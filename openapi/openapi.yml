@@ -1,0 +1,246 @@
+openapi: 3.0.3
+info:
+  title: Jellyfish REST API - OpenAPI 3.0
+  description: REST API of Jellyfish Media Server
+
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 0.1.0
+
+servers:
+  - url: https://localhost/api/v1
+tags:
+  - name: room
+    description: Manage rooms
+paths:
+  /room:
+    post:
+      tags:
+        - room
+      summary: Create a new room
+      operationId: createRoom
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoomConfig'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+        '405':
+          description: Invalid input
+        '500':
+          description: Internal server error
+          # max number of rooms has been reached?
+    get:
+      tags:
+        - room
+      summary: List all rooms and their configs
+      operationId: getRooms
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Room'
+  /room/{roomId}:
+    get:
+      tags:
+        - room
+      summary: Find room by ID
+      operationId: getRoomById
+      parameters:
+        - name: roomId
+          in: path
+          description: ID of room to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Room not found
+    delete:
+      tags:
+        - room
+      summary: Delete a room
+      operationId: deleteRoom
+      parameters:
+        - name: roomId
+          in: path
+          description: Room id to delete
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '400':
+          description: Invalid room value
+  /room/{roomId}/peer:
+    post:
+      tags:
+        - room
+      summary: Add peer
+      operationId: addPeer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PeerConfig'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Peer'
+        '500':
+          description: reached max number of peers
+  /room/{roomId}/consumer:
+    post:
+      tags:
+        - room
+      summary: Create consumer
+      operationId: createConsumer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsumerConfig'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Consumer'
+  /room/{roomId}/producer:
+    post:
+      tags:
+        - room
+      summary: Create producer
+      operationId: createProducer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProducerConfig'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Producer'
+components:
+  schemas:
+    RoomConfig:
+      type: object
+      properties:
+        maxPeers:
+          type: integer
+          format: int64
+          example: 10
+    Room:
+      type: object
+      properties: 
+        id:
+          type: integer
+          format: int64
+        config:
+          type: object
+          schema: 
+              $ref: '#/components/schemas/RoomConfig'
+        producers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Producer'
+        consumers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Consumer'
+    ProducerConfig:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/ProducerType'
+    Producer:
+      type: object
+      description: "
+        Producer is a server side entity that publishes a track.
+        Example producer is RTSP, which connects to a remote camera
+        or FileReader, which reads a track from a file. Producer 
+        doesn't subscribe to tracks and is spawned just after adding it.
+        "
+      properties:
+        id:
+          type: integer
+          format: int64
+        type:
+          $ref: '#/components/schemas/ProducerType'
+    ConsumerConfig:
+      type: object
+      properties: 
+        type:
+          $ref: '#/components/schemas/ConsumerType'
+    Consumer:
+      type: object
+      description: "
+        Consumer is a server side entity that subscribes to tracks
+        published by producers or peers and process them.
+        "
+      properties:
+        id:
+          type: integer
+          format: int64
+        type:
+          $ref: '#/components/schemas/ConsumerType'
+    PeerConfig:
+      type: object
+      properties: 
+        type:
+          $ref: '#/components/schemas/PeerType'
+    Peer:
+      type: object
+      description: "
+        Peer is an entity that connects to the server to publish, 
+        subscribe or publish and subscribe to tracks published by producers
+        or other peers. Peer process is spawned after peer connects to the server.
+        "
+      properties:
+        id:
+          type: integer
+          format: int64
+        type:
+          $ref: '#/components/schemas/PeerType'
+    ProducerType:
+      type: string
+      enum:
+        - rtsp
+        - file
+    ConsumerType:
+      type: string
+      enum:
+        - hls
+        - recorder
+    PeerType:
+      type: string
+      enum:
+        - webrtc 
