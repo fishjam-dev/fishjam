@@ -113,42 +113,26 @@ paths:
                 $ref: '#/components/schemas/Peer'
         '500':
           description: reached max number of peers
-  /room/{roomId}/consumer:
+  /room/{roomId}/component:
     post:
       tags:
         - room
-      summary: Create consumer
-      operationId: createConsumer
+      summary: Create server side component
+      operationId: createComponent
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ConsumerConfig'
+              $ref: '#/components/schemas/ComponentConfig'
       responses:
         '200':
           description: successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Consumer'
-  /room/{roomId}/producer:
-    post:
-      tags:
-        - room
-      summary: Create producer
-      operationId: createProducer
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ProducerConfig'
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Producer'
+                $ref: '#/components/schemas/Component'
+        '404':
+          description: component not found
 components:
   schemas:
     RoomConfig:
@@ -168,50 +152,31 @@ components:
           type: object
           schema: 
               $ref: '#/components/schemas/RoomConfig'
-        producers:
+        components:
           type: array
           items:
-            $ref: '#/components/schemas/Producer'
-        consumers:
-          type: array
-          items:
-            $ref: '#/components/schemas/Consumer'
-    ProducerConfig:
+            $ref: '#/components/schemas/Component'
+    ComponentConfig:
       type: object
       properties:
         type:
-          $ref: '#/components/schemas/ProducerType'
-    Producer:
+          $ref: '#/components/schemas/ComponentType'
+        options:
+          type:
+            object
+            
+    Component:
       type: object
       description: "
-        Producer is a server side entity that publishes a track.
-        Example producer is RTSP, which connects to a remote camera
-        or FileReader, which reads a track from a file. Producer 
-        doesn't subscribe to tracks and is spawned just after adding it.
+        Component is a server side entity that publishes or subscribes to
+        a track. 
         "
       properties:
         id:
           type: integer
           format: int64
         type:
-          $ref: '#/components/schemas/ProducerType'
-    ConsumerConfig:
-      type: object
-      properties: 
-        type:
-          $ref: '#/components/schemas/ConsumerType'
-    Consumer:
-      type: object
-      description: "
-        Consumer is a server side entity that subscribes to tracks
-        published by producers or peers and process them.
-        "
-      properties:
-        id:
-          type: integer
-          format: int64
-        type:
-          $ref: '#/components/schemas/ConsumerType'
+          $ref: '#/components/schemas/ComponentType'
     PeerConfig:
       type: object
       properties: 
@@ -230,17 +195,16 @@ components:
           format: int64
         type:
           $ref: '#/components/schemas/PeerType'
-    ProducerType:
-      type: string
-      enum:
-        - rtsp
-        - file
-    ConsumerType:
-      type: string
-      enum:
-        - hls
-        - recorder
+    
     PeerType:
       type: string
       enum:
         - webrtc 
+
+    ComponentType:
+      type: string
+      enum:
+        - rtsp_producer
+        - file_producer
+        - hls_consumer
+        - file_consumer
