@@ -1,10 +1,6 @@
 defmodule JellyfishWeb.RoomControllerTest do
   use JellyfishWeb.ConnCase
 
-  alias Jellyfish.Rooms.Room
-
-  @invalid_attrs %{name: nil}
-
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
@@ -51,27 +47,27 @@ defmodule JellyfishWeb.RoomControllerTest do
     end
   end
 
-  # describe "delete room" do
-  #   setup [:create_room]
+  describe "delete room" do
+    setup [:create_room]
 
-  #   test "deletes chosen room", %{conn: conn, room: room} do
-  #     conn = delete(conn, Routes.room_path(conn, :delete, room))
-  #     assert response(conn, 204)
+    test "deletes chosen room", %{conn: conn, room_id: room_id} do
+      conn = delete(conn, Routes.room_path(conn, :delete, room_id))
+      assert response(conn, 204)
 
-  #     assert_error_sent 404, fn ->
-  #       get(conn, Routes.room_path(conn, :show, room))
-  #     end
-  #   end
+      conn = get(conn, Routes.room_path(conn, :show, room_id))
+      assert json_response(conn, 404) == %{"errors" => "Room not found"}
+    end
 
-  #   test "returns 404 if room doesn't exists", %{conn: conn, room: room} do
-  #     conn = delete(conn, Routes.room_path(conn, :delete, "abc303"))
-  #     assert response(conn, 404)
-  #   end
-  # end
+    test "returns 404 if room doesn't exists", %{conn: conn} do
+      conn = delete(conn, Routes.room_path(conn, :delete, "abc303"))
+      assert response(conn, 404)
+    end
+  end
 
-  # defp create_room(conn) do
-  #   conn = post(conn, Routes.room_path(conn, :create), room: @create_attrs)
-  #   assert %{"id" => id} = json_response(conn, 201)["data"]
-  #   %{room: room}
-  # end
+  defp create_room(state) do
+    conn = post(state.conn, Routes.room_path(state.conn, :create))
+    assert %{"id" => id} = json_response(conn, 201)["data"]
+
+    %{room_id: id}
+  end
 end

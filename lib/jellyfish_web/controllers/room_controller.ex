@@ -38,12 +38,15 @@ defmodule JellyfishWeb.RoomController do
         render(conn, "show.json", room: room)
 
       _not_found ->
-        send_resp(conn, 404, "Room not found")
+        conn
+        |> put_resp_content_type("application/json")
+        |> put_status(404)
+        |> json(%{errors: "Room not found"})
     end
   end
 
   def delete(conn, %{"room_id" => id}) do
-    case GenServer.call(RoomService, {:delete, id}) do
+    case GenServer.call(RoomService, {:delete_room, id}) do
       :ok -> send_resp(conn, :no_content, "")
       :not_found -> send_resp(conn, 404, "Room with id #{id} doesn't exist already")
     end
