@@ -2,6 +2,7 @@ defmodule Jellyfish.Application do
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
   @moduledoc false
+  alias JellyfishWeb.RoomService
 
   use Application
 
@@ -17,6 +18,8 @@ defmodule Jellyfish.Application do
       # Start a worker by calling: Jellyfish.Worker.start_link(arg)
       # {Jellyfish.Worker, arg}
     ]
+
+    {:ok, _} = GenServer.start_link(RoomService, [], name: RoomService)
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options

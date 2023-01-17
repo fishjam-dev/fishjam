@@ -7,6 +7,11 @@ defmodule JellyfishWeb.Router do
 
   scope "/api", JellyfishWeb do
     pipe_through :api
+
+    resources("/rooms", RoomController,
+      only: [:create, :index, :show, :delete],
+      param: "room_id"
+    )
   end
 
   # Enables LiveDashboard only for development

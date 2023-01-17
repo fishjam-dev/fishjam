@@ -16,16 +16,15 @@ defmodule Jellyfish.MixProject do
       deps: deps(),
       dialyzer: dialyzer(),
 
+      # hex
+      description: "Template Plugin for Membrane Multimedia Framework",
+      package: package(),
 
-            # hex
-            description: "Template Plugin for Membrane Multimedia Framework",
-            package: package(),
-
-            # docs
-            name: "Membrane Template plugin",
-            source_url: @github_url,
-            homepage_url: "https://membraneframework.org",
-            docs: docs()
+      # docs
+      name: "Membrane Template plugin",
+      source_url: @github_url,
+      homepage_url: "https://membraneframework.org",
+      docs: docs()
     ]
   end
 
@@ -54,6 +53,7 @@ defmodule Jellyfish.MixProject do
       {:telemetry_poller, "~> 1.0"},
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
+      {:uuid, "~> 1.1"},
 
       # Docs and credo
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
@@ -74,7 +74,6 @@ defmodule Jellyfish.MixProject do
     ]
   end
 
-
   defp dialyzer() do
     opts = [
       flags: [:error_handling]
@@ -87,7 +86,6 @@ defmodule Jellyfish.MixProject do
       opts
     end
   end
-
 
   defp package do
     [
