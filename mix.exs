@@ -54,6 +54,7 @@ defmodule Jellyfish.MixProject do
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
       {:uuid, "~> 1.1"},
+      {:bunch, "~> 1.6"},
 
       # Docs and credo
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
