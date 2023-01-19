@@ -5,15 +5,16 @@ defmodule JellyfishWeb.Router do
     plug :accepts, ["json"]
   end
 
-  scope "/api", JellyfishWeb do
+  scope "/room", JellyfishWeb do
     pipe_through :api
 
-    resources("/rooms", RoomController,
+    resources("/", RoomController,
       only: [:create, :index, :show, :delete],
       param: "room_id"
     )
 
-    resources("/rooms/:room_uuid/peer", PeerController, only: [:create])
+    resources("/:room_uuid/peer", PeerController, only: [:create, :delete])
+    resources("/:room_uuid/endpoint", EndpointController, only: [:create, :delete])
   end
 
   # Enables LiveDashboard only for development

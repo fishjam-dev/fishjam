@@ -1,6 +1,7 @@
 defmodule JellyfishWeb.PeerView do
   use JellyfishWeb, :view
   alias JellyfishWeb.PeerView
+  alias Jellyfish.Peer
 
   def render("index.json", %{peers: peers}) do
     %{data: render_many(peers, PeerView, "peer.json")}
@@ -13,10 +14,11 @@ defmodule JellyfishWeb.PeerView do
   def render("peer.json", %{peer: peer}) do
     %{
       id: peer.id,
-      peer_type: peer.peer_type
+      type: peer.type
     }
   end
 
+  @spec render_dict(peers :: %{Peer.id() => Peer.t()}) :: [any()]
   def render_dict(peers) do
     peers
     |> Map.values()

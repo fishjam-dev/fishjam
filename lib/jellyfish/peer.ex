@@ -6,7 +6,7 @@ defmodule Jellyfish.Peer do
 
   @enforce_keys [
     :id,
-    :peer_type
+    :type
   ]
   defstruct @enforce_keys
 
@@ -16,18 +16,18 @@ defmodule Jellyfish.Peer do
   @typedoc """
   This module contains:
   * `id` - peer id
-  * `peer_type` - type of peer
+  * `type` - type of peer
   """
   @type t :: %__MODULE__{
           id: id,
-          peer_type: peer_type()
+          type: peer_type()
         }
 
   @spec new(peer_type :: :webrtc) :: t()
   def new(peer_type) do
     %__MODULE__{
       id: UUID.uuid4(),
-      peer_type: peer_type
+      type: peer_type
     }
   end
 

@@ -22,8 +22,8 @@ defmodule JellyfishWeb.RoomControllerTest do
       assert %{
                "id" => ^id,
                "config" => %{"max_peers" => 10},
-               "producers" => [],
-               "consumers" => []
+               "endpoints" => [],
+               "peers" => []
              } = json_response(conn, 200)["data"]
     end
 
@@ -36,8 +36,8 @@ defmodule JellyfishWeb.RoomControllerTest do
       assert %{
                "id" => ^id,
                "config" => %{"max_peers" => nil},
-               "producers" => [],
-               "consumers" => []
+               "endpoints" => [],
+               "peers" => []
              } = json_response(conn, 200)["data"]
     end
 
