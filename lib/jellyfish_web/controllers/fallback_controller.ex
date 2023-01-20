@@ -13,4 +13,11 @@ defmodule JellyfishWeb.FallbackController do
     |> put_view(JellyfishWeb.ErrorView)
     |> render(:"404")
   end
+
+  def error_json_respond(conn, status_code, error_msg) do
+    conn
+    |> put_resp_content_type("application/json")
+    |> put_status(status_code)
+    |> json(%{errors: error_msg})
+  end
 end

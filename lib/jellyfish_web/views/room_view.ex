@@ -2,7 +2,7 @@ defmodule JellyfishWeb.RoomView do
   use JellyfishWeb, :view
   alias JellyfishWeb.RoomView
   alias JellyfishWeb.PeerView
-  alias JellyfishWeb.EndpointView
+  alias JellyfishWeb.ComponentView
 
   def render("index.json", %{rooms: rooms}) do
     %{data: render_many(rooms, RoomView, "room.json")}
@@ -16,7 +16,7 @@ defmodule JellyfishWeb.RoomView do
     %{
       id: room.id,
       config: room.config,
-      endpoints: EndpointView.render_dict(room.endpoints),
+      components: ComponentView.render_dict(room.components),
       peers: PeerView.render_dict(room.peers)
     }
   end

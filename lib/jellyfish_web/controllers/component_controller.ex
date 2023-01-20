@@ -1,37 +1,37 @@
-defmodule JellyfishWeb.EndpointController do
+defmodule JellyfishWeb.ComponentController do
   use JellyfishWeb, :controller
 
   alias Jellyfish.RoomService
-  alias Jellyfish.Endpoint
+  alias Jellyfish.Component
   alias Jellyfish.Room
 
   action_fallback JellyfishWeb.FallbackController
 
   def create(conn, %{"room_uuid" => room_uuid} = params) do
-    endpoint_type =
+    component_type =
       params
-      |> Map.fetch!("endpoint_type")
-      |> Endpoint.validate_endpoint_type()
+      |> Map.fetch!("component_type")
+      |> Component.validate_component_type()
 
-    case {endpoint_type, RoomService.find_room(room_uuid)} do
+    case {component_type, RoomService.find_room(room_uuid)} do
       {:error, _} ->
         conn
         |> put_resp_content_type("application/json")
         |> put_status(400)
-        |> json(%{errors: "Not proper endpoint type"})
+        |> json(%{errors: "Not proper component type"})
 
-      {{:ok, _endpoint_type}, :not_found} ->
+      {{:ok, _component_type}, :not_found} ->
         conn
         |> put_resp_content_type("application/json")
         |> put_status(400)
         |> json(%{errors: "Room not found"})
 
-      {{:ok, endpoint_type}, room_pid} ->
-        endpoint = Room.add_endpoint(room_pid, endpoint_type)
+      {{:ok, component_type}, room_pid} ->
+        component = Room.add_component(room_pid, component_type)
 
         conn
         |> put_status(:created)
-        |> render("show.json", endpoint: endpoint)
+        |> render("show.json", component: component)
     end
   end
 
@@ -44,7 +44,7 @@ defmodule JellyfishWeb.EndpointController do
         |> json(%{errors: "Room not found"})
 
       room_pid ->
-        case Room.remove_endpoint(room_pid, id) do
+        case Room.remove_component(room_pid, id) do
           :ok ->
             send_resp(conn, :no_content, "")
 
@@ -52,7 +52,7 @@ defmodule JellyfishWeb.EndpointController do
             conn
             |> put_resp_content_type("application/json")
             |> put_status(404)
-            |> json(%{errors: "Endpoint with id #{id} doesn't exist"})
+            |> json(%{errors: "Component with id #{id} doesn't exist"})
         end
     end
   end
