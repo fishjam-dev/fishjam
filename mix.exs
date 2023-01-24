@@ -59,6 +59,16 @@ defmodule Jellyfish.MixProject do
       {:membrane_rtc_engine,
        github: "jellyfish-dev/membrane_rtc_engine", branch: "get_endpoints"},
 
+      # HLS endpoints deps
+      {:membrane_http_adaptive_stream_plugin, "~> 0.8.1"},
+      {:membrane_mp4_plugin, "~> 0.16.1"},
+      {:membrane_aac_plugin, "~> 0.12.0"},
+      {:membrane_aac_fdk_plugin, "~> 0.13.0"},
+      {:membrane_opus_plugin, "~> 0.15.0"},
+      {:membrane_h264_ffmpeg_plugin, "~> 0.21.5"},
+      {:membrane_framerate_converter_plugin, "~> 0.5.0"},
+      {:membrane_ffmpeg_swscale_plugin, "~> 0.10.0"},
+
       # Docs and credo
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},

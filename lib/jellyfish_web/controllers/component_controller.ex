@@ -13,6 +13,8 @@ defmodule JellyfishWeb.ComponentController do
       |> Map.fetch!("component_type")
       |> Component.validate_component_type()
 
+    component_options = Map.get(params, "component_options")
+
     case {component_type, RoomService.find_room(room_uuid)} do
       {:error, _} ->
         conn
@@ -27,7 +29,7 @@ defmodule JellyfishWeb.ComponentController do
         |> json(%{errors: "Room not found"})
 
       {{:ok, component_type}, room_pid} ->
-        component = Room.add_component(room_pid, component_type)
+        component = Room.add_component(room_pid, component_type, component_options)
 
         conn
         |> put_status(:created)

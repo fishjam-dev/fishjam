@@ -17,7 +17,7 @@ defmodule JellyfishWeb.PeerControllerTest do
 
       assert %{
                "id" => ^room_id,
-               "peers" => [%{"id" => ^id, "type" => "webrtc"}]
+               "peers" => [%{"id" => ^id, "type" => "Elixir.Membrane.RTC.Engine.Endpoint.WebRTC"}]
              } = json_response(conn, 200)["data"]
     end
 

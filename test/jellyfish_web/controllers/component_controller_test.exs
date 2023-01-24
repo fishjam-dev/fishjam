@@ -16,7 +16,9 @@ defmodule JellyfishWeb.ComponentControllerTest do
 
       assert %{
                "id" => ^room_id,
-               "components" => [%{"id" => ^id, "type" => "hls"}]
+               "components" => [
+                 %{"id" => ^id, "type" => "Elixir.Membrane.RTC.Engine.Endpoint.HLS"}
+               ]
              } = json_response(conn, 200)["data"]
     end
 

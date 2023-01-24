@@ -9,8 +9,6 @@ defmodule Jellyfish.Room do
   alias Jellyfish.Peer
   alias Jellyfish.Component
   alias Membrane.RTC.Engine
-  alias Membrane.RTC.Engine.Endpoint.WebRTC
-  alias Membrane.RTC.Engine.Endpoint.WebRTC.SimulcastConfig
 
   @enforce_keys [
     :id,
@@ -59,25 +57,50 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_call(:state, _from, state) do
-    {:reply, state, state}
+    engine_endpoints = Engine.get_endpoints(state.engine_pid)
+
+    peers =
+      engine_endpoints
+      |> Enum.filter(fn endpoint -> Map.has_key?(state.peers, endpoint.id) end)
+      |> Map.new(&{&1.id, &1})
+
+    components =
+      engine_endpoints
+      |> Enum.filter(fn endpoint ->
+        Map.has_key?(state.components, endpoint.id)
+      end)
+      |> Map.new(&{&1.id, &1})
+
+    {:reply, %{id: state.id, peers: peers, components: components, config: state.config}, state}
   end
 
   def handle_call({:add_peer, peer_type}, _from, state) do
-    peers_number = Enum.count(state.peers)
+    if Enum.count(state.peers) == state.config.max_peers do
+      {:reply, {:error, :reached_peers_limit}, state}
+    else
+      options = %{engine_pid: state.engine_pid, network_options: state.network_options}
+      peer = Peer.create_peer(peer_type, options)
 
-    case peer_type do
-      _any_peer_type when peers_number == state.config.max_peers ->
-        {:reply, {:error, :reached_peers_limit}, state}
+      state = put_in(state, [:peers, peer.id], peer)
 
-      :webrtc ->
-        {peer, state} = add_webrtc(peer_type, state)
-        {:reply, peer, state}
+      :ok = Engine.add_endpoint(state.engine_pid, peer.engine_endpoint, endpoint_id: peer.id)
+
+      {:reply, peer, state}
     end
   end
 
-  def handle_call({:add_component, component_type}, _from, state) do
-    component = Component.new(component_type)
+  def handle_call({:add_component, component_type, options}, _from, state) do
+    component =
+      Component.create_component(component_type, options, %{
+        engine_pid: state.engine_pid,
+        room_id: state.id
+      })
+
     state = put_in(state, [:components, component.id], component)
+
+    :ok =
+      Engine.add_endpoint(state.engine_pid, component.engine_endpoint, endpoint_id: component.id)
+
     {:reply, component, state}
   end
 
@@ -103,10 +126,13 @@ defmodule Jellyfish.Room do
     GenServer.call(room_pid, {:add_peer, peer_type})
   end
 
-  @spec add_component(room_pid :: pid(), component_type :: Component.component_type()) ::
-          Component.t()
-  def add_component(room_pid, component_type) do
-    GenServer.call(room_pid, {:add_component, component_type})
+  @spec add_component(
+          room_pid :: pid(),
+          component_type :: Component.component_type(),
+          options :: any()
+        ) :: Component.t()
+  def add_component(room_pid, component_type, options) do
+    GenServer.call(room_pid, {:add_component, component_type, options})
   end
 
   @spec remove_component(room_pid :: pid(), component_id :: String.t()) :: :ok | :error
@@ -132,7 +158,9 @@ defmodule Jellyfish.Room do
       end
 
     turn_mock_ip = Application.fetch_env!(:jellyfish, :integrated_turn_ip)
-    turn_ip = if @mix_env == :prod, do: {0, 0, 0, 0}, else: turn_mock_ip
+
+    # turn_ip = if @mix_env == :prod, do: {0, 0, 0, 0}, else: turn_mock_ip
+    turn_ip = turn_mock_ip
 
     integrated_turn_options = [
       ip: turn_ip,
@@ -154,55 +182,5 @@ defmodule Jellyfish.Room do
       engine_pid: pid,
       network_options: network_options
     }
-  end
-
-  defp add_webrtc(peer_type, state) do
-    peer = Peer.new(peer_type)
-    state = put_in(state, [:peers, peer.id], peer)
-
-    simulcast? = true
-
-    handshake_opts =
-      if state.network_options[:dtls_pkey] &&
-           state.network_options[:dtls_cert] do
-        [
-          client_mode: false,
-          dtls_srtp: true,
-          pkey: state.network_options[:dtls_pkey],
-          cert: state.network_options[:dtls_cert]
-        ]
-      else
-        [
-          client_mode: false,
-          dtls_srtp: true
-        ]
-      end
-
-    webrtc_extensions =
-      if simulcast? do
-        [Mid, Rid, TWCC]
-      else
-        [TWCC]
-      end
-
-    endpoint = %WebRTC{
-      rtc_engine: state.engine_pid,
-      ice_name: peer.id,
-      owner: self(),
-      integrated_turn_options: state.network_options[:integrated_turn_options],
-      integrated_turn_domain: state.network_options[:integrated_turn_domain],
-      handshake_opts: handshake_opts,
-      log_metadata: [peer_id: peer.id],
-      trace_context: nil,
-      webrtc_extensions: webrtc_extensions,
-      simulcast_config: %SimulcastConfig{
-        enabled: simulcast?,
-        initial_target_variant: fn _track -> :medium end
-      }
-    }
-
-    :ok = Engine.add_endpoint(state.engine_pid, endpoint, endpoint_id: peer.id)
-
-    {peer, state}
   end
 end
