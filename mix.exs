@@ -16,16 +16,25 @@ defmodule Jellyfish.MixProject do
       deps: deps(),
       dialyzer: dialyzer(),
 
+      # hex
+      description: "Jellyfish media server",
+      package: package(),
 
-            # hex
-            description: "Template Plugin for Membrane Multimedia Framework",
-            package: package(),
+      # docs
+      name: "Jellyfish media server",
+      source_url: @github_url,
+      homepage_url: "https://membrane.stream",
+      docs: docs(),
 
-            # docs
-            name: "Membrane Template plugin",
-            source_url: @github_url,
-            homepage_url: "https://membraneframework.org",
-            docs: docs()
+      # test coverage
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test,
+        "coveralls.json": :test
+      ]
     ]
   end
 
@@ -55,10 +64,13 @@ defmodule Jellyfish.MixProject do
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
 
-      # Docs and credo
+      # Docs, credo
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},
-      {:credo, ">= 0.0.0", only: :dev, runtime: false}
+      {:credo, ">= 0.0.0", only: :dev, runtime: false},
+
+      # Test deps
+      {:excoveralls, "~> 0.15.0", only: :test, runtime: false}
     ]
   end
 
@@ -74,7 +86,6 @@ defmodule Jellyfish.MixProject do
     ]
   end
 
-
   defp dialyzer() do
     opts = [
       flags: [:error_handling]
@@ -87,7 +98,6 @@ defmodule Jellyfish.MixProject do
       opts
     end
   end
-
 
   defp package do
     [
