@@ -1,0 +1,14 @@
+version: 2.1
+
+jobs:
+  test:
+    steps:
+      - checkout
+      - run: mix deps.get
+      - run: mix test
+
+workflows:
+  version: 2.1
+  build:
+    jobs:
+      - test
