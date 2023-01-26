@@ -13,7 +13,7 @@ jobs:
     steps:
       - checkout
       - run: mix deps.get
-      - run: mix coveralls.json
+      - run: mix coveralls.json --warnings-as-errors
       - codecov/upload
 
 workflows:

@@ -17,6 +17,9 @@ defmodule JellyfishWeb do
   and import those modules here.
   """
 
+  @spec controller ::
+          {:__block__, [],
+           [{:alias, [...], [...]} | {:import, [...], [...]} | {:use, [...], [...]}, ...]}
   def controller do
     quote do
       use Phoenix.Controller, namespace: JellyfishWeb
@@ -26,6 +29,9 @@ defmodule JellyfishWeb do
     end
   end
 
+  @spec view ::
+          {:__block__, [],
+           [{:__block__, [], [...]} | {:import, [...], [...]} | {:use, [...], [...]}, ...]}
   def view do
     quote do
       use Phoenix.View,
@@ -41,6 +47,7 @@ defmodule JellyfishWeb do
     end
   end
 
+  @spec router :: {:__block__, [], [{:import, [...], [...]} | {:use, [...], [...]}, ...]}
   def router do
     quote do
       use Phoenix.Router
@@ -50,6 +57,9 @@ defmodule JellyfishWeb do
     end
   end
 
+  @spec channel ::
+          {:use, [{:context, JellyfishWeb} | {:import, Kernel}, ...],
+           [{:__aliases__, [...], [...]}, ...]}
   def channel do
     quote do
       use Phoenix.Channel
@@ -66,6 +76,7 @@ defmodule JellyfishWeb do
     end
   end
 
+  @spec __using__(atom) :: any
   @doc """
   When used, dispatch to the appropriate controller/view/etc.
   """

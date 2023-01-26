@@ -1,7 +1,9 @@
 defmodule JellyfishWeb.Telemetry do
+  @moduledoc false
   use Supervisor
   import Telemetry.Metrics
 
+  @spec start_link(any) :: {:error, any} | {:ok, pid}
   def start_link(arg) do
     Supervisor.start_link(__MODULE__, arg, name: __MODULE__)
   end
@@ -19,6 +21,7 @@ defmodule JellyfishWeb.Telemetry do
     Supervisor.init(children, strategy: :one_for_one)
   end
 
+  @spec metrics :: [Telemetry.Metrics.Summary.t(), ...]
   def metrics do
     [
       # Phoenix Metrics
