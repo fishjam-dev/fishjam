@@ -19,7 +19,7 @@ defmodule Jellyfish.RoomService do
   @impl true
   def handle_call({:create_room, max_peers}, _from, state) do
     {:ok, room_pid} = GenServer.start_link(Room, max_peers)
-    room = GenServer.call(room_pid, :state)
+    room = Room.get_state(room_pid)
 
     :ets.insert(:rooms, {room.id, room_pid})
 
@@ -30,7 +30,7 @@ defmodule Jellyfish.RoomService do
   def handle_call(:list_rooms, _from, state) do
     rooms =
       Enum.map(state.rooms, fn {_room_id, room_pid} ->
-        GenServer.call(room_pid, :state)
+        Room.get_state(room_pid)
       end)
 
     {:reply, rooms, state}
@@ -57,12 +57,12 @@ defmodule Jellyfish.RoomService do
   end
 
   @spec create_room(max_peers :: Room.max_peers()) :: Room.t() | :bad_arg
-  def create_room(max_peers) when not is_nil(max_peers) and not is_number(max_peers) do
-    :bad_arg
+  def create_room(max_peers) when is_nil(max_peers) or is_number(max_peers) do
+    GenServer.call(__MODULE__, {:create_room, max_peers})
   end
 
-  def create_room(max_peers) do
-    GenServer.call(__MODULE__, {:create_room, max_peers})
+  def create_room(_max_peers) do
+    :bad_arg
   end
 
   @spec delete_room(room_id :: String.t()) :: :ok | :not_found

@@ -19,12 +19,7 @@ defmodule JellyfishWeb.RoomController do
     max_peers = Map.get(params, "max_peers")
 
     case RoomService.create_room(max_peers) do
-      :bad_arg ->
-        conn
-        |> put_resp_content_type("application/json")
-        |> put_status(422)
-        |> json(%{errors: "max_peers should be number if passed"})
-
+      :bad_arg -> {:error, :unprocessable_entity, "max_peers should be number if passed"}
       room ->
         conn
         |> put_status(:created)
@@ -34,11 +29,7 @@ defmodule JellyfishWeb.RoomController do
 
   def show(conn, %{"room_id" => id}) do
     case RoomService.find_room(id) do
-      :not_found ->
-        conn
-        |> put_resp_content_type("application/json")
-        |> put_status(404)
-        |> json(%{errors: "Room not found"})
+      :not_found -> {:error, :not_found, "Room not found"}
 
       room_pid ->
         room = Room.get_state(room_pid)
@@ -49,7 +40,7 @@ defmodule JellyfishWeb.RoomController do
   def delete(conn, %{"room_id" => id}) do
     case RoomService.delete_room(id) do
       :ok -> send_resp(conn, :no_content, "")
-      :not_found -> send_resp(conn, 404, "Room with id #{id} doesn't exist already")
+      :not_found -> {:error, :not_found, "Room with id #{id} doesn't exist already"}
     end
   end
 end

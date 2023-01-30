@@ -7,17 +7,25 @@ defmodule JellyfishWeb.FallbackController do
   use JellyfishWeb, :controller
 
   # This clause is an example of how to handle resources that cannot be found.
-  def call(conn, {:error, :not_found}) do
-    conn
-    |> put_status(:not_found)
-    |> put_view(JellyfishWeb.ErrorView)
-    |> render(:"404")
-  end
+  # def call(conn, {:error, :not_found}) do
+  #   conn
+  #   |> put_status(:not_found)
+  #   |> put_view(JellyfishWeb.ErrorView)
+  #   |> render(:"404")
+  # end
 
-  def error_json_respond(conn, status_code, error_msg) do
+  # def error_json_respond(conn, status_code, error_msg) do
+  #   conn
+  #   |> put_resp_content_type("application/json")
+  #   |> put_status(status_code)
+  #   |> json(%{errors: error_msg})
+  # end
+
+
+  def call(conn, {:error, status, reason}) do
     conn
     |> put_resp_content_type("application/json")
-    |> put_status(status_code)
-    |> json(%{errors: error_msg})
+    |> put_status(status)
+    |> json(%{error: reason})
   end
 end

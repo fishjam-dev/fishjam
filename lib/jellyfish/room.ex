@@ -1,7 +1,6 @@
 defmodule Jellyfish.Room do
   @moduledoc """
   Module representing room.
-
   """
 
   use Bunch.Access
@@ -89,7 +88,22 @@ defmodule Jellyfish.Room do
     end
   end
 
+  def handle_call({:remove_peer, peer_id}, _from, state) do
+    # we could combine this and remove_component
+    {result, state} =
+      if Map.has_key?(state.peers, peer_id) do
+        {_elem, state} = pop_in(state, [:peers, peer_id])
+        :ok = Engine.remove_endpoint(state.engine_pid, peer_id)
+        {:ok, state}
+      else
+        {:error, state}
+      end
+
+    {:reply, result, state}
+  end
+
   def handle_call({:add_component, component_type, options}, _from, state) do
+    # add limit on components?
     component =
       Component.create_component(component_type, options, %{
         engine_pid: state.engine_pid,
@@ -108,6 +122,7 @@ defmodule Jellyfish.Room do
     {result, state} =
       if Map.has_key?(state.components, component_id) do
         {_elem, state} = pop_in(state, [:components, component_id])
+        :ok = Engine.remove_endpoint(state.engine_pid, component_id)
         {:ok, state}
       else
         {:error, state}
