@@ -5,6 +5,6 @@ defmodule JellyfishWeb.FallbackController do
     conn
     |> put_resp_content_type("application/json")
     |> put_status(status)
-    |> json(%{error: reason})
+    |> json(%{errors: reason})
   end
 end

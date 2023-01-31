@@ -9,7 +9,7 @@ defmodule JellyfishWeb.ComponentController do
 
   def create(conn, %{"room_id" => room_id} = params) do
     with {:ok, component_type_string} <- Map.fetch(params, "type"),
-         {:ok, component_options} <- Map.fetch(params, "options"),
+         component_options <- Map.get(params, "options"),
          {:ok, component_type} <- Component.validate_component_type(component_type_string) do
       case RoomService.find_room(room_id) do
         :not_found -> {:error, :not_found, "Room not found"}
@@ -30,7 +30,7 @@ defmodule JellyfishWeb.ComponentController do
 
   def delete(conn, %{"room_id" => room_id, "id" => id}) do
     case RoomService.find_room(room_id) do
-      :not_found -> {:error, :bad_request, "Room not found"}
+      :not_found -> {:error, :not_found, "Room not found"}
 
       room_pid ->
         case Room.remove_component(room_pid, id) do

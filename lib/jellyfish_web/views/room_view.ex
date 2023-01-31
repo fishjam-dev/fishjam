@@ -14,7 +14,7 @@ defmodule JellyfishWeb.RoomView do
   def render("room.json", %{room: room}) do
     %{
       id: room.id,
-      config: room.config,
+      config: %{"maxPeers" => room.config.max_peers},
       components: render_many(room.components, ComponentView, "component.json"),
       peers: render_many(room.peers, PeerView, "peer.json")
     }

@@ -30,12 +30,12 @@ defmodule JellyfishWeb.PeerController do
 
   def delete(conn, %{"room_id" => room_id, "id" => id}) do
     case RoomService.find_room(room_id) do
-      :not_found -> {:error, :bad_request, "Room not found"}
+      :not_found -> {:error, :not_found, "Room not found"}
 
       room_pid ->
         case Room.remove_peer(room_pid, id) do
           :ok -> send_resp(conn, :no_content, "")
-          :error -> {:error, :not_found, "Component with id #{id} doesn't exist"}
+          :error -> {:error, :not_found, "Peer with id #{id} doesn't exist"}
         end
     end
   end

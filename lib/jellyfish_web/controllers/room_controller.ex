@@ -12,7 +12,6 @@ defmodule JellyfishWeb.RoomController do
       |> :ets.tab2list()
       |> Enum.map(fn {_id, room_pid} -> Room.get_state(room_pid) end)
       |> Enum.map(&maps_to_lists/1)
-      |> IO.inspect()
 
     render(conn, "index.json", rooms: rooms)
   end
