@@ -29,17 +29,17 @@ defmodule Jellyfish.Peer do
           engine_endpoint: struct() | atom()
         }
 
-  @spec validate_peer_type(String.t()) :: {:ok, peer_type()} | :error
-  def validate_peer_type(peer_type) do
-    case peer_type do
+  @spec validate_peer_type(type :: String.t()) :: {:ok, peer_type()} | :error
+  def validate_peer_type(type) do
+    case type do
       "webrtc" -> {:ok, :webrtc}
       _other -> {:error, :invalid_peer_type}
     end
   end
 
-  @spec create_peer(peer_type :: peer_type(), any()) :: t()
-  def create_peer(peer_type, options) do
-    case peer_type do
+  @spec create_peer(type :: peer_type(), any()) :: t()
+  def create_peer(type, options) do
+    case type do
       :webrtc -> add_webrtc(options)
       _other -> {:error, :invalid_peer_type}
     end

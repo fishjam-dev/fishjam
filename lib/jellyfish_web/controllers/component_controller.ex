@@ -24,7 +24,7 @@ defmodule JellyfishWeb.ComponentController do
       end
     else
       {:error, :invalid_component_type} -> {:error, :bad_request, "Invalid component type"}
-      :error -> {:error, :bad_reguest, "Request body has invalid structure"}
+      :error -> {:error, :bad_request, "Request body has invalid structure"}
     end
   end
 
@@ -34,9 +34,7 @@ defmodule JellyfishWeb.ComponentController do
 
       room_pid ->
         case Room.remove_component(room_pid, id) do
-          :ok ->
-            send_resp(conn, :no_content, "")
-
+          :ok -> send_resp(conn, :no_content, "")
           :error -> {:error, :not_found, "Component with id #{id} doesn't exist"}
         end
     end

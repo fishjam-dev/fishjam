@@ -31,7 +31,7 @@ defmodule Jellyfish.Component do
           engine_endpoint: struct() | atom()
         }
 
-  @spec validate_component_type(String.t()) :: {:ok, component_type()} | :error
+  @spec validate_component_type(type :: String.t()) :: {:ok, component_type()} | :error
   def validate_component_type(type) do
     case type do
       "file_reader" -> {:ok, :file_reader}
@@ -40,7 +40,7 @@ defmodule Jellyfish.Component do
     end
   end
 
-  @spec create_component(component_type(), any(), any()) :: t()
+  @spec create_component(type :: component_type(), options :: any(), room_options :: any()) :: t()
   def create_component(component_type, _options, room_options) do
     case component_type do
       :hls -> create_hls(room_options)

@@ -8,7 +8,7 @@ defmodule JellyfishWeb.PeerController do
   action_fallback JellyfishWeb.FallbackController
 
   def create(conn, %{"room_id" => room_id} = params) do
-    with {:ok, peer_type_string} <- Map.fetch(params, "peer_type"),
+    with {:ok, peer_type_string} <- Map.fetch(params, "type"),
          {:ok, peer_type} <- Peer.validate_peer_type(peer_type_string) do
       case RoomService.find_room(room_id) do
         :not_found -> {:error, :not_found, "Room not found"}
@@ -24,7 +24,19 @@ defmodule JellyfishWeb.PeerController do
       end
     else
       {:error, :invalid_peer_type} -> {:error, :bad_request, "Invalid peer type"}
-      :error -> {:error, :bad_reguest, "Request body has invalid structure"}
+      :error -> {:error, :bad_request, "Request body has invalid structure"}
+    end
+  end
+
+  def delete(conn, %{"room_id" => room_id, "id" => id}) do
+    case RoomService.find_room(room_id) do
+      :not_found -> {:error, :bad_request, "Room not found"}
+
+      room_pid ->
+        case Room.remove_peer(room_pid, id) do
+          :ok -> send_resp(conn, :no_content, "")
+          :error -> {:error, :not_found, "Component with id #{id} doesn't exist"}
+        end
     end
   end
 end

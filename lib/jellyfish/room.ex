@@ -18,23 +18,23 @@ defmodule Jellyfish.Room do
   defstruct @enforce_keys ++ [components: %{}, peers: %{}]
 
   @type id :: String.t()
-  @type max_peers :: integer() | nil
+  @type max_peers :: non_neg_integer() | nil
 
   @typedoc """
   This module contains:
   * `id` - room id
   * `config` - configuration of room. For example you can specify maximal number of peers
-  * `components` - list of components
-  * `peers` - list of peers
+  * `components` - map of components
+  * `peers` - map of peers
   * `engine` - pid of engine
   """
   @type t :: %__MODULE__{
           id: id,
           config: %{max_peers: max_peers(), simulcast?: boolean()},
-          components: %{},
+          components: %{Component.id() => Component.t()},
           peers: %{Peer.id() => Peer.t()},
           engine_pid: pid(),
-          network_options: %{}
+          network_options: map()
         }
 
   @mix_env Mix.env()
@@ -56,23 +56,27 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_call(:state, _from, state) do
-    engine_endpoints = Engine.get_endpoints(state.engine_pid)
+    active_endpoints =
+      state.engine_pid
+      |> Engine.get_endpoints()
+      |> Enum.map(&(&1.id))
+      |> MapSet.new()
 
+    # Small redundancy here, map values also contain component/peer id
     peers =
-      engine_endpoints
-      |> Enum.filter(fn endpoint -> Map.has_key?(state.peers, endpoint.id) end)
-      |> Map.new(&{&1.id, &1})
+      state.peers
+      |> Enum.filter(fn {id, _component} -> MapSet.member?(active_endpoints, id) end)
+      |> Map.new()
 
     components =
-      engine_endpoints
-      |> Enum.filter(fn endpoint ->
-        Map.has_key?(state.components, endpoint.id)
-      end)
-      |> Map.new(&{&1.id, &1})
+      state.components
+      |> Enum.filter(fn {id, _component} -> MapSet.member?(active_endpoints, id) end)
+      |> Map.new()
 
     {:reply, %{id: state.id, peers: peers, components: components, config: state.config}, state}
   end
 
+  @impl true
   def handle_call({:add_peer, peer_type}, _from, state) do
     if Enum.count(state.peers) == state.config.max_peers do
       {:reply, {:error, :reached_peers_limit}, state}
@@ -88,8 +92,8 @@ defmodule Jellyfish.Room do
     end
   end
 
+  @impl true
   def handle_call({:remove_peer, peer_id}, _from, state) do
-    # we could combine this and remove_component
     {result, state} =
       if Map.has_key?(state.peers, peer_id) do
         {_elem, state} = pop_in(state, [:peers, peer_id])
@@ -102,8 +106,8 @@ defmodule Jellyfish.Room do
     {:reply, result, state}
   end
 
+  @impl true
   def handle_call({:add_component, component_type, options}, _from, state) do
-    # add limit on components?
     component =
       Component.create_component(component_type, options, %{
         engine_pid: state.engine_pid,
@@ -118,6 +122,7 @@ defmodule Jellyfish.Room do
     {:reply, component, state}
   end
 
+  @impl true
   def handle_call({:remove_component, component_id}, _from, state) do
     {result, state} =
       if Map.has_key?(state.components, component_id) do
@@ -139,6 +144,11 @@ defmodule Jellyfish.Room do
   @spec add_peer(room_pid :: pid(), peer_type :: Peer.peer_type()) :: Peer.t() | {:error, any()}
   def add_peer(room_pid, peer_type) do
     GenServer.call(room_pid, {:add_peer, peer_type})
+  end
+
+  @spec remove_peer(room_id :: pid(), peer_id: Peer.id()) :: :ok | :error
+  def remove_peer(room_id, peer_id) do
+    GenServer.call(room_id, {:remove_peer, peer_id})
   end
 
   @spec add_component(
