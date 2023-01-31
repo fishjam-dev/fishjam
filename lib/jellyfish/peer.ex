@@ -6,6 +6,7 @@ defmodule Jellyfish.Peer do
 
   alias Membrane.RTC.Engine.Endpoint.WebRTC
   alias Membrane.RTC.Engine.Endpoint.WebRTC.SimulcastConfig
+  alias Membrane.WebRTC.Extension.{Mid, Rid, TWCC}
 
   @enforce_keys [
     :id,
