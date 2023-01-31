@@ -59,7 +59,7 @@ defmodule Jellyfish.Room do
     active_endpoints =
       state.engine_pid
       |> Engine.get_endpoints()
-      |> Enum.map(&(&1.id))
+      |> Enum.map(& &1.id)
       |> MapSet.new()
 
     # Small redundancy here, map values also contain component/peer id

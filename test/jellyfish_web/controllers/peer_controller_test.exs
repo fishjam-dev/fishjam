@@ -8,9 +8,9 @@ defmodule JellyfishWeb.PeerControllerTest do
     assert %{"id" => id} = json_response(room_conn, :created)["data"]
 
     on_exit(fn ->
-        room_conn = delete(conn, Routes.room_path(conn, :delete, id))
-        assert response(room_conn, :no_content)
-      end)
+      room_conn = delete(conn, Routes.room_path(conn, :delete, id))
+      assert response(room_conn, :no_content)
+    end)
 
     {:ok, %{conn: put_req_header(conn, "accept", "application/json"), room_id: id}}
   end
@@ -21,6 +21,7 @@ defmodule JellyfishWeb.PeerControllerTest do
       assert %{"id" => id, "type" => @peer_type} = json_response(conn, :created)["data"]
 
       conn = get(conn, Routes.room_path(conn, :show, room_id))
+
       assert %{
                "id" => ^room_id,
                "peers" => [%{"id" => ^id, "type" => @peer_type}]
@@ -38,7 +39,8 @@ defmodule JellyfishWeb.PeerControllerTest do
 
       conn = post(conn, Routes.peer_path(conn, :create, room_id), type: @peer_type)
 
-      assert json_response(conn, :service_unavailable)["errors"] == "Reached peer limit in the room"
+      assert json_response(conn, :service_unavailable)["errors"] ==
+               "Reached peer limit in the room"
     end
 
     test "renders errors when room doesn't exist", %{conn: conn} do
@@ -72,7 +74,7 @@ defmodule JellyfishWeb.PeerControllerTest do
       conn = delete(conn, Routes.peer_path(conn, :delete, room_id, peer_id))
 
       assert json_response(conn, :not_found)["errors"] ==
-        "Peer with id #{peer_id} doesn't exist"
+               "Peer with id #{peer_id} doesn't exist"
     end
 
     test "deletes component from not exisiting room", %{conn: conn, peer_id: peer_id} do
@@ -82,9 +84,7 @@ defmodule JellyfishWeb.PeerControllerTest do
 
     defp create_peer(state) do
       conn =
-        post(state.conn, Routes.peer_path(state.conn, :create, state.room_id),
-          type: @peer_type
-        )
+        post(state.conn, Routes.peer_path(state.conn, :create, state.room_id), type: @peer_type)
 
       assert %{"id" => id} = json_response(conn, :created)["data"]
 

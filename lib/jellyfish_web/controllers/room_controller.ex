@@ -20,7 +20,9 @@ defmodule JellyfishWeb.RoomController do
     max_peers = Map.get(params, "maxPeers")
 
     case RoomService.create_room(max_peers) do
-      :bad_arg -> {:error, :unprocessable_entity, "maxPeers should be number if passed"}
+      :bad_arg ->
+        {:error, :unprocessable_entity, "maxPeers should be number if passed"}
+
       room ->
         conn
         |> put_status(:created)
@@ -30,7 +32,8 @@ defmodule JellyfishWeb.RoomController do
 
   def show(conn, %{"room_id" => id}) do
     case RoomService.find_room(id) do
-      :not_found -> {:error, :not_found, "Room not found"}
+      :not_found ->
+        {:error, :not_found, "Room not found"}
 
       room_pid ->
         room =

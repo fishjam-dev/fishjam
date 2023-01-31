@@ -31,12 +31,10 @@ defmodule JellyfishWeb.ComponentControllerTest do
     end
 
     test "renders errors when data is invalid", %{conn: conn, room_id: room_id} do
-      conn =
-        post(conn, Routes.component_path(conn, :create, room_id), type: "test_type")
+      conn = post(conn, Routes.component_path(conn, :create, room_id), type: "test_type")
 
       assert json_response(conn, :bad_request)["errors"] == "Invalid component type"
     end
-
 
     test "renders errors when request body structure is invalid", %{conn: conn, room_id: room_id} do
       conn = post(conn, Routes.peer_path(conn, :create, room_id), component_type: @component_type)

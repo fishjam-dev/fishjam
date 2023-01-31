@@ -12,7 +12,9 @@ defmodule JellyfishWeb.ComponentController do
          component_options <- Map.get(params, "options"),
          {:ok, component_type} <- Component.validate_component_type(component_type_string) do
       case RoomService.find_room(room_id) do
-        :not_found -> {:error, :not_found, "Room not found"}
+        :not_found ->
+          {:error, :not_found, "Room not found"}
+
         room_pid ->
           component = Room.add_component(room_pid, component_type, component_options)
 
@@ -20,7 +22,6 @@ defmodule JellyfishWeb.ComponentController do
           |> put_resp_content_type("application/json")
           |> put_status(:created)
           |> render("show.json", component: component)
-
       end
     else
       {:error, :invalid_component_type} -> {:error, :bad_request, "Invalid component type"}
@@ -30,7 +31,8 @@ defmodule JellyfishWeb.ComponentController do
 
   def delete(conn, %{"room_id" => room_id, "id" => id}) do
     case RoomService.find_room(room_id) do
-      :not_found -> {:error, :not_found, "Room not found"}
+      :not_found ->
+        {:error, :not_found, "Room not found"}
 
       room_pid ->
         case Room.remove_component(room_pid, id) do

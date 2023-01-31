@@ -11,7 +11,7 @@ defmodule Jellyfish.RoomService do
   end
 
   @impl true
-  def init(_) do
+  def init(_opts) do
     :ets.new(:rooms, [:protected, :set, :named_table])
     {:ok, %{rooms: %{}}}
   end

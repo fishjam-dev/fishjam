@@ -43,7 +43,9 @@ defmodule JellyfishWeb.RoomControllerTest do
 
     test "renders errors when data is invalid", %{conn: conn} do
       conn = post(conn, Routes.room_path(conn, :create), maxPeers: "abc123")
-      assert json_response(conn, :unprocessable_entity)["errors"] == "maxPeers should be number if passed"
+
+      assert json_response(conn, :unprocessable_entity)["errors"] ==
+               "maxPeers should be number if passed"
     end
   end
 

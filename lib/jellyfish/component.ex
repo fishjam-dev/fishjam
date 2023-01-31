@@ -12,7 +12,7 @@ defmodule Jellyfish.Component do
   @enforce_keys [
     :id,
     :type,
-    :engine_endpoint,
+    :engine_endpoint
   ]
   defstruct @enforce_keys
 
