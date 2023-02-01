@@ -1,8 +1,6 @@
 defmodule Jellyfish.MixProject do
   use Mix.Project
 
-  @github_url "https://github.com/jellyfish-dev/jellyfish"
-
   def project do
     [
       app: :jellyfish,
@@ -18,11 +16,6 @@ defmodule Jellyfish.MixProject do
       # hex
       description: "Jellyfish media server",
       package: package(),
-
-      # docs
-      name: "Jellyfish media server",
-      source_url: @github_url,
-      homepage_url: "https://membrane.stream",
 
       # test coverage
       test_coverage: [tool: ExCoveralls],
@@ -101,8 +94,8 @@ defmodule Jellyfish.MixProject do
       maintainers: ["Membrane Team"],
       licenses: ["Apache-2.0"],
       links: %{
-        "GitHub" => @github_url,
-        "Membrane Framework Homepage" => "https://membraneframework.org"
+        "GitHub" => "https://github.com/jellyfish-dev/jellyfish",
+        "Membrane Framework Homepage" => "https://membrane.stream"
       }
     ]
   end
