@@ -1,7 +1,6 @@
 defmodule Jellyfish.MixProject do
   use Mix.Project
 
-  @version "0.1.0"
   @github_url "https://github.com/jellyfish-dev/jellyfish"
 
   def project do
@@ -24,7 +23,6 @@ defmodule Jellyfish.MixProject do
       name: "Jellyfish media server",
       source_url: @github_url,
       homepage_url: "https://membrane.stream",
-      docs: docs(),
 
       # test coverage
       test_coverage: [tool: ExCoveralls],
@@ -64,8 +62,7 @@ defmodule Jellyfish.MixProject do
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
 
-      # Docs, credo
-      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
+      # Dialyzer and credo
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},
       {:credo, ">= 0.0.0", only: :dev, runtime: false},
 
@@ -107,16 +104,6 @@ defmodule Jellyfish.MixProject do
         "GitHub" => @github_url,
         "Membrane Framework Homepage" => "https://membraneframework.org"
       }
-    ]
-  end
-
-  defp docs do
-    [
-      main: "readme",
-      extras: ["README.md", "LICENSE"],
-      formatters: ["html"],
-      source_ref: "v#{@version}",
-      nest_modules_by_prefix: [Membrane.Template]
     ]
   end
 end

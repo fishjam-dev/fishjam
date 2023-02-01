@@ -34,9 +34,7 @@
         excluded: [
           ~r"/_build/",
           ~r"/deps/",
-          ~r"/node_modules/",
-          "lib/jellyfish_web.ex",
-          "lib/jellyfish_web/telemetry.ex"
+          ~r"/node_modules/"
         ]
       },
       #
@@ -170,7 +168,7 @@
         {Credo.Check.Design.DuplicatedCode, false},
         {Credo.Check.Readability.AliasAs, false},
         {Credo.Check.Readability.MultiAlias, false},
-        {Credo.Check.Readability.Specs, []},
+        {Credo.Check.Readability.Specs, false},
         {Credo.Check.Readability.SinglePipe, false},
         {Credo.Check.Readability.WithCustomTaggedTuple, false},
         {Credo.Check.Refactor.ABCSize, false},
