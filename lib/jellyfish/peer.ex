@@ -25,24 +25,24 @@ defmodule Jellyfish.Peer do
   * `engine_endpoint` - engine endpoint for this peer
   """
   @type t :: %__MODULE__{
-          id: id,
+          id: id(),
           type: peer_type(),
           engine_endpoint: struct() | atom()
         }
 
-  @spec validate_peer_type(type :: String.t()) :: {:ok, peer_type()} | :error
+  @spec validate_peer_type(String.t()) :: {:ok, peer_type()} | {:error, atom()}
   def validate_peer_type(type) do
     case type do
       "webrtc" -> {:ok, :webrtc}
-      _other -> {:error, :invalid_peer_type}
+      _other -> {:error, :invalid_type}
     end
   end
 
-  @spec create_peer(type :: peer_type(), any()) :: t()
+  @spec create_peer(peer_type(), any()) :: {:ok, t()} | {:error, atom()}
   def create_peer(type, options) do
     case type do
-      :webrtc -> add_webrtc(options)
-      _other -> {:error, :invalid_peer_type}
+      :webrtc -> {:ok, add_webrtc(options)}
+      _other -> {:error, :invalid_type}
     end
   end
 

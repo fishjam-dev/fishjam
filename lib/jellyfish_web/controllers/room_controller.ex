@@ -1,8 +1,8 @@
 defmodule JellyfishWeb.RoomController do
   use JellyfishWeb, :controller
 
-  alias Jellyfish.RoomService
   alias Jellyfish.Room
+  alias Jellyfish.RoomService
 
   action_fallback JellyfishWeb.FallbackController
 
@@ -17,31 +17,28 @@ defmodule JellyfishWeb.RoomController do
   end
 
   def create(conn, params) do
-    max_peers = Map.get(params, "maxPeers")
-
-    case RoomService.create_room(max_peers) do
-      :bad_arg ->
-        {:error, :unprocessable_entity, "maxPeers should be number if passed"}
-
-      room ->
-        conn
-        |> put_status(:created)
-        |> render("show.json", room: room)
+    with max_peers <- Map.get(params, "maxPeers"),
+         {:ok, room} <- RoomService.create_room(max_peers) do
+      conn
+      |> put_status(:created)
+      |> render("show.json", room: room)
+    else
+      {:error, :bad_arg} -> {:error, :unprocessable_entity, "maxPeers must be a number"}
     end
   end
 
   def show(conn, %{"room_id" => id}) do
     case RoomService.find_room(id) do
-      {:error, :room_not_found} ->
-        {:error, :not_found, "Room not found"}
-
-      room_pid ->
+      {:ok, room_pid} ->
         room =
           room_pid
           |> Room.get_state()
           |> maps_to_lists()
 
         render(conn, "show.json", room: room)
+
+      {:error, :not_found} ->
+        {:error, :not_found, "Room #{id} does not exist"}
     end
   end
 
@@ -50,8 +47,8 @@ defmodule JellyfishWeb.RoomController do
       :ok ->
         send_resp(conn, :no_content, "")
 
-      {:error, :room_not_found} ->
-        {:error, :not_found, "Room with id #{id} doesn't exist already"}
+      {:error, :not_found} ->
+        {:error, :not_found, "Room #{id} doest not exist"}
     end
   end
 

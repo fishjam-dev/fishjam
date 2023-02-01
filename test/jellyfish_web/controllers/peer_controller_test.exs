@@ -40,17 +40,18 @@ defmodule JellyfishWeb.PeerControllerTest do
       conn = post(conn, Routes.peer_path(conn, :create, room_id), type: @peer_type)
 
       assert json_response(conn, :service_unavailable)["errors"] ==
-               "Reached peer limit in the room"
+               "Reached peer limit in room #{room_id}"
     end
 
     test "renders errors when room doesn't exist", %{conn: conn} do
-      conn = post(conn, Routes.peer_path(conn, :create, "abc"), type: @peer_type)
-      assert json_response(conn, :not_found)["errors"] == "Room not found"
+      room_id = "abc"
+      conn = post(conn, Routes.peer_path(conn, :create, room_id), type: @peer_type)
+      assert json_response(conn, :not_found)["errors"] == "Room #{room_id} does not exist"
     end
 
     test "renders errors when request body structure is invalid", %{conn: conn, room_id: room_id} do
       conn = post(conn, Routes.peer_path(conn, :create, room_id), peer_type: @peer_type)
-      assert json_response(conn, :bad_request)["errors"] == "Request body has invalid structure"
+      assert json_response(conn, :bad_request)["errors"] == "Invalid request body structure"
     end
   end
 
@@ -74,12 +75,13 @@ defmodule JellyfishWeb.PeerControllerTest do
       conn = delete(conn, Routes.peer_path(conn, :delete, room_id, peer_id))
 
       assert json_response(conn, :not_found)["errors"] ==
-               "Peer with id #{peer_id} doesn't exist"
+               "Peer #{peer_id} does not exist"
     end
 
     test "deletes peer from not exisiting room", %{conn: conn, peer_id: peer_id} do
-      conn = delete(conn, Routes.peer_path(conn, :delete, "abc", peer_id))
-      assert json_response(conn, :not_found)["errors"] == "Room not found"
+      room_id = "abc"
+      conn = delete(conn, Routes.peer_path(conn, :delete, room_id, peer_id))
+      assert json_response(conn, :not_found)["errors"] == "Room #{room_id} does not exist"
     end
 
     defp create_peer(state) do

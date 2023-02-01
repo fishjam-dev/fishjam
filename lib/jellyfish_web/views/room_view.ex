@@ -1,7 +1,8 @@
 defmodule JellyfishWeb.RoomView do
   use JellyfishWeb, :view
-  alias JellyfishWeb.PeerView
+
   alias JellyfishWeb.ComponentView
+  alias JellyfishWeb.PeerView
 
   def render("index.json", %{rooms: rooms}) do
     %{data: render_many(rooms, __MODULE__, "room.json")}

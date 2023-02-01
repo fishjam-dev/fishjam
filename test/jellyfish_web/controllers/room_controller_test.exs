@@ -45,7 +45,7 @@ defmodule JellyfishWeb.RoomControllerTest do
       conn = post(conn, Routes.room_path(conn, :create), maxPeers: "abc123")
 
       assert json_response(conn, :unprocessable_entity)["errors"] ==
-               "maxPeers should be number if passed"
+               "maxPeers must be a number"
     end
   end
 
@@ -57,7 +57,7 @@ defmodule JellyfishWeb.RoomControllerTest do
       assert response(conn, :no_content)
 
       conn = get(conn, Routes.room_path(conn, :show, room_id))
-      assert json_response(conn, :not_found) == %{"errors" => "Room not found"}
+      assert json_response(conn, :not_found) == %{"errors" => "Room #{room_id} does not exist"}
     end
 
     test "returns 404 if room doesn't exists", %{conn: conn} do

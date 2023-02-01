@@ -5,8 +5,8 @@ defmodule Jellyfish.Room do
 
   use Bunch.Access
   use GenServer
-  alias Jellyfish.Peer
   alias Jellyfish.Component
+  alias Jellyfish.Peer
   alias Membrane.RTC.Engine
 
   @enforce_keys [
@@ -29,7 +29,7 @@ defmodule Jellyfish.Room do
   * `engine` - pid of engine
   """
   @type t :: %__MODULE__{
-          id: id,
+          id: id(),
           config: %{max_peers: max_peers(), simulcast?: boolean()},
           components: %{Component.id() => Component.t()},
           peers: %{Peer.id() => Peer.t()},
@@ -47,12 +47,34 @@ defmodule Jellyfish.Room do
     GenServer.start_link(__MODULE__, [], opts)
   end
 
-  @impl true
-  def init(max_peers) do
-    state = new(max_peers)
-
-    {:ok, state}
+  @spec get_state(pid()) :: t()
+  def get_state(room_pid) do
+    GenServer.call(room_pid, :state)
   end
+
+  @spec add_peer(pid(), Peer.peer_type()) :: {:ok, Peer.t()} | {:error, atom()}
+  def add_peer(room_pid, peer_type) do
+    GenServer.call(room_pid, {:add_peer, peer_type})
+  end
+
+  @spec remove_peer(pid(), Peer.id()) :: :ok | {:error, atom()}
+  def remove_peer(room_id, peer_id) do
+    GenServer.call(room_id, {:remove_peer, peer_id})
+  end
+
+  @spec add_component(pid(), Component.component_type(), any()) ::
+          {:ok, Component.t()} | {:error, atom()}
+  def add_component(room_pid, component_type, options) do
+    GenServer.call(room_pid, {:add_component, component_type, options})
+  end
+
+  @spec remove_component(pid(), String.t()) :: :ok | {:error, atom()}
+  def remove_component(room_pid, component_id) do
+    GenServer.call(room_pid, {:remove_component, component_id})
+  end
+
+  @impl true
+  def init(max_peers), do: {:ok, new(max_peers)}
 
   @impl true
   def handle_call(:state, _from, state) do
@@ -62,7 +84,6 @@ defmodule Jellyfish.Room do
       |> Enum.map(& &1.id)
       |> MapSet.new()
 
-    # Small redundancy here, map values also contain component/peer id
     peers =
       state.peers
       |> Enum.filter(fn {id, _component} -> MapSet.member?(active_endpoints, id) end)
@@ -82,13 +103,22 @@ defmodule Jellyfish.Room do
       {:reply, {:error, :reached_peers_limit}, state}
     else
       options = %{engine_pid: state.engine_pid, network_options: state.network_options}
-      peer = Peer.create_peer(peer_type, options)
 
-      state = put_in(state, [:peers, peer.id], peer)
+      {reply, state} =
+        case Peer.create_peer(peer_type, options) do
+          {:ok, peer} ->
+            state = put_in(state, [:peers, peer.id], peer)
 
-      :ok = Engine.add_endpoint(state.engine_pid, peer.engine_endpoint, endpoint_id: peer.id)
+            :ok =
+              Engine.add_endpoint(state.engine_pid, peer.engine_endpoint, endpoint_id: peer.id)
 
-      {:reply, peer, state}
+            {{:ok, peer}, state}
+
+          {:error, _reason} = error ->
+            {error, state}
+        end
+
+      {:reply, reply, state}
     end
   end
 
@@ -100,7 +130,7 @@ defmodule Jellyfish.Room do
         :ok = Engine.remove_endpoint(state.engine_pid, peer_id)
         {:ok, state}
       else
-        {:error, state}
+        {{:error, :peer_not_found}, state}
       end
 
     {:reply, result, state}
@@ -108,18 +138,25 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_call({:add_component, component_type, options}, _from, state) do
-    component =
-      Component.create_component(component_type, options, %{
-        engine_pid: state.engine_pid,
-        room_id: state.id
-      })
+    room_options = %{engine_pid: state.engine_pid, room_id: state.id}
 
-    state = put_in(state, [:components, component.id], component)
+    {reply, state} =
+      case Component.create_component(component_type, options, room_options) do
+        {:ok, component} ->
+          state = put_in(state, [:components, component.id], component)
 
-    :ok =
-      Engine.add_endpoint(state.engine_pid, component.engine_endpoint, endpoint_id: component.id)
+          :ok =
+            Engine.add_endpoint(state.engine_pid, component.engine_endpoint,
+              endpoint_id: component.id
+            )
 
-    {:reply, component, state}
+          {{:ok, component}, state}
+
+        {:error, _reason} = error ->
+          {error, state}
+      end
+
+    {:reply, reply, state}
   end
 
   @impl true
@@ -130,39 +167,10 @@ defmodule Jellyfish.Room do
         :ok = Engine.remove_endpoint(state.engine_pid, component_id)
         {:ok, state}
       else
-        {:error, state}
+        {{:error, :component_not_found}, state}
       end
 
     {:reply, result, state}
-  end
-
-  @spec get_state(room_pid :: pid()) :: t()
-  def get_state(room_pid) do
-    GenServer.call(room_pid, :state)
-  end
-
-  @spec add_peer(room_pid :: pid(), peer_type :: Peer.peer_type()) :: Peer.t() | {:error, any()}
-  def add_peer(room_pid, peer_type) do
-    GenServer.call(room_pid, {:add_peer, peer_type})
-  end
-
-  @spec remove_peer(room_id :: pid(), peer_id: Peer.id()) :: :ok | :error
-  def remove_peer(room_id, peer_id) do
-    GenServer.call(room_id, {:remove_peer, peer_id})
-  end
-
-  @spec add_component(
-          room_pid :: pid(),
-          component_type :: Component.component_type(),
-          options :: any()
-        ) :: Component.t()
-  def add_component(room_pid, component_type, options) do
-    GenServer.call(room_pid, {:add_component, component_type, options})
-  end
-
-  @spec remove_component(room_pid :: pid(), component_id :: String.t()) :: :ok | :error
-  def remove_component(room_pid, component_id) do
-    GenServer.call(room_pid, {:remove_component, component_id})
   end
 
   defp new(max_peers) do

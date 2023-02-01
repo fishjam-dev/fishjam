@@ -26,25 +26,25 @@ defmodule Jellyfish.Component do
   * `engine_endpoint` - engine endpoint for this component
   """
   @type t :: %__MODULE__{
-          id: id,
+          id: id(),
           type: component_type(),
           engine_endpoint: struct() | atom()
         }
 
-  @spec validate_component_type(type :: String.t()) :: {:ok, component_type()} | :error
+  @spec validate_component_type(String.t()) :: {:ok, component_type()} | {:error, atom()}
   def validate_component_type(type) do
     case type do
       "file_reader" -> {:ok, :file_reader}
       "hls" -> {:ok, :hls}
-      _other -> {:error, :invalid_component_type}
+      _other -> {:error, :invalid_type}
     end
   end
 
-  @spec create_component(type :: component_type(), options :: any(), room_options :: any()) :: t()
+  @spec create_component(component_type(), any(), any()) :: {:ok, t()} | {:error, atom()}
   def create_component(component_type, _options, room_options) do
     case component_type do
-      :hls -> create_hls(room_options)
-      _other -> {:error, :invalid_component_type}
+      :hls -> {:ok, create_hls(room_options)}
+      _other -> {:error, :invalid_type}
     end
   end
 

@@ -38,7 +38,7 @@ defmodule JellyfishWeb.ComponentControllerTest do
 
     test "renders errors when request body structure is invalid", %{conn: conn, room_id: room_id} do
       conn = post(conn, Routes.peer_path(conn, :create, room_id), component_type: @component_type)
-      assert json_response(conn, :bad_request)["errors"] == "Request body has invalid structure"
+      assert json_response(conn, :bad_request)["errors"] == "Invalid request body structure"
     end
   end
 
@@ -62,12 +62,13 @@ defmodule JellyfishWeb.ComponentControllerTest do
       conn = delete(conn, Routes.component_path(conn, :delete, room_id, component_id))
 
       assert json_response(conn, :not_found)["errors"] ==
-               "Component with id #{component_id} doesn't exist"
+               "Component #{component_id} does not exist"
     end
 
     test "deletes component from not exisiting room", %{conn: conn, component_id: component_id} do
-      conn = delete(conn, Routes.component_path(conn, :delete, "abc", component_id))
-      assert json_response(conn, :not_found)["errors"] == "Room not found"
+      room_id = "abc"
+      conn = delete(conn, Routes.component_path(conn, :delete, room_id, component_id))
+      assert json_response(conn, :not_found)["errors"] == "Room #{room_id} does not exist"
     end
   end
 
