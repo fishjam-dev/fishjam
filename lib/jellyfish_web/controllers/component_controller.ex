@@ -12,7 +12,7 @@ defmodule JellyfishWeb.ComponentController do
          component_options <- Map.get(params, "options"),
          {:ok, component_type} <- Component.validate_component_type(component_type_string) do
       case RoomService.find_room(room_id) do
-        :not_found ->
+        {:error, :room_not_found} ->
           {:error, :not_found, "Room not found"}
 
         room_pid ->
@@ -31,7 +31,7 @@ defmodule JellyfishWeb.ComponentController do
 
   def delete(conn, %{"room_id" => room_id, "id" => id}) do
     case RoomService.find_room(room_id) do
-      :not_found ->
+      {:error, :room_not_found} ->
         {:error, :not_found, "Room not found"}
 
       room_pid ->

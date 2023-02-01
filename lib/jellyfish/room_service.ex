@@ -45,14 +45,14 @@ defmodule Jellyfish.RoomService do
 
   @impl true
   def handle_call({:delete_room, _room_id}, _from, state) do
-    {:reply, :not_found, state}
+    {:reply, {:error, :room_not_found}, state}
   end
 
-  @spec find_room(room_id :: String.t()) :: pid() | :not_found
+  @spec find_room(room_id :: String.t()) :: pid() | {:error, :room_not_found}
   def find_room(room_id) do
     case :ets.lookup(:rooms, room_id) do
       [{_room_id, room_pid} | _] -> room_pid
-      _not_found -> :not_found
+      _not_found -> {:error, :room_not_found}
     end
   end
 
@@ -65,7 +65,7 @@ defmodule Jellyfish.RoomService do
     :bad_arg
   end
 
-  @spec delete_room(room_id :: String.t()) :: :ok | :not_found
+  @spec delete_room(room_id :: String.t()) :: :ok | {:error, :room_not_found}
   def delete_room(room_id) do
     GenServer.call(__MODULE__, {:delete_room, room_id})
   end

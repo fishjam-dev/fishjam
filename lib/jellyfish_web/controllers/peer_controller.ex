@@ -11,7 +11,7 @@ defmodule JellyfishWeb.PeerController do
     with {:ok, peer_type_string} <- Map.fetch(params, "type"),
          {:ok, peer_type} <- Peer.validate_peer_type(peer_type_string) do
       case RoomService.find_room(room_id) do
-        :not_found ->
+        {:error, :room_not_found} ->
           {:error, :not_found, "Room not found"}
 
         room_pid ->
@@ -34,7 +34,7 @@ defmodule JellyfishWeb.PeerController do
 
   def delete(conn, %{"room_id" => room_id, "id" => id}) do
     case RoomService.find_room(room_id) do
-      :not_found ->
+      {:error, :room_not_found} ->
         {:error, :not_found, "Room not found"}
 
       room_pid ->

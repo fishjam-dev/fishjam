@@ -77,7 +77,7 @@ defmodule JellyfishWeb.PeerControllerTest do
                "Peer with id #{peer_id} doesn't exist"
     end
 
-    test "deletes component from not exisiting room", %{conn: conn, peer_id: peer_id} do
+    test "deletes peer from not exisiting room", %{conn: conn, peer_id: peer_id} do
       conn = delete(conn, Routes.peer_path(conn, :delete, "abc", peer_id))
       assert json_response(conn, :not_found)["errors"] == "Room not found"
     end

@@ -32,7 +32,7 @@ defmodule JellyfishWeb.RoomController do
 
   def show(conn, %{"room_id" => id}) do
     case RoomService.find_room(id) do
-      :not_found ->
+      {:error, :room_not_found} ->
         {:error, :not_found, "Room not found"}
 
       room_pid ->
@@ -47,8 +47,11 @@ defmodule JellyfishWeb.RoomController do
 
   def delete(conn, %{"room_id" => id}) do
     case RoomService.delete_room(id) do
-      :ok -> send_resp(conn, :no_content, "")
-      :not_found -> {:error, :not_found, "Room with id #{id} doesn't exist already"}
+      :ok ->
+        send_resp(conn, :no_content, "")
+
+      {:error, :room_not_found} ->
+        {:error, :not_found, "Room with id #{id} doesn't exist already"}
     end
   end
 
