@@ -13,8 +13,8 @@ defmodule JellyfishWeb.Router do
       param: "room_id"
     )
 
-    resources("/:room_uuid/peer", PeerController, only: [:create, :delete])
-    resources("/:room_uuid/component", ComponentController, only: [:create, :delete])
+    resources("/:room_id/peer", PeerController, only: [:create, :delete])
+    resources("/:room_id/component", ComponentController, only: [:create, :delete])
   end
 
   # Enables LiveDashboard only for development

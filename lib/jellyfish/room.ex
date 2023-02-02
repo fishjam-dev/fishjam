@@ -1,13 +1,12 @@
 defmodule Jellyfish.Room do
   @moduledoc """
   Module representing room.
-
   """
 
   use Bunch.Access
   use GenServer
-  alias Jellyfish.Peer
   alias Jellyfish.Component
+  alias Jellyfish.Peer
   alias Membrane.RTC.Engine
 
   @enforce_keys [
@@ -19,23 +18,23 @@ defmodule Jellyfish.Room do
   defstruct @enforce_keys ++ [components: %{}, peers: %{}]
 
   @type id :: String.t()
-  @type max_peers :: integer() | nil
+  @type max_peers :: non_neg_integer() | nil
 
   @typedoc """
   This module contains:
   * `id` - room id
   * `config` - configuration of room. For example you can specify maximal number of peers
-  * `components` - list of components
-  * `peers` - list of peers
+  * `components` - map of components
+  * `peers` - map of peers
   * `engine` - pid of engine
   """
   @type t :: %__MODULE__{
-          id: id,
+          id: id(),
           config: %{max_peers: max_peers(), simulcast?: boolean()},
-          components: %{},
+          components: %{Component.id() => Component.t()},
           peers: %{Peer.id() => Peer.t()},
           engine_pid: pid(),
-          network_options: %{}
+          network_options: map()
         }
 
   @mix_env Mix.env()
@@ -48,96 +47,130 @@ defmodule Jellyfish.Room do
     GenServer.start_link(__MODULE__, [], opts)
   end
 
-  @impl true
-  def init(max_peers) do
-    state = new(max_peers)
+  @spec get_state(pid()) :: t()
+  def get_state(room_pid) do
+    GenServer.call(room_pid, :state)
+  end
 
-    {:ok, state}
+  @spec add_peer(pid(), Peer.peer_type()) :: {:ok, Peer.t()} | {:error, atom()}
+  def add_peer(room_pid, peer_type) do
+    GenServer.call(room_pid, {:add_peer, peer_type})
+  end
+
+  @spec remove_peer(pid(), Peer.id()) :: :ok | {:error, atom()}
+  def remove_peer(room_id, peer_id) do
+    GenServer.call(room_id, {:remove_peer, peer_id})
+  end
+
+  @spec add_component(pid(), Component.component_type(), any()) ::
+          {:ok, Component.t()} | {:error, atom()}
+  def add_component(room_pid, component_type, options) do
+    GenServer.call(room_pid, {:add_component, component_type, options})
+  end
+
+  @spec remove_component(pid(), String.t()) :: :ok | {:error, atom()}
+  def remove_component(room_pid, component_id) do
+    GenServer.call(room_pid, {:remove_component, component_id})
   end
 
   @impl true
+  def init(max_peers), do: {:ok, new(max_peers)}
+
+  @impl true
   def handle_call(:state, _from, state) do
-    engine_endpoints = Engine.get_endpoints(state.engine_pid)
+    active_endpoints =
+      state.engine_pid
+      |> Engine.get_endpoints()
+      |> Enum.map(& &1.id)
+      |> MapSet.new()
 
     peers =
-      engine_endpoints
-      |> Enum.filter(fn endpoint -> Map.has_key?(state.peers, endpoint.id) end)
-      |> Map.new(&{&1.id, &1})
+      state.peers
+      |> Enum.filter(fn {id, _component} -> MapSet.member?(active_endpoints, id) end)
+      |> Map.new()
 
     components =
-      engine_endpoints
-      |> Enum.filter(fn endpoint ->
-        Map.has_key?(state.components, endpoint.id)
-      end)
-      |> Map.new(&{&1.id, &1})
+      state.components
+      |> Enum.filter(fn {id, _component} -> MapSet.member?(active_endpoints, id) end)
+      |> Map.new()
 
     {:reply, %{id: state.id, peers: peers, components: components, config: state.config}, state}
   end
 
+  @impl true
   def handle_call({:add_peer, peer_type}, _from, state) do
     if Enum.count(state.peers) == state.config.max_peers do
       {:reply, {:error, :reached_peers_limit}, state}
     else
       options = %{engine_pid: state.engine_pid, network_options: state.network_options}
-      peer = Peer.create_peer(peer_type, options)
 
-      state = put_in(state, [:peers, peer.id], peer)
+      {reply, state} =
+        case Peer.create_peer(peer_type, options) do
+          {:ok, peer} ->
+            state = put_in(state, [:peers, peer.id], peer)
 
-      :ok = Engine.add_endpoint(state.engine_pid, peer.engine_endpoint, endpoint_id: peer.id)
+            :ok =
+              Engine.add_endpoint(state.engine_pid, peer.engine_endpoint, endpoint_id: peer.id)
 
-      {:reply, peer, state}
+            {{:ok, peer}, state}
+
+          {:error, _reason} = error ->
+            {error, state}
+        end
+
+      {:reply, reply, state}
     end
   end
 
-  def handle_call({:add_component, component_type, options}, _from, state) do
-    component =
-      Component.create_component(component_type, options, %{
-        engine_pid: state.engine_pid,
-        room_id: state.id
-      })
-
-    state = put_in(state, [:components, component.id], component)
-
-    :ok =
-      Engine.add_endpoint(state.engine_pid, component.engine_endpoint, endpoint_id: component.id)
-
-    {:reply, component, state}
-  end
-
-  def handle_call({:remove_component, component_id}, _from, state) do
+  @impl true
+  def handle_call({:remove_peer, peer_id}, _from, state) do
     {result, state} =
-      if Map.has_key?(state.components, component_id) do
-        {_elem, state} = pop_in(state, [:components, component_id])
+      if Map.has_key?(state.peers, peer_id) do
+        {_elem, state} = pop_in(state, [:peers, peer_id])
+        :ok = Engine.remove_endpoint(state.engine_pid, peer_id)
         {:ok, state}
       else
-        {:error, state}
+        {{:error, :peer_not_found}, state}
       end
 
     {:reply, result, state}
   end
 
-  @spec get_state(room_pid :: pid()) :: t()
-  def get_state(room_pid) do
-    GenServer.call(room_pid, :state)
+  @impl true
+  def handle_call({:add_component, component_type, options}, _from, state) do
+    room_options = %{engine_pid: state.engine_pid, room_id: state.id}
+
+    {reply, state} =
+      case Component.create_component(component_type, options, room_options) do
+        {:ok, component} ->
+          state = put_in(state, [:components, component.id], component)
+
+          :ok =
+            Engine.add_endpoint(state.engine_pid, component.engine_endpoint,
+              endpoint_id: component.id
+            )
+
+          {{:ok, component}, state}
+
+        {:error, _reason} = error ->
+          {error, state}
+      end
+
+    {:reply, reply, state}
   end
 
-  @spec add_peer(room_pid :: pid(), peer_type :: Peer.peer_type()) :: Peer.t() | {:error, any()}
-  def add_peer(room_pid, peer_type) do
-    GenServer.call(room_pid, {:add_peer, peer_type})
-  end
+  @impl true
+  def handle_call({:remove_component, component_id}, _from, state) do
+    {result, state} =
+      if Map.has_key?(state.components, component_id) do
+        {_elem, state} = pop_in(state, [:components, component_id])
+        :ok = Engine.remove_endpoint(state.engine_pid, component_id)
+        {:ok, state}
+      else
+        {{:error, :component_not_found}, state}
+      end
 
-  @spec add_component(
-          room_pid :: pid(),
-          component_type :: Component.component_type(),
-          options :: any()
-        ) :: Component.t()
-  def add_component(room_pid, component_type, options) do
-    GenServer.call(room_pid, {:add_component, component_type, options})
-  end
-
-  @spec remove_component(room_pid :: pid(), component_id :: String.t()) :: :ok | :error
-  def remove_component(room_pid, component_id) do
-    GenServer.call(room_pid, {:remove_component, component_id})
+    {:reply, result, state}
   end
 
   defp new(max_peers) do

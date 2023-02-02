@@ -2,9 +2,9 @@ defmodule Jellyfish.Application do
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
   @moduledoc false
-  alias Jellyfish.RoomService
-
   use Application
+
+  alias Jellyfish.RoomService
 
   @impl true
   def start(_type, _args) do

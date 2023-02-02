@@ -1,61 +1,36 @@
 defmodule JellyfishWeb.ComponentController do
   use JellyfishWeb, :controller
 
-  alias Jellyfish.RoomService
   alias Jellyfish.Component
   alias Jellyfish.Room
+  alias Jellyfish.RoomService
 
   action_fallback JellyfishWeb.FallbackController
 
-  def create(conn, %{"room_uuid" => room_uuid} = params) do
-    component_type =
-      params
-      |> Map.fetch!("component_type")
-      |> Component.validate_component_type()
-
-    component_options = Map.get(params, "component_options")
-
-    case {component_type, RoomService.find_room(room_uuid)} do
-      {:error, _} ->
-        conn
-        |> put_resp_content_type("application/json")
-        |> put_status(400)
-        |> json(%{errors: "Not proper component type"})
-
-      {{:ok, _component_type}, :not_found} ->
-        conn
-        |> put_resp_content_type("application/json")
-        |> put_status(400)
-        |> json(%{errors: "Room not found"})
-
-      {{:ok, component_type}, room_pid} ->
-        component = Room.add_component(room_pid, component_type, component_options)
-
-        conn
-        |> put_status(:created)
-        |> render("show.json", component: component)
+  def create(conn, %{"room_id" => room_id} = params) do
+    with component_options <- Map.get(params, "options"),
+         {:ok, component_type_string} <- Map.fetch(params, "type"),
+         {:ok, component_type} <- Component.validate_component_type(component_type_string),
+         {:ok, room_pid} <- RoomService.find_room(room_id),
+         {:ok, component} <- Room.add_component(room_pid, component_type, component_options) do
+      conn
+      |> put_resp_content_type("application/json")
+      |> put_status(:created)
+      |> render("show.json", component: component)
+    else
+      :error -> {:error, :bad_request, "Invalid request body structure"}
+      {:error, :invalid_type} -> {:error, :bad_request, "Invalid component type"}
+      {:error, :not_found} -> {:error, :not_found, "Room #{room_id} does not exist"}
     end
   end
 
-  def delete(conn, %{"room_uuid" => room_id, "id" => id}) do
-    case RoomService.find_room(room_id) do
-      :not_found ->
-        conn
-        |> put_resp_content_type("application/json")
-        |> put_status(400)
-        |> json(%{errors: "Room not found"})
-
-      room_pid ->
-        case Room.remove_component(room_pid, id) do
-          :ok ->
-            send_resp(conn, :no_content, "")
-
-          :error ->
-            conn
-            |> put_resp_content_type("application/json")
-            |> put_status(404)
-            |> json(%{errors: "Component with id #{id} doesn't exist"})
-        end
+  def delete(conn, %{"room_id" => room_id, "id" => id}) do
+    with {:ok, room_pid} <- RoomService.find_room(room_id),
+         :ok <- Room.remove_component(room_pid, id) do
+      send_resp(conn, :no_content, "")
+    else
+      {:error, :not_found} -> {:error, :not_found, "Room #{room_id} does not exist"}
+      {:error, :component_not_found} -> {:error, :not_found, "Component #{id} does not exist"}
     end
   end
 end

@@ -6,12 +6,14 @@ defmodule Jellyfish.Peer do
 
   alias Membrane.RTC.Engine.Endpoint.WebRTC
   alias Membrane.RTC.Engine.Endpoint.WebRTC.SimulcastConfig
+  alias Membrane.WebRTC.Extension.{Mid, Rid, TWCC}
 
   @enforce_keys [
     :id,
-    :type
+    :type,
+    :engine_endpoint
   ]
-  defstruct @enforce_keys ++ [:engine_endpoint]
+  defstruct @enforce_keys
 
   @type id :: String.t()
   @type peer_type :: :webrtc
@@ -19,41 +21,33 @@ defmodule Jellyfish.Peer do
   @typedoc """
   This module contains:
   * `id` - peer id
-  * `type` - type of peer
+  * `type` - type of this peer
   * `engine_endpoint` - engine endpoint for this peer
   """
   @type t :: %__MODULE__{
-          id: id,
+          id: id(),
           type: peer_type(),
           engine_endpoint: struct() | atom()
         }
 
-  @spec new(peer_type :: peer_type()) :: t()
-  def new(peer_type) do
-    %__MODULE__{
-      id: UUID.uuid4(),
-      type: peer_type
-    }
-  end
-
-  @spec validate_peer_type(peer_type :: String.t()) :: {:ok, peer_type()} | :error
-  def validate_peer_type(peer_type) do
-    case peer_type do
+  @spec validate_peer_type(String.t()) :: {:ok, peer_type()} | {:error, atom()}
+  def validate_peer_type(type) do
+    case type do
       "webrtc" -> {:ok, :webrtc}
-      _other -> :error
+      _other -> {:error, :invalid_type}
     end
   end
 
-  @spec create_peer(peer_type :: peer_type(), any()) :: t()
-  def create_peer(peer_type, options) do
-    case peer_type do
-      :webrtc -> add_webrtc(options)
-      _other -> :error
+  @spec create_peer(peer_type(), any()) :: {:ok, t()} | {:error, atom()}
+  def create_peer(type, options) do
+    case type do
+      :webrtc -> {:ok, add_webrtc(options)}
+      _other -> {:error, :invalid_type}
     end
   end
 
   defp add_webrtc(options) do
-    peer = new(:webrtc)
+    peer_id = UUID.uuid4()
 
     network_options = options.network_options
 
@@ -78,12 +72,12 @@ defmodule Jellyfish.Peer do
 
     endpoint = %WebRTC{
       rtc_engine: options.engine_pid,
-      ice_name: peer.id,
+      ice_name: peer_id,
       owner: self(),
       integrated_turn_options: network_options[:integrated_turn_options],
       integrated_turn_domain: network_options[:integrated_turn_domain],
       handshake_opts: handshake_opts,
-      log_metadata: [peer_id: peer.id],
+      log_metadata: [peer_id: peer_id],
       trace_context: nil,
       webrtc_extensions: webrtc_extensions,
       simulcast_config: %SimulcastConfig{
@@ -92,6 +86,10 @@ defmodule Jellyfish.Peer do
       }
     }
 
-    %{peer | engine_endpoint: endpoint}
+    %__MODULE__{
+      id: peer_id,
+      type: :webrtc,
+      engine_endpoint: endpoint
+    }
   end
 end
