@@ -24,7 +24,7 @@ let the user to replace it with his own implementation using the other approach)
 1) **CL** sends request to **BE** to join some room (meeting, webinar).
 2) **BE** generates secret and sends request to **JMS** (*add_peer*).
 3) **JMS** responds positively.
-4) **BE** responds to client with generated secret.
+4) **BE** responds to client with generated token.
 5) **CL** opens WebSocket connection to **JMS**, flow of signaling messages begins.
 
 **JMS** can diferentiate between clients by the opened WebSocket connection so it knows who is the sender of

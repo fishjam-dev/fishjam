@@ -59,9 +59,11 @@ This approach only makes sense when using direct signaling, otherwise tokens are
 
 ### **JMS**
 
-In this approach **JMS** creates the tokens (when using `add_peer`, with information about peer the token is also send), so user only needs to pass it to the **CL**.
+In this approach **JMS** creates the tokens (when using `add_peer`, token is send in the response), so user only needs to pass it to the **CL**.
 You also might need to pass expected token presmissions to **JMS**.
 Despite that, we still need a way to authenticate **BE** - **JMS** connection. Possible solutions:
 
 - create JWT on **BE** side anyway (in such case you might as well use the first approach in order to not split logic responsible for token generation between Server SDK and Jellyfish),
 - create JWT (or some other token type) once and use it in configuration (makes it easier to change **BE** permissions, if that's ever necessary, but the token never expires, I'm not surewhether that's a problem, also **BE** doesn't need to know the secret).
+
+In both situations effort from the user comes to passing the token to **CL** (in direct signaling, otherwise no need to do anything except for creating the signalling connection).
