@@ -1,9 +1,6 @@
 defmodule Jellyfish.MixProject do
   use Mix.Project
 
-  @version "0.1.0"
-  @github_url "https://github.com/jellyfish-dev/jellyfish"
-
   def project do
     [
       app: :jellyfish,
@@ -17,14 +14,18 @@ defmodule Jellyfish.MixProject do
       dialyzer: dialyzer(),
 
       # hex
-      description: "Template Plugin for Membrane Multimedia Framework",
+      description: "Jellyfish media server",
       package: package(),
 
-      # docs
-      name: "Membrane Template plugin",
-      source_url: @github_url,
-      homepage_url: "https://membraneframework.org",
-      docs: docs()
+      # test coverage
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test,
+        "coveralls.json": :test
+      ]
     ]
   end
 
@@ -69,10 +70,12 @@ defmodule Jellyfish.MixProject do
       {:membrane_framerate_converter_plugin, "~> 0.5.0"},
       {:membrane_ffmpeg_swscale_plugin, "~> 0.10.0"},
 
-      # Docs and credo
-      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
+      # Dialyzer and credo
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},
-      {:credo, ">= 0.0.0", only: :dev, runtime: false}
+      {:credo, ">= 0.0.0", only: :dev, runtime: false},
+
+      # Test deps
+      {:excoveralls, "~> 0.15.0", only: :test, runtime: false}
     ]
   end
 
@@ -106,19 +109,9 @@ defmodule Jellyfish.MixProject do
       maintainers: ["Membrane Team"],
       licenses: ["Apache-2.0"],
       links: %{
-        "GitHub" => @github_url,
-        "Membrane Framework Homepage" => "https://membraneframework.org"
+        "GitHub" => "https://github.com/jellyfish-dev/jellyfish",
+        "Membrane Framework Homepage" => "https://membrane.stream"
       }
-    ]
-  end
-
-  defp docs do
-    [
-      main: "readme",
-      extras: ["README.md", "LICENSE"],
-      formatters: ["html"],
-      source_ref: "v#{@version}",
-      nest_modules_by_prefix: [Membrane.Template]
     ]
   end
 end
