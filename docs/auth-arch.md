@@ -17,17 +17,17 @@ Let's start with the first approach.
 
 ### Direct connection between **CL** and **JF**
 
-Let's assume client wants to join some multimedia room and is already authenticated (from the bussines logic perspective, e.g. he is logged in to his account).
+Let's assume **CL** wants to join some multimedia room and is already authenticated (from the bussines logic perspective, e.g. he is logged into his account).
 Also, **JF** and **BE** share common secret (more about that later).
 Scenario:
 
 1) **CL** sends request to join the multimedia room to **BE**.
 2) **BE** recieves the request and sends `add_peer` request to **JF**.
 3) **JF** sends back created `peer_id`.
-4) **BE** uses received `peer_id`, id of the **JF** instance to create JWT that is signed with the secret (or the **JF** creates the token in the previous step).
-The token can also contain permissions (which may differ between "normal" client and administrator).
+4) **BE** uses received `peer_id` and id of the **JF** instance to create JWT that is signed with the secret (or the **JF** creates the token in the previous step).
+The token can also contain permissions (which may differ between "normal" clients and administrators).
 5) **BE** responds to **CL** with the token.
-6) **CL** can now open WebSocket connection with **JF** using the token to authorize. **JF** (thanks to informations included in the token)
+6) **CL** can now open WebSocket connection to **JF** using the token to authorize themselves. **JF** (thanks to informations included in the token)
 can tell who opened the connection and that it was intended for this instance of **JF**.
 
 Problems:
@@ -45,15 +45,15 @@ Problems:
 
 - in current implementation of `membrane_rtc_engine`, endpoint should be created after signaling connection was established. In previous example it was obvious:
 WebSocekt connection is established, endpoint is created. Here some kind of special message will be necessary to communicate the begining of signaling connection. Also, we need
-to think if we wont to use the token to tag the signaling messages (seems unnecessary), or simply `peer_id`, harder to manage permissions
-(more of a signaling architecture problems, but worth noting).
-- **BE** doesn't need to pass the token to **CL** (has to respond to in anyway to start signaling messages flow), but also have to take care of matching incoming messages with `peer_id`s.
+to think if we want to use the token to tag the signaling messages (seems unnecessary), or simply `peer_id`, it's harder to manage permissions
+(more of a signaling architecture problems, but worth noting),
+- **BE** doesn't need to pass the token to **CL** (has to respond to in anyway to start signaling messages flow), but have to take care of matching incoming messages with `peer_id`s.
 
 ## Who should create tokens?
 
 ### **BE**
 
-If **BE** (server SDK) is responsible for creating tokens, then it has to know the secret that will be used to signing. It also needs `peer_id`, which can be obtained from **JF**. That takes care of **CL** authorization, we also need to authorize **BE** - **JF** connection. One possible solution to that is to use the very same secret to create tokens that will be used by **BE**. So **BE** will generate tokens and then, instead of sending them to client, will use it itself (which may seem wierd, but we came to conclusion that the approach is alright).
+If **BE** (server SDK) is responsible for creating tokens, then it has to know the secret that will be used in signing JWT. It also needs `peer_id`, which can be obtained from **JF**. That takes care of **CL** authorization, but we also need to authorize **BE** - **JF** connection. One possible solution is to use the very same secret as before to create tokens that will be used by **BE**. So **BE** will generate token and then, instead of sending them to client, will use it itself (which may seem wierd, but we came to conclusion that the approach is alright).
 
 This approach only makes sense when using direct signaling, otherwise tokens are not necessary at all (except for **BE** - **JF** connection).
 
@@ -63,7 +63,7 @@ In this approach **JF** creates the tokens (when using `add_peer`, token is send
 You also might need to pass expected token presmissions to **JF**.
 Despite that, we still need a way to authenticate **BE** - **JF** connection. Possible solutions:
 
-- create JWT on **BE** side anyway (in such case you might as well use the first approach in order to not split logic responsible for token generation between Server SDK and Jellyfish),
+- create JWT on **BE** side anyway (in such case you might as well use the first approach in order not to split logic responsible for token generation between Server SDK and Jellyfish),
 - create JWT (or some other token type) once and use it in configuration (makes it easier to change **BE** permissions, if that's ever necessary, but the token never expires, I'm not sure whether that's a problem, also **BE** doesn't need to know the secret).
 
-In both situations effort from the user comes to passing the token to **CL** (in direct signaling, otherwise no need to do anything except for creating the signalling connection).
+No matter who generates the tokens, effort from the user comes to passing the token to **CL** (in direct signaling, otherwise no need to do anything except for creating the signalling connection).
