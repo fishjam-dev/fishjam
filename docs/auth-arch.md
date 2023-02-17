@@ -3,32 +3,32 @@
 **Glossary:**
 
 - **CL** - client
-- **BE** - business logic (backend)
-- **JMS** - Jellyfish Media Server
+- **BE** - business logic (backend) implemented by the user
+- **JF** - Jellyfish
 
 ## Approaches and connection with signaling architecture
 
 Authentication might be a big factor when deciding on signaling architecture (see the other document). We need to consider 2 situations:
 
-- **CL** connect directly do **JMS**,
-- **CL** connect to **BE** which forwards signaling messages to **JMS**.
+- **CL** connect directly do **JF**,
+- **CL** connect to **BE** which forwards signaling messages to **JF**.
 
 Let's start with the first approach.
 
-### Direct connection between **CL** and **JMS**
+### Direct connection between **CL** and **JF**
 
 Let's assume client wants to join some multimedia room and is already authenticated (from the bussines logic perspective, e.g. he is logged in to his account).
-Also, **JMS** and **BE** share common secret (more about that later).
+Also, **JF** and **BE** share common secret (more about that later).
 Scenario:
 
 1) **CL** sends request to join the multimedia room to **BE**.
-2) **BE** recieves the request and sends `add_peer` request to **JMS**.
-3) **JMS** sends back created `peer_id`.
-4) **BE** uses received `peer_id`, id of the **JMS** instance to create JWT token with that is signed with the secret (or the **JMS** creates the token in the previous step).
+2) **BE** recieves the request and sends `add_peer` request to **JF**.
+3) **JF** sends back created `peer_id`.
+4) **BE** uses received `peer_id`, id of the **JF** instance to create JWT that is signed with the secret (or the **JF** creates the token in the previous step).
 The token can also contain permissions (which may differ between "normal" client and administrator).
 5) **BE** responds to **CL** with the token.
-6) **CL** can now open WebSocket connection with **JMS** using the token to authorize. **JMS** (thanks to informations included in the token)
-can tell who opened the connection and that it was intended for this instance of **JMS**.
+6) **CL** can now open WebSocket connection with **JF** using the token to authorize. **JF** (thanks to informations included in the token)
+can tell who opened the connection and that it was intended for this instance of **JF**.
 
 Problems:
 
@@ -53,17 +53,17 @@ to think if we wont to use the token to tag the signaling messages (seems unnece
 
 ### **BE**
 
-If **BE** (server SDK) is responsible for creating tokens, then it has to know the secret that will be used to signing. It also needs `peer_id`, which can be obtained from **JMS**. That takes care of **CL** authorization, we also need to authorize **BE** - **JMS** connection. One possible solution to that is to use the very same secret to create tokens that will be used by **BE**. So **BE** will generate tokens and then, instead of sending them to client, will use it itself (which may seem wierd, but we came to conclusion that the approach is alright).
+If **BE** (server SDK) is responsible for creating tokens, then it has to know the secret that will be used to signing. It also needs `peer_id`, which can be obtained from **JF**. That takes care of **CL** authorization, we also need to authorize **BE** - **JF** connection. One possible solution to that is to use the very same secret to create tokens that will be used by **BE**. So **BE** will generate tokens and then, instead of sending them to client, will use it itself (which may seem wierd, but we came to conclusion that the approach is alright).
 
-This approach only makes sense when using direct signaling, otherwise tokens are not necessary at all (except for **BE** - **JMS** connection).
+This approach only makes sense when using direct signaling, otherwise tokens are not necessary at all (except for **BE** - **JF** connection).
 
-### **JMS**
+### **JF**
 
-In this approach **JMS** creates the tokens (when using `add_peer`, token is send in the response), so user only needs to pass it to the **CL**.
-You also might need to pass expected token presmissions to **JMS**.
-Despite that, we still need a way to authenticate **BE** - **JMS** connection. Possible solutions:
+In this approach **JF** creates the tokens (when using `add_peer`, token is send in the response), so user only needs to pass it to the **CL**.
+You also might need to pass expected token presmissions to **JF**.
+Despite that, we still need a way to authenticate **BE** - **JF** connection. Possible solutions:
 
 - create JWT on **BE** side anyway (in such case you might as well use the first approach in order to not split logic responsible for token generation between Server SDK and Jellyfish),
-- create JWT (or some other token type) once and use it in configuration (makes it easier to change **BE** permissions, if that's ever necessary, but the token never expires, I'm not surewhether that's a problem, also **BE** doesn't need to know the secret).
+- create JWT (or some other token type) once and use it in configuration (makes it easier to change **BE** permissions, if that's ever necessary, but the token never expires, I'm not sure whether that's a problem, also **BE** doesn't need to know the secret).
 
 In both situations effort from the user comes to passing the token to **CL** (in direct signaling, otherwise no need to do anything except for creating the signalling connection).
