@@ -28,11 +28,11 @@ defmodule Jellyfish.Component do
   @type t :: %__MODULE__{
           id: id(),
           type: component_type(),
-          engine_endpoint: struct() | atom()
+          engine_endpoint: Membrane.ParentSpec.child_spec_t()
         }
 
-  @spec validate_component_type(String.t()) :: {:ok, component_type()} | {:error, atom()}
-  def validate_component_type(type) do
+  @spec parse_component_type(String.t()) :: {:ok, component_type()} | {:error, atom()}
+  def parse_component_type(type) do
     case type do
       "file_reader" -> {:ok, :file_reader}
       "hls" -> {:ok, :hls}
@@ -40,7 +40,7 @@ defmodule Jellyfish.Component do
     end
   end
 
-  @spec create_component(component_type(), any(), any()) :: {:ok, t()} | {:error, atom()}
+  @spec create_component(component_type(), map(), map()) :: {:ok, t()} | {:error, atom()}
   def create_component(component_type, _options, room_options) do
     case component_type do
       :hls -> {:ok, create_hls(room_options)}

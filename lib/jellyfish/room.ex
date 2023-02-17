@@ -1,7 +1,5 @@
 defmodule Jellyfish.Room do
-  @moduledoc """
-  Module representing room.
-  """
+  @moduledoc false
 
   use Bunch.Access
   use GenServer
@@ -37,7 +35,7 @@ defmodule Jellyfish.Room do
           network_options: map()
         }
 
-  @mix_env Mix.env()
+  # @mix_env Mix.env()
 
   def start(init_arg, opts) do
     GenServer.start(__MODULE__, init_arg, opts)

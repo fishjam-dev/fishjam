@@ -9,7 +9,7 @@ defmodule JellyfishWeb.PeerController do
 
   def create(conn, %{"room_id" => room_id} = params) do
     with {:ok, peer_type_string} <- Map.fetch(params, "type"),
-         {:ok, peer_type} <- Peer.validate_peer_type(peer_type_string),
+         {:ok, peer_type} <- Peer.parse_peer_type(peer_type_string),
          {:ok, room_pid} <- RoomService.find_room(room_id),
          {:ok, peer} <- Room.add_peer(room_pid, peer_type) do
       conn

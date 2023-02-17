@@ -13,13 +13,16 @@ defmodule JellyfishWeb.RoomController do
       |> Enum.map(fn {_id, room_pid} -> Room.get_state(room_pid) end)
       |> Enum.map(&maps_to_lists/1)
 
-    render(conn, "index.json", rooms: rooms)
+    conn
+    |> put_resp_content_type("application/json")
+    |> render("index.json", rooms: rooms)
   end
 
   def create(conn, params) do
     with max_peers <- Map.get(params, "maxPeers"),
          {:ok, room} <- RoomService.create_room(max_peers) do
       conn
+      |> put_resp_content_type("application/json")
       |> put_status(:created)
       |> render("show.json", room: room)
     else
@@ -35,7 +38,9 @@ defmodule JellyfishWeb.RoomController do
           |> Room.get_state()
           |> maps_to_lists()
 
-        render(conn, "show.json", room: room)
+        conn
+        |> put_resp_content_type("application/json")
+        |> render("show.json", room: room)
 
       {:error, :not_found} ->
         {:error, :not_found, "Room #{id} does not exist"}

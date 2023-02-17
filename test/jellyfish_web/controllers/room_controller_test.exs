@@ -2,6 +2,8 @@ defmodule JellyfishWeb.RoomControllerTest do
   use JellyfishWeb.ConnCase
 
   setup %{conn: conn} do
+    on_exit(fn -> delete_all_rooms(conn) end)
+
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
 
@@ -71,5 +73,16 @@ defmodule JellyfishWeb.RoomControllerTest do
     assert %{"id" => id} = json_response(conn, :created)["data"]
 
     %{room_id: id}
+  end
+
+  defp delete_all_rooms(conn) do
+    conn = get(conn, Routes.room_path(conn, :index))
+    assert rooms = json_response(conn, :ok)["data"]
+
+    Enum.reduce(rooms, conn, fn room, conn ->
+      conn = delete(conn, Routes.room_path(conn, :delete, room["id"]))
+      assert response(conn, :no_content)
+      conn
+    end)
   end
 end

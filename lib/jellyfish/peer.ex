@@ -22,23 +22,23 @@ defmodule Jellyfish.Peer do
   This module contains:
   * `id` - peer id
   * `type` - type of this peer
-  * `engine_endpoint` - engine endpoint for this peer
+  * `engine_endpoint` - rtc_engine endpoint for this peer
   """
   @type t :: %__MODULE__{
           id: id(),
           type: peer_type(),
-          engine_endpoint: struct() | atom()
+          engine_endpoint: Membrane.ParentSpec.child_spec_t()
         }
 
-  @spec validate_peer_type(String.t()) :: {:ok, peer_type()} | {:error, atom()}
-  def validate_peer_type(type) do
+  @spec parse_peer_type(String.t()) :: {:ok, peer_type()} | {:error, atom()}
+  def parse_peer_type(type) do
     case type do
       "webrtc" -> {:ok, :webrtc}
       _other -> {:error, :invalid_type}
     end
   end
 
-  @spec create_peer(peer_type(), any()) :: {:ok, t()} | {:error, atom()}
+  @spec create_peer(peer_type(), map()) :: {:ok, t()} | {:error, atom()}
   def create_peer(type, options) do
     case type do
       :webrtc -> {:ok, add_webrtc(options)}

@@ -4,8 +4,6 @@ defmodule Jellyfish.Application do
   @moduledoc false
   use Application
 
-  alias Jellyfish.RoomService
-
   @impl true
   def start(_type, _args) do
     children = [
@@ -14,12 +12,12 @@ defmodule Jellyfish.Application do
       # Start the PubSub system
       {Phoenix.PubSub, name: Jellyfish.PubSub},
       # Start the Endpoint (http/https)
-      JellyfishWeb.Endpoint
+      JellyfishWeb.Endpoint,
+      # Start the RoomService
+      {Jellyfish.RoomService, name: Jellyfish.RoomService}
       # Start a worker by calling: Jellyfish.Worker.start_link(arg)
       # {Jellyfish.Worker, arg}
     ]
-
-    {:ok, _} = GenServer.start_link(RoomService, [], name: RoomService)
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
