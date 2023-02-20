@@ -100,3 +100,10 @@ On the other hand, when tags are not used, there's everything alright with direc
 
 - More complicated to implement.
 - Introduces some redundancy (at least the ways to identify signaling messages that we thought of).
+
+## Conclusion
+
+The approach that we are going to use is the **direct connection**, mostly because it's a lot easier for the user to implement (which outweights benefits like the flexibility of the other approach).
+Also, the drawbacks seem not to be very severe: some of the information about the state of rooms and peers (like the fact that recording has begun) can be
+kept and shared by **JF** via the signalling connection.
+Mixed approach is not considered at the moment (as it brings some difficulties) but can be added in the future if there's need.
