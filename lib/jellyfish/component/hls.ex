@@ -6,6 +6,7 @@ defmodule Jellyfish.Component.HLS do
   @behaviour Jellyfish.Endpoint.Config
 
   alias Membrane.RTC.Engine.Endpoint.HLS
+  alias Membrane.RTC.Engine.Endpoint.HLS.{HLSConfig, MixerConfig}
 
   @impl true
   def config(options) do
@@ -13,8 +14,8 @@ defmodule Jellyfish.Component.HLS do
       rtc_engine: options.engine_pid,
       owner: self(),
       output_directory: "output/#{options.room_id}",
-      target_window_duration: :infinity,
-      hls_mode: :muxed_av
+      mixer_config: %MixerConfig{},
+      hls_config: %HLSConfig{}
     }
   end
 end

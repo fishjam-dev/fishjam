@@ -3,5 +3,5 @@ defmodule Jellyfish.Endpoint.Config do
   An interface for RTC Engine endpoint configuration.
   """
 
-  @callback config(map) :: Membrane.ParentSpec.child_spec_t()
+  @callback config(map) :: Membrane.ChildrenSpec.child_definition_t()
 end

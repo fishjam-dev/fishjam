@@ -25,7 +25,7 @@ defmodule Jellyfish.Peer do
   @type t :: %__MODULE__{
           id: id,
           type: peer,
-          engine_endpoint: Membrane.ParentSpec.child_spec_t()
+          engine_endpoint: Membrane.ChildrenSpec.child_definition_t()
         }
 
   @spec parse_type(String.t()) :: {:ok, peer} | {:error, :invalid_type}
