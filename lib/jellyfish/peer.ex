@@ -4,9 +4,7 @@ defmodule Jellyfish.Peer do
   producers or other peers. Peer process is spawned after peer connects to the server.
   """
 
-  alias Membrane.RTC.Engine.Endpoint.WebRTC
-  alias Membrane.RTC.Engine.Endpoint.WebRTC.SimulcastConfig
-  alias Membrane.WebRTC.Extension.{Mid, Rid, TWCC}
+  alias Jellyfish.Peer.WebRTC
 
   @enforce_keys [
     :id,
@@ -16,7 +14,7 @@ defmodule Jellyfish.Peer do
   defstruct @enforce_keys
 
   @type id :: String.t()
-  @type peer_type :: :webrtc
+  @type peer :: WebRTC
 
   @typedoc """
   This module contains:
@@ -25,71 +23,28 @@ defmodule Jellyfish.Peer do
   * `engine_endpoint` - rtc_engine endpoint for this peer
   """
   @type t :: %__MODULE__{
-          id: id(),
-          type: peer_type(),
+          id: id,
+          type: peer,
           engine_endpoint: Membrane.ParentSpec.child_spec_t()
         }
 
-  @spec parse_peer_type(String.t()) :: {:ok, peer_type()} | {:error, atom()}
-  def parse_peer_type(type) do
+  @spec parse_type(String.t()) :: {:ok, peer} | {:error, :invalid_type}
+  def parse_type(type) do
     case type do
-      "webrtc" -> {:ok, :webrtc}
+      "webrtc" -> {:ok, WebRTC}
       _other -> {:error, :invalid_type}
     end
   end
 
-  @spec create_peer(peer_type(), map()) :: {:ok, t()} | {:error, atom()}
-  def create_peer(type, options) do
-    case type do
-      :webrtc -> {:ok, add_webrtc(options)}
-      _other -> {:error, :invalid_type}
-    end
-  end
-
-  defp add_webrtc(options) do
-    peer_id = UUID.uuid4()
-
-    network_options = options.network_options
-
-    simulcast? = true
-
-    handshake_opts =
-      if network_options[:dtls_pkey] && network_options[:dtls_cert] do
-        [
-          client_mode: false,
-          dtls_srtp: true,
-          pkey: network_options[:dtls_pkey],
-          cert: network_options[:dtls_cert]
-        ]
-      else
-        [
-          client_mode: false,
-          dtls_srtp: true
-        ]
-      end
-
-    webrtc_extensions = [Mid, Rid, TWCC]
-
-    endpoint = %WebRTC{
-      rtc_engine: options.engine_pid,
-      ice_name: peer_id,
-      owner: self(),
-      integrated_turn_options: network_options[:integrated_turn_options],
-      integrated_turn_domain: network_options[:integrated_turn_domain],
-      handshake_opts: handshake_opts,
-      log_metadata: [peer_id: peer_id],
-      trace_context: nil,
-      webrtc_extensions: webrtc_extensions,
-      simulcast_config: %SimulcastConfig{
-        enabled: simulcast?,
-        initial_target_variant: fn _track -> :medium end
-      }
-    }
+  @spec new(peer, map) :: t
+  def new(type, options) do
+    id = UUID.uuid4()
+    options = Map.put(options, :peer_id, id)
 
     %__MODULE__{
-      id: peer_id,
-      type: :webrtc,
-      engine_endpoint: endpoint
+      id: id,
+      type: type,
+      engine_endpoint: type.config(options)
     }
   end
 end
