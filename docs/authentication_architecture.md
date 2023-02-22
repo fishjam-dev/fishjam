@@ -37,7 +37,7 @@ Problems:
 
 ### Using **BE** as a middleman
 
-**Note: direct signaling option have been chosen so this paragraph is not applicable at the moment.**
+**Note: direct signaling approach has been chosen, so this paragraph is not applicable anymore.**
 
 The same assumptions and first 3 steps as in the previous example:
 
