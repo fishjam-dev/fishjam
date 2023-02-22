@@ -31,7 +31,7 @@ defmodule JellyfishWeb.ConnCase do
     end
   end
 
-  setup _tags do
+  setup do
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
 end

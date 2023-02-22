@@ -54,6 +54,24 @@ defmodule Jellyfish.MixProject do
       {:telemetry_poller, "~> 1.0"},
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
+      {:uuid, "~> 1.1"},
+
+      # Membrane deps
+      {:membrane_rtc_engine,
+       github: "jellyfish-dev/membrane_rtc_engine", branch: "get_endpoints"},
+
+      # HLS endpoints deps
+      {:membrane_aac_plugin, "~> 0.13.0"},
+      {:membrane_opus_plugin, "~> 0.16.0"},
+      {:membrane_aac_fdk_plugin, "~> 0.14.0"},
+      {:membrane_generator_plugin, "~> 0.8.0"},
+      {:membrane_realtimer_plugin, "~> 0.6.0"},
+      {:membrane_audio_mix_plugin, "~> 0.12.0"},
+      {:membrane_raw_audio_format, "~> 0.10.0"},
+      {:membrane_h264_ffmpeg_plugin, "~> 0.25.2"},
+      {:membrane_audio_filler_plugin, "~> 0.1.0"},
+      {:membrane_video_compositor_plugin, "~> 0.1.0"},
+      {:membrane_http_adaptive_stream_plugin, "~> 0.10.0"},
 
       # Dialyzer and credo
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},

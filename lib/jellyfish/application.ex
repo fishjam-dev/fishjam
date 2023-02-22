@@ -2,7 +2,6 @@ defmodule Jellyfish.Application do
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
   @moduledoc false
-
   use Application
 
   @impl true
@@ -13,7 +12,9 @@ defmodule Jellyfish.Application do
       # Start the PubSub system
       {Phoenix.PubSub, name: Jellyfish.PubSub},
       # Start the Endpoint (http/https)
-      JellyfishWeb.Endpoint
+      JellyfishWeb.Endpoint,
+      # Start the RoomService
+      {Jellyfish.RoomService, name: Jellyfish.RoomService}
       # Start a worker by calling: Jellyfish.Worker.start_link(arg)
       # {Jellyfish.Worker, arg}
     ]
