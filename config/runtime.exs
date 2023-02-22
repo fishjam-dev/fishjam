@@ -70,6 +70,7 @@ defmodule ConfigParser do
 end
 
 config :jellyfish,
+  webrtc_used: String.downcase(System.get_env("WEBRTC_USED", "true")) not in ["false", "f", "0"],
   integrated_turn_ip:
     System.get_env("INTEGRATED_TURN_IP", "127.0.0.1") |> ConfigParser.parse_integrated_turn_ip(),
   integrated_turn_port_range:

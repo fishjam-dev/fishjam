@@ -168,30 +168,35 @@ defmodule Jellyfish.Room do
     Engine.register(pid, self())
     Process.monitor(pid)
 
-    turn_cert_file =
-      case Application.fetch_env(:jellyfish, :integrated_turn_cert_pkey) do
-        {:ok, val} -> val
-        :error -> nil
+    network_options =
+      if Application.fetch_env!(:jellyfish, :webrtc_used) do
+        turn_cert_file =
+          case Application.fetch_env(:jellyfish, :integrated_turn_cert_pkey) do
+            {:ok, val} -> val
+            :error -> nil
+          end
+
+        turn_mock_ip = Application.fetch_env!(:jellyfish, :integrated_turn_ip)
+
+        # turn_ip = if @mix_env == :prod, do: {0, 0, 0, 0}, else: turn_mock_ip
+        turn_ip = turn_mock_ip
+
+        integrated_turn_options = [
+          ip: turn_ip,
+          mock_ip: turn_mock_ip,
+          ports_range: Application.fetch_env!(:jellyfish, :integrated_turn_port_range),
+          cert_file: turn_cert_file
+        ]
+
+        [
+          integrated_turn_options: integrated_turn_options,
+          integrated_turn_domain: Application.fetch_env!(:jellyfish, :integrated_turn_domain),
+          dtls_pkey: Application.get_env(:jellyfish, :dtls_pkey),
+          dtls_cert: Application.get_env(:jellyfish, :dtls_cert)
+        ]
+      else
+        []
       end
-
-    turn_mock_ip = Application.fetch_env!(:jellyfish, :integrated_turn_ip)
-
-    # turn_ip = if @mix_env == :prod, do: {0, 0, 0, 0}, else: turn_mock_ip
-    turn_ip = turn_mock_ip
-
-    integrated_turn_options = [
-      ip: turn_ip,
-      mock_ip: turn_mock_ip,
-      ports_range: Application.fetch_env!(:jellyfish, :integrated_turn_port_range),
-      cert_file: turn_cert_file
-    ]
-
-    network_options = [
-      integrated_turn_options: integrated_turn_options,
-      integrated_turn_domain: Application.fetch_env!(:jellyfish, :integrated_turn_domain),
-      dtls_pkey: Application.get_env(:jellyfish, :dtls_pkey),
-      dtls_cert: Application.get_env(:jellyfish, :dtls_cert)
-    ]
 
     %__MODULE__{
       id: id,

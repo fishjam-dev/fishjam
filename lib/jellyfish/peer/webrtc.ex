@@ -1,6 +1,6 @@
 defmodule Jellyfish.Peer.WebRTC do
   @moduledoc """
-  Module representing Web RTC peer.
+  Module representing WebRTC peer.
   """
 
   @behaviour Jellyfish.Endpoint.Config
@@ -11,6 +11,12 @@ defmodule Jellyfish.Peer.WebRTC do
 
   @impl true
   def config(options) do
+    if not Application.get_env(:jellyfish, :webrtc_used),
+      do:
+        raise(
+          "WebRTC peers can be used only if WEBRTC_USED environmental variable is not set to \"false\""
+        )
+
     network_options = options.network_options
 
     simulcast? = true
