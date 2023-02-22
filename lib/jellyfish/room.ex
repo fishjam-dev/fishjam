@@ -37,7 +37,7 @@ defmodule Jellyfish.Room do
           network_options: map
         }
 
-  # @mix_env Mix.env()
+  @is_prod Mix.env() == :prod
 
   def start(init_arg, opts) do
     GenServer.start(__MODULE__, init_arg, opts)
@@ -178,8 +178,7 @@ defmodule Jellyfish.Room do
 
         turn_mock_ip = Application.fetch_env!(:jellyfish, :integrated_turn_ip)
 
-        # turn_ip = if @mix_env == :prod, do: {0, 0, 0, 0}, else: turn_mock_ip
-        turn_ip = turn_mock_ip
+        turn_ip = if @is_prod, do: {0, 0, 0, 0}, else: turn_mock_ip
 
         integrated_turn_options = [
           ip: turn_ip,
