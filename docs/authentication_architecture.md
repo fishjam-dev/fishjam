@@ -37,6 +37,8 @@ Problems:
 
 ### Using **BE** as a middleman
 
+**Note: direct signaling option have been chosen so this paragraph is not applicable at the moment.**
+
 The same assumptions and first 3 steps as in the previous example:
 
 4) **BE** responds to **CL** that it was authorized and that it can send signaling messages to **BE**.
@@ -47,7 +49,7 @@ Problems:
 WebSocekt connection is established, endpoint is created. Here some kind of special message will be necessary to communicate the begining of signaling connection. Also, we need
 to think if we want to use the token to tag the signaling messages (seems unnecessary), or simply `peer_id`, it's harder to manage permissions
 (more of a signaling architecture problems, but worth noting),
-- **BE** doesn't need to pass the token to **CL** (has to respond to in anyway to start signaling messages flow), but have to take care of matching incoming messages with `peer_id`s.
+- **BE** doesn't need to pass the token to **CL** (has to respond to in anyway to start signaling messages flow), but have to take care of matching incoming messages with `peer_id`s.~
 
 ## Who should create tokens?
 
