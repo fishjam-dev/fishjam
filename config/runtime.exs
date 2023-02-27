@@ -86,6 +86,51 @@ config :jellyfish,
   integrated_turn_cert: System.get_env("INTEGRATED_TURN_CERT"),
   integrated_turn_domain: System.get_env("VIRTUAL_HOST")
 
+otel_state = :purge
+
+config :opentelemetry, :resource,
+  service: [
+    name: "membrane",
+    namespace: "membrane"
+  ]
+
+exporter =
+  case otel_state do
+    :local ->
+      {:otel_exporter_stdout, []}
+
+    :honeycomb ->
+      {:opentelemetry_exporter,
+       %{
+         endpoints: ["https://api.honeycomb.io:443"],
+         headers: [
+           {"x-honeycomb-dataset", "experiments"},
+           {"x-honeycomb-team", System.get_env("HONEYCOMB")}
+         ]
+       }}
+
+    :zipkin ->
+      {:opentelemetry_zipkin,
+       %{
+         address: ["http://localhost:9411/api/v2/spans"],
+         local_endpoint: %{service_name: "VideoRoom"}
+       }}
+
+    _ ->
+      {}
+  end
+
+if otel_state != :purge do
+  config :opentelemetry,
+    processors: [
+      otel_batch_processor: %{
+        exporter: exporter
+      }
+    ]
+else
+  config :opentelemetry, traces_exporter: :none
+end
+
 if config_env() == :prod do
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you
