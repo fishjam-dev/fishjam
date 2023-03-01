@@ -14,7 +14,7 @@ defmodule Jellyfish.Application do
       # Start the Endpoint (http/https)
       JellyfishWeb.Endpoint,
       # Start the RoomService
-      {Jellyfish.RoomService, name: Jellyfish.RoomService}
+      Jellyfish.RoomService
       # Start a worker by calling: Jellyfish.Worker.start_link(arg)
       # {Jellyfish.Worker, arg}
     ]

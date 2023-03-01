@@ -11,10 +11,11 @@ defmodule Jellyfish.Peer do
     :type,
     :engine_endpoint
   ]
-  defstruct @enforce_keys
+  defstruct @enforce_keys ++ [status: :disconnected]
 
   @type id :: String.t()
   @type peer :: WebRTC
+  @type status :: :connected | :disconnected
 
   @typedoc """
   This module contains:
@@ -25,6 +26,7 @@ defmodule Jellyfish.Peer do
   @type t :: %__MODULE__{
           id: id,
           type: peer,
+          status: status,
           engine_endpoint: Membrane.ChildrenSpec.child_definition_t()
         }
 
