@@ -155,6 +155,7 @@ defmodule Jellyfish.Room do
       if Map.has_key?(state.peers, peer_id) do
         {_elem, state} = pop_in(state, [:peers, peer_id])
         :ok = Engine.remove_endpoint(state.engine_pid, peer_id)
+        # TODO kill websocket process
         {:ok, state}
       else
         {{:error, :peer_not_found}, state}
@@ -230,6 +231,7 @@ defmodule Jellyfish.Room do
           state
 
         {peer_id, peer_data} ->
+          :ok = Engine.remove_endpoint(state.engine_pid, peer_id)
           peer = %{peer_data.peer | status: :disconnected}
           put_in(state, [:peers, peer_id], %{peer: peer, socket_id: nil})
       end

@@ -34,7 +34,7 @@ defmodule JellyfishWeb.Socket do
     case Room.connect_peer(state.room_pid, state.peer_id) do
       :ok -> nil
       # TODO
-      {:error, reason} -> nil
+      {:error, _reason} -> nil
     end
 
     {:ok, state}
