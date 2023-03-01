@@ -69,3 +69,9 @@ Despite that, we still need a way to authenticate **BE** - **JF** connection. Po
 - create JWT (or some other token type) once and use it in configuration (makes it easier to change **BE** permissions, if that's ever necessary, but the token never expires, I'm not sure whether that's a problem, also **BE** doesn't need to know the secret).
 
 No matter who generates the tokens, effort from the user comes to passing the token to **CL** (in direct signaling, otherwise no need to do anything except for creating the signalling connection).
+
+## Consclusion
+
+We will be using **JF** to generate tokens, as it makes it easier to maintain (we don't need to implement token generation in all of our SDKs) and we keep all of the logic responsible for generation and validation together.
+Also, **BE** authentication might not be very difficult: they may just share a common secret and use it directly to authenticate, especially when **JF** and **BE** are some in internal network, which will be a common case.
+Using **BE** to generate tokens could also complicate things when using more than one instance of **JF** and make it harder to scale and make modifications related to tokens (need to redeploy both **JF** and **BE** in such case).
