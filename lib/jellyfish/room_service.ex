@@ -13,7 +13,7 @@ defmodule Jellyfish.RoomService do
     GenServer.start_link(__MODULE__, args, name: __MODULE__)
   end
 
-  @spec find_room(Room.id()) :: {:ok, pid} | {:error, :room_not_found}
+  @spec find_room(Room.id()) :: {:ok, pid()} | {:error, :room_not_found}
   def find_room(room_id) do
     case :ets.lookup(:rooms, room_id) do
       [{_room_id, room_pid} | _] -> {:ok, room_pid}

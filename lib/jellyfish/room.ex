@@ -22,7 +22,7 @@ defmodule Jellyfish.Room do
   defstruct @enforce_keys ++ [components: %{}, peers: %{}]
 
   @type id :: String.t()
-  @type max_peers :: non_neg_integer | nil
+  @type max_peers :: non_neg_integer() | nil
 
   @typedoc """
   This module contains:
@@ -33,12 +33,12 @@ defmodule Jellyfish.Room do
   * `engine` - pid of engine
   """
   @type t :: %__MODULE__{
-          id: id,
-          config: %{max_peers: max_peers, simulcast?: boolean},
+          id: id(),
+          config: %{max_peers: max_peers(), simulcast?: boolean()},
           components: %{Component.id() => Component.t()},
           peers: %{Peer.id() => Peer.t()},
-          engine_pid: pid,
-          network_options: map
+          engine_pid: pid(),
+          network_options: map()
         }
 
   @is_prod Mix.env() == :prod
@@ -47,38 +47,38 @@ defmodule Jellyfish.Room do
     GenServer.start_link(__MODULE__, args)
   end
 
-  @spec get_state(pid) :: t
+  @spec get_state(pid()) :: t()
   def get_state(room_pid) do
     GenServer.call(room_pid, :state)
   end
 
-  @spec add_peer(pid, Peer.peer()) :: {:ok, Peer.t()} | {:error, :reached_peers_limit}
+  @spec add_peer(pid(), Peer.peer()) :: {:ok, Peer.t()} | {:error, :reached_peers_limit}
   def add_peer(room_pid, peer_type) do
     GenServer.call(room_pid, {:add_peer, peer_type})
   end
 
-  @spec set_peer_connected(pid, Peer.id()) :: :ok | {:error, :peer_not_found}
+  @spec set_peer_connected(pid(), Peer.id()) :: :ok | {:error, :peer_not_found}
   def set_peer_connected(room_pid, peer_id) do
     GenServer.call(room_pid, {:set_peer_connected, peer_id})
   end
 
-  @spec get_peer_connection_status(pid, Peer.id()) ::
+  @spec get_peer_connection_status(pid(), Peer.id()) ::
           {:ok, Peer.status()} | {:error, :peer_not_found}
   def get_peer_connection_status(room_pid, peer_id) do
     GenServer.call(room_pid, {:get_peer_connection_status, peer_id})
   end
 
-  @spec remove_peer(pid, Peer.id()) :: :ok | {:error, :peer_not_found}
+  @spec remove_peer(pid(), Peer.id()) :: :ok | {:error, :peer_not_found}
   def remove_peer(room_id, peer_id) do
     GenServer.call(room_id, {:remove_peer, peer_id})
   end
 
-  @spec add_component(pid, Component.component(), map | nil) :: {:ok, Component.t()}
+  @spec add_component(pid(), Component.component(), map() | nil) :: {:ok, Component.t()}
   def add_component(room_pid, component_type, options) do
     GenServer.call(room_pid, {:add_component, component_type, options})
   end
 
-  @spec remove_component(pid, Component.id()) :: :ok | {:error, :component_not_found}
+  @spec remove_component(pid(), Component.id()) :: :ok | {:error, :component_not_found}
   def remove_component(room_pid, component_id) do
     GenServer.call(room_pid, {:remove_component, component_id})
   end
