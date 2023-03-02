@@ -51,6 +51,10 @@ That means, that we would first create schema in Elixir and then generate types 
 
 Importantly, GraphQL allows for deprecating fields. When greater changes are introduced it might be easier to introduce new endpoint with newer API.
 
+Features:
+- generating type specification from schema
+- backward compatibility (deprecating fields)
+
 #### Json Schema
 
 JSON Schema is a declarative language that allows you to annotate and validate JSON documents.
@@ -73,23 +77,31 @@ JSON Schema is a declarative language that allows you to annotate and validate J
 Json schema allows for code generation for multiple languages, but not for Elixir.
 That means, that we would have to create it by hand (and validate it using existing validators) or create our own generator.
 
+Features:
+- defining schema, used for code generation, data validation and providing documentation
+- no support for Elixir code generation :c, which would gave to be created
+
 #### AsyncAPI
 
 AsyncAPI defines AsyncAPI document, which specifies the API and allows for generating code and documentation. 
 
 ```yaml
 message:
-        name: LightMeasured
-        payload:
-          type: object
-          properties:
-            id:
-              type: integer
-              minimum: 0
-              description: Id of the streetlight.
+    name: LightMeasured
+    payload:
+        type: object
+        properties:
+        id:
+            type: integer
+            minimum: 0
+            description: Id of the streetlight.
 ```    
 
 The problem with AsyncAPI is that there isn't code generation tool for Elixir, so one had to be created using the template for [code generator](https://github.com/asyncapi/generator/blob/master/docs/index.md).
+
+Features:
+- defines AsyncAPI document API specification
+- no code generation for Elixir yet
 
 ### Protocol Buffers
 
@@ -106,3 +118,7 @@ message Person {
 Protobufs are fast and allow for compact messages. 
 Protobufs have built-in backward- and forward-compatibility as well as code generation features
 for many languages, including Elixir.
+
+Features:
+- automatically-generated classes for multiple languages
+- built-in forward- and backward-compatibity
