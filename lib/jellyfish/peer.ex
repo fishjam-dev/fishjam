@@ -11,7 +11,7 @@ defmodule Jellyfish.Peer do
     :type,
     :engine_endpoint
   ]
-  defstruct @enforce_keys ++ [status: :disconnected]
+  defstruct @enforce_keys ++ [status: :disconnected, socket_pid: nil]
 
   @type id :: String.t()
   @type peer :: WebRTC
@@ -27,6 +27,7 @@ defmodule Jellyfish.Peer do
           id: id,
           type: peer,
           status: status,
+          socket_pid: pid | nil,
           engine_endpoint: Membrane.ChildrenSpec.child_definition_t()
         }
 

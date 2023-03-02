@@ -43,7 +43,7 @@ defmodule Jellyfish.RoomService do
     {:ok, room_pid} = Room.start_link(max_peers)
     room = Room.get_state(room_pid)
 
-    Logger.info("Created room #{room.id}")
+    Logger.info("Created room #{inspect(room.id)}")
 
     :ets.insert(:rooms, {room.id, room_pid})
 
@@ -69,7 +69,7 @@ defmodule Jellyfish.RoomService do
     state = Map.delete(state, room_id)
     :ets.delete(:rooms, room_id)
 
-    Logger.info("Deleted room #{room_id}")
+    Logger.info("Deleted room #{inspect(room_id)}")
 
     {:reply, :ok, state}
   end

@@ -8,39 +8,72 @@ defmodule JellyfishWeb.Socket do
 
   @impl true
   def child_spec(_opts) do
-    # No additional processes are spawned, dummy task below
+    # No additional processes are spawned, returning child_spec for dummy task
     %{id: __MODULE__, start: {Task, :start_link, [fn -> :ok end]}, restart: :transient}
   end
 
   @impl true
   def connect(state) do
+    Logger.info("New incoming WebSocket connection...")
+
     with {:ok, peer_id} <- Map.fetch(state.params, "peer_id"),
          {:ok, room_id} <- Map.fetch(state.params, "room_id"),
          {:ok, room_pid} <- RoomService.find_room(room_id),
          {:ok, :disconnected} <- Room.get_peer_connection_status(room_pid, peer_id) do
       state =
         state
-        |> Map.put(:room_pid, room_pid)
         |> Map.put(:room_id, room_id)
         |> Map.put(:peer_id, peer_id)
 
+      Logger.info(
+        "WebSocket connection from peer #{inspect(peer_id)} accepted, room #{inspect(room_id)}"
+      )
+
       {:ok, state}
     else
-      {:ok, :connected} -> :error
-      {:error, :room_not_found} -> :error
-      :error -> :error
+      {:ok, :connected} ->
+        Logger.warn(
+          "WebSocket connection for peer #{inspect(state.params["peer_id"])} in room #{inspect(state.params["room_id"])} already exists, rejected"
+        )
+
+        :error
+
+      {:error, :room_not_found} ->
+        Logger.warn(
+          "Room #{inspect(state.params["room_id"])} not found, ignoring incoming WebSocket connection"
+        )
+
+        :error
+
+      {:error, :peer_not_found} ->
+        Logger.warn(
+          "Peer #{inspect(state.params["peer_id"])} not found in room #{inspect(state.params["room_id"])}, ignoring incoming WebSocket connection"
+        )
+
+        :error
+
+      :error ->
+        Logger.warn(
+          "No room_id/peer_id in connection params, ignoring incoming WebSocket connection"
+        )
+
+        :error
     end
   end
 
   @impl true
   def init(state) do
-    case Room.connect_peer(state.room_pid, state.peer_id) do
-      :ok ->
-        nil
-
-      {:error, _reason} ->
+    with {:ok, room_pid} <- RoomService.find_room(state.room_id),
+         :ok <- Room.set_peer_connected(room_pid, state.peer_id) do
+    else
+      {:error, :room_not_found} ->
         Logger.error(
-          "Trying to connect signaling from non existent peer (target id: #{state.peer_di}, room: #{state.room_id})"
+          "Trying to connect signaling from non existent peer #{inspect(state.peer_id)}), room: #{inspect(state.room_id)}"
+        )
+
+      {:error, :peer_not_found} ->
+        Logger.error(
+          "Trying to connect signaling to non existent room #{inspect(state.room_id)})"
         )
     end
 
@@ -49,25 +82,31 @@ defmodule JellyfishWeb.Socket do
 
   @impl true
   def handle_in({encoded_message, [opcode: :text]}, state) do
-    with {:ok, message} <- Jason.decode(encoded_message),
-         {:ok, type} <- Map.fetch(message, "type"),
-         {:ok, data} <- Map.fetch(message, "data") do
-      case type do
-        "mediaEvent" ->
-          send(state.room_pid, {:media_event, state.peer_id, data})
+    case Jason.decode(encoded_message) do
+      {:ok, %{"type" => "mediaEvent", "data" => data}} ->
+        case RoomService.find_room(state.room_id) do
+          {:ok, room_pid} ->
+            send(room_pid, {:media_event, state.peer_id, data})
 
-        _other ->
-          Logger.warn(
-            "Received message with unexpected type from peer #{state.peer_id}, room: #{state.room_id}"
-          )
-      end
-    else
+          {:error, :room_not_found} ->
+            Logger.warn(
+              "Trying to send Media Event to room #{inspect(state.room_id)}) that does not exists "
+            )
+        end
+
       {:error, %Jason.DecodeError{}} ->
-        Logger.warn("Failed do decode message from peer #{state.peer_id}, room: #{state.room_id}")
-
-      :error ->
         Logger.warn(
-          "Received message with invalid structure from peer #{state.peer_id}, room: #{state.room_id}"
+          "Failed do decode message from peer #{inspect(state.peer_id)}, room: #{inspect(state.room_id)}"
+        )
+
+      {:ok, %{"type" => type}} ->
+        Logger.warn(
+          "Received message with unexpected type #{inspect(type)} from peer #{inspect(state.peer_id)}, room: #{inspect(state.room_id)}"
+        )
+
+      {:ok, _message} ->
+        Logger.warn(
+          "Received message with invalid structure from peer #{inspect(state.peer_id)}, room: #{inspect(state.room_id)}"
         )
     end
 
@@ -90,7 +129,10 @@ defmodule JellyfishWeb.Socket do
 
   @impl true
   def terminate(_reason, state) do
-    Logger.info("Socket associated with peer #{state.peer_id} stopped, room: #{state.room_id}")
+    Logger.info(
+      "WebSocket associated with peer #{inspect(state.peer_id)} stopped, room: #{inspect(state.room_id)}"
+    )
+
     :ok
   end
 end

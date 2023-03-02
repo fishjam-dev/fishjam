@@ -20,7 +20,7 @@ defmodule JellyfishWeb.PeerView do
     %{
       id: peer.id,
       type: type,
-      status: Atom.to_string(peer.status)
+      status: "#{peer.status}"
     }
   end
 end
