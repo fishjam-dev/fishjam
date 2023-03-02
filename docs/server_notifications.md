@@ -73,8 +73,36 @@ JSON Schema is a declarative language that allows you to annotate and validate J
 Json schema allows for code generation for multiple languages, but not for Elixir.
 That means, that we would have to create it by hand (and validate it using existing validators) or create our own generator.
 
+#### AsyncAPI
+
+AsyncAPI defines AsyncAPI document, which specifies the API and allows for generating code and documentation. 
+
+```yaml
+message:
+        name: LightMeasured
+        payload:
+          type: object
+          properties:
+            id:
+              type: integer
+              minimum: 0
+              description: Id of the streetlight.
+```    
+
+The problem with AsyncAPI is that there isn't code generation tool for Elixir, so one had to be created using the template for [code generator](https://github.com/asyncapi/generator/blob/master/docs/index.md).
+
 ### Protocol Buffers
 
 Protocol Buffers (protobuf) are a language-neutral, platform-neutral extensible mechanism for serializing structured data.
 
+```proto
+message Person {
+  optional string name = 1;
+  optional int32 id = 2;
+  optional string email = 3;
+}
+```
 
+Protobufs are fast and allow for compact messages. 
+Protobufs have built-in backward- and forward-compatibility as well as code generation features
+for many languages, including Elixir.
