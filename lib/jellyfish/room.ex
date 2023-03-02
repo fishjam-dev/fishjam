@@ -5,6 +5,9 @@ defmodule Jellyfish.Room do
 
   use Bunch.Access
   use GenServer
+
+  require Logger
+
   alias Jellyfish.Component
   alias Jellyfish.Peer
   alias Membrane.RTC.Engine
@@ -107,6 +110,9 @@ defmodule Jellyfish.Room do
         options = %{engine_pid: state.engine_pid, network_options: state.network_options}
         peer = Peer.new(peer_type, options)
         state = put_in(state, [:peers, peer.id], %{peer: peer, socket_pid: nil})
+
+        Logger.info("Added peer #{peer.id}, room: #{state.id}")
+
         {{:ok, peer}, state}
       end
 
@@ -128,6 +134,8 @@ defmodule Jellyfish.Room do
           state
           |> put_in([:peers, peer_id, :socket_pid], socket_pid)
           |> put_in([:peers, peer_id, :peer], %{peer_data.peer | status: :connected})
+
+        Logger.info("Connected signaling from peer #{peer_id}, room: #{state.id}")
 
         {:ok, state}
       else
@@ -153,9 +161,14 @@ defmodule Jellyfish.Room do
   def handle_call({:remove_peer, peer_id}, _from, state) do
     {reply, state} =
       if Map.has_key?(state.peers, peer_id) do
-        {_elem, state} = pop_in(state, [:peers, peer_id])
+        {peer_data, state} = pop_in(state, [:peers, peer_id])
         :ok = Engine.remove_endpoint(state.engine_pid, peer_id)
-        # TODO kill websocket process
+
+        if is_pid(peer_data.socket_pid),
+          do: send(peer_data.socket_pid, {:stop_connection, :peer_removed})
+
+        Logger.info("Removed peer #{peer_id}, room: #{state.id}")
+
         {:ok, state}
       else
         {{:error, :peer_not_found}, state}
@@ -178,6 +191,8 @@ defmodule Jellyfish.Room do
     :ok =
       Engine.add_endpoint(state.engine_pid, component.engine_endpoint, endpoint_id: component.id)
 
+    Logger.info("Added component  #{component.id}, room: #{state.id}")
+
     {:reply, {:ok, component}, state}
   end
 
@@ -187,6 +202,9 @@ defmodule Jellyfish.Room do
       if Map.has_key?(state.components, component_id) do
         {_elem, state} = pop_in(state, [:components, component_id])
         :ok = Engine.remove_endpoint(state.engine_pid, component_id)
+
+        Logger.info("Removed component #{component_id}, room: #{state.id}")
+
         {:ok, state}
       else
         {{:error, :component_not_found}, state}
@@ -201,18 +219,30 @@ defmodule Jellyfish.Room do
          socket_pid when is_pid(socket_pid) <- Map.get(peer, :socket_pid) do
       send(socket_pid, {:media_event, data})
     else
-      # TODO
-      nil -> :ok
-      # TODO
-      :error -> :ok
+      nil ->
+        Logger.warn(
+          "Received Media Event from RTC Engine to peer #{to} without established signaling connection, room: #{state.id}"
+        )
+
+      :error ->
+        Logger.warn(
+          "Received Media Event from RTC Engine to non existent peer (target id: #{to}), room: #{state.id}"
+        )
     end
 
     {:noreply, state}
   end
 
   @impl true
-  def handle_info(%Message.EndpointCrashed{endpoint_id: _endpoint_id}, state) do
-    # TODO
+  def handle_info(%Message.EndpointCrashed{endpoint_id: endpoint_id}, state) do
+    Logger.error(
+      "RTC Engine endpoint associated with peer #{endpoint_id} crashed, room: #{state.id}"
+    )
+
+    with {:ok, peer_data} <- Map.fetch(state.peers, endpoint_id),
+         socket_pid when is_pid(socket_pid) <- Map.get(peer_data, :socket_pid) do
+      send(socket_pid, {:stop_connection, :endpoint_crashed})
+    end
 
     {:noreply, state}
   end

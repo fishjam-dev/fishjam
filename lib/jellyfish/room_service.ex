@@ -4,6 +4,9 @@ defmodule Jellyfish.RoomService do
   """
 
   use GenServer
+
+  require Logger
+
   alias Jellyfish.Room
 
   def start_link(args) do
@@ -40,6 +43,8 @@ defmodule Jellyfish.RoomService do
     {:ok, room_pid} = Room.start_link(max_peers)
     room = Room.get_state(room_pid)
 
+    Logger.info("Created room #{room.id}")
+
     :ets.insert(:rooms, {room.id, room_pid})
 
     {:reply, {:ok, room}, %{state | rooms: Map.put(state.rooms, room.id, room_pid)}}
@@ -63,6 +68,9 @@ defmodule Jellyfish.RoomService do
   def handle_call({:delete_room, room_id}, _from, state) when is_map_key(state.rooms, room_id) do
     state = Map.delete(state, room_id)
     :ets.delete(:rooms, room_id)
+
+    Logger.info("Deleted room #{room_id}")
+
     {:reply, :ok, state}
   end
 
