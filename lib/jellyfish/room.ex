@@ -105,7 +105,7 @@ defmodule Jellyfish.Room do
         options = %{engine_pid: state.engine_pid, network_options: state.network_options}
         peer = Peer.new(peer_type, options)
         state = put_in(state, [:peers, peer.id], peer)
-        :ok = Engine.add_endpoint(state.engine_pid, peer.engine_endpoint, endpoint_id: peer.id)
+        :ok = Engine.add_endpoint(state.engine_pid, peer.engine_endpoint, peer_id: peer.id)
         {{:ok, peer}, state}
       end
 
