@@ -15,6 +15,10 @@ defmodule JellyfishWeb.SocketTest do
     {:ok, room_pid} = RoomService.find_room(room.id)
     {:ok, peer} = Room.add_peer(room_pid, WebRTC)
 
+    on_exit(fn ->
+      RoomService.delete_room(room.id)
+    end)
+
     %{room_id: room.id, peer_id: peer.id, room_pid: room_pid}
   end
 
