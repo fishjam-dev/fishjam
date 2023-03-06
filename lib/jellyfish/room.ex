@@ -103,8 +103,6 @@ defmodule Jellyfish.Room do
 
         Logger.info("Added peer #{inspect(peer.id)} to room #{inspect(state.id)}")
 
-        :ok = Engine.add_endpoint(state.engine_pid, peer.engine_endpoint, peer_id: peer.id)
-
         {{:ok, peer}, state}
       end
 
@@ -116,7 +114,7 @@ defmodule Jellyfish.Room do
     {reply, state} =
       case Map.fetch(state.peers, peer_id) do
         {:ok, peer} ->
-          :ok = Engine.add_endpoint(state.engine_pid, peer.engine_endpoint, endpoint_id: peer_id)
+          :ok = Engine.add_endpoint(state.engine_pid, peer.engine_endpoint, peer_id: peer_id)
 
           Process.monitor(socket_pid)
 

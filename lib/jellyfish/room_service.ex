@@ -21,6 +21,13 @@ defmodule Jellyfish.RoomService do
     end
   end
 
+  @spec list_rooms() :: [Room.t()]
+  def list_rooms() do
+    :rooms
+    |> :ets.tab2list()
+    |> Enum.map(fn {_id, room_pid} -> Room.get_state(room_pid) end)
+  end
+
   @spec create_room(Room.max_peers()) :: {:ok, Room.t()} | {:error, :bad_arg}
   def create_room(max_peers) do
     GenServer.call(__MODULE__, {:create_room, max_peers})
@@ -53,16 +60,6 @@ defmodule Jellyfish.RoomService do
   @impl true
   def handle_call({:create_room, _max_peers}, _from, state),
     do: {:reply, {:error, :bad_arg}, state}
-
-  @impl true
-  def handle_call(:list_rooms, _from, state) do
-    rooms =
-      Enum.map(state.rooms, fn {_room_id, room_pid} ->
-        Room.get_state(room_pid)
-      end)
-
-    {:reply, rooms, state}
-  end
 
   @impl true
   def handle_call({:delete_room, room_id}, _from, state) when is_map_key(state.rooms, room_id) do

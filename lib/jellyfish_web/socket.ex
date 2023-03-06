@@ -36,28 +36,28 @@ defmodule JellyfishWeb.Socket do
           "WebSocket connection for peer #{inspect(state.params["peer_id"])} in room #{inspect(state.params["room_id"])} already exists, rejected"
         )
 
-        :error
+        {:error, :already_connected}
 
       {:error, :room_not_found} ->
         Logger.warn(
           "Room #{inspect(state.params["room_id"])} not found, ignoring incoming WebSocket connection"
         )
 
-        :error
+        {:error, :room_not_found}
 
       {:error, :peer_not_found} ->
         Logger.warn(
           "Peer #{inspect(state.params["peer_id"])} not found in room #{inspect(state.params["room_id"])}, ignoring incoming WebSocket connection"
         )
 
-        :error
+        {:error, :peer_not_found}
 
       :error ->
         Logger.warn(
           "No room_id/peer_id in connection params, ignoring incoming WebSocket connection"
         )
 
-        :error
+        {:error, :no_params}
     end
   end
 
@@ -66,6 +66,7 @@ defmodule JellyfishWeb.Socket do
     with {:ok, room_pid} <- RoomService.find_room(state.room_id),
          :ok <- Room.set_peer_connected(room_pid, state.peer_id) do
     else
+      # these cases should not happen, if requirements were properly checked in `connect/1`
       {:error, :room_not_found} ->
         Logger.error(
           "Trying to connect signaling from non existent peer #{inspect(state.peer_id)}), room: #{inspect(state.room_id)}"
@@ -96,7 +97,7 @@ defmodule JellyfishWeb.Socket do
 
       {:error, %Jason.DecodeError{}} ->
         Logger.warn(
-          "Failed do decode message from peer #{inspect(state.peer_id)}, room: #{inspect(state.room_id)}"
+          "Failed to decode message from peer #{inspect(state.peer_id)}, room: #{inspect(state.room_id)}"
         )
 
       {:ok, %{"type" => type}} ->

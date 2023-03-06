@@ -8,9 +8,7 @@ defmodule JellyfishWeb.RoomController do
 
   def index(conn, _params) do
     rooms =
-      :rooms
-      |> :ets.tab2list()
-      |> Enum.map(fn {_id, room_pid} -> Room.get_state(room_pid) end)
+      RoomService.list_rooms()
       |> Enum.map(&maps_to_lists/1)
 
     conn
