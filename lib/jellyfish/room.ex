@@ -228,7 +228,7 @@ defmodule Jellyfish.Room do
   @impl true
   def handle_info(%Message.EndpointCrashed{endpoint_id: endpoint_id}, state) do
     Logger.error(
-      "RTC Engine endpoint associated with peer #{inspect(endpoint_id)} crashed, room: #{inspect(state.id)}"
+      "RTC Engine endpoint #{inspect(endpoint_id)} crashed, room: #{inspect(state.id)}"
     )
 
     with {:ok, peer} <- Map.fetch(state.peers, endpoint_id),

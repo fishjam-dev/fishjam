@@ -24,6 +24,7 @@ defmodule JellyfishWeb.Socket do
         state
         |> Map.put(:room_id, room_id)
         |> Map.put(:peer_id, peer_id)
+        |> Map.put(:room_pid, room_pid)
 
       Logger.info(
         "WebSocket connection from peer #{inspect(peer_id)} accepted, room #{inspect(room_id)}"
@@ -63,20 +64,9 @@ defmodule JellyfishWeb.Socket do
 
   @impl true
   def init(state) do
-    with {:ok, room_pid} <- RoomService.find_room(state.room_id),
-         :ok <- Room.set_peer_connected(room_pid, state.peer_id) do
-    else
-      # these cases should not happen, if requirements were properly checked in `connect/1`
-      {:error, :room_not_found} ->
-        Logger.error(
-          "Trying to connect signaling from non existent peer #{inspect(state.peer_id)}), room: #{inspect(state.room_id)}"
-        )
-
-      {:error, :peer_not_found} ->
-        Logger.error(
-          "Trying to connect signaling to non existent room #{inspect(state.room_id)})"
-        )
-    end
+    # everywhere else room_pid should be fetched with `RoomService.find_room/1`
+    {room_pid, state} = Map.pop(state, :room_pid)
+    Room.set_peer_connected(room_pid, state.peer_id)
 
     {:ok, state}
   end
