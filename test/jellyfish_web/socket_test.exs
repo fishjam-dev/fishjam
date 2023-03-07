@@ -60,34 +60,43 @@ defmodule JellyfishWeb.SocketTest do
 
   describe "receiving messages from client" do
     test "when message is valid Media Event", %{
+      room_id: room_id,
       room_pid: room_pid,
       peer_id: peer_id
     } do
       :erlang.trace(room_pid, true, [:receive])
 
       json = Jason.encode!(%{"type" => "mediaEvent", "data" => @data})
-      send_from_client(json, room_pid, peer_id)
+      send_from_client(json, room_pid, peer_id, room_id)
 
       # check if room process received the media event
       assert_receive {:trace, ^room_pid, :receive, {:media_event, ^peer_id, _data}}
     end
 
-    test "when message is not a json", %{room_pid: room_pid, peer_id: peer_id} do
-      assert capture_log(fn -> send_from_client("notajson", room_pid, peer_id) end) =~
+    test "when message is not a json", %{room_pid: room_pid, peer_id: peer_id, room_id: room_id} do
+      assert capture_log(fn -> send_from_client("notajson", room_pid, peer_id, room_id) end) =~
                "Failed to decode message"
     end
 
-    test "when message type is unexpected", %{room_pid: room_pid, peer_id: peer_id} do
+    test "when message type is unexpected", %{
+      room_pid: room_pid,
+      peer_id: peer_id,
+      room_id: room_id
+    } do
       json = Jason.encode!(%{"type" => 34})
 
-      assert capture_log(fn -> send_from_client(json, room_pid, peer_id) end) =~
+      assert capture_log(fn -> send_from_client(json, room_pid, peer_id, room_id) end) =~
                "Received message with unexpected type"
     end
 
-    test "when message has invalid structure", %{room_pid: room_pid, peer_id: peer_id} do
+    test "when message has invalid structure", %{
+      room_pid: room_pid,
+      peer_id: peer_id,
+      room_id: room_id
+    } do
       json = Jason.encode!(%{"notatype" => 45})
 
-      assert capture_log(fn -> send_from_client(json, room_pid, peer_id) end) =~
+      assert capture_log(fn -> send_from_client(json, room_pid, peer_id, room_id) end) =~
                "Received message with invalid structure"
     end
   end
@@ -121,8 +130,12 @@ defmodule JellyfishWeb.SocketTest do
     end
   end
 
-  defp send_from_client(message, room_pid, peer_id) do
-    Socket.handle_in({message, [opcode: :text]}, %{room_pid: room_pid, peer_id: peer_id})
+  defp send_from_client(message, room_pid, peer_id, room_id) do
+    Socket.handle_in({message, [opcode: :text]}, %{
+      room_pid: room_pid,
+      peer_id: peer_id,
+      room_id: room_id
+    })
   end
 
   defp send_from_server(message), do: Socket.handle_info(message, %{})
