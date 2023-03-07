@@ -74,5 +74,5 @@ No matter who generates the tokens, effort from the user comes to passing the to
 
 We will be using **JF** to generate tokens, as it makes it easier to maintain (we don't need to implement token generation in all of our SDKs) and we keep all of the logic responsible for generation and validation together.
 Also, **BE** authentication might not be very difficult: they may just share a common secret and use it directly to authenticate (e.g. via HTTP authorization request header), especially when **JF** and **BE** are in the same internal
-network, which will be a common case. Using **BE** to generate tokens could also complicate things when using more than one instance of **JF** and make it harder to scale and make modifications related to tokens (need to redeploy
+network, which will be a common case. Using **BE** to generate tokens could also make it harder to scale and make modifications related to tokens (need to redeploy
 both **JF** and **BE** in such case).
