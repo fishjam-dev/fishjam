@@ -1,8 +1,8 @@
 # Server notifications
 
-Client SDKs communicate with Jellyfish using so called Media Events (ME), which are messages exchanged using Websockets.
+Client SDKs communicate with Jellyfish using so called Control Messages (CM), which are messages exchanged using Websockets.
 
-A few examples when Media events are sent:
+A few examples when Control Messages are sent:
 * `join` - sent when peer joins WebRTC room
 * `peerDenied` - sent if peer was rejected by server when joining to server
 * `tracksAdded` - sent when some tracks (video or audio) were added by a peer
@@ -18,11 +18,11 @@ In general we have two major options here:
 JSON has been used for a long time in [membrane_rtc_engine](https://github.com/jellyfish-dev/membrane_rtc_engine).
 
 This solution has several drawbacks:
-* there is no versioning so it’s hard to track which version of ME is used on the server side and which one on the client side
-* each client SDK has to implement type definitions, serialization and deserialization on its own. Adding new media events requires a lot of the same work in each client library
-* introducing changes in already existing ME is error-prone
+* there is no versioning so it’s hard to track which version of CM is used on the server side and which one on the client side
+* each client SDK has to implement type definitions, serialization and deserialization on its own. Adding new Control Message requires a lot of the same work in each client library
+* introducing changes in already existing CM is error-prone
 
-This renders JSON on it's own unsuitable for ME.
+This renders JSON on it's own unsuitable for CM.
 
 However, there are ways to harness JSON and make it easier to manage - both when it comes to versioning and generating code.
 
@@ -50,6 +50,10 @@ In Elixir, using [Absinthe](https://hexdocs.pm/absinthe/overview.html) (a GraphQ
 That means, that we would first create schema in Elixir and then generate types for each client SDK.
 
 Importantly, GraphQL allows for deprecating fields. When greater changes are introduced it might be easier to introduce new endpoint with newer API.
+
+Note, that the two operations for receiving and modyfing data defined by GraphQL - `query` and `mutation` usually use HTTP requests, however they can use websocket as well.
+By default real-time communication should use the third type - `subscripition`.
+Subscription is a websocket based communication between the server and a client, allowing the client to receive real-time updates on a topic.
 
 Features:
 - generating type specification from schema
@@ -122,3 +126,21 @@ for many languages, including Elixir.
 Features:
 - automatically-generated classes for multiple languages
 - built-in forward- and backward-compatibity
+
+
+## Conclusion
+
+Although there are a couple solution which would be feasible and could actually work, it seems that going with Protobufs is the sensible option.
+
+AsyncAPI and JsonSchema would be quite difficult to implement since we would have to create our own code generator, which then we would have to maintain.
+
+GraphQL in general could be useful in our case, however there are a couple issues which overall would probably cause us headaches:
+* No code generator for Elixir - we would have to implement schema using `Absinthe.Schema`. From Elixir code we could generate GraphQL Schema and use it for generating code in other languages.
+* No single code generator for all languages. This means we would have to find and integrate a separate code generator for each SDK. This may not be a problem for 2-3 SDK but would also likely discourage external developers from using Jellyfish.
+* Issues with maintaining signalling connection - so far we haven't found simple or non-hacky way of monitoring whether the client-server websocket connection is alive. Absinthe doesn't allow for access to the tcp socket.
+
+Overall it feels like our requirements are very specific in the context of GraphQL use-case and we would be be using it on the edge of what it was designed for in the first place. 
+
+The Protobufs are a much better fit our needs well and don't provide more than what we will use.
+They allow for code generation in multiple languages and forward and backward-compatiblity.
+We won't have trouble with websockets as we will handle them manually.
