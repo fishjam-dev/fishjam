@@ -11,10 +11,11 @@ defmodule Jellyfish.Peer do
     :type,
     :engine_endpoint
   ]
-  defstruct @enforce_keys
+  defstruct @enforce_keys ++ [status: :disconnected, socket_pid: nil]
 
   @type id :: String.t()
   @type peer :: WebRTC
+  @type status :: :connected | :disconnected
 
   @typedoc """
   This module contains:
@@ -23,12 +24,14 @@ defmodule Jellyfish.Peer do
   * `engine_endpoint` - rtc_engine endpoint for this peer
   """
   @type t :: %__MODULE__{
-          id: id,
-          type: peer,
+          id: id(),
+          type: peer(),
+          status: status(),
+          socket_pid: pid() | nil,
           engine_endpoint: Membrane.ChildrenSpec.child_definition_t()
         }
 
-  @spec parse_type(String.t()) :: {:ok, peer} | {:error, :invalid_type}
+  @spec parse_type(String.t()) :: {:ok, peer()} | {:error, :invalid_type}
   def parse_type(type) do
     case type do
       "webrtc" -> {:ok, WebRTC}
@@ -36,7 +39,7 @@ defmodule Jellyfish.Peer do
     end
   end
 
-  @spec new(peer, map) :: t
+  @spec new(peer(), map()) :: t()
   def new(type, options) do
     id = UUID.uuid4()
     options = Map.put(options, :peer_id, id)

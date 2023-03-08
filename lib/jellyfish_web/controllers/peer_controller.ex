@@ -23,7 +23,7 @@ defmodule JellyfishWeb.PeerController do
       {:error, :invalid_type} ->
         {:error, :bad_request, "Invalid peer type"}
 
-      {:error, :not_found} ->
+      {:error, :room_not_found} ->
         {:error, :not_found, "Room #{room_id} does not exist"}
 
       {:error, :reached_peers_limit} ->
@@ -36,7 +36,7 @@ defmodule JellyfishWeb.PeerController do
          :ok <- Room.remove_peer(room_pid, id) do
       send_resp(conn, :no_content, "")
     else
-      {:error, :not_found} -> {:error, :not_found, "Room #{room_id} does not exist"}
+      {:error, :room_not_found} -> {:error, :not_found, "Room #{room_id} does not exist"}
       {:error, :peer_not_found} -> {:error, :not_found, "Peer #{id} does not exist"}
     end
   end

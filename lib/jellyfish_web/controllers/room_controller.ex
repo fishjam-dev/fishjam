@@ -8,9 +8,7 @@ defmodule JellyfishWeb.RoomController do
 
   def index(conn, _params) do
     rooms =
-      :rooms
-      |> :ets.tab2list()
-      |> Enum.map(fn {_id, room_pid} -> Room.get_state(room_pid) end)
+      RoomService.list_rooms()
       |> Enum.map(&maps_to_lists/1)
 
     conn
@@ -42,7 +40,7 @@ defmodule JellyfishWeb.RoomController do
         |> put_resp_content_type("application/json")
         |> render("show.json", room: room)
 
-      {:error, :not_found} ->
+      {:error, :room_not_found} ->
         {:error, :not_found, "Room #{id} does not exist"}
     end
   end
@@ -52,7 +50,7 @@ defmodule JellyfishWeb.RoomController do
       :ok ->
         send_resp(conn, :no_content, "")
 
-      {:error, :not_found} ->
+      {:error, :room_not_found} ->
         {:error, :not_found, "Room #{id} doest not exist"}
     end
   end

@@ -4,22 +4,28 @@ defmodule Jellyfish.RoomService do
   """
 
   use GenServer
+
+  require Logger
+
   alias Jellyfish.Room
 
-  def start(init_arg, opts) do
-    GenServer.start(__MODULE__, init_arg, opts)
+  def start_link(args) do
+    GenServer.start_link(__MODULE__, args, name: __MODULE__)
   end
 
-  def start_link(opts) do
-    GenServer.start_link(__MODULE__, [], opts)
-  end
-
-  @spec find_room(String.t()) :: {:ok, pid} | {:error, :not_found}
+  @spec find_room(Room.id()) :: {:ok, pid()} | {:error, :room_not_found}
   def find_room(room_id) do
     case :ets.lookup(:rooms, room_id) do
       [{_room_id, room_pid} | _] -> {:ok, room_pid}
-      _not_found -> {:error, :not_found}
+      _not_found -> {:error, :room_not_found}
     end
+  end
+
+  @spec list_rooms() :: [Room.t()]
+  def list_rooms() do
+    :rooms
+    |> :ets.tab2list()
+    |> Enum.map(fn {_id, room_pid} -> Room.get_state(room_pid) end)
   end
 
   @spec create_room(Room.max_peers()) :: {:ok, Room.t()} | {:error, :bad_arg}
@@ -27,7 +33,7 @@ defmodule Jellyfish.RoomService do
     GenServer.call(__MODULE__, {:create_room, max_peers})
   end
 
-  @spec delete_room(String.t()) :: :ok | {:error, :not_found}
+  @spec delete_room(Room.id()) :: :ok | {:error, :room_not_found}
   def delete_room(room_id) do
     GenServer.call(__MODULE__, {:delete_room, room_id})
   end
@@ -41,8 +47,10 @@ defmodule Jellyfish.RoomService do
   @impl true
   def handle_call({:create_room, max_peers}, _from, state)
       when is_nil(max_peers) or is_number(max_peers) do
-    {:ok, room_pid} = GenServer.start_link(Room, max_peers)
+    {:ok, room_pid} = Room.start_link(max_peers)
     room = Room.get_state(room_pid)
+
+    Logger.info("Created room #{inspect(room.id)}")
 
     :ets.insert(:rooms, {room.id, room_pid})
 
@@ -54,24 +62,17 @@ defmodule Jellyfish.RoomService do
     do: {:reply, {:error, :bad_arg}, state}
 
   @impl true
-  def handle_call(:list_rooms, _from, state) do
-    rooms =
-      Enum.map(state.rooms, fn {_room_id, room_pid} ->
-        Room.get_state(room_pid)
-      end)
-
-    {:reply, rooms, state}
-  end
-
-  @impl true
   def handle_call({:delete_room, room_id}, _from, state) when is_map_key(state.rooms, room_id) do
     state = Map.delete(state, room_id)
     :ets.delete(:rooms, room_id)
+
+    Logger.info("Deleted room #{inspect(room_id)}")
+
     {:reply, :ok, state}
   end
 
   @impl true
   def handle_call({:delete_room, _room_id}, _from, state) do
-    {:reply, {:error, :not_found}, state}
+    {:reply, {:error, :room_not_found}, state}
   end
 end

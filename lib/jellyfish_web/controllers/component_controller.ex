@@ -20,7 +20,7 @@ defmodule JellyfishWeb.ComponentController do
     else
       :error -> {:error, :bad_request, "Invalid request body structure"}
       {:error, :invalid_type} -> {:error, :bad_request, "Invalid component type"}
-      {:error, :not_found} -> {:error, :not_found, "Room #{room_id} does not exist"}
+      {:error, :room_not_found} -> {:error, :not_found, "Room #{room_id} does not exist"}
     end
   end
 
@@ -29,7 +29,7 @@ defmodule JellyfishWeb.ComponentController do
          :ok <- Room.remove_component(room_pid, id) do
       send_resp(conn, :no_content, "")
     else
-      {:error, :not_found} -> {:error, :not_found, "Room #{room_id} does not exist"}
+      {:error, :room_not_found} -> {:error, :not_found, "Room #{room_id} does not exist"}
       {:error, :component_not_found} -> {:error, :not_found, "Component #{id} does not exist"}
     end
   end

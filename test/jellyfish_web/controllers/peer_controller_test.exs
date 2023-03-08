@@ -24,7 +24,7 @@ defmodule JellyfishWeb.PeerControllerTest do
 
       assert %{
                "id" => ^room_id,
-               "peers" => [%{"id" => ^id, "type" => @peer_type}]
+               "peers" => [%{"id" => ^id, "type" => @peer_type, "status" => "disconnected"}]
              } = json_response(conn, :ok)["data"]
     end
 

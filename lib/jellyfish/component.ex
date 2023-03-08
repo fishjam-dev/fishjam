@@ -25,12 +25,12 @@ defmodule Jellyfish.Component do
   * `engine_endpoint` - engine endpoint for this component
   """
   @type t :: %__MODULE__{
-          id: id,
-          type: component,
+          id: id(),
+          type: component(),
           engine_endpoint: Membrane.ChildrenSpec.child_definition_t()
         }
 
-  @spec parse_type(String.t()) :: {:ok, component} | {:error, :invalid_type}
+  @spec parse_type(String.t()) :: {:ok, component()} | {:error, :invalid_type}
   def parse_type(type) do
     case type do
       "hls" -> {:ok, HLS}
@@ -38,7 +38,7 @@ defmodule Jellyfish.Component do
     end
   end
 
-  @spec new(component, map) :: t
+  @spec new(component(), map()) :: t()
   def new(type, options) do
     %__MODULE__{
       id: UUID.uuid4(),

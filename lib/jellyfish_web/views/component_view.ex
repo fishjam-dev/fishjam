@@ -3,10 +3,6 @@ defmodule JellyfishWeb.ComponentView do
 
   alias Jellyfish.Component.HLS
 
-  def render("index.json", %{component: component}) do
-    %{data: render_many(component, __MODULE__, "component.json")}
-  end
-
   def render("show.json", %{component: component}) do
     %{data: render_one(component, __MODULE__, "component.json")}
   end
