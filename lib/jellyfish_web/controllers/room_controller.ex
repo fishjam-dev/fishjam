@@ -24,7 +24,7 @@ defmodule JellyfishWeb.RoomController do
       |> put_status(:created)
       |> render("show.json", room: room)
     else
-      {:error, :bad_arg} -> {:error, :unprocessable_entity, "maxPeers must be a number"}
+      {:error, :bad_arg} -> {:error, :bad_request, "maxPeers must be a number"}
     end
   end
 

@@ -46,7 +46,7 @@ defmodule Jellyfish.RoomService do
 
   @impl true
   def handle_call({:create_room, max_peers}, _from, state)
-      when is_nil(max_peers) or is_number(max_peers) do
+      when is_nil(max_peers) or (is_integer(max_peers) and max_peers >= 0) do
     {:ok, room_pid} = Room.start_link(max_peers)
     room = Room.get_state(room_pid)
 
