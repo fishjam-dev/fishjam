@@ -1,11 +1,58 @@
 defmodule JellyfishWeb.ComponentController do
   use JellyfishWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias Jellyfish.Component
   alias Jellyfish.Room
   alias Jellyfish.RoomService
+  alias JellyfishWeb.ApiSpec
+  alias OpenApiSpex.{Response, Schema}
 
   action_fallback JellyfishWeb.FallbackController
+
+  operation :create,
+    summary: "Creates the component and adds it to the room",
+    parameters: [
+      room_id: [
+        in: :path,
+        type: :string,
+        description: "Room ID"
+      ]
+    ],
+    request_body:
+      {"Component config", "application/json",
+       %Schema{
+         type: :object,
+         properties: %{
+           options: ApiSpec.Component.Options,
+           type: ApiSpec.Component.Type
+         },
+         required: [:type]
+       }},
+    responses: [
+      created: {"Successfully added component", "application/json", ApiSpec.Component},
+      bad_request: %Response{description: "Invalid request"},
+      not_found: %Response{description: "Room doesn't exist"}
+    ]
+
+  operation :delete,
+    summary: "Delete the component from the room",
+    parameters: [
+      room_id: [
+        in: :path,
+        type: :string,
+        description: "Room ID"
+      ],
+      id: [
+        in: :path,
+        type: :string,
+        description: "Component ID"
+      ]
+    ],
+    responses: [
+      no_content: %Response{description: "Successfully deleted"},
+      not_found: %Response{description: "Either component or the room doesn't exist"}
+    ]
 
   def create(conn, %{"room_id" => room_id} = params) do
     with component_options <- Map.get(params, "options"),

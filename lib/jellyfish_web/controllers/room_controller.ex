@@ -1,10 +1,60 @@
 defmodule JellyfishWeb.RoomController do
   use JellyfishWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias Jellyfish.Room
   alias Jellyfish.RoomService
+  alias JellyfishWeb.ApiSpec
+  alias OpenApiSpex.{Response, Schema}
 
   action_fallback JellyfishWeb.FallbackController
+
+  operation :index,
+    summary: "Show information about all rooms",
+    responses: [
+      ok:
+        {"Success", "application/json",
+         %Schema{
+           type: :array,
+           items: ApiSpec.Room
+         }}
+    ]
+
+  operation :create,
+    summary: "Creates a room",
+    request_body: {"Room configuration", "application/json", ApiSpec.Room.Config},
+    responses: [
+      created: {"Room successfully created", "application/json", ApiSpec.Room},
+      bad_request: %Response{description: "Invalid request structure"}
+    ]
+
+  operation :show,
+    summary: "Shows information about the room",
+    parameters: [
+      room_id: [
+        in: :path,
+        description: "Room ID",
+        type: :string
+      ]
+    ],
+    responses: [
+      ok: {"Success", "application/json", ApiSpec.Room},
+      not_found: %Response{description: "Room doesn't exist"}
+    ]
+
+  operation :delete,
+    summary: "Delete the room",
+    parameters: [
+      room_id: [
+        in: :path,
+        type: :string,
+        description: "Room id"
+      ]
+    ],
+    responses: [
+      no_content: %Response{description: "Successfully deleted room"},
+      not_found: %Response{description: "Room doesn't exist"}
+    ]
 
   def index(conn, _params) do
     rooms =

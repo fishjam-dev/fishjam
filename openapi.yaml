@@ -1,0 +1,298 @@
+---
+components:
+  responses: {}
+  schemas:
+    Component:
+      description: Describes component
+      properties:
+        id:
+          description: Assigned component id
+          example: component-1
+          type: string
+        type:
+          $ref: '#/components/schemas/ComponentType'
+      title: Component
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component
+    ComponentOptions:
+      description: Component-specific options
+      example:
+        output_path: /hls-output
+      title: ComponentOptions
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Options
+    ComponentType:
+      description: Component type
+      example: hls
+      title: ComponentType
+      type: string
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Type
+    Peer:
+      description: Describes peer status
+      properties:
+        id:
+          description: Assigned peer id
+          example: peer-1
+          type: string
+        status:
+          $ref: '#/components/schemas/PeerStatus'
+        type:
+          $ref: '#/components/schemas/PeerType'
+      title: Peer
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer
+    PeerStatus:
+      description: Informs about the peer status
+      enum:
+        - connected
+        - disconnected
+      example: disconnected
+      title: PeerStatus
+      type: string
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.Status
+    PeerType:
+      description: Peer type
+      example: webrtc
+      title: PeerType
+      type: string
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.Type
+    Room:
+      description: Description of the room state
+      properties:
+        components:
+          items:
+            $ref: '#/components/schemas/Component'
+          type: array
+        config:
+          $ref: '#/components/schemas/RoomConfig'
+        id:
+          description: Room ID
+          example: room-1
+          type: string
+        peers:
+          items:
+            $ref: '#/components/schemas/Peer'
+          type: array
+      title: Room
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Room
+    RoomConfig:
+      description: Room configuration
+      properties:
+        maxPeers:
+          description: Maximum amount of peers allowed into the room
+          example: 10
+          minimum: 1
+          type: integer
+      title: RoomConfig
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Room.Config
+info:
+  title: Jellyfish Media Server
+  version: 0.1.0
+openapi: 3.0.0
+paths:
+  /room:
+    get:
+      callbacks: {}
+      operationId: JellyfishWeb.RoomController.index
+      parameters: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Room'
+                type: array
+          description: Success
+      summary: Show information about all rooms
+      tags: []
+    post:
+      callbacks: {}
+      operationId: JellyfishWeb.RoomController.create
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoomConfig'
+        description: Room configuration
+        required: false
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+          description: Room successfully created
+        '400':
+          description: Invalid request structure
+      summary: Creates a room
+      tags: []
+  /room/{room_id}:
+    delete:
+      callbacks: {}
+      operationId: JellyfishWeb.RoomController.delete
+      parameters:
+        - description: Room id
+          in: path
+          name: room_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Successfully deleted room
+        '404':
+          description: Room doesn't exist
+      summary: Delete the room
+      tags: []
+    get:
+      callbacks: {}
+      operationId: JellyfishWeb.RoomController.show
+      parameters:
+        - description: Room ID
+          in: path
+          name: room_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+          description: Success
+        '404':
+          description: Room doesn't exist
+      summary: Shows information about the room
+      tags: []
+  /room/{room_id}/component:
+    post:
+      callbacks: {}
+      operationId: JellyfishWeb.ComponentController.create
+      parameters:
+        - description: Room ID
+          in: path
+          name: room_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                options:
+                  $ref: '#/components/schemas/ComponentOptions'
+                type:
+                  $ref: '#/components/schemas/ComponentType'
+              required:
+                - type
+              type: object
+        description: Component config
+        required: false
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Component'
+          description: Successfully added component
+        '400':
+          description: Invalid request
+        '404':
+          description: Room doesn't exist
+      summary: Creates the component and adds it to the room
+      tags: []
+  /room/{room_id}/component/{id}:
+    delete:
+      callbacks: {}
+      operationId: JellyfishWeb.ComponentController.delete
+      parameters:
+        - description: Room ID
+          in: path
+          name: room_id
+          required: true
+          schema:
+            type: string
+        - description: Component ID
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Successfully deleted
+        '404':
+          description: Either component or the room doesn't exist
+      summary: Delete the component from the room
+      tags: []
+  /room/{room_id}/peer:
+    post:
+      callbacks: {}
+      operationId: JellyfishWeb.PeerController.create
+      parameters:
+        - description: Room id
+          in: path
+          name: room_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                type:
+                  $ref: '#/components/schemas/PeerType'
+              required:
+                - type
+              type: object
+        description: Peer specification
+        required: false
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Peer'
+          description: Peer successfully created
+        '400':
+          description: Invalid request body structure
+        '404':
+          description: Room doesn't exist
+        '503':
+          description: Peer limit has been reached
+      summary: Create peer
+      tags: []
+  /room/{room_id}/peer/{id}:
+    delete:
+      callbacks: {}
+      operationId: JellyfishWeb.PeerController.delete
+      parameters:
+        - description: Room ID
+          in: path
+          name: room_id
+          required: true
+          schema:
+            type: string
+        - description: Peer id
+          in: path
+          name: peer_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Peer successfully deleted
+        '404':
+          description: Room ID or Peer ID references a resource that doesn't exist
+      summary: Delete peer
+      tags: []
+security: []
+servers: []
+tags: []
