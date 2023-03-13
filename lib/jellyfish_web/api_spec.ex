@@ -20,17 +20,11 @@ defmodule JellyfishWeb.ApiSpec do
 
   @spec data(String.t(), Schema.t()) :: {String.t(), String.t(), Schema.t()}
   def data(description, schema) do
-    {description, "application/json", %Schema{type: :object, properties: %{data: schema}}}
+    {description, "application/json", schema}
   end
 
   @spec error(String.t()) :: {String.t(), String.t(), Schema.t()}
   def error(description) do
-    {description, "application/json",
-     %Schema{
-       type: :object,
-       properties: %{
-         errors: %Schema{type: :string, description: "Error details", example: description}
-       }
-     }}
+    {description, "application/json", JellyfishWeb.ApiSpec.Error}
   end
 end

@@ -5,21 +5,21 @@ defmodule JellyfishWeb.RoomController do
   alias Jellyfish.Room
   alias Jellyfish.RoomService
   alias JellyfishWeb.ApiSpec
-  alias OpenApiSpex.{Response, Schema}
+  alias OpenApiSpex.Response
 
   action_fallback JellyfishWeb.FallbackController
 
   operation :index,
     summary: "Show information about all rooms",
     responses: [
-      ok: ApiSpec.data("Success", %Schema{type: :array, items: ApiSpec.Room})
+      ok: ApiSpec.data("Success", ApiSpec.RoomsListingResponse)
     ]
 
   operation :create,
     summary: "Creates a room",
     request_body: {"Room configuration", "application/json", ApiSpec.Room.Config},
     responses: [
-      created: ApiSpec.data("Room successfully created", ApiSpec.Room),
+      created: ApiSpec.data("Room successfully created", ApiSpec.RoomDetailsResponse),
       bad_request: ApiSpec.error("Invalid request structure")
     ]
 
@@ -33,7 +33,7 @@ defmodule JellyfishWeb.RoomController do
       ]
     ],
     responses: [
-      ok: ApiSpec.data("Success", ApiSpec.Room),
+      ok: ApiSpec.data("Success", ApiSpec.RoomDetailsResponse),
       not_found: ApiSpec.error("Room doesn't exist")
     ]
 

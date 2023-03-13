@@ -30,7 +30,7 @@ defmodule JellyfishWeb.ComponentController do
          required: [:type]
        }},
     responses: [
-      created: ApiSpec.data("Successfully added component", ApiSpec.Component),
+      created: ApiSpec.data("Successfully added component", ApiSpec.ComponentDetailsResponse),
       bad_request: ApiSpec.error("Invalid request"),
       not_found: ApiSpec.error("Room doesn't exist")
     ]

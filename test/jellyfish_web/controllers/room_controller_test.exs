@@ -1,16 +1,24 @@
 defmodule JellyfishWeb.RoomControllerTest do
   use JellyfishWeb.ConnCase
 
+  import OpenApiSpex.TestAssertions
+
+  @schema JellyfishWeb.ApiSpec.spec()
+
   setup %{conn: conn} do
     on_exit(fn -> delete_all_rooms(conn) end)
 
-    {:ok, conn: put_req_header(conn, "accept", "application/json")}
+    []
   end
 
   describe "index" do
     test "lists all rooms", %{conn: conn} do
+      conn = post(conn, Routes.room_path(conn, :create), maxPeers: 10)
       conn = get(conn, Routes.room_path(conn, :index))
-      assert json_response(conn, :ok)["data"] == []
+      response = json_response(conn, :ok)
+      assert_response_schema(response, "RoomsListingResponse", @schema)
+
+      assert length(response["data"]) == 1
     end
   end
 
@@ -20,13 +28,15 @@ defmodule JellyfishWeb.RoomControllerTest do
       assert %{"id" => id} = json_response(conn, :created)["data"]
 
       conn = get(conn, Routes.room_path(conn, :show, id))
+      response = json_response(conn, :ok)
+      assert_response_schema(response, "RoomDetailsResponse", @schema)
 
       assert %{
                "id" => ^id,
                "config" => %{"maxPeers" => 10},
                "components" => [],
                "peers" => []
-             } = json_response(conn, :ok)["data"]
+             } = response["data"]
     end
 
     test "renders room when max_peers isn't present", %{conn: conn} do
@@ -34,13 +44,15 @@ defmodule JellyfishWeb.RoomControllerTest do
       assert %{"id" => id} = json_response(conn, :created)["data"]
 
       conn = get(conn, Routes.room_path(conn, :show, id))
+      response = json_response(conn, :ok)
+      assert_response_schema(response, "RoomDetailsResponse", @schema)
 
       assert %{
                "id" => ^id,
-               "config" => %{"maxPeers" => nil},
+               "config" => %{},
                "components" => [],
                "peers" => []
-             } = json_response(conn, :ok)["data"]
+             } = response["data"]
     end
 
     test "renders errors when data is invalid", %{conn: conn} do

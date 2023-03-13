@@ -14,6 +14,16 @@ components:
       title: Component
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component
+    ComponentDetailsResponse:
+      description: Response containing component details
+      properties:
+        data:
+          $ref: '#/components/schemas/Component'
+      required:
+        - data
+      title: ComponentDetailsResponse
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.ComponentDetailsResponse
     ComponentOptions:
       description: Component-specific options
       example:
@@ -27,6 +37,16 @@ components:
       title: ComponentType
       type: string
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Type
+    Error:
+      description: Error message
+      properties:
+        errors:
+          description: Error details
+          example: error details
+          type: string
+      title: Error
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Error
     Peer:
       description: Describes peer status
       properties:
@@ -41,6 +61,16 @@ components:
       title: Peer
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Peer
+    PeerDetailsResponse:
+      description: Response containing peer details
+      properties:
+        data:
+          $ref: '#/components/schemas/Peer'
+      required:
+        - data
+      title: PeerDetailsResponse
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.PeerDetailsResponse
     PeerStatus:
       description: Informs about the peer status
       enum:
@@ -87,6 +117,28 @@ components:
       title: RoomConfig
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Room.Config
+    RoomDetailsResponse:
+      description: Response containing room details
+      properties:
+        data:
+          $ref: '#/components/schemas/Room'
+      required:
+        - data
+      title: RoomDetailsResponse
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.RoomDetailsResponse
+    RoomsListingResponse:
+      description: Response containing list of all rooms
+      properties:
+        data:
+          items:
+            $ref: '#/components/schemas/Room'
+          type: array
+      required:
+        - data
+      title: RoomsListingResponse
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.RoomsListingResponse
 info:
   title: Jellyfish Media Server
   version: 0.1.0
@@ -102,12 +154,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  data:
-                    items:
-                      $ref: '#/components/schemas/Room'
-                    type: array
-                type: object
+                $ref: '#/components/schemas/RoomsListingResponse'
           description: Success
       summary: Show information about all rooms
       tags: []
@@ -127,21 +174,13 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  data:
-                    $ref: '#/components/schemas/Room'
-                type: object
+                $ref: '#/components/schemas/RoomDetailsResponse'
           description: Room successfully created
         '400':
           content:
             application/json:
               schema:
-                properties:
-                  errors:
-                    description: Error details
-                    example: Invalid request structure
-                    type: string
-                type: object
+                $ref: '#/components/schemas/Error'
           description: Invalid request structure
       summary: Creates a room
       tags: []
@@ -163,12 +202,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  errors:
-                    description: Error details
-                    example: Room doesn't exist
-                    type: string
-                type: object
+                $ref: '#/components/schemas/Error'
           description: Room doesn't exist
       summary: Delete the room
       tags: []
@@ -187,21 +221,13 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  data:
-                    $ref: '#/components/schemas/Room'
-                type: object
+                $ref: '#/components/schemas/RoomDetailsResponse'
           description: Success
         '404':
           content:
             application/json:
               schema:
-                properties:
-                  errors:
-                    description: Error details
-                    example: Room doesn't exist
-                    type: string
-                type: object
+                $ref: '#/components/schemas/Error'
           description: Room doesn't exist
       summary: Shows information about the room
       tags: []
@@ -235,32 +261,19 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  data:
-                    $ref: '#/components/schemas/Component'
-                type: object
+                $ref: '#/components/schemas/ComponentDetailsResponse'
           description: Successfully added component
         '400':
           content:
             application/json:
               schema:
-                properties:
-                  errors:
-                    description: Error details
-                    example: Invalid request
-                    type: string
-                type: object
+                $ref: '#/components/schemas/Error'
           description: Invalid request
         '404':
           content:
             application/json:
               schema:
-                properties:
-                  errors:
-                    description: Error details
-                    example: Room doesn't exist
-                    type: string
-                type: object
+                $ref: '#/components/schemas/Error'
           description: Room doesn't exist
       summary: Creates the component and adds it to the room
       tags: []
@@ -288,12 +301,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  errors:
-                    description: Error details
-                    example: Either component or the room doesn't exist
-                    type: string
-                type: object
+                $ref: '#/components/schemas/Error'
           description: Either component or the room doesn't exist
       summary: Delete the component from the room
       tags: []
@@ -325,43 +333,25 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  data:
-                    $ref: '#/components/schemas/Peer'
-                type: object
+                $ref: '#/components/schemas/PeerDetailsResponse'
           description: Peer successfully created
         '400':
           content:
             application/json:
               schema:
-                properties:
-                  errors:
-                    description: Error details
-                    example: Invalid request body structure
-                    type: string
-                type: object
+                $ref: '#/components/schemas/Error'
           description: Invalid request body structure
         '404':
           content:
             application/json:
               schema:
-                properties:
-                  errors:
-                    description: Error details
-                    example: Room doesn't exist
-                    type: string
-                type: object
+                $ref: '#/components/schemas/Error'
           description: Room doesn't exist
         '503':
           content:
             application/json:
               schema:
-                properties:
-                  errors:
-                    description: Error details
-                    example: Peer limit has been reached
-                    type: string
-                type: object
+                $ref: '#/components/schemas/Error'
           description: Peer limit has been reached
       summary: Create peer
       tags: []
@@ -389,12 +379,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  errors:
-                    description: Error details
-                    example: Room ID or Peer ID references a resource that doesn't exist
-                    type: string
-                type: object
+                $ref: '#/components/schemas/Error'
           description: Room ID or Peer ID references a resource that doesn't exist
       summary: Delete peer
       tags: []
