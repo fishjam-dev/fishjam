@@ -12,20 +12,15 @@ defmodule JellyfishWeb.RoomController do
   operation :index,
     summary: "Show information about all rooms",
     responses: [
-      ok:
-        {"Success", "application/json",
-         %Schema{
-           type: :array,
-           items: ApiSpec.Room
-         }}
+      ok: ApiSpec.data("Success", %Schema{type: :array, items: ApiSpec.Room})
     ]
 
   operation :create,
     summary: "Creates a room",
     request_body: {"Room configuration", "application/json", ApiSpec.Room.Config},
     responses: [
-      created: {"Room successfully created", "application/json", ApiSpec.Room},
-      bad_request: %Response{description: "Invalid request structure"}
+      created: ApiSpec.data("Room successfully created", ApiSpec.Room),
+      bad_request: ApiSpec.error("Invalid request structure")
     ]
 
   operation :show,
@@ -38,8 +33,8 @@ defmodule JellyfishWeb.RoomController do
       ]
     ],
     responses: [
-      ok: {"Success", "application/json", ApiSpec.Room},
-      not_found: %Response{description: "Room doesn't exist"}
+      ok: ApiSpec.data("Success", ApiSpec.Room),
+      not_found: ApiSpec.error("Room doesn't exist")
     ]
 
   operation :delete,
@@ -53,7 +48,7 @@ defmodule JellyfishWeb.RoomController do
     ],
     responses: [
       no_content: %Response{description: "Successfully deleted room"},
-      not_found: %Response{description: "Room doesn't exist"}
+      not_found: ApiSpec.error("Room doesn't exist")
     ]
 
   def index(conn, _params) do

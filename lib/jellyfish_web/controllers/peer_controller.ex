@@ -29,10 +29,10 @@ defmodule JellyfishWeb.PeerController do
          required: [:type]
        }},
     responses: [
-      created: {"Peer successfully created", "application/json", ApiSpec.Peer},
-      bad_request: %Response{description: "Invalid request body structure"},
-      not_found: %Response{description: "Room doesn't exist"},
-      service_unavailable: %Response{description: "Peer limit has been reached"}
+      created: ApiSpec.data("Peer successfully created", ApiSpec.Peer),
+      bad_request: ApiSpec.error("Invalid request body structure"),
+      not_found: ApiSpec.error("Room doesn't exist"),
+      service_unavailable: ApiSpec.error("Peer limit has been reached")
     ]
 
   operation :delete,
@@ -51,9 +51,7 @@ defmodule JellyfishWeb.PeerController do
     ],
     responses: [
       no_content: %Response{description: "Peer successfully deleted"},
-      not_found: %Response{
-        description: "Room ID or Peer ID references a resource that doesn't exist"
-      }
+      not_found: ApiSpec.error("Room ID or Peer ID references a resource that doesn't exist")
     ]
 
   def create(conn, %{"room_id" => room_id} = params) do

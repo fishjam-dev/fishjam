@@ -30,9 +30,9 @@ defmodule JellyfishWeb.ComponentController do
          required: [:type]
        }},
     responses: [
-      created: {"Successfully added component", "application/json", ApiSpec.Component},
-      bad_request: %Response{description: "Invalid request"},
-      not_found: %Response{description: "Room doesn't exist"}
+      created: ApiSpec.data("Successfully added component", ApiSpec.Component),
+      bad_request: ApiSpec.error("Invalid request"),
+      not_found: ApiSpec.error("Room doesn't exist")
     ]
 
   operation :delete,
@@ -51,7 +51,7 @@ defmodule JellyfishWeb.ComponentController do
     ],
     responses: [
       no_content: %Response{description: "Successfully deleted"},
-      not_found: %Response{description: "Either component or the room doesn't exist"}
+      not_found: ApiSpec.error("Either component or the room doesn't exist")
     ]
 
   def create(conn, %{"room_id" => room_id} = params) do

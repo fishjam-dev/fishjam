@@ -2,7 +2,7 @@ defmodule JellyfishWeb.ApiSpec do
   @moduledoc false
   @behaviour OpenApiSpex.OpenApi
 
-  alias OpenApiSpex.{Info, Paths}
+  alias OpenApiSpex.{Info, Paths, Schema}
 
   # OpenAPISpex master specification
 
@@ -16,5 +16,21 @@ defmodule JellyfishWeb.ApiSpec do
       paths: Paths.from_router(JellyfishWeb.Router)
     }
     |> OpenApiSpex.resolve_schema_modules()
+  end
+
+  @spec data(String.t(), Schema.t()) :: {String.t(), String.t(), Schema.t()}
+  def data(description, schema) do
+    {description, "application/json", %Schema{type: :object, properties: %{data: schema}}}
+  end
+
+  @spec error(String.t()) :: {String.t(), String.t(), Schema.t()}
+  def error(description) do
+    {description, "application/json",
+     %Schema{
+       type: :object,
+       properties: %{
+         errors: %Schema{type: :string, description: "Error details", example: description}
+       }
+     }}
   end
 end

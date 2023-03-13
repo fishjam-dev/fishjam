@@ -102,9 +102,12 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/Room'
-                type: array
+                properties:
+                  data:
+                    items:
+                      $ref: '#/components/schemas/Room'
+                    type: array
+                type: object
           description: Success
       summary: Show information about all rooms
       tags: []
@@ -124,9 +127,21 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Room'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Room'
+                type: object
           description: Room successfully created
         '400':
+          content:
+            application/json:
+              schema:
+                properties:
+                  errors:
+                    description: Error details
+                    example: Invalid request structure
+                    type: string
+                type: object
           description: Invalid request structure
       summary: Creates a room
       tags: []
@@ -145,6 +160,15 @@ paths:
         '204':
           description: Successfully deleted room
         '404':
+          content:
+            application/json:
+              schema:
+                properties:
+                  errors:
+                    description: Error details
+                    example: Room doesn't exist
+                    type: string
+                type: object
           description: Room doesn't exist
       summary: Delete the room
       tags: []
@@ -163,9 +187,21 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Room'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Room'
+                type: object
           description: Success
         '404':
+          content:
+            application/json:
+              schema:
+                properties:
+                  errors:
+                    description: Error details
+                    example: Room doesn't exist
+                    type: string
+                type: object
           description: Room doesn't exist
       summary: Shows information about the room
       tags: []
@@ -199,11 +235,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Component'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Component'
+                type: object
           description: Successfully added component
         '400':
+          content:
+            application/json:
+              schema:
+                properties:
+                  errors:
+                    description: Error details
+                    example: Invalid request
+                    type: string
+                type: object
           description: Invalid request
         '404':
+          content:
+            application/json:
+              schema:
+                properties:
+                  errors:
+                    description: Error details
+                    example: Room doesn't exist
+                    type: string
+                type: object
           description: Room doesn't exist
       summary: Creates the component and adds it to the room
       tags: []
@@ -228,6 +285,15 @@ paths:
         '204':
           description: Successfully deleted
         '404':
+          content:
+            application/json:
+              schema:
+                properties:
+                  errors:
+                    description: Error details
+                    example: Either component or the room doesn't exist
+                    type: string
+                type: object
           description: Either component or the room doesn't exist
       summary: Delete the component from the room
       tags: []
@@ -259,13 +325,43 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Peer'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Peer'
+                type: object
           description: Peer successfully created
         '400':
+          content:
+            application/json:
+              schema:
+                properties:
+                  errors:
+                    description: Error details
+                    example: Invalid request body structure
+                    type: string
+                type: object
           description: Invalid request body structure
         '404':
+          content:
+            application/json:
+              schema:
+                properties:
+                  errors:
+                    description: Error details
+                    example: Room doesn't exist
+                    type: string
+                type: object
           description: Room doesn't exist
         '503':
+          content:
+            application/json:
+              schema:
+                properties:
+                  errors:
+                    description: Error details
+                    example: Peer limit has been reached
+                    type: string
+                type: object
           description: Peer limit has been reached
       summary: Create peer
       tags: []
@@ -290,6 +386,15 @@ paths:
         '204':
           description: Peer successfully deleted
         '404':
+          content:
+            application/json:
+              schema:
+                properties:
+                  errors:
+                    description: Error details
+                    example: Room ID or Peer ID references a resource that doesn't exist
+                    type: string
+                type: object
           description: Room ID or Peer ID references a resource that doesn't exist
       summary: Delete peer
       tags: []
