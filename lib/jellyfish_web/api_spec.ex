@@ -23,7 +23,7 @@ defmodule JellyfishWeb.ApiSpec do
     {description, "application/json", schema}
   end
 
-  @spec error(String.t()) :: {String.t(), String.t(), Schema.t()}
+  @spec error(String.t()) :: {String.t(), String.t(), module()}
   def error(description) do
     {description, "application/json", JellyfishWeb.ApiSpec.Error}
   end
