@@ -10,6 +10,8 @@ defmodule JellyfishWeb.ComponentController do
 
   action_fallback JellyfishWeb.FallbackController
 
+  tags [:component]
+
   operation :create,
     summary: "Creates the component and adds it to the room",
     parameters: [

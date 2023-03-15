@@ -9,6 +9,8 @@ defmodule JellyfishWeb.RoomController do
 
   action_fallback JellyfishWeb.FallbackController
 
+  tags [:room]
+
   operation :index,
     summary: "Show information about all rooms",
     responses: [

@@ -10,6 +10,8 @@ defmodule JellyfishWeb.PeerController do
 
   action_fallback JellyfishWeb.FallbackController
 
+  tags [:peer]
+
   operation :create,
     summary: "Create peer",
     parameters: [

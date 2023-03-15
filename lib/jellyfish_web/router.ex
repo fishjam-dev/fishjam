@@ -37,10 +37,10 @@ defmodule JellyfishWeb.Router do
       plug OpenApiSpex.Plug.PutApiSpec, module: JellyfishWeb.ApiSpec
     end
 
-    scope "/api" do
+    scope "/" do
       pipe_through :open_api_spec
-      get "/openapi", OpenApiSpex.Plug.RenderSpec, []
-      get "/swaggerui", OpenApiSpex.Plug.SwaggerUI, path: "/api/openapi"
+      get "/openapi.json", OpenApiSpex.Plug.RenderSpec, []
+      get "/docs", OpenApiSpex.Plug.SwaggerUI, path: "/openapi.json"
     end
   end
 end

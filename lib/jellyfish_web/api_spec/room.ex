@@ -18,7 +18,8 @@ defmodule JellyfishWeb.ApiSpec.Room do
           type: :integer,
           minimum: 1,
           example: 10,
-          description: "Maximum amount of peers allowed into the room"
+          description: "Maximum amount of peers allowed into the room",
+          nullable: true
         }
       }
     })
