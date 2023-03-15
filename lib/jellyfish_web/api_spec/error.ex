@@ -12,7 +12,7 @@ defmodule JellyfishWeb.ApiSpec.Error do
       errors: %Schema{
         type: :string,
         description: "Error details",
-        example: "error details"
+        example: "Token has expired"
       }
     }
   })
