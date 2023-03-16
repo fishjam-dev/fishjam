@@ -19,6 +19,11 @@ defmodule JellyfishWeb.ConnCase do
 
   using do
     quote do
+      # The default endpoint for testing
+      @endpoint JellyfishWeb.Endpoint
+
+      use JellyfishWeb, :verified_routes
+
       # Import conveniences for testing with connections
       import Plug.Conn
       import Phoenix.ConnTest
@@ -31,7 +36,7 @@ defmodule JellyfishWeb.ConnCase do
     end
   end
 
-  setup do
+  setup _tags do
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
 end

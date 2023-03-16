@@ -1,0 +1,21 @@
+defmodule JellyfishWeb.PeerJSON do
+  @moduledoc false
+  alias Jellyfish.Peer.WebRTC
+
+  def show(%{peer: peer}) do
+    %{data: data(peer)}
+  end
+
+  def data(peer) do
+    type =
+      case peer.type do
+        WebRTC -> "webrtc"
+      end
+
+    %{
+      id: peer.id,
+      type: type,
+      status: "#{peer.status}"
+    }
+  end
+end
