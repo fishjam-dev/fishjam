@@ -56,6 +56,8 @@ defmodule Jellyfish.MixProject do
       {:plug_cowboy, "~> 2.5"},
       {:uuid, "~> 1.1"},
       {:cors_plug, "~> 3.0"},
+      {:open_api_spex, "~> 3.16"},
+      {:ymlr, "~> 3.0"},
 
       # Membrane deps
       {:membrane_rtc_engine, github: "jellyfish-dev/membrane_rtc_engine"},
@@ -90,7 +92,8 @@ defmodule Jellyfish.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
-      setup: ["deps.get"]
+      setup: ["deps.get"],
+      "api.spec": ["openapi.spec.yaml --spec JellyfishWeb.ApiSpec"]
     ]
   end
 

@@ -1,6 +1,9 @@
 defmodule JellyfishWeb.PeerControllerTest do
   use JellyfishWeb.ConnCase
 
+  import OpenApiSpex.TestAssertions
+
+  @schema JellyfishWeb.ApiSpec.spec()
   @peer_type "webrtc"
 
   setup %{conn: conn} do
@@ -18,7 +21,9 @@ defmodule JellyfishWeb.PeerControllerTest do
   describe "create peer" do
     test "renders peer when data is valid", %{conn: conn, room_id: room_id} do
       conn = post(conn, Routes.peer_path(conn, :create, room_id), type: @peer_type)
-      assert %{"id" => id, "type" => @peer_type} = json_response(conn, :created)["data"]
+      response = json_response(conn, :created)
+      assert_response_schema(response, "PeerDetailsResponse", @schema)
+      assert %{"id" => id, "type" => @peer_type} = response["data"]
 
       conn = get(conn, Routes.room_path(conn, :show, room_id))
 

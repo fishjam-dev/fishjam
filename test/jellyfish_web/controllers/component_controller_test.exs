@@ -1,7 +1,10 @@
 defmodule JellyfishWeb.ComponentControllerTest do
   use JellyfishWeb.ConnCase
 
+  import OpenApiSpex.TestAssertions
+
   @component_type "hls"
+  @schema JellyfishWeb.ApiSpec.spec()
 
   setup %{conn: conn} do
     room_conn = post(conn, Routes.room_path(conn, :create))
@@ -18,7 +21,9 @@ defmodule JellyfishWeb.ComponentControllerTest do
   describe "create component" do
     test "renders component when data is valid", %{conn: conn, room_id: room_id} do
       conn = post(conn, Routes.component_path(conn, :create, room_id), type: @component_type)
-      assert %{"id" => id} = json_response(conn, :created)["data"]
+
+      assert response = %{"data" => %{"id" => id}} = json_response(conn, :created)
+      assert_response_schema(response, "ComponentDetailsResponse", @schema)
 
       conn = get(conn, Routes.room_path(conn, :show, room_id))
 

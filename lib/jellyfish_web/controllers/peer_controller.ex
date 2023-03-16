@@ -1,11 +1,60 @@
 defmodule JellyfishWeb.PeerController do
   use JellyfishWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias Jellyfish.Peer
   alias Jellyfish.Room
   alias Jellyfish.RoomService
+  alias JellyfishWeb.ApiSpec
+  alias OpenApiSpex.{Response, Schema}
 
   action_fallback JellyfishWeb.FallbackController
+
+  tags [:peer]
+
+  operation :create,
+    summary: "Create peer",
+    parameters: [
+      room_id: [
+        in: :path,
+        description: "Room id",
+        type: :string
+      ]
+    ],
+    request_body:
+      {"Peer specification", "application/json",
+       %Schema{
+         type: :object,
+         properties: %{
+           type: ApiSpec.Peer.Type
+         },
+         required: [:type]
+       }},
+    responses: [
+      created: ApiSpec.data("Peer successfully created", ApiSpec.PeerDetailsResponse),
+      bad_request: ApiSpec.error("Invalid request body structure"),
+      not_found: ApiSpec.error("Room doesn't exist"),
+      service_unavailable: ApiSpec.error("Peer limit has been reached")
+    ]
+
+  operation :delete,
+    summary: "Delete peer",
+    parameters: [
+      room_id: [
+        in: :path,
+        description: "Room ID",
+        type: :string
+      ],
+      peer_id: [
+        in: :path,
+        description: "Peer id",
+        type: :string
+      ]
+    ],
+    responses: [
+      no_content: %Response{description: "Peer successfully deleted"},
+      not_found: ApiSpec.error("Room ID or Peer ID references a resource that doesn't exist")
+    ]
 
   def create(conn, %{"room_id" => room_id} = params) do
     with {:ok, peer_type_string} <- Map.fetch(params, "type"),

@@ -32,5 +32,15 @@ defmodule JellyfishWeb.Router do
 
       live_dashboard "/dashboard", metrics: JellyfishWeb.Telemetry
     end
+
+    pipeline :open_api_spec do
+      plug OpenApiSpex.Plug.PutApiSpec, module: JellyfishWeb.ApiSpec
+    end
+
+    scope "/" do
+      pipe_through :open_api_spec
+      get "/openapi.json", OpenApiSpex.Plug.RenderSpec, []
+      get "/docs", OpenApiSpex.Plug.SwaggerUI, path: "/openapi.json"
+    end
   end
 end
