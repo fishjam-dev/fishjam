@@ -47,6 +47,10 @@ defmodule Jellyfish.Room do
     GenServer.start_link(__MODULE__, args)
   end
 
+  def start(args) do
+    GenServer.start(__MODULE__, args)
+  end
+
   @spec get_state(pid()) :: t()
   def get_state(room_pid) do
     GenServer.call(room_pid, :state)
@@ -87,6 +91,7 @@ defmodule Jellyfish.Room do
   def init(max_peers) do
     state = new(max_peers)
     Logger.metadata(room_id: state.id)
+    Logger.info("Initialize room")
 
     {:ok, state}
   end

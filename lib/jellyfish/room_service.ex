@@ -40,6 +40,7 @@ defmodule Jellyfish.RoomService do
 
   @impl true
   def init(_opts) do
+    Logger.info("Start #{__MODULE__}")
     :ets.new(:rooms, [:protected, :set, :named_table])
     {:ok, %{rooms: %{}}}
   end
@@ -47,7 +48,9 @@ defmodule Jellyfish.RoomService do
   @impl true
   def handle_call({:create_room, max_peers}, _from, state)
       when is_nil(max_peers) or (is_integer(max_peers) and max_peers >= 0) do
-    {:ok, room_pid} = Room.start_link(max_peers)
+    # {:ok, room_pid} = DynamicSupervisor.start_child(RoomSupervisor, {Room, max_peers})
+    {:ok, room_pid} = Room.start(max_peers)
+    Process.monitor(room_pid)
     room = Room.get_state(room_pid)
 
     Logger.info("Created room #{inspect(room.id)}")
@@ -63,16 +66,54 @@ defmodule Jellyfish.RoomService do
 
   @impl true
   def handle_call({:delete_room, room_id}, _from, state) when is_map_key(state.rooms, room_id) do
-    state = Map.delete(state, room_id)
-    :ets.delete(:rooms, room_id)
-
-    Logger.info("Deleted room #{inspect(room_id)}")
-
+    state = remove_room(state, room_id)
     {:reply, :ok, state}
   end
 
   @impl true
   def handle_call({:delete_room, _room_id}, _from, state) do
     {:reply, {:error, :room_not_found}, state}
+  end
+
+  @impl true
+  def handle_info({:DOWN, ref, :process, pid, reason}, state) do
+    Logger.warn("Process (#{inspect(ref)}, #{inspect(pid)}) is down with reason: #{reason}")
+    room_id = find_room_id_by_pid(pid)
+
+    state =
+      if room_id == nil do
+        Logger.warn("There is no such process with pid #{inspect(pid)}")
+        state
+      else
+        Phoenix.PubSub.broadcast!(Jellyfish.PubSub, room_id, :room_crashed)
+        remove_room(state, room_id)
+      end
+
+    {:noreply, state}
+  end
+
+  defp find_room_id_by_pid(room_pid) do
+    :rooms
+    |> :ets.tab2list()
+    |> Enum.find(fn
+      {_id, ^room_pid} -> true
+      _other -> false
+    end)
+    |> case do
+      {id, _pid} -> id
+      nil -> nil
+    end
+  end
+
+  defp remove_room(state, room_id) when is_map_key(state.rooms, room_id) do
+    state = %{state | rooms: Map.delete(state.rooms, room_id)}
+    :ets.delete(:rooms, room_id)
+    Logger.info("Deleted room #{inspect(room_id)}")
+    state
+  end
+
+  defp remove_room(_state, room_id) do
+    Logger.error("Room with room_id #{room_id} doesn't exist")
+    raise "Room with room_id #{room_id} doesn't exist"
   end
 end

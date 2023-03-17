@@ -68,7 +68,10 @@ defmodule JellyfishWeb.Socket do
 
   @impl true
   def init(state) do
-    Room.set_peer_connected(state.room_pid, state.peer_id)
+    :ok = Room.set_peer_connected(state.room_pid, state.peer_id)
+
+    :ok = Phoenix.PubSub.subscribe(Jellyfish.PubSub, state.room_id)
+
     {:ok, state}
   end
 
@@ -112,6 +115,11 @@ defmodule JellyfishWeb.Socket do
   @impl true
   def handle_info({:stop_connection, reason}, state) do
     {:stop, reason, state}
+  end
+
+  @impl true
+  def handle_info(:room_crashed, state) do
+    {:stop, :room_crashed, state}
   end
 
   @impl true
