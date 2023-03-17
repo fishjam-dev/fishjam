@@ -112,7 +112,7 @@ defmodule JellyfishWeb.SocketTest do
       assert {:stop, _reason, _state} = send_from_server({:stop_connection, :reason})
     end
 
-    test "when room_crashed", %{room_id: room_id, peer_id: peer_id, room_pid: room_pid} do
+    test "when room crashed", %{room_id: room_id, peer_id: peer_id, room_pid: room_pid} do
       assert {:ok, _state} = connect(%{"room_id" => room_id, "peer_id" => peer_id})
 
       Process.exit(room_pid, :error)

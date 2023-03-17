@@ -83,15 +83,17 @@ defmodule JellyfishWeb.RoomControllerTest do
   describe "room crashing" do
     setup [:create_room]
 
-    test "roomService removes room on chrash", %{room_id: room_id} = state do
+    test "roomService removes room on crash", %{room_id: room_id} = state do
       %{room_id: room2_id} = create_room(state)
 
       room_pid = get_room_pid_from_ets!(room_id)
       room2_pid = get_room_pid_from_ets!(room2_id)
 
-      Process.exit(room_pid, :error)
+      :erlang.trace(Process.whereis(RoomService), true, [:receive])
 
-      Process.sleep(500)
+      assert true = Process.exit(room_pid, :error)
+
+      assert_receive({:trace, _pid, :receive, {:DOWN, _ref, :process, ^room_pid, :error}})
 
       room_service_state = :sys.get_state(RoomService)
       assert %{rooms: %{^room2_id => ^room2_pid}} = room_service_state

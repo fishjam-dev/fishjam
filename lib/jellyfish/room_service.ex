@@ -40,7 +40,6 @@ defmodule Jellyfish.RoomService do
 
   @impl true
   def init(_opts) do
-    Logger.info("Start #{__MODULE__}")
     :ets.new(:rooms, [:protected, :set, :named_table])
     {:ok, %{rooms: %{}}}
   end
@@ -48,7 +47,6 @@ defmodule Jellyfish.RoomService do
   @impl true
   def handle_call({:create_room, max_peers}, _from, state)
       when is_nil(max_peers) or (is_integer(max_peers) and max_peers >= 0) do
-    # {:ok, room_pid} = DynamicSupervisor.start_child(RoomSupervisor, {Room, max_peers})
     {:ok, room_pid} = Room.start(max_peers)
     Process.monitor(room_pid)
     room = Room.get_state(room_pid)
