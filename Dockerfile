@@ -4,14 +4,13 @@ RUN \
   apk add --no-cache \
   build-base \
   git \
-  openssl-dev \
+  openssl1.1-compat-dev \
   libsrtp-dev \
   ffmpeg-dev \
   fdk-aac-dev \
-  opus-dev
-
-ARG VERSION
-ENV VERISON=${VERSION}
+  opus-dev \
+  rust \
+  cargo
 
 WORKDIR /app
 
@@ -29,18 +28,15 @@ RUN mix deps.compile
 
 RUN mix do compile, release
 
-FROM alpine:3.16 AS app
+FROM alpine:3.17 AS app
 
-# there's possibility that some of the deps are unnecessary
 RUN \
   apk add --no-cache \
-  ncurses-libs \
-  openssl \
+  openssl1.1-compat \
   libsrtp \
   ffmpeg \
   fdk-aac \
   opus \
-  clang \
   curl
 
 WORKDIR /app
@@ -58,3 +54,4 @@ EXPOSE 4000
 HEALTHCHECK CMD curl --fail http://localhost:4000 || exit 1
 
 CMD ["bin/jellyfish", "start"]
+

@@ -6,20 +6,6 @@ import Config
 # and secrets from environment variables or elsewhere. Do not define
 # any compile-time configuration in here, as it won't be applied.
 # The block below contains prod specific runtime configuration.
-
-# ## Using releases
-#
-# If you use `mix release`, you need to explicitly enable the server
-# by passing the PHX_SERVER=true when you start it:
-#
-#     PHX_SERVER=true bin/jellyfish start
-#
-# Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
-# script that automatically sets the env var above.
-if System.get_env("PHX_SERVER") do
-  config :jellyfish, JellyfishWeb.Endpoint, server: true
-end
-
 defmodule ConfigParser do
   def parse_integrated_turn_ip(ip) do
     with {:ok, parsed_ip} <- ip |> to_charlist() |> :inet.parse_address() do
@@ -101,7 +87,7 @@ if config_env() == :prod do
       You can generate one by calling: mix phx.gen.secret
       """
 
-  host = System.get_env("PHX_HOST") || "example.com"
+  host = System.get_env("VIRTUAL_HOST") || "example.com"
   port = String.to_integer(System.get_env("PORT") || "4000")
 
   config :jellyfish, JellyfishWeb.Endpoint,
