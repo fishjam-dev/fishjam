@@ -86,8 +86,8 @@ defmodule JellyfishWeb.RoomControllerTest do
     test "roomService removes room on crash", %{room_id: room_id} = state do
       %{room_id: room2_id} = create_room(state)
 
-      room_pid = get_room_pid_from_ets!(room_id)
-      room2_pid = get_room_pid_from_ets!(room2_id)
+      room_pid = RoomService.find_room!(room_id)
+      room2_pid = RoomService.find_room!(room2_id)
 
       :erlang.trace(Process.whereis(RoomService), true, [:receive])
 
@@ -97,19 +97,12 @@ defmodule JellyfishWeb.RoomControllerTest do
 
       room_service_state = :sys.get_state(RoomService)
       assert %{rooms: %{^room2_id => ^room2_pid}} = room_service_state
-      assert false == is_map_key(room_service_state.rooms, room_id)
+      assert not is_map_key(room_service_state.rooms, room_id)
 
       # Shouldn't throw an error as in ets should be only living processes
       rooms = RoomService.list_rooms()
       assert Enum.any?(rooms, &(&1.id == room2_id))
       assert Enum.all?(rooms, &(&1.id != room_id))
-    end
-
-    defp get_room_pid_from_ets!(room_id) do
-      case :ets.lookup(:rooms, room_id) do
-        [{^room_id, room_pid} | _] -> room_pid
-        [] -> raise "There should be room with id #{room_id} in ets"
-      end
     end
   end
 

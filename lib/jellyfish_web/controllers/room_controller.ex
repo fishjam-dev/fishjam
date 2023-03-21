@@ -76,17 +76,17 @@ defmodule JellyfishWeb.RoomController do
   end
 
   def show(conn, %{"room_id" => id}) do
-    case RoomService.find_room(id) do
-      {:ok, room_pid} ->
-        room =
-          room_pid
-          |> Room.get_state()
-          |> maps_to_lists()
+    with {:ok, room_pid} <- RoomService.find_room(id),
+         true <- Process.alive?(room_pid) do
+      room =
+        room_pid
+        |> Room.get_state()
+        |> maps_to_lists()
 
-        conn
-        |> put_resp_content_type("application/json")
-        |> render("show.json", room: room)
-
+      conn
+      |> put_resp_content_type("application/json")
+      |> render("show.json", room: room)
+    else
       {:error, :room_not_found} ->
         {:error, :not_found, "Room #{id} does not exist"}
     end

@@ -15,17 +15,31 @@ defmodule Jellyfish.RoomService do
 
   @spec find_room(Room.id()) :: {:ok, pid()} | {:error, :room_not_found}
   def find_room(room_id) do
-    case :ets.lookup(:rooms, room_id) do
-      [{_room_id, room_pid} | _] -> {:ok, room_pid}
-      _not_found -> {:error, :room_not_found}
+    case Registry.lookup(Jellyfish.RoomRegistry, room_id) do
+      [{_room_id, room_pid} | _] ->
+        {:ok, room_pid}
+
+      _not_found ->
+        {:error, :room_not_found}
+    end
+  end
+
+  @spec find_room!(Room.id()) :: pid() | no_return()
+  def find_room!(room_id) do
+    case find_room(room_id) do
+      {:ok, pid} ->
+        pid
+
+      _not_found ->
+        raise "Room with id #{room_id} doesn't exist"
     end
   end
 
   @spec list_rooms() :: [Room.t()]
   def list_rooms() do
-    :rooms
-    |> :ets.tab2list()
-    |> Enum.map(fn {_id, room_pid} -> Room.get_state(room_pid) end)
+    Jellyfish.RoomRegistry
+    |> Registry.select([{{:_, :"$1", :_}, [], [:"$1"]}])
+    |> Enum.map(&Room.get_state(&1))
   end
 
   @spec create_room(Room.max_peers()) :: {:ok, Room.t()} | {:error, :bad_arg}
@@ -40,7 +54,6 @@ defmodule Jellyfish.RoomService do
 
   @impl true
   def init(_opts) do
-    :ets.new(:rooms, [:protected, :set, :named_table])
     {:ok, %{rooms: %{}}}
   end
 
@@ -48,12 +61,10 @@ defmodule Jellyfish.RoomService do
   def handle_call({:create_room, max_peers}, _from, state)
       when is_nil(max_peers) or (is_integer(max_peers) and max_peers >= 0) do
     {:ok, room_pid} = Room.start(max_peers)
-    Process.monitor(room_pid)
     room = Room.get_state(room_pid)
+    Process.monitor(room_pid)
 
     Logger.info("Created room #{inspect(room.id)}")
-
-    :ets.insert(:rooms, {room.id, room_pid})
 
     {:reply, {:ok, room}, %{state | rooms: Map.put(state.rooms, room.id, room_pid)}}
   end
@@ -65,6 +76,7 @@ defmodule Jellyfish.RoomService do
   @impl true
   def handle_call({:delete_room, room_id}, _from, state) when is_map_key(state.rooms, room_id) do
     state = remove_room(state, room_id)
+
     {:reply, :ok, state}
   end
 
@@ -74,44 +86,47 @@ defmodule Jellyfish.RoomService do
   end
 
   @impl true
+  def handle_info({:DOWN, _ref, :process, _pid, :killed}, state) do
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_info({:DOWN, ref, :process, pid, reason}, state) do
     Logger.warn("Process (#{inspect(ref)}, #{inspect(pid)}) is down with reason: #{reason}")
-    room_id = find_room_id_by_pid(pid)
+
+    room_id = Enum.find(state.rooms, fn {_id, room_pid} -> room_pid == pid end)
 
     state =
-      if room_id == nil do
-        Logger.warn("There is no such process with pid #{inspect(pid)}")
-        state
-      else
-        Phoenix.PubSub.broadcast!(Jellyfish.PubSub, room_id, :room_crashed)
-        remove_room(state, room_id)
+      case room_id do
+        nil ->
+          Logger.warn("There is no such process with pid #{inspect(pid)}")
+          state
+
+        {room_id, _pid} ->
+          Phoenix.PubSub.broadcast(Jellyfish.PubSub, room_id, :room_crashed)
+          %{state | rooms: Map.delete(state.rooms, room_id)}
       end
 
     {:noreply, state}
   end
 
-  defp find_room_id_by_pid(room_pid) do
-    :rooms
-    |> :ets.tab2list()
-    |> Enum.find(fn
-      {_id, ^room_pid} -> true
-      _other -> false
-    end)
-    |> case do
-      {id, _pid} -> id
-      nil -> nil
-    end
-  end
-
   defp remove_room(state, room_id) when is_map_key(state.rooms, room_id) do
     state = %{state | rooms: Map.delete(state.rooms, room_id)}
-    :ets.delete(:rooms, room_id)
+
+    case find_room(room_id) do
+      {:ok, pid} ->
+        true = Process.exit(pid, :kill)
+
+      _not_found ->
+        Logger.warn("Room with id #{room_id} doesn't exist")
+    end
+
     Logger.info("Deleted room #{inspect(room_id)}")
     state
   end
 
-  defp remove_room(_state, room_id) do
+  defp remove_room(state, room_id) do
     Logger.error("Room with room_id #{room_id} doesn't exist")
-    raise "Room with room_id #{room_id} doesn't exist"
+    state
   end
 end
