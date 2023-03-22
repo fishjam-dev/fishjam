@@ -39,6 +39,7 @@ defmodule Jellyfish.RoomService do
   def list_rooms() do
     Jellyfish.RoomRegistry
     |> Registry.select([{{:_, :"$1", :_}, [], [:"$1"]}])
+    |> Enum.filter(&Process.alive?(&1))
     |> Enum.map(&Room.get_state(&1))
   end
 
