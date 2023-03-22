@@ -16,7 +16,7 @@ defmodule Jellyfish.RoomService do
   @spec find_room(Room.id()) :: {:ok, pid()} | {:error, :room_not_found}
   def find_room(room_id) do
     case Registry.lookup(Jellyfish.RoomRegistry, room_id) do
-      [{_room_id, room_pid} | _] ->
+      [{^room_id, room_pid} | _] ->
         {:ok, room_pid}
 
       _not_found ->
@@ -78,7 +78,7 @@ defmodule Jellyfish.RoomService do
     response =
       case find_room(room_id) do
         {:ok, _pid} ->
-          remove_room(state, room_id)
+          remove_room(room_id)
           :ok
 
         {:error, _} ->
@@ -102,7 +102,7 @@ defmodule Jellyfish.RoomService do
     {:noreply, state}
   end
 
-  defp remove_room(state, room_id) do
+  defp remove_room(room_id) do
     case find_room(room_id) do
       {:ok, pid} ->
         true = Process.exit(pid, :kill)

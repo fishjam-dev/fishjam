@@ -7,25 +7,27 @@ defmodule JellyfishWeb.RoomController do
   alias JellyfishWeb.ApiSpec
   alias OpenApiSpex.Response
 
-  action_fallback JellyfishWeb.FallbackController
+  action_fallback(JellyfishWeb.FallbackController)
 
-  tags [:room]
+  tags([:room])
 
-  operation :index,
+  operation(:index,
     summary: "Show information about all rooms",
     responses: [
       ok: ApiSpec.data("Success", ApiSpec.RoomsListingResponse)
     ]
+  )
 
-  operation :create,
+  operation(:create,
     summary: "Creates a room",
     request_body: {"Room configuration", "application/json", ApiSpec.Room.Config},
     responses: [
       created: ApiSpec.data("Room successfully created", ApiSpec.RoomDetailsResponse),
       bad_request: ApiSpec.error("Invalid request structure")
     ]
+  )
 
-  operation :show,
+  operation(:show,
     summary: "Shows information about the room",
     parameters: [
       room_id: [
@@ -38,8 +40,9 @@ defmodule JellyfishWeb.RoomController do
       ok: ApiSpec.data("Success", ApiSpec.RoomDetailsResponse),
       not_found: ApiSpec.error("Room doesn't exist")
     ]
+  )
 
-  operation :delete,
+  operation(:delete,
     summary: "Delete the room",
     parameters: [
       room_id: [
@@ -52,6 +55,7 @@ defmodule JellyfishWeb.RoomController do
       no_content: %Response{description: "Successfully deleted room"},
       not_found: ApiSpec.error("Room doesn't exist")
     ]
+  )
 
   def index(conn, _params) do
     rooms =
@@ -87,7 +91,7 @@ defmodule JellyfishWeb.RoomController do
       |> put_resp_content_type("application/json")
       |> render("show.json", room: room)
     else
-      {:error, :room_not_found} ->
+      value when value in [{:error, :room_not_found}, false] ->
         {:error, :not_found, "Room #{id} does not exist"}
     end
   end
