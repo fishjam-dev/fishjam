@@ -20,7 +20,7 @@ defmodule JellyfishWeb.PeerControllerTest do
 
   describe "create peer" do
     test "renders peer when data is valid", %{conn: conn, room_id: room_id} do
-      conn = post(conn, ~p"/room/#{room_id}/peer?#{[type: @peer_type]}")
+      conn = post(conn, ~p"/room/#{room_id}/peer", type: @peer_type)
       response = json_response(conn, :created)
       assert_response_schema(response, "PeerDetailsResponse", @schema)
       assert %{"id" => id, "type" => @peer_type} = response["data"]
@@ -34,15 +34,15 @@ defmodule JellyfishWeb.PeerControllerTest do
     end
 
     test "renders errors when peer_type is invalid", %{conn: conn, room_id: room_id} do
-      conn = post(conn, ~p"/room/#{room_id}/peer?#{[type: "invalid_type"]}")
+      conn = post(conn, ~p"/room/#{room_id}/peer", type: "invalid_type")
       assert json_response(conn, :bad_request)["errors"] == "Invalid peer type"
     end
 
     test "renders errors when reached peers limit", %{conn: conn, room_id: room_id} do
-      conn = post(conn, ~p"/room/#{room_id}/peer?#{[type: @peer_type]}")
+      conn = post(conn, ~p"/room/#{room_id}/peer", type: @peer_type)
       assert %{"id" => _id} = json_response(conn, :created)["data"]
 
-      conn = post(conn, ~p"/room/#{room_id}/peer?#{[type: @peer_type]}")
+      conn = post(conn, ~p"/room/#{room_id}/peer", type: @peer_type)
 
       assert json_response(conn, :service_unavailable)["errors"] ==
                "Reached peer limit in room #{room_id}"
@@ -50,12 +50,12 @@ defmodule JellyfishWeb.PeerControllerTest do
 
     test "renders errors when room doesn't exist", %{conn: conn} do
       room_id = "invalid_room"
-      conn = post(conn, ~p"/room/#{room_id}/peer?#{[type: @peer_type]}")
+      conn = post(conn, ~p"/room/#{room_id}/peer", type: @peer_type)
       assert json_response(conn, :not_found)["errors"] == "Room #{room_id} does not exist"
     end
 
     test "renders errors when request body structure is invalid", %{conn: conn, room_id: room_id} do
-      conn = post(conn, ~p"/room/#{room_id}/peer?#{[invalid_param: @peer_type]}")
+      conn = post(conn, ~p"/room/#{room_id}/peer", invalid_param: @peer_type)
       assert json_response(conn, :bad_request)["errors"] == "Invalid request body structure"
     end
   end
@@ -90,7 +90,7 @@ defmodule JellyfishWeb.PeerControllerTest do
     end
 
     defp create_peer(state) do
-      conn = post(state.conn, ~p"/room/#{state.room_id}/peer?#{[type: @peer_type]}")
+      conn = post(state.conn, ~p"/room/#{state.room_id}/peer", type: @peer_type)
 
       assert %{"id" => id} = json_response(conn, :created)["data"]
 
