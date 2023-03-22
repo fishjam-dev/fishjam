@@ -70,7 +70,9 @@ defmodule JellyfishWeb.Socket do
   def init(state) do
     :ok = Room.set_peer_connected(state.room_pid, state.peer_id)
 
-    :ok = Phoenix.PubSub.subscribe(Jellyfish.PubSub, state.room_id)
+    {:ok, room_pid} = RoomService.find_room(state.room_id)
+
+    :ok = Phoenix.PubSub.subscribe(Jellyfish.PubSub, inspect(room_pid))
 
     {:ok, state}
   end

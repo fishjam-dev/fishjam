@@ -54,7 +54,7 @@ defmodule Jellyfish.RoomService do
 
   @impl true
   def init(_opts) do
-    {:ok, %{rooms: %{}}}
+    {:ok, %{}}
   end
 
   @impl true
@@ -66,7 +66,7 @@ defmodule Jellyfish.RoomService do
 
     Logger.info("Created room #{inspect(room.id)}")
 
-    {:reply, {:ok, room}, %{state | rooms: Map.put(state.rooms, room.id, room_pid)}}
+    {:reply, {:ok, room}, state}
   end
 
   @impl true
@@ -74,15 +74,18 @@ defmodule Jellyfish.RoomService do
     do: {:reply, {:error, :bad_arg}, state}
 
   @impl true
-  def handle_call({:delete_room, room_id}, _from, state) when is_map_key(state.rooms, room_id) do
-    state = remove_room(state, room_id)
+  def handle_call({:delete_room, room_id}, _from, state) do
+    response =
+      case find_room(room_id) do
+        {:ok, _pid} ->
+          remove_room(state, room_id)
+          :ok
 
-    {:reply, :ok, state}
-  end
+        {:error, _} ->
+          {:error, :room_not_found}
+      end
 
-  @impl true
-  def handle_call({:delete_room, _room_id}, _from, state) do
-    {:reply, {:error, :room_not_found}, state}
+    {:reply, response, state}
   end
 
   @impl true
@@ -94,25 +97,12 @@ defmodule Jellyfish.RoomService do
   def handle_info({:DOWN, ref, :process, pid, reason}, state) do
     Logger.warn("Process (#{inspect(ref)}, #{inspect(pid)}) is down with reason: #{reason}")
 
-    room_id = Enum.find(state.rooms, fn {_id, room_pid} -> room_pid == pid end)
-
-    state =
-      case room_id do
-        nil ->
-          Logger.warn("There is no such process with pid #{inspect(pid)}")
-          state
-
-        {room_id, _pid} ->
-          Phoenix.PubSub.broadcast(Jellyfish.PubSub, room_id, :room_crashed)
-          %{state | rooms: Map.delete(state.rooms, room_id)}
-      end
+    Phoenix.PubSub.broadcast(Jellyfish.PubSub, inspect(pid), :room_crashed)
 
     {:noreply, state}
   end
 
-  defp remove_room(state, room_id) when is_map_key(state.rooms, room_id) do
-    state = %{state | rooms: Map.delete(state.rooms, room_id)}
-
+  defp remove_room(state, room_id) do
     case find_room(room_id) do
       {:ok, pid} ->
         true = Process.exit(pid, :kill)
@@ -122,11 +112,5 @@ defmodule Jellyfish.RoomService do
     end
 
     Logger.info("Deleted room #{inspect(room_id)}")
-    state
-  end
-
-  defp remove_room(state, room_id) do
-    Logger.error("Room with room_id #{room_id} doesn't exist")
-    state
   end
 end

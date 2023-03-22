@@ -87,17 +87,12 @@ defmodule JellyfishWeb.RoomControllerTest do
       %{room_id: room2_id} = create_room(state)
 
       room_pid = RoomService.find_room!(room_id)
-      room2_pid = RoomService.find_room!(room2_id)
 
       :erlang.trace(Process.whereis(RoomService), true, [:receive])
 
       assert true = Process.exit(room_pid, :error)
 
       assert_receive({:trace, _pid, :receive, {:DOWN, _ref, :process, ^room_pid, :error}})
-
-      room_service_state = :sys.get_state(RoomService)
-      assert %{rooms: %{^room2_id => ^room2_pid}} = room_service_state
-      assert not is_map_key(room_service_state.rooms, room_id)
 
       # Shouldn't throw an error as in ets should be only living processes
       rooms = RoomService.list_rooms()
