@@ -10,7 +10,10 @@ import Config
 # Configures the endpoint
 config :jellyfish, JellyfishWeb.Endpoint,
   url: [host: "localhost"],
-  render_errors: [view: JellyfishWeb.ErrorView, accepts: ~w(json), layout: false],
+  render_errors: [
+    formats: [json: JellyfishWeb.ErrorJSON],
+    layout: false
+  ],
   pubsub_server: Jellyfish.PubSub,
   live_view: [signing_salt: "/Lo03qJT"]
 
