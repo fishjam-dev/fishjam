@@ -91,7 +91,7 @@ defmodule Jellyfish.Room do
   def init(max_peers) do
     state = new(max_peers)
     Logger.metadata(room_id: state.id)
-    {:ok, _pid} = Registry.register(Jellyfish.RoomRegistry, state.id, self())
+    {:ok, _pid} = Registry.register(Jellyfish.RoomRegistry, state.id, state.id)
     Logger.info("Initialize room")
 
     {:ok, state}
