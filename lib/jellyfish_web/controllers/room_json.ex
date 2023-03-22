@@ -14,7 +14,6 @@ defmodule JellyfishWeb.RoomJSON do
   def data(room) do
     config =
       room.config
-      |> Enum.reject(fn {_key, value} -> is_nil(value) end)
       |> Map.new(fn {key, value} -> {snake_case_to_camel_case(key), value} end)
 
     %{
