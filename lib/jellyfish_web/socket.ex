@@ -125,6 +125,11 @@ defmodule JellyfishWeb.Socket do
   end
 
   @impl true
+  def handle_info(:room_stopped, state) do
+    {:stop, :room_stopped, state}
+  end
+
+  @impl true
   def terminate(_reason, state) do
     Logger.info("""
     WebSocket associated with peer #{inspect(state.peer_id)} stopped, \

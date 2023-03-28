@@ -51,9 +51,18 @@ defmodule Jellyfish.Room do
     GenServer.start(__MODULE__, args)
   end
 
-  @spec get_state(pid()) :: t()
+  @spec get_state(pid()) :: t() | nil
   def get_state(room_pid) do
-    GenServer.call(room_pid, :state)
+    try do
+      GenServer.call(room_pid, :state)
+    catch
+      :exit, {:noproc, {GenServer, :call, [^room_pid, :state, _timeout]}} ->
+        Logger.warn(
+          "During get state of room #{inspect(room_pid)}, process exited because this process doesn't exist"
+        )
+
+        nil
+    end
   end
 
   @spec add_peer(pid(), Peer.peer()) :: {:ok, Peer.t()} | {:error, :reached_peers_limit}
@@ -95,6 +104,12 @@ defmodule Jellyfish.Room do
     Logger.info("Initialize room")
 
     {:ok, state}
+  end
+
+  @impl true
+  def terminate(reason, state) do
+    :ok = Registry.unregister(Jellyfish.RoomRegistry, state.id)
+    reason
   end
 
   @impl true

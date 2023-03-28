@@ -16,7 +16,7 @@ defmodule Jellyfish.RoomService do
   @spec find_room(Room.id()) :: {:ok, pid()} | {:error, :room_not_found}
   def find_room(room_id) do
     case Registry.lookup(Jellyfish.RoomRegistry, room_id) do
-      [{room_pid, ^room_id} | _] ->
+      [{room_pid, ^room_id}] ->
         {:ok, room_pid}
 
       _not_found ->
@@ -35,12 +35,22 @@ defmodule Jellyfish.RoomService do
     end
   end
 
+  @spec get_room(Room.id()) :: {:ok, Room.t()} | {:error, :room_not_found}
+  def get_room(room_id) do
+    with {:ok, room_pid} <- find_room(room_id),
+         room when not is_nil(room) <- Room.get_state(room_pid) do
+      {:ok, room}
+    else
+      _ -> {:error, :room_not_found}
+    end
+  end
+
   @spec list_rooms() :: [Room.t()]
   def list_rooms() do
     Jellyfish.RoomRegistry
     |> Registry.select([{{:_, :"$1", :_}, [], [:"$1"]}])
-    |> Enum.filter(&Process.alive?(&1))
     |> Enum.map(&Room.get_state(&1))
+    |> Enum.reject(&(&1 == nil))
   end
 
   @spec create_room(Room.max_peers()) :: {:ok, Room.t()} | {:error, :bad_arg}
@@ -90,7 +100,11 @@ defmodule Jellyfish.RoomService do
   end
 
   @impl true
-  def handle_info({:DOWN, _ref, :process, _pid, :killed}, state) do
+  def handle_info({:DOWN, ref, :process, pid, :normal}, state) do
+    Logger.debug("Process (#{inspect(ref)}, #{inspect(pid)}) is down with reason: normal")
+
+    Phoenix.PubSub.broadcast(Jellyfish.PubSub, inspect(pid), :room_stopped)
+
     {:noreply, state}
   end
 
@@ -106,7 +120,14 @@ defmodule Jellyfish.RoomService do
   defp remove_room(room_id) do
     case find_room(room_id) do
       {:ok, pid} ->
-        true = Process.exit(pid, :kill)
+        try do
+          :ok = GenServer.stop(pid, :normal)
+        catch
+          :exit, {:noproc, {GenServer, :stop, [^pid, :normal, :infinity]}} ->
+            Logger.warn(
+              "During removing room #{room_id}, process exited because process didn't live already"
+            )
+        end
 
       _not_found ->
         Logger.warn("Room with id #{room_id} doesn't exist")

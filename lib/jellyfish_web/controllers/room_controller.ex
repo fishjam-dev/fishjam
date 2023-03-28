@@ -2,12 +2,11 @@ defmodule JellyfishWeb.RoomController do
   use JellyfishWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Jellyfish.Room
   alias Jellyfish.RoomService
   alias JellyfishWeb.ApiSpec
   alias OpenApiSpex.Response
 
-  action_fallback(JellyfishWeb.FallbackController)
+  action_fallback JellyfishWeb.FallbackController
 
   tags([:room])
 
@@ -80,18 +79,15 @@ defmodule JellyfishWeb.RoomController do
   end
 
   def show(conn, %{"room_id" => id}) do
-    with {:ok, room_pid} <- RoomService.find_room(id),
-         true <- Process.alive?(room_pid) do
-      room =
-        room_pid
-        |> Room.get_state()
-        |> maps_to_lists()
+    case RoomService.get_room(id) do
+      {:ok, room} ->
+        room = maps_to_lists(room)
 
-      conn
-      |> put_resp_content_type("application/json")
-      |> render("show.json", room: room)
-    else
-      value when value in [{:error, :room_not_found}, false] ->
+        conn
+        |> put_resp_content_type("application/json")
+        |> render("show.json", room: room)
+
+      {:error, :room_not_found} ->
         {:error, :not_found, "Room #{id} does not exist"}
     end
   end
