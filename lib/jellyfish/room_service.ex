@@ -41,7 +41,7 @@ defmodule Jellyfish.RoomService do
          room when not is_nil(room) <- Room.get_state(room_pid) do
       {:ok, room}
     else
-      _ -> {:error, :room_not_found}
+      _error_or_nil -> {:error, :room_not_found}
     end
   end
 
