@@ -3,13 +3,26 @@
 [![codecov](https://codecov.io/gh/jellyfish-dev/jellyfish/branch/main/graph/badge.svg?token=ANWFKV2EDP)](https://codecov.io/gh/jellyfish-dev/jellyfish)
 [![CircleCI](https://circleci.com/gh/jellyfish-dev/jellyfish.svg?style=svg)](https://circleci.com/gh/jellyfish-dev/jellyfish)
 
-## Installation
-
-TODO
-
 ## Usage
 
-TODO
+### Running in Docker
+
+To download Jellyfish Docker image, see [Jellyfish images](https://github.com/jellyfish-dev/jellyfish/pkgs/container/jellyfish).
+
+You can also build the image locally
+
+```console
+docker  build -t jellyfish .
+```
+
+To run the Docker container, use
+
+```console
+docker run -p 4000:4000 --env-file ./env_file jellyfish
+```
+
+Where `./env-file` is a file containing environmental variables that the image expects, see example file `.env.sample`.
+Now Jellyfish is running on port 4000.
 
 ## Copyright and License
 
