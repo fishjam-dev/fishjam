@@ -1,7 +1,7 @@
 defmodule JellyfishWeb.RoomControllerTest do
   use JellyfishWeb.ConnCase
-
   import OpenApiSpex.TestAssertions
+  alias Jellyfish.RoomService
 
   @schema JellyfishWeb.ApiSpec.spec()
 
@@ -77,6 +77,27 @@ defmodule JellyfishWeb.RoomControllerTest do
     test "returns 404 if room doesn't exists", %{conn: conn} do
       conn = delete(conn, ~p"/room/#{"invalid_room"}")
       assert response(conn, :not_found)
+    end
+  end
+
+  describe "room crashing" do
+    setup [:create_room]
+
+    test "roomService removes room on crash", %{room_id: room_id} = state do
+      %{room_id: room2_id} = create_room(state)
+
+      room_pid = RoomService.find_room!(room_id)
+
+      :erlang.trace(Process.whereis(RoomService), true, [:receive])
+
+      assert true = Process.exit(room_pid, :error)
+
+      assert_receive({:trace, _pid, :receive, {:DOWN, _ref, :process, ^room_pid, :error}})
+
+      # Shouldn't throw an error as in ets should be only living processes
+      rooms = RoomService.list_rooms()
+      assert Enum.any?(rooms, &(&1.id == room2_id))
+      assert Enum.all?(rooms, &(&1.id != room_id))
     end
   end
 

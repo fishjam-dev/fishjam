@@ -2,7 +2,6 @@ defmodule JellyfishWeb.RoomController do
   use JellyfishWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Jellyfish.Room
   alias Jellyfish.RoomService
   alias JellyfishWeb.ApiSpec
   alias OpenApiSpex.Response
@@ -76,12 +75,9 @@ defmodule JellyfishWeb.RoomController do
   end
 
   def show(conn, %{"room_id" => id}) do
-    case RoomService.find_room(id) do
-      {:ok, room_pid} ->
-        room =
-          room_pid
-          |> Room.get_state()
-          |> maps_to_lists()
+    case RoomService.get_room(id) do
+      {:ok, room} ->
+        room = maps_to_lists(room)
 
         conn
         |> put_resp_content_type("application/json")

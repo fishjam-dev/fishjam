@@ -15,7 +15,8 @@ defmodule Jellyfish.Application do
       # Start the Endpoint (http/https)
       JellyfishWeb.Endpoint,
       # Start the RoomService
-      Jellyfish.RoomService
+      Jellyfish.RoomService,
+      {Registry, keys: :unique, name: Jellyfish.RoomRegistry}
       # Start a worker by calling: Jellyfish.Worker.start_link(arg)
       # {Jellyfish.Worker, arg}
     ]
