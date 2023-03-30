@@ -24,6 +24,8 @@ defmodule Jellyfish.Room do
   @type id :: String.t()
   @type max_peers :: non_neg_integer() | nil
 
+  @type room_ref :: pid | {:via, Registry, {Jellyfish.RoomRegistry, id()}}
+
   @typedoc """
   This module contains:
   * `id` - room id
@@ -51,14 +53,14 @@ defmodule Jellyfish.Room do
     GenServer.start(__MODULE__, args)
   end
 
-  @spec get_state(pid()) :: t() | nil
+  @spec get_state(room_ref()) :: t() | nil
   def get_state(room_pid) do
     try do
       GenServer.call(room_pid, :state)
     catch
       :exit, {:noproc, {GenServer, :call, [^room_pid, :state, _timeout]}} ->
         Logger.warn(
-          "During get state of room #{inspect(room_pid)}, process exited because this process doesn't exist"
+          "Cannot get state of #{inspect(room_pid)}, the room's process doesn't exist anymore"
         )
 
         nil
@@ -104,12 +106,6 @@ defmodule Jellyfish.Room do
     Logger.info("Initialize room")
 
     {:ok, state}
-  end
-
-  @impl true
-  def terminate(reason, state) do
-    :ok = Registry.unregister(Jellyfish.RoomRegistry, state.id)
-    reason
   end
 
   @impl true

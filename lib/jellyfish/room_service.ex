@@ -37,11 +37,12 @@ defmodule Jellyfish.RoomService do
 
   @spec get_room(Room.id()) :: {:ok, Room.t()} | {:error, :room_not_found}
   def get_room(room_id) do
-    with {:ok, room_pid} <- find_room(room_id),
-         room when not is_nil(room) <- Room.get_state(room_pid) do
-      {:ok, room}
+    room = Room.get_state({:via, Registry, {Jellyfish.RoomRegistry, room_id}})
+
+    if is_nil(room) do
+      {:error, :room_not_found}
     else
-      _error_or_nil -> {:error, :room_not_found}
+      {:ok, room}
     end
   end
 
@@ -118,21 +119,16 @@ defmodule Jellyfish.RoomService do
   end
 
   defp remove_room(room_id) do
-    case find_room(room_id) do
-      {:ok, pid} ->
-        try do
-          :ok = GenServer.stop(pid, :normal)
-        catch
-          :exit, {:noproc, {GenServer, :stop, [^pid, :normal, :infinity]}} ->
-            Logger.warn(
-              "During removing room #{room_id}, process exited because process didn't live already"
-            )
-        end
+    room = {:via, Registry, {Jellyfish.RoomRegistry, room_id}}
 
-      _not_found ->
-        Logger.warn("Room with id #{room_id} doesn't exist")
+    try do
+      :ok = GenServer.stop(room, :normal)
+      Logger.info("Deleted room #{inspect(room_id)}")
+    catch
+      :exit, {:noproc, {GenServer, :stop, [^room, :normal, :infinity]}} ->
+        Logger.warn(
+          "During removing room #{room_id}, process exited because process didn't live already"
+        )
     end
-
-    Logger.info("Deleted room #{inspect(room_id)}")
   end
 end
