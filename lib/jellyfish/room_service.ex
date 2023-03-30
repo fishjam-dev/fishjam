@@ -126,9 +126,7 @@ defmodule Jellyfish.RoomService do
       Logger.info("Deleted room #{inspect(room_id)}")
     catch
       :exit, {:noproc, {GenServer, :stop, [^room, :normal, :infinity]}} ->
-        Logger.warn(
-          "During removing room #{room_id}, process exited because process didn't live already"
-        )
+        Logger.warn("Room process with id #{inspect(room_id)} doesn't exist")
     end
   end
 end
