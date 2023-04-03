@@ -72,7 +72,8 @@ defmodule Jellyfish.Room do
     GenServer.call(room_pid, {:add_peer, peer_type})
   end
 
-  @spec set_peer_connected(pid(), Peer.id()) :: :ok | {:error, :peer_not_found}
+  @spec set_peer_connected(pid(), Peer.id()) ::
+          :ok | {:error, :peer_not_found | :peer_already_connected}
   def set_peer_connected(room_pid, peer_id) do
     GenServer.call(room_pid, {:set_peer_connected, peer_id})
   end
@@ -135,17 +136,20 @@ defmodule Jellyfish.Room do
   def handle_call({:set_peer_connected, peer_id}, {socket_pid, _tag}, state) do
     {reply, state} =
       case Map.fetch(state.peers, peer_id) do
-        {:ok, peer} ->
-          :ok = Engine.add_endpoint(state.engine_pid, peer.engine_endpoint, peer_id: peer_id)
-
+        {:ok, %{status: :disconnected} = peer} ->
           Process.monitor(socket_pid)
 
           peer = %{peer | status: :connected, socket_pid: socket_pid}
           state = put_in(state, [:peers, peer_id], peer)
 
-          Logger.info("Peer #{inspect(peer_id)} established signaling connection")
+          :ok = Engine.add_endpoint(state.engine_pid, peer.engine_endpoint, peer_id: peer_id)
+
+          Logger.info("Peer #{inspect(peer_id)} connected")
 
           {:ok, state}
+
+        {:ok, %{status: :connected}} ->
+          {{:error, :peer_already_connected}, state}
 
         :error ->
           {{:error, :peer_not_found}, state}

@@ -1,10 +1,12 @@
 defmodule JellyfishWeb.Socket do
   @moduledoc false
   @behaviour Phoenix.Socket.Transport
-
   require Logger
 
   alias Jellyfish.{Room, RoomService}
+  alias JellyfishWeb.PeerToken
+
+  @heartbeat_interval 30_000
 
   @impl true
   def child_spec(_opts) do
@@ -14,70 +16,58 @@ defmodule JellyfishWeb.Socket do
 
   @impl true
   def connect(state) do
-    Logger.info("New incoming WebSocket connection...")
-
-    with {:ok, peer_id} <- Map.fetch(state.params, "peer_id"),
-         {:ok, room_id} <- Map.fetch(state.params, "room_id"),
-         {:ok, room_pid} <- RoomService.find_room(room_id),
-         {:ok, :disconnected} <- Room.get_peer_connection_status(room_pid, peer_id) do
-      state =
-        state
-        |> Map.put(:room_id, room_id)
-        |> Map.put(:peer_id, peer_id)
-        |> Map.put(:room_pid, room_pid)
-
-      Logger.info("""
-      WebSocket connection from peer #{inspect(peer_id)} accepted, \
-      room #{inspect(room_id)}
-      """)
-
-      {:ok, state}
-    else
-      {:ok, :connected} ->
-        Logger.warn("""
-        WebSocket connection for peer #{inspect(state.params["peer_id"])} in room \
-        #{inspect(state.params["room_id"])} already exists, rejected
-        """)
-
-        {:error, :already_connected}
-
-      {:error, :room_not_found} ->
-        Logger.warn("""
-        Room #{inspect(state.params["room_id"])} not found, \
-        ignoring incoming WebSocket connection
-        """)
-
-        {:error, :room_not_found}
-
-      {:error, :peer_not_found} ->
-        Logger.warn("""
-        Peer #{inspect(state.params["peer_id"])} not found in room \
-        #{inspect(state.params["room_id"])}, ignoring incoming WebSocket connection
-        """)
-
-        {:error, :peer_not_found}
-
-      :error ->
-        Logger.warn(
-          "No room_id/peer_id in connection params, ignoring incoming WebSocket connection"
-        )
-
-        {:error, :no_params}
-    end
-  end
-
-  @impl true
-  def init(state) do
-    :ok = Room.set_peer_connected(state.room_pid, state.peer_id)
-
-    {:ok, room_pid} = RoomService.find_room(state.room_id)
-
-    :ok = Phoenix.PubSub.subscribe(Jellyfish.PubSub, inspect(room_pid))
+    Logger.info("New incoming WebSocket connection, accepting")
 
     {:ok, state}
   end
 
   @impl true
+  def init(state) do
+    {:ok, Map.put(state, :authenticated?, false)}
+  end
+
+  @impl true
+  def handle_in({encoded_message, [opcode: :text]}, %{authenticated?: false} = state) do
+    case Jason.decode(encoded_message) do
+      {:ok, %{"type" => "controlMessage", "data" => %{"type" => "authRequest", "token" => token}}} ->
+        with {:ok, %{peer_id: peer_id, room_id: room_id}} <- PeerToken.verify(token),
+             {:ok, room_pid} <- RoomService.find_room(room_id),
+             :ok <- Room.set_peer_connected(room_pid, peer_id),
+             :ok <- Phoenix.PubSub.subscribe(Jellyfish.PubSub, inspect(room_pid)) do
+          Process.send_after(self(), :send_ping, @heartbeat_interval)
+
+          message =
+            %{"type" => "authenticated"}
+            |> control_message()
+
+          state =
+            state
+            |> Map.merge(%{
+              authenticated?: true,
+              peer_id: peer_id,
+              room_id: room_id,
+              room_pid: room_pid
+            })
+
+          {:reply, :ok, {:text, message}, state}
+        else
+          {:error, reason} ->
+            Logger.warn("""
+            Authentication failed, reason: #{reason}
+            """)
+
+            {:stop, :closed, {1000, inspect(reason)}, state}
+        end
+
+      _other ->
+        Logger.warn("""
+        Received message from unauthenticated peer, ignoring
+        """)
+
+        {:stop, :closed, {1000, "unauthenticated"}, state}
+    end
+  end
+
   def handle_in({encoded_message, [opcode: :text]}, state) do
     case Jason.decode(encoded_message) do
       {:ok, %{"type" => "mediaEvent", "data" => data}} ->
@@ -88,6 +78,9 @@ defmodule JellyfishWeb.Socket do
         Failed to decode message from peer #{inspect(state.peer_id)}, \
         room: #{inspect(state.room_id)}
         """)
+
+      {:ok, %{"type" => "controlMessage", "data" => data}} ->
+        handle_control_message(data, state)
 
       {:ok, %{"type" => type}} ->
         Logger.warn("""
@@ -105,6 +98,20 @@ defmodule JellyfishWeb.Socket do
     {:ok, state}
   end
 
+  defp handle_control_message(%{"type" => "authRequest"}, state) do
+    Logger.warn("""
+    Received authRequest from #{inspect(state.peer_id)}, \
+    room: #{inspect(state.room_id)}, but peer already connected
+    """)
+  end
+
+  defp handle_control_message(message, state) do
+    Logger.warn("""
+    Received unknown controlMessage: #{inspect(message)} \
+    from #{inspect(state.peer_id)}, room: #{inspect(state.room_id)}
+    """)
+  end
+
   @impl true
   def handle_info({:media_event, data}, state) when is_binary(data) do
     message =
@@ -112,6 +119,12 @@ defmodule JellyfishWeb.Socket do
       |> Jason.encode!()
 
     {:push, {:text, message}, state}
+  end
+
+  @impl true
+  def handle_info(:send_ping, state) do
+    Process.send_after(self(), :send_ping, @heartbeat_interval)
+    {:push, {:ping, ""}, state}
   end
 
   @impl true
@@ -132,10 +145,18 @@ defmodule JellyfishWeb.Socket do
   @impl true
   def terminate(_reason, state) do
     Logger.info("""
-    WebSocket associated with peer #{inspect(state.peer_id)} stopped, \
-    room: #{inspect(state.room_id)}
+    WebSocket associated with peer #{inspect(Map.get(state, :peer_id, ""))} stopped, \
+    room: #{inspect(Map.get(state, :room_id, ""))}
     """)
 
     :ok
+  end
+
+  defp control_message(data) do
+    %{
+      "type" => "controlMessage",
+      "data" => data
+    }
+    |> Jason.encode!()
   end
 end

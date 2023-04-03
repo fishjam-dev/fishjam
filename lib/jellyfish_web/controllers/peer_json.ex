@@ -2,6 +2,10 @@ defmodule JellyfishWeb.PeerJSON do
   @moduledoc false
   alias Jellyfish.Peer.WebRTC
 
+  def show(%{peer: peer, token: token}) do
+    %{data: %{peer: data(peer), token: token}}
+  end
+
   def show(%{peer: peer}) do
     %{data: data(peer)}
   end

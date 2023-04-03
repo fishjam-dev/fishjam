@@ -1,102 +1,113 @@
 defmodule JellyfishWeb.SocketTest do
-  use ExUnit.Case
+  use JellyfishWeb.ConnCase
 
   import ExUnit.CaptureLog
 
-  alias Jellyfish.Peer.WebRTC
-  alias Jellyfish.{Room, RoomService}
-
-  alias JellyfishWeb.{Endpoint, Socket}
+  alias Jellyfish.RoomService
+  alias JellyfishWeb.{PeerToken, Socket}
 
   @data "mediaEventData"
 
-  setup do
-    {:ok, room} = RoomService.create_room(10)
-    {:ok, room_pid} = RoomService.find_room(room.id)
-    {:ok, peer} = Room.add_peer(room_pid, WebRTC)
+  setup %{conn: conn} do
+    room_conn = post(conn, ~p"/room", maxPeers: 1)
+    assert %{"id" => room_id} = json_response(room_conn, :created)["data"]
+    {:ok, room_pid} = RoomService.find_room(room_id)
+
+    conn = post(conn, ~p"/room/#{room_id}/peer", type: "webrtc")
+
+    assert %{"token" => token} = json_response(conn, :created)["data"]
 
     on_exit(fn ->
-      RoomService.delete_room(room.id)
+      room_conn = delete(conn, ~p"/room/#{room_id}")
+      assert response(room_conn, :no_content)
     end)
 
-    %{room_id: room.id, peer_id: peer.id, room_pid: room_pid}
+    {:ok,
+     %{
+       room_pid: room_pid,
+       authenticated?: false,
+       token: token
+     }}
   end
 
   describe "connecting" do
-    test "when credentials are valid", %{room_id: room_id, peer_id: peer_id, room_pid: room_pid} do
-      assert {:ok, state} = connect(%{"room_id" => room_id, "peer_id" => peer_id})
-      assert state.peer_id == peer_id
-      assert state.room_pid == room_pid
+    test "connecting doesn't require any params" do
+      assert {:ok, _state} = connect(%{})
+    end
+  end
 
-      status =
-        room_pid
-        |> Room.get_state()
-        |> Map.get(:peers)
-        |> Map.get(peer_id)
-        |> Map.get(:status)
+  describe "authenticating" do
+    setup [:connect_setup]
 
-      assert status == :connected
+    test "credentials valid", %{token: token} = state do
+      auth_msg =
+        Jason.encode!(%{
+          "type" => "controlMessage",
+          "data" => %{"type" => "authRequest", "token" => token}
+        })
+
+      assert {:reply, :ok, {:text, message}, _state} = send_from_client(auth_msg, state)
+
+      assert %{"type" => "controlMessage", "data" => %{"type" => "authenticated"}} =
+               Jason.decode!(message)
     end
 
-    test "when peer is already connected", %{room_id: room_id, peer_id: peer_id} do
-      assert {:ok, _state} = connect(%{"room_id" => room_id, "peer_id" => peer_id})
-      assert {:error, :already_connected} = connect(%{"room_id" => room_id, "peer_id" => peer_id})
+    test "invalid token", state do
+      auth_msg =
+        Jason.encode!(%{
+          "type" => "controlMessage",
+          "data" => %{"type" => "authRequest", "token" => "invalid_token"}
+        })
+
+      assert {:stop, :closed, {1000, "invalid"}, _state} = send_from_client(auth_msg, state)
     end
 
-    test "when room does not exist" do
-      assert {:error, :room_not_found} =
-               connect(%{"room_id" => "fake_room_id", "peer_id" => "fake_peer_id"})
-    end
-
-    test "when peer does not exist", %{room_id: room_id} do
-      assert {:error, :peer_not_found} =
-               connect(%{"room_id" => room_id, "peer_id" => "fake_peer_id"})
-    end
-
-    test "when request params are missing" do
-      assert {:error, :no_params} = connect(%{"room_id" => "room_id", "not_peer_id" => "abc"})
+    test "unauthenticated message", state do
+      msg = Jason.encode!(%{"type" => "mediaEvent", "data" => @data})
+      assert {:stop, :closed, {1000, "unauthenticated"}, _state} = send_from_client(msg, state)
     end
   end
 
   describe "receiving messages from client" do
-    test "when message is valid Media Event", %{
-      room_id: room_id,
-      room_pid: room_pid,
-      peer_id: peer_id
-    } do
+    setup [:authenticate]
+
+    test "when message is valid Media Event", %{room_pid: room_pid, peer_id: peer_id} = state do
       :erlang.trace(room_pid, true, [:receive])
 
       json = Jason.encode!(%{"type" => "mediaEvent", "data" => @data})
-      send_from_client(json, room_pid, peer_id, room_id)
+      send_from_client(json, state)
 
       # check if room process received the media event
       assert_receive {:trace, ^room_pid, :receive, {:media_event, ^peer_id, _data}}
     end
 
-    test "when message is not a json", %{room_pid: room_pid, peer_id: peer_id, room_id: room_id} do
-      assert capture_log(fn -> send_from_client("notajson", room_pid, peer_id, room_id) end) =~
+    test "authRequest when already connected", state do
+      auth_msg =
+        Jason.encode!(%{
+          "type" => "controlMessage",
+          "data" => %{"type" => "authRequest", "token" => state.token}
+        })
+
+      assert capture_log(fn -> send_from_client(auth_msg, state) end) =~
+               ~r/peer already connected/
+    end
+
+    test "when message is not a json", state do
+      assert capture_log(fn -> send_from_client("notajson", state) end) =~
                "Failed to decode message"
     end
 
-    test "when message type is unexpected", %{
-      room_pid: room_pid,
-      peer_id: peer_id,
-      room_id: room_id
-    } do
+    test "when message type is unexpected", state do
       json = Jason.encode!(%{"type" => 34})
 
-      assert capture_log(fn -> send_from_client(json, room_pid, peer_id, room_id) end) =~
+      assert capture_log(fn -> send_from_client(json, state) end) =~
                "Received message with unexpected type"
     end
 
-    test "when message has invalid structure", %{
-      room_pid: room_pid,
-      peer_id: peer_id,
-      room_id: room_id
-    } do
+    test "when message has invalid structure", state do
       json = Jason.encode!(%{"notatype" => 45})
 
-      assert capture_log(fn -> send_from_client(json, room_pid, peer_id, room_id) end) =~
+      assert capture_log(fn -> send_from_client(json, state) end) =~
                "Received message with invalid structure"
     end
   end
@@ -121,7 +132,7 @@ defmodule JellyfishWeb.SocketTest do
     end
   end
 
-  defp connect(params, connect_info \\ %{}) do
+  def connect(params, connect_info \\ %{}) do
     map = %{
       endpoint: Endpoint,
       transport: :channel_test,
@@ -138,13 +149,20 @@ defmodule JellyfishWeb.SocketTest do
     end
   end
 
-  defp send_from_client(message, room_pid, peer_id, room_id) do
-    Socket.handle_in({message, [opcode: :text]}, %{
-      room_pid: room_pid,
-      peer_id: peer_id,
-      room_id: room_id
-    })
+  def send_from_client(message, state) do
+    Socket.handle_in({message, [opcode: :text]}, state)
   end
 
-  defp send_from_server(message), do: Socket.handle_info(message, %{})
+  def send_from_server(message), do: Socket.handle_info(message, %{})
+
+  def connect_setup(%{}) do
+    {:ok, state} = connect(%{})
+    state
+  end
+
+  def authenticate(state) do
+    {:ok, %{peer_id: peer_id, room_id: room_id}} = PeerToken.verify(state.token)
+
+    state |> Map.merge(%{authenticated?: true, peer_id: peer_id, room_id: room_id})
+  end
 end
