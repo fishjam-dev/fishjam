@@ -1,4 +1,4 @@
-FROM elixir:1.14.3-alpine as build
+FROM elixir:1.14.3-otp-24-alpine as build
 
 RUN \
   apk add --no-cache \
@@ -9,10 +9,14 @@ RUN \
   ffmpeg-dev \
   fdk-aac-dev \
   opus-dev \
-  rust \
-  cargo
+  curl
 
 WORKDIR /app
+
+ENV RUSTFLAGS="-C target-feature=-crt-static"
+ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse 
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 RUN mix local.hex --force && \
   mix local.rebar --force
