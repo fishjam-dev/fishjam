@@ -4,7 +4,7 @@ defmodule JellyfishWeb.SocketTest do
   import ExUnit.CaptureLog
 
   alias Jellyfish.RoomService
-  alias JellyfishWeb.{PeerToken, Socket}
+  alias JellyfishWeb.Socket
 
   @data "mediaEventData"
 
@@ -18,8 +18,7 @@ defmodule JellyfishWeb.SocketTest do
     assert %{"token" => token} = json_response(conn, :created)["data"]
 
     on_exit(fn ->
-      room_conn = delete(conn, ~p"/room/#{room_id}")
-      assert response(room_conn, :no_content)
+      RoomService.delete_room(room_id)
     end)
 
     {:ok,
@@ -59,7 +58,7 @@ defmodule JellyfishWeb.SocketTest do
           "data" => %{"type" => "authRequest", "token" => "invalid_token"}
         })
 
-      assert {:stop, :closed, {1000, "invalid"}, _state} = send_from_client(auth_msg, state)
+      assert {:stop, :closed, {1000, ":invalid"}, _state} = send_from_client(auth_msg, state)
     end
 
     test "unauthenticated message", state do
@@ -123,8 +122,8 @@ defmodule JellyfishWeb.SocketTest do
       assert {:stop, _reason, _state} = send_from_server({:stop_connection, :reason})
     end
 
-    test "when room crashed", %{room_id: room_id, peer_id: peer_id, room_pid: room_pid} do
-      assert {:ok, _state} = connect(%{"room_id" => room_id, "peer_id" => peer_id})
+    test "when room crashed", state do
+      %{room_pid: room_pid} = authenticate(state)
 
       Process.exit(room_pid, :error)
 
@@ -161,8 +160,19 @@ defmodule JellyfishWeb.SocketTest do
   end
 
   def authenticate(state) do
-    {:ok, %{peer_id: peer_id, room_id: room_id}} = PeerToken.verify(state.token)
+    auth_message =
+      %{
+        "type" => "controlMessage",
+        "data" => %{
+          "type" => "authRequest",
+          "token" => state.token
+        }
+      }
+      |> Jason.encode!()
 
-    state |> Map.merge(%{authenticated?: true, peer_id: peer_id, room_id: room_id})
+    {:reply, :ok, {:text, _message}, new_state} =
+      Socket.handle_in({auth_message, [opcode: :text]}, state)
+
+    Map.merge(state, new_state)
   end
 end
