@@ -6,9 +6,46 @@ defmodule JellyfishWeb.RoomControllerTest do
   @schema JellyfishWeb.ApiSpec.spec()
 
   setup %{conn: conn} do
+    token = Application.fetch_env!(:jellyfish, :token)
+    conn = put_req_header(conn, "authorization", "Bearer " <> token)
+
     on_exit(fn -> delete_all_rooms(conn) end)
 
-    []
+    [conn: conn]
+  end
+
+  describe "auth" do
+    setup %{conn: conn} do
+      conn = delete_req_header(conn, "authorization")
+      [conn: conn]
+    end
+
+    test "invalid token", %{conn: conn} do
+      invalid_token = "invalid" <> Application.fetch_env!(:jellyfish, :token)
+      conn = put_req_header(conn, "authorization", "Bearer " <> invalid_token)
+
+      conn = post(conn, ~p"/room", maxPeers: 10)
+
+      response = json_response(conn, :unauthorized)
+
+      assert_response_schema(response, "Error", @schema)
+    end
+
+    test "missing token", %{conn: conn} do
+      conn = post(conn, ~p"/room", maxPeers: 10)
+
+      response = json_response(conn, :unauthorized)
+
+      assert_response_schema(response, "Error", @schema)
+    end
+
+    test "correct token", %{conn: conn} do
+      token = Application.fetch_env!(:jellyfish, :token)
+      conn = put_req_header(conn, "authorization", "Bearer " <> token)
+
+      conn = post(conn, ~p"/room", maxPeers: 10)
+      json_response(conn, :created)
+    end
   end
 
   describe "index" do

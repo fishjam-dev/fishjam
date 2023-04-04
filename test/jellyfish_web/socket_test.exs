@@ -9,6 +9,9 @@ defmodule JellyfishWeb.SocketTest do
   @data "mediaEventData"
 
   setup %{conn: conn} do
+    token = Application.fetch_env!(:jellyfish, :token)
+    conn = put_req_header(conn, "authorization", "Bearer " <> token)
+
     room_conn = post(conn, ~p"/room", maxPeers: 1)
     assert %{"id" => room_id} = json_response(room_conn, :created)["data"]
     {:ok, room_pid} = RoomService.find_room(room_id)

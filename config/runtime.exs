@@ -69,6 +69,13 @@ defmodule ConfigParser do
   end
 end
 
+token =
+  if config_env() == :prod do
+    System.fetch_env!("TOKEN")
+  else
+    System.get_env("TOKEN", "development")
+  end
+
 config :jellyfish,
   webrtc_used: String.downcase(System.get_env("WEBRTC_USED", "true")) not in ["false", "f", "0"],
   integrated_turn_ip:
@@ -85,6 +92,7 @@ config :jellyfish,
   integrated_turn_pkey: System.get_env("INTEGRATED_TURN_PKEY"),
   integrated_turn_cert: System.get_env("INTEGRATED_TURN_CERT"),
   integrated_turn_domain: System.get_env("VIRTUAL_HOST"),
+  token: token,
   auth_salt: System.get_env("AUTH_SALT", "7d8ecfca-aeaf-43b1-81fa-5eb6d4b0557a"),
   jwt_max_age: 24 * 3600
 

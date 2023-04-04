@@ -3,6 +3,7 @@ defmodule JellyfishWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug :bearer_auth
   end
 
   scope "/room", JellyfishWeb do
@@ -40,6 +41,25 @@ defmodule JellyfishWeb.Router do
       pipe_through :open_api_spec
       get "/openapi.json", OpenApiSpex.Plug.RenderSpec, []
       get "/docs", OpenApiSpex.Plug.SwaggerUI, path: "/openapi.json"
+    end
+  end
+
+  def bearer_auth(conn, _opts) do
+    with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
+         true <- token == Application.fetch_env!(:jellyfish, :token) do
+      conn
+    else
+      false ->
+        conn
+        |> put_resp_content_type("application/json")
+        |> resp(401, "{\"errors\": \"Invalid token\"}")
+        |> halt()
+
+      _other ->
+        conn
+        |> put_resp_content_type("application/json")
+        |> resp(401, "{\"errors\": \"Missing token\"}")
+        |> halt()
     end
   end
 end
