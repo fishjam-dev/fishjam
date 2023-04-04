@@ -4,7 +4,7 @@ defmodule JellyfishWeb.SocketTest do
   import ExUnit.CaptureLog
 
   alias Jellyfish.RoomService
-  alias JellyfishWeb.Socket
+  alias JellyfishWeb.{PeerToken, Socket}
 
   @data "mediaEventData"
 
@@ -64,6 +64,20 @@ defmodule JellyfishWeb.SocketTest do
     test "unauthenticated message", state do
       msg = Jason.encode!(%{"type" => "mediaEvent", "data" => @data})
       assert {:stop, :closed, {1000, "unauthenticated"}, _state} = send_from_client(msg, state)
+    end
+
+    test "valid token but peer doesn't exist", %{token: token} = state do
+      {:ok, %{room_id: room_id}} = PeerToken.verify(token)
+      fake_token = PeerToken.generate(%{peer_id: "peer_id", room_id: room_id})
+
+      msg =
+        %{
+          "type" => "controlMessage",
+          "data" => %{"type" => "authRequest", "token" => fake_token}
+        }
+        |> Jason.encode!()
+
+      assert {:stop, :closed, {1000, ":peer_not_found"}, _state} = send_from_client(msg, state)
     end
   end
 
