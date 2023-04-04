@@ -10,12 +10,13 @@ defmodule Jellyfish.Component.HLS do
 
   @impl true
   def config(options) do
-    %HLS{
-      rtc_engine: options.engine_pid,
-      owner: self(),
-      output_directory: "output/#{options.room_id}",
-      mixer_config: %MixerConfig{},
-      hls_config: %HLSConfig{}
-    }
+    {:ok,
+     %HLS{
+       rtc_engine: options.engine_pid,
+       owner: self(),
+       output_directory: "output/#{options.room_id}",
+       mixer_config: nil,
+       hls_config: %HLSConfig{}
+     }}
   end
 end

@@ -88,7 +88,7 @@ defmodule Jellyfish.Room do
     GenServer.call(registry_id(room_id), {:remove_peer, peer_id})
   end
 
-  @spec add_component(id(), Component.component(), map() | nil) :: {:ok, Component.t()}
+  @spec add_component(id(), Component.component(), map() | nil) :: {:ok, Component.t()} | :error
   def add_component(room_id, component_type, options) do
     GenServer.call(registry_id(room_id), {:add_component, component_type, options})
   end
@@ -195,15 +195,20 @@ defmodule Jellyfish.Room do
         if(is_nil(options), do: %{}, else: options)
       )
 
-    component = Component.new(component_type, options)
-    state = put_in(state, [:components, component.id], component)
+    with {:ok, component} <- Component.new(component_type, options) do
+      state = put_in(state, [:components, component.id], component)
 
-    :ok =
-      Engine.add_endpoint(state.engine_pid, component.engine_endpoint, endpoint_id: component.id)
+      :ok =
+        Engine.add_endpoint(state.engine_pid, component.engine_endpoint, endpoint_id: component.id)
 
-    Logger.info("Added component #{inspect(component.id)}")
+      Logger.info("Added component #{inspect(component.id)}")
 
-    {:reply, {:ok, component}, state}
+      {:reply, {:ok, component}, state}
+    else
+      {:error, reason} ->
+        Logger.warn("Unable to add component: #{inspect(reason)}")
+        {:reply, :error, state}
+    end
   end
 
   @impl true
@@ -281,6 +286,12 @@ defmodule Jellyfish.Room do
           put_in(state, [:peers, peer_id], peer)
       end
 
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(info, state) do
+    Logger.warn("Received unexpected info: #{inspect(info)}")
     {:noreply, state}
   end
 
