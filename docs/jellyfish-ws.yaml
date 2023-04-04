@@ -61,7 +61,6 @@ components:
         data:
           oneOf:
             - $ref: '#/components/schemas/authenticated'
-            - $ref: '#/components/schemas/unauthenticated'
 
     authRequest:
       description: An authentication request sent from the client
@@ -78,13 +77,6 @@ components:
       properties:
         type:
           const: 'authenticated'
-
-    unauthenticated:
-      description: Peer sent a message without authenticating first or the authentication failed
-      type: object
-      properties:
-        type:
-          const: 'unauthenticated'  
 
     mediaEvent:
       type: object

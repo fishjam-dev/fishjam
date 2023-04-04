@@ -32,6 +32,19 @@ defmodule JellyfishWeb.ApiSpec.Peer do
     })
   end
 
+  defmodule Token do
+    @moduledoc false
+
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "AuthToken",
+      description: "Token for authorizing websocket connection",
+      type: :string,
+      example: "5cdac726-57a3-4ecb-b1d5-72a3d62ec242"
+    })
+  end
+
   OpenApiSpex.schema(%{
     title: "Peer",
     description: "Describes peer status",
@@ -39,7 +52,8 @@ defmodule JellyfishWeb.ApiSpec.Peer do
     properties: %{
       id: %Schema{type: :string, description: "Assigned peer id", example: "peer-1"},
       type: Type,
-      status: Status
+      status: Status,
+      token: Token
     }
   })
 end

@@ -23,14 +23,29 @@ defmodule JellyfishWeb.PeerControllerTest do
       conn = post(conn, ~p"/room/#{room_id}/peer", type: @peer_type)
       response = json_response(conn, :created)
       assert_response_schema(response, "PeerDetailsResponse", @schema)
-      assert %{"id" => id, "type" => @peer_type} = response["data"]
+
+      assert %{"peer" => %{"id" => peer_id, "type" => @peer_type}, "token" => token} =
+               response["data"]
 
       conn = get(conn, ~p"/room/#{room_id}")
 
       assert %{
                "id" => ^room_id,
-               "peers" => [%{"id" => ^id, "type" => @peer_type, "status" => "disconnected"}]
+               "peers" => [
+                 %{
+                   "id" => ^peer_id,
+                   "type" => @peer_type,
+                   "status" => "disconnected"
+                 }
+               ]
              } = json_response(conn, :ok)["data"]
+
+      assert {:ok, %{peer_id: ^peer_id, room_id: ^room_id}} =
+               Phoenix.Token.verify(
+                 JellyfishWeb.Endpoint,
+                 Application.get_env(:jellyfish, :auth_salt),
+                 token
+               )
     end
 
     test "renders errors when peer_type is invalid", %{conn: conn, room_id: room_id} do
@@ -40,7 +55,7 @@ defmodule JellyfishWeb.PeerControllerTest do
 
     test "renders errors when reached peers limit", %{conn: conn, room_id: room_id} do
       conn = post(conn, ~p"/room/#{room_id}/peer", type: @peer_type)
-      assert %{"id" => _id} = json_response(conn, :created)["data"]
+      assert %{"peer" => _peer, "token" => _token} = json_response(conn, :created)["data"]
 
       conn = post(conn, ~p"/room/#{room_id}/peer", type: @peer_type)
 
@@ -92,9 +107,10 @@ defmodule JellyfishWeb.PeerControllerTest do
     defp create_peer(state) do
       conn = post(state.conn, ~p"/room/#{state.room_id}/peer", type: @peer_type)
 
-      assert %{"id" => id} = json_response(conn, :created)["data"]
+      assert %{"peer" => %{"id" => peer_id}, "token" => token} =
+               json_response(conn, :created)["data"]
 
-      %{peer_id: id}
+      %{peer_id: peer_id, token: token}
     end
   end
 end

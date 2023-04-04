@@ -6,6 +6,7 @@ defmodule JellyfishWeb.PeerController do
   alias Jellyfish.Room
   alias Jellyfish.RoomService
   alias JellyfishWeb.ApiSpec
+  alias JellyfishWeb.PeerToken
   alias OpenApiSpex.{Response, Schema}
 
   action_fallback JellyfishWeb.FallbackController
@@ -61,10 +62,12 @@ defmodule JellyfishWeb.PeerController do
          {:ok, peer_type} <- Peer.parse_type(peer_type_string),
          {:ok, room_pid} <- RoomService.find_room(room_id),
          {:ok, peer} <- Room.add_peer(room_pid, peer_type) do
+      assigns = [peer: peer, token: PeerToken.generate(%{peer_id: peer.id, room_id: room_id})]
+
       conn
       |> put_resp_content_type("application/json")
       |> put_status(:created)
-      |> render("show.json", peer: peer)
+      |> render("show.json", assigns)
     else
       :error ->
         {:error, :bad_request, "Invalid request body structure"}
