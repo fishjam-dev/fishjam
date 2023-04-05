@@ -12,7 +12,7 @@ To download Jellyfish Docker image, see [Jellyfish images](https://github.com/je
 You can also build the image locally
 
 ```console
-docker  build -t jellyfish .
+docker build -t jellyfish .
 ```
 
 After obtaining the image, you need to find `INTEGRATED_TURN_IP`, it is the IPv4 address at which your computer is accessible in the
@@ -25,7 +25,8 @@ Explicit port exposure (macOS compatible)
 docker run -p 50000-50050:50000-50050/udp -p 4000:4000/tcp -e INTEGRATED_TURN_PORT_RANGE=50000-50050 -e INTEGRATED_TURN_IP=<IPv4 address> -e VIRTUAL_HOST=localhost -e SECRET_KEY_BASE=secret ghcr.io/jellyfish-dev/jellyfish:latest
 ```
 
-Make sure that the exposed UDP ports match `INTEGRATED_TURN_PORT_RANGE`.
+Make sure that the exposed UDP ports match `INTEGRATED_TURN_PORT_RANGE`. Range of the ports shouldn't be too wide as it might
+cause problems with container startup.
 
 Using host network (Linux only)
 
@@ -33,13 +34,7 @@ Using host network (Linux only)
 docker run --network=host -e INTEGRATED_TURN_IP=<IPv4 address> -e VIRTUAL_HOST=localhost -e SECRET_KEY_BASE ghcr.io/jellyfish-dev/jellyfish:latest
 ```
 
-Instead of passing environmental variables manually you can do
-
-```console
-docker run --network=host --env-file ./env-file ghcr.io/jellyfish-dev/jellyfish:latest
-```
-
-where `./env-file` is a file containing environmental variables that the image expects, see example file `.env.sample`.
+> **NOTE** Instead of passing environmental variables manually, you can use `--env-file ./env-file` flag, where `env-file` is a file containing the variables that the image expects, see example file `.env.sample`
 
 ## Copyright and License
 
