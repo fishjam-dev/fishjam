@@ -33,7 +33,7 @@ Using host network (Linux only)
 docker run --network=host -e INTEGRATED_TURN_IP=<IPv4 address> -e VIRTUAL_HOST=localhost -e SECRET_KEY_BASE ghcr.io/jellyfish-dev/jellyfish:latest
 ```
 
-> **NOTE** Instead of passing environmental variables manually, you can use `--env-file ./env-file` flag, where `env-file` is a file containing the variables that the image expects, see example file `.env.sample`
+> **_NOTE_** Instead of passing environmental variables manually, you can use `--env-file ./env-file` flag, where `env-file` is a file containing the variables that the image expects, see example file `.env.sample`
 
 ## Copyright and License
 
