@@ -2,6 +2,12 @@
 components:
   responses: {}
   schemas:
+    AuthToken:
+      description: Token for authorizing websocket connection
+      example: 5cdac726-57a3-4ecb-b1d5-72a3d62ec242
+      title: AuthToken
+      type: string
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.Token
     Component:
       description: Describes component
       properties:
@@ -42,7 +48,7 @@ components:
       properties:
         errors:
           description: Error details
-          example: error details
+          example: Token has expired
           type: string
       title: Error
       type: object
@@ -56,6 +62,8 @@ components:
           type: string
         status:
           $ref: '#/components/schemas/PeerStatus'
+        token:
+          $ref: '#/components/schemas/AuthToken'
         type:
           $ref: '#/components/schemas/PeerType'
       title: Peer
@@ -113,6 +121,7 @@ components:
           description: Maximum amount of peers allowed into the room
           example: 10
           minimum: 1
+          nullable: true
           type: integer
       title: RoomConfig
       type: object
@@ -157,7 +166,8 @@ paths:
                 $ref: '#/components/schemas/RoomsListingResponse'
           description: Success
       summary: Show information about all rooms
-      tags: []
+      tags:
+        - room
     post:
       callbacks: {}
       operationId: JellyfishWeb.RoomController.create
@@ -183,7 +193,8 @@ paths:
                 $ref: '#/components/schemas/Error'
           description: Invalid request structure
       summary: Creates a room
-      tags: []
+      tags:
+        - room
   /room/{room_id}:
     delete:
       callbacks: {}
@@ -205,7 +216,8 @@ paths:
                 $ref: '#/components/schemas/Error'
           description: Room doesn't exist
       summary: Delete the room
-      tags: []
+      tags:
+        - room
     get:
       callbacks: {}
       operationId: JellyfishWeb.RoomController.show
@@ -230,7 +242,8 @@ paths:
                 $ref: '#/components/schemas/Error'
           description: Room doesn't exist
       summary: Shows information about the room
-      tags: []
+      tags:
+        - room
   /room/{room_id}/component:
     post:
       callbacks: {}
@@ -276,7 +289,8 @@ paths:
                 $ref: '#/components/schemas/Error'
           description: Room doesn't exist
       summary: Creates the component and adds it to the room
-      tags: []
+      tags:
+        - component
   /room/{room_id}/component/{id}:
     delete:
       callbacks: {}
@@ -304,7 +318,8 @@ paths:
                 $ref: '#/components/schemas/Error'
           description: Either component or the room doesn't exist
       summary: Delete the component from the room
-      tags: []
+      tags:
+        - component
   /room/{room_id}/peer:
     post:
       callbacks: {}
@@ -354,7 +369,8 @@ paths:
                 $ref: '#/components/schemas/Error'
           description: Peer limit has been reached
       summary: Create peer
-      tags: []
+      tags:
+        - peer
   /room/{room_id}/peer/{id}:
     delete:
       callbacks: {}
@@ -382,7 +398,8 @@ paths:
                 $ref: '#/components/schemas/Error'
           description: Room ID or Peer ID references a resource that doesn't exist
       summary: Delete peer
-      tags: []
+      tags:
+        - peer
 security: []
 servers: []
 tags: []
