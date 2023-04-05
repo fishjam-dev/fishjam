@@ -16,8 +16,7 @@ docker build -t jellyfish .
 ```
 
 After obtaining the image, you need to find `INTEGRATED_TURN_IP`, it is the IPv4 address at which your computer is accessible in the
-network (e.g. private address in a local network, like 192.168.X.X) or a loopback address (i.e. 127.0.0.1), if you want the server to be 
-accessible only from your machine. Then the container can be started.
+network (e.g. private address in a local network, like 192.168.X.X). Then the container can be started.
 
 Explicit port exposure (macOS compatible)
 

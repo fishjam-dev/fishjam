@@ -5,7 +5,7 @@ import Config
 # when generating URLs.
 
 # Do not print debug messages in production
-config :logger, level: :info
+config :logger, level: :debug
 
 # run the server automatically when using prod release
 config :jellyfish, JellyfishWeb.Endpoint, server: true
