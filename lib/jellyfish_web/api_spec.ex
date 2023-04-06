@@ -2,7 +2,7 @@ defmodule JellyfishWeb.ApiSpec do
   @moduledoc false
   @behaviour OpenApiSpex.OpenApi
 
-  alias OpenApiSpex.{Info, Paths, Schema}
+  alias OpenApiSpex.{Components, Info, Paths, Schema, SecurityScheme}
 
   # OpenAPISpex master specification
 
@@ -13,7 +13,11 @@ defmodule JellyfishWeb.ApiSpec do
         title: "Jellyfish Media Server",
         version: "0.1.0"
       },
-      paths: Paths.from_router(JellyfishWeb.Router)
+      paths: Paths.from_router(JellyfishWeb.Router),
+      components: %Components{
+        securitySchemes: %{"authorization" => %SecurityScheme{type: "http", scheme: "bearer"}}
+      },
+      security: [%{"authorization" => []}]
     }
     |> OpenApiSpex.resolve_schema_modules()
   end

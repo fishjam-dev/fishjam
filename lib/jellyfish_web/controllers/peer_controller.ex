@@ -35,7 +35,8 @@ defmodule JellyfishWeb.PeerController do
       created: ApiSpec.data("Peer successfully created", ApiSpec.PeerDetailsResponse),
       bad_request: ApiSpec.error("Invalid request body structure"),
       not_found: ApiSpec.error("Room doesn't exist"),
-      service_unavailable: ApiSpec.error("Peer limit has been reached")
+      service_unavailable: ApiSpec.error("Peer limit has been reached"),
+      unauthorized: ApiSpec.error("Unauthorized")
     ]
 
   operation :delete,
@@ -54,7 +55,8 @@ defmodule JellyfishWeb.PeerController do
     ],
     responses: [
       no_content: %Response{description: "Peer successfully deleted"},
-      not_found: ApiSpec.error("Room ID or Peer ID references a resource that doesn't exist")
+      not_found: ApiSpec.error("Room ID or Peer ID references a resource that doesn't exist"),
+      unauthorized: ApiSpec.error("Unauthorized")
     ]
 
   def create(conn, %{"room_id" => room_id} = params) do

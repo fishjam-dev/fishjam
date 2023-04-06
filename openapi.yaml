@@ -148,6 +148,10 @@ components:
       title: RoomsListingResponse
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.RoomsListingResponse
+  securitySchemes:
+    authorization:
+      scheme: bearer
+      type: http
 info:
   title: Jellyfish Media Server
   version: 0.1.0
@@ -165,6 +169,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/RoomsListingResponse'
           description: Success
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unauthorized
       summary: Show information about all rooms
       tags:
         - room
@@ -192,6 +202,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Invalid request structure
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unauthorized
       summary: Creates a room
       tags:
         - room
@@ -209,6 +225,12 @@ paths:
       responses:
         '204':
           description: Successfully deleted room
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unauthorized
         '404':
           content:
             application/json:
@@ -235,6 +257,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/RoomDetailsResponse'
           description: Success
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unauthorized
         '404':
           content:
             application/json:
@@ -282,6 +310,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Invalid request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unauthorized
         '404':
           content:
             application/json:
@@ -311,6 +345,12 @@ paths:
       responses:
         '204':
           description: Successfully deleted
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unauthorized
         '404':
           content:
             application/json:
@@ -356,6 +396,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Invalid request body structure
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unauthorized
         '404':
           content:
             application/json:
@@ -391,6 +437,12 @@ paths:
       responses:
         '204':
           description: Peer successfully deleted
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unauthorized
         '404':
           content:
             application/json:
@@ -400,6 +452,7 @@ paths:
       summary: Delete peer
       tags:
         - peer
-security: []
+security:
+  - authorization: []
 servers: []
 tags: []

@@ -13,7 +13,8 @@ defmodule JellyfishWeb.RoomController do
   operation :index,
     summary: "Show information about all rooms",
     responses: [
-      ok: ApiSpec.data("Success", ApiSpec.RoomsListingResponse)
+      ok: ApiSpec.data("Success", ApiSpec.RoomsListingResponse),
+      unauthorized: ApiSpec.error("Unauthorized")
     ]
 
   operation :create,
@@ -21,7 +22,8 @@ defmodule JellyfishWeb.RoomController do
     request_body: {"Room configuration", "application/json", ApiSpec.Room.Config},
     responses: [
       created: ApiSpec.data("Room successfully created", ApiSpec.RoomDetailsResponse),
-      bad_request: ApiSpec.error("Invalid request structure")
+      bad_request: ApiSpec.error("Invalid request structure"),
+      unauthorized: ApiSpec.error("Unauthorized")
     ]
 
   operation :show,
@@ -35,7 +37,8 @@ defmodule JellyfishWeb.RoomController do
     ],
     responses: [
       ok: ApiSpec.data("Success", ApiSpec.RoomDetailsResponse),
-      not_found: ApiSpec.error("Room doesn't exist")
+      not_found: ApiSpec.error("Room doesn't exist"),
+      unauthorized: ApiSpec.error("Unauthorized")
     ]
 
   operation :delete,
@@ -49,7 +52,8 @@ defmodule JellyfishWeb.RoomController do
     ],
     responses: [
       no_content: %Response{description: "Successfully deleted room"},
-      not_found: ApiSpec.error("Room doesn't exist")
+      not_found: ApiSpec.error("Room doesn't exist"),
+      unauthorized: ApiSpec.error("Unauthorized")
     ]
 
   def index(conn, _params) do
