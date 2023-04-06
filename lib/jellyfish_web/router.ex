@@ -52,13 +52,15 @@ defmodule JellyfishWeb.Router do
       false ->
         conn
         |> put_resp_content_type("application/json")
-        |> resp(401, "{\"errors\": \"Invalid token\"}")
+        |> put_status(:unauthorized)
+        |> json(%{errors: "Invalid token"})
         |> halt()
 
       _other ->
         conn
         |> put_resp_content_type("application/json")
-        |> resp(401, "{\"errors\": \"Missing token\"}")
+        |> put_status(:unauthorized)
+        |> json(%{errors: "Missing token"})
         |> halt()
     end
   end
