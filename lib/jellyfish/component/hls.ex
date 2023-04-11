@@ -6,7 +6,7 @@ defmodule Jellyfish.Component.HLS do
   @behaviour Jellyfish.Endpoint.Config
 
   alias Membrane.RTC.Engine.Endpoint.HLS
-  alias Membrane.RTC.Engine.Endpoint.HLS.{HLSConfig, MixerConfig}
+  alias Membrane.RTC.Engine.Endpoint.HLS.HLSConfig
 
   @impl true
   def config(options) do
