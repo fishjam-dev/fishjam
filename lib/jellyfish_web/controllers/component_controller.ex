@@ -62,8 +62,8 @@ defmodule JellyfishWeb.ComponentController do
     with component_options <- Map.get(params, "options"),
          {:ok, component_type_string} <- Map.fetch(params, "type"),
          {:ok, component_type} <- Component.parse_type(component_type_string),
-         {:ok, room_pid} <- RoomService.find_room(room_id),
-         {:ok, component} <- Room.add_component(room_pid, component_type, component_options) do
+         {:ok, _room_pid} <- RoomService.find_room(room_id),
+         {:ok, component} <- Room.add_component(room_id, component_type, component_options) do
       conn
       |> put_resp_content_type("application/json")
       |> put_status(:created)
@@ -76,8 +76,8 @@ defmodule JellyfishWeb.ComponentController do
   end
 
   def delete(conn, %{"room_id" => room_id, "id" => id}) do
-    with {:ok, room_pid} <- RoomService.find_room(room_id),
-         :ok <- Room.remove_component(room_pid, id) do
+    with {:ok, _room_pid} <- RoomService.find_room(room_id),
+         :ok <- Room.remove_component(room_id, id) do
       send_resp(conn, :no_content, "")
     else
       {:error, :room_not_found} -> {:error, :not_found, "Room #{room_id} does not exist"}

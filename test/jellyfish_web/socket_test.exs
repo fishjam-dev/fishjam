@@ -14,7 +14,7 @@ defmodule JellyfishWeb.SocketTest do
 
     room_conn = post(conn, ~p"/room", maxPeers: 1)
     assert %{"id" => room_id} = json_response(room_conn, :created)["data"]
-    {:ok, room_pid} = RoomService.find_room(room_id)
+    {:ok, _room_pid} = RoomService.find_room(room_id)
 
     conn = post(conn, ~p"/room/#{room_id}/peer", type: "webrtc")
 
@@ -26,7 +26,7 @@ defmodule JellyfishWeb.SocketTest do
 
     {:ok,
      %{
-       room_pid: room_pid,
+       room_id: room_id,
        authenticated?: false,
        token: token
      }}
@@ -87,7 +87,8 @@ defmodule JellyfishWeb.SocketTest do
   describe "receiving messages from client" do
     setup [:authenticate]
 
-    test "when message is valid Media Event", %{room_pid: room_pid, peer_id: peer_id} = state do
+    test "when message is valid Media Event", %{room_id: room_id, peer_id: peer_id} = state do
+      room_pid = RoomService.find_room!(room_id)
       :erlang.trace(room_pid, true, [:receive])
 
       json = Jason.encode!(%{"type" => "mediaEvent", "data" => @data})

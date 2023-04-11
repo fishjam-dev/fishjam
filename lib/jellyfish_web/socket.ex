@@ -32,8 +32,8 @@ defmodule JellyfishWeb.Socket do
       {:ok, %{"type" => "controlMessage", "data" => %{"type" => "authRequest", "token" => token}}} ->
         with {:ok, %{peer_id: peer_id, room_id: room_id}} <- PeerToken.verify(token),
              {:ok, room_pid} <- RoomService.find_room(room_id),
-             :ok <- Room.set_peer_connected(room_pid, peer_id),
-             :ok <- Phoenix.PubSub.subscribe(Jellyfish.PubSub, inspect(room_pid)) do
+             :ok <- Room.set_peer_connected(room_id, peer_id),
+             :ok <- Phoenix.PubSub.subscribe(Jellyfish.PubSub, room_id) do
           Process.send_after(self(), :send_ping, @heartbeat_interval)
 
           message =
@@ -53,7 +53,8 @@ defmodule JellyfishWeb.Socket do
         else
           {:error, reason} ->
             Logger.warn("""
-            Authentication failed, reason: #{reason}
+            Authentication failed, reason: #{reason}.
+            Closing the connection.
             """)
 
             {:stop, :closed, {1000, inspect(reason)}, state}

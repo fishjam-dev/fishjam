@@ -24,8 +24,6 @@ defmodule Jellyfish.Room do
   @type id :: String.t()
   @type max_peers :: non_neg_integer() | nil
 
-  @type room_ref :: pid | {:via, Registry, {Jellyfish.RoomRegistry, id()}}
-
   @typedoc """
   This module contains:
   * `id` - room id
@@ -45,65 +43,64 @@ defmodule Jellyfish.Room do
 
   @is_prod Mix.env() == :prod
 
-  def start_link(args) do
-    GenServer.start_link(__MODULE__, args)
+  def start(max_peers) do
+    id = UUID.uuid4()
+    {:ok, pid} = GenServer.start(__MODULE__, [id, max_peers], name: registry_id(id))
+    {:ok, pid, id}
   end
 
-  def start(args) do
-    GenServer.start(__MODULE__, args)
-  end
+  @spec get_state(id()) :: t() | nil
+  def get_state(room_id) do
+    room_id = registry_id(room_id)
 
-  @spec get_state(room_ref()) :: t() | nil
-  def get_state(room_pid) do
     try do
-      GenServer.call(room_pid, :state)
+      GenServer.call(room_id, :state)
     catch
-      :exit, {:noproc, {GenServer, :call, [^room_pid, :state, _timeout]}} ->
+      :exit, {:noproc, {GenServer, :call, [^room_id, :state, _timeout]}} ->
         Logger.warn(
-          "Cannot get state of #{inspect(room_pid)}, the room's process doesn't exist anymore"
+          "Cannot get state of #{inspect(room_id)}, the room's process doesn't exist anymore"
         )
 
         nil
     end
   end
 
-  @spec add_peer(pid(), Peer.peer()) :: {:ok, Peer.t()} | {:error, :reached_peers_limit}
-  def add_peer(room_pid, peer_type) do
-    GenServer.call(room_pid, {:add_peer, peer_type})
+  @spec add_peer(id(), Peer.peer()) :: {:ok, Peer.t()} | {:error, :reached_peers_limit}
+  def add_peer(room_id, peer_type) do
+    GenServer.call(registry_id(room_id), {:add_peer, peer_type})
   end
 
-  @spec set_peer_connected(pid(), Peer.id()) ::
+  @spec set_peer_connected(id(), Peer.id()) ::
           :ok | {:error, :peer_not_found | :peer_already_connected}
-  def set_peer_connected(room_pid, peer_id) do
-    GenServer.call(room_pid, {:set_peer_connected, peer_id})
+  def set_peer_connected(room_id, peer_id) do
+    GenServer.call(registry_id(room_id), {:set_peer_connected, peer_id})
   end
 
-  @spec get_peer_connection_status(pid(), Peer.id()) ::
+  @spec get_peer_connection_status(id(), Peer.id()) ::
           {:ok, Peer.status()} | {:error, :peer_not_found}
-  def get_peer_connection_status(room_pid, peer_id) do
-    GenServer.call(room_pid, {:get_peer_connection_status, peer_id})
+  def get_peer_connection_status(room_id, peer_id) do
+    GenServer.call(registry_id(room_id), {:get_peer_connection_status, peer_id})
   end
 
-  @spec remove_peer(pid(), Peer.id()) :: :ok | {:error, :peer_not_found}
+  @spec remove_peer(id(), Peer.id()) :: :ok | {:error, :peer_not_found}
   def remove_peer(room_id, peer_id) do
-    GenServer.call(room_id, {:remove_peer, peer_id})
+    GenServer.call(registry_id(room_id), {:remove_peer, peer_id})
   end
 
-  @spec add_component(pid(), Component.component(), map() | nil) :: {:ok, Component.t()}
-  def add_component(room_pid, component_type, options) do
-    GenServer.call(room_pid, {:add_component, component_type, options})
+  @spec add_component(id(), Component.component(), map() | nil) :: {:ok, Component.t()}
+  def add_component(room_id, component_type, options) do
+    GenServer.call(registry_id(room_id), {:add_component, component_type, options})
   end
 
-  @spec remove_component(pid(), Component.id()) :: :ok | {:error, :component_not_found}
-  def remove_component(room_pid, component_id) do
-    GenServer.call(room_pid, {:remove_component, component_id})
+  @spec remove_component(id(), Component.id()) :: :ok | {:error, :component_not_found}
+  def remove_component(room_id, component_id) do
+    GenServer.call(registry_id(room_id), {:remove_component, component_id})
   end
 
   @impl true
-  def init(max_peers) do
-    state = new(max_peers)
-    Logger.metadata(room_id: state.id)
-    {:ok, _pid} = Registry.register(Jellyfish.RoomRegistry, state.id, state.id)
+  def init([id, max_peers]) do
+    state = new(id, max_peers)
+    Logger.metadata(room_id: id)
     Logger.info("Initialize room")
 
     {:ok, state}
@@ -279,9 +276,7 @@ defmodule Jellyfish.Room do
     {:noreply, state}
   end
 
-  defp new(max_peers) do
-    id = UUID.uuid4()
-
+  defp new(id, max_peers) do
     rtc_engine_options = [
       id: id
     ]
@@ -326,4 +321,6 @@ defmodule Jellyfish.Room do
       network_options: network_options
     }
   end
+
+  defp registry_id(room_id), do: {:via, Registry, {Jellyfish.RoomRegistry, room_id}}
 end
