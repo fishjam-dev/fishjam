@@ -60,6 +60,10 @@ defmodule JellyfishWeb.PeerController do
     ]
 
   def create(conn, %{"room_id" => room_id} = params) do
+    # the room may crash between fetching its
+    # pid and adding a new peer to it
+    # in such a case, the controller will fail
+    # and Phoenix will return 500
     with {:ok, peer_type_string} <- Map.fetch(params, "type"),
          {:ok, peer_type} <- Peer.parse_type(peer_type_string),
          {:ok, _room_pid} <- RoomService.find_room(room_id),

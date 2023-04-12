@@ -43,6 +43,7 @@ defmodule Jellyfish.Room do
 
   @is_prod Mix.env() == :prod
 
+  @spec start(max_peers()) :: {:ok, pid(), id()}
   def start(max_peers) do
     id = UUID.uuid4()
     {:ok, pid} = GenServer.start(__MODULE__, [id, max_peers], name: registry_id(id))
