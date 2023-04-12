@@ -52,12 +52,12 @@ defmodule Jellyfish.Room do
 
   @spec get_state(id()) :: t() | nil
   def get_state(room_id) do
-    room_id = registry_id(room_id)
+    registry_room_id = registry_id(room_id)
 
     try do
-      GenServer.call(room_id, :state)
+      GenServer.call(registry_room_id, :state)
     catch
-      :exit, {:noproc, {GenServer, :call, [^room_id, :state, _timeout]}} ->
+      :exit, {:noproc, {GenServer, :call, [^registry_room_id, :state, _timeout]}} ->
         Logger.warn(
           "Cannot get state of #{inspect(room_id)}, the room's process doesn't exist anymore"
         )
@@ -247,9 +247,16 @@ defmodule Jellyfish.Room do
   def handle_info(%Message.EndpointCrashed{endpoint_id: endpoint_id}, state) do
     Logger.error("RTC Engine endpoint #{inspect(endpoint_id)} crashed")
 
-    with {:ok, peer} <- Map.fetch(state.peers, endpoint_id),
-         socket_pid when is_pid(socket_pid) <- Map.get(peer, :socket_pid) do
-      send(socket_pid, {:stop_connection, :endpoint_crashed})
+    if Map.has_key?(state.peers, endpoint_id) do
+      Phoenix.PubSub.broadcast(Jellyfish.PubSub, "server", {:peer_crashed, endpoint_id})
+
+      peer = Map.fetch!(state.peers, endpoint_id)
+
+      if peer.socket_pid != nil do
+        send(peer.socket_pid, {:stop_connection, :endpoint_crashed})
+      end
+    else
+      Phoenix.PubSub.broadcast(Jellyfish.PubSub, "server", {:component_crashed, endpoint_id})
     end
 
     {:noreply, state}

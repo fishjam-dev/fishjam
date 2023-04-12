@@ -119,6 +119,7 @@ defmodule Jellyfish.RoomService do
     Logger.warn("Process #{room_id} is down with reason: #{reason}")
 
     Phoenix.PubSub.broadcast(Jellyfish.PubSub, room_id, :room_crashed)
+    Phoenix.PubSub.broadcast(Jellyfish.PubSub, "server", {:room_crashed, room_id})
 
     {:noreply, state}
   end

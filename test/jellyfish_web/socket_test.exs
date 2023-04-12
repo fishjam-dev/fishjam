@@ -4,7 +4,7 @@ defmodule JellyfishWeb.SocketTest do
   import ExUnit.CaptureLog
 
   alias Jellyfish.RoomService
-  alias JellyfishWeb.{PeerToken, Socket}
+  alias JellyfishWeb.{PeerSocket, PeerToken}
 
   @data "mediaEventData"
 
@@ -158,8 +158,8 @@ defmodule JellyfishWeb.SocketTest do
       connect_info: connect_info
     }
 
-    with {:ok, state} <- Socket.connect(map),
-         {:ok, state} <- Socket.init(state) do
+    with {:ok, state} <- PeerSocket.connect(map),
+         {:ok, state} <- PeerSocket.init(state) do
       {:ok, state}
     else
       {:error, reason} -> {:error, reason}
@@ -167,10 +167,10 @@ defmodule JellyfishWeb.SocketTest do
   end
 
   def send_from_client(message, state) do
-    Socket.handle_in({message, [opcode: :text]}, state)
+    PeerSocket.handle_in({message, [opcode: :text]}, state)
   end
 
-  def send_from_server(message), do: Socket.handle_info(message, %{})
+  def send_from_server(message), do: PeerSocket.handle_info(message, %{})
 
   def connect_setup(%{}) do
     {:ok, state} = connect(%{})
@@ -189,7 +189,7 @@ defmodule JellyfishWeb.SocketTest do
       |> Jason.encode!()
 
     {:reply, :ok, {:text, _message}, new_state} =
-      Socket.handle_in({auth_message, [opcode: :text]}, state)
+      PeerSocket.handle_in({auth_message, [opcode: :text]}, state)
 
     Map.merge(state, new_state)
   end

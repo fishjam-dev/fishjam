@@ -1,4 +1,4 @@
-defmodule JellyfishWeb.Socket do
+defmodule JellyfishWeb.PeerSocket do
   @moduledoc false
   @behaviour Phoenix.Socket.Transport
   require Logger
@@ -16,7 +16,7 @@ defmodule JellyfishWeb.Socket do
 
   @impl true
   def connect(state) do
-    Logger.info("New incoming WebSocket connection, accepting")
+    Logger.info("New incoming peer WebSocket connection, accepting")
 
     {:ok, state}
   end
@@ -49,6 +49,8 @@ defmodule JellyfishWeb.Socket do
               room_pid: room_pid
             })
 
+          Logger.info("Peer WS #{peer_id} authenticated.")
+
           {:reply, :ok, {:text, message}, state}
         else
           {:error, reason} ->
@@ -62,7 +64,8 @@ defmodule JellyfishWeb.Socket do
 
       _other ->
         Logger.warn("""
-        Received message from unauthenticated peer, ignoring
+        Received message from unauthenticated peer that is not authRequest.
+        Closing the connection.
         """)
 
         {:stop, :closed, {1000, "unauthenticated"}, state}
@@ -149,6 +152,10 @@ defmodule JellyfishWeb.Socket do
     WebSocket associated with peer #{inspect(Map.get(state, :peer_id, ""))} stopped, \
     room: #{inspect(Map.get(state, :room_id, ""))}
     """)
+
+    if Map.has_key?(state, :peer_id) do
+      Phoenix.PubSub.broadcast(Jellyfish.PubSub, "server", {:peer_disconnected, state.peer_id})
+    end
 
     :ok
   end

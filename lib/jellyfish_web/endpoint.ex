@@ -1,7 +1,11 @@
 defmodule JellyfishWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :jellyfish
 
-  socket "/socket", JellyfishWeb.Socket,
+  socket "/socket/peer", JellyfishWeb.PeerSocket,
+    websocket: true,
+    longpoll: false
+
+  socket "/socket/server", JellyfishWeb.ServerSocket,
     websocket: true,
     longpoll: false
 
