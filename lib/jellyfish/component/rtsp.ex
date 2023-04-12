@@ -11,10 +11,15 @@ defmodule Jellyfish.Component.RTSP do
 
   @impl true
   def config(%{engine_pid: engine} = options) do
-    options = Map.drop(options, [:engine_pid, :room_id]) |> Map.put(:rtc_engine, engine)
+    options = Map.drop(options, [:engine_pid, :room_id])
 
     with {:ok, valid_opts} <- OpenApiSpex.cast_value(options, ApiSpec.Component.RTSP.schema()) do
-      {:ok, struct(RTSP, valid_opts)}
+      component_spec =
+        Map.from_struct(valid_opts)
+        |> Map.put(:rtc_engine, engine)
+        |> then(&struct(RTSP, &1))
+
+      {:ok, component_spec}
     else
       {:error, _reason} = error -> error
     end

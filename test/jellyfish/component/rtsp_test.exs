@@ -41,6 +41,19 @@ defmodule Jellyfish.Component.RTSPTest do
   end
 
   test "error on no source_uri" do
-    {:error, {:missing_required_option, :source_uri}} = Component.RTSP.config(@jellyfish_opts)
+    expected_reason = [
+      %OpenApiSpex.Cast.Error{
+        reason: :missing_field,
+        value: %{},
+        format: nil,
+        type: nil,
+        name: :source_uri,
+        path: [:source_uri],
+        length: 0,
+        meta: %{}
+      }
+    ]
+
+    {:error, ^expected_reason} = Component.RTSP.config(@jellyfish_opts)
   end
 end
