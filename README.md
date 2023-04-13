@@ -7,7 +7,7 @@ Jellyfish is an open-source, general-purpose media server that ships with suppor
 It can be thought of as a multimedia bridge meant for creating different types of multimedia systems that lets 
 you easily create a real-time video conferencing system, a broadcasting solution or both at the same time.
 
-It leverages the [Membrane RTC Engine](https://github.com/jellyfish-dev/membrane_rtc_engine), a real-time communiation engine/SFU library built with [Membrane](https://membrane.stream/).
+It leverages the [Membrane RTC Engine](https://github.com/jellyfish-dev/membrane_rtc_engine), a real-time communication engine/SFU library built with [Membrane](https://membrane.stream/).
 
 ## Documentation
 
