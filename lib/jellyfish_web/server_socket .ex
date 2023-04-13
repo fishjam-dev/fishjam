@@ -85,8 +85,6 @@ defmodule JellyfishWeb.ServerSocket do
 
   @impl true
   def handle_info(msg, state) do
-    Logger.error(inspect(msg))
-
     msg =
       case msg do
         {:peer_connected, peer_id} ->

@@ -49,7 +49,7 @@ defmodule JellyfishWeb.PeerSocket do
               room_pid: room_pid
             })
 
-          Logger.info("Peer WS #{peer_id} authenticated.")
+          Phoenix.PubSub.broadcast(Jellyfish.PubSub, "server", {:peer_connected, peer_id})
 
           {:reply, :ok, {:text, message}, state}
         else
