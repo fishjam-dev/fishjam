@@ -1,4 +1,4 @@
-defmodule JellyfishWeb.SocketTest do
+defmodule JellyfishWeb.PeerSocketTest do
   use JellyfishWeb.ConnCase
 
   import ExUnit.CaptureLog
