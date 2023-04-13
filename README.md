@@ -3,37 +3,17 @@
 [![codecov](https://codecov.io/gh/jellyfish-dev/jellyfish/branch/main/graph/badge.svg?token=ANWFKV2EDP)](https://codecov.io/gh/jellyfish-dev/jellyfish)
 [![CircleCI](https://circleci.com/gh/jellyfish-dev/jellyfish.svg?style=svg)](https://circleci.com/gh/jellyfish-dev/jellyfish)
 
-## Usage
+Jellyfish is an open-source, general-purpose media server that ships with support for multiple media protocols.
+It can be thought of as a multimedia bridge meant for creating different types of multimedia systems that lets 
+you easily create a real-time video conferencing system, a broadcasting solution or both at the same time.
 
-### Running with Docker
+It leverages the [Membrane RTC Engine](https://github.com/jellyfish-dev/membrane_rtc_engine), a real-time communiation engine/SFU library built with [Membrane](https://membrane.stream/).
 
-To download Jellyfish Docker image, see [Jellyfish images](https://github.com/jellyfish-dev/jellyfish/pkgs/container/jellyfish).
+## Documentation
 
-You can also build the image locally
+Everything you need to get started with Jellyfish is available in the [Jellyfish docs](https://jellyfish-dev.github.io/jellyfish-docs/).
 
-```console
-docker build -t jellyfish .
-```
-
-After obtaining the image, you need to find `INTEGRATED_TURN_IP`, it is the IPv4 address at which your computer is accessible in the
-network (e.g. private address in a local network, like 192.168.X.X). Then the container can be started.
-
-Explicit port exposure (macOS compatible)
-
-```console
-docker run -p 50000-50050:50000-50050/udp -p 4000:4000/tcp -e INTEGRATED_TURN_PORT_RANGE=50000-50050 -e INTEGRATED_TURN_IP=<IPv4 address> -e VIRTUAL_HOST=localhost -e SECRET_KEY_BASE=secret ghcr.io/jellyfish-dev/jellyfish:latest
-```
-
-Make sure that the exposed UDP ports match `INTEGRATED_TURN_PORT_RANGE`. Range of the ports shouldn't be too wide as it might
-cause problems with container startup.
-
-Using host network (Linux only)
-
-```console
-docker run --network=host -e INTEGRATED_TURN_IP=<IPv4 address> -e VIRTUAL_HOST=localhost -e SECRET_KEY_BASE ghcr.io/jellyfish-dev/jellyfish:latest
-```
-
-> **_NOTE_** Instead of passing environmental variables manually, you can use `--env-file ./env-file` flag, where `env-file` is a file containing the variables that the image expects, see example file `.env.sample`
+You can read about theoretical concepts and problems we encountered in [Jellybook](https://jellyfish-dev.github.io/book/).
 
 ## Copyright and License
 
