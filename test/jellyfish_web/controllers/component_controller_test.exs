@@ -7,8 +7,8 @@ defmodule JellyfishWeb.ComponentControllerTest do
   @schema JellyfishWeb.ApiSpec.spec()
 
   setup %{conn: conn} do
-    token = Application.fetch_env!(:jellyfish, :token)
-    conn = put_req_header(conn, "authorization", "Bearer " <> token)
+    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+    conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
     room_conn = post(conn, ~p"/room")
     assert %{"id" => id} = json_response(room_conn, :created)["data"]

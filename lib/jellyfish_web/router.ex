@@ -46,7 +46,7 @@ defmodule JellyfishWeb.Router do
 
   def bearer_auth(conn, _opts) do
     with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
-         true <- token == Application.fetch_env!(:jellyfish, :token) do
+         true <- token == Application.fetch_env!(:jellyfish, :server_api_token) do
       conn
     else
       false ->

@@ -55,13 +55,6 @@ defmodule ConfigParser do
   end
 end
 
-token =
-  if config_env() == :prod do
-    System.fetch_env!("TOKEN")
-  else
-    System.get_env("TOKEN", "development")
-  end
-
 config :jellyfish,
   webrtc_used: String.downcase(System.get_env("WEBRTC_USED", "true")) not in ["false", "f", "0"],
   integrated_turn_ip:
@@ -78,13 +71,22 @@ config :jellyfish,
   integrated_turn_pkey: System.get_env("INTEGRATED_TURN_PKEY"),
   integrated_turn_cert: System.get_env("INTEGRATED_TURN_CERT"),
   integrated_turn_domain: System.get_env("VIRTUAL_HOST"),
-  token: token,
   auth_salt: System.get_env("AUTH_SALT", "7d8ecfca-aeaf-43b1-81fa-5eb6d4b0557a"),
   jwt_max_age: 24 * 3600
 
 config :opentelemetry, traces_exporter: :none
 
 if config_env() == :prod do
+  token =
+    System.fetch_env!("SERVER_API_TOKEN") ||
+      raise """
+      environment variable SERVER_API_TOKEN is missing.
+      SERVER_API_TOKEN is used for HTTP requests and
+      server WebSocket authorization.
+      """
+
+  config :jellyfish, server_api_token: token
+
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you
   # want to use a different value for prod and you most likely don't want
