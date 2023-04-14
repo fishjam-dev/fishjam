@@ -6,8 +6,8 @@ defmodule JellyfishWeb.RoomControllerTest do
   @schema JellyfishWeb.ApiSpec.spec()
 
   setup %{conn: conn} do
-    token = Application.fetch_env!(:jellyfish, :token)
-    conn = put_req_header(conn, "authorization", "Bearer " <> token)
+    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+    conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
     on_exit(fn -> delete_all_rooms(conn) end)
 
@@ -21,8 +21,10 @@ defmodule JellyfishWeb.RoomControllerTest do
     end
 
     test "invalid token", %{conn: conn} do
-      invalid_token = "invalid" <> Application.fetch_env!(:jellyfish, :token)
-      conn = put_req_header(conn, "authorization", "Bearer " <> invalid_token)
+      invalid_server_api_token =
+        "invalid" <> Application.fetch_env!(:jellyfish, :server_api_token)
+
+      conn = put_req_header(conn, "authorization", "Bearer " <> invalid_server_api_token)
 
       conn = post(conn, ~p"/room", maxPeers: 10)
 
@@ -40,8 +42,8 @@ defmodule JellyfishWeb.RoomControllerTest do
     end
 
     test "correct token", %{conn: conn} do
-      token = Application.fetch_env!(:jellyfish, :token)
-      conn = put_req_header(conn, "authorization", "Bearer " <> token)
+      server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+      conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
       conn = post(conn, ~p"/room", maxPeers: 10)
       json_response(conn, :created)

@@ -27,7 +27,7 @@ defmodule JellyfishWeb.ServerSocket do
   def handle_in({encoded_message, [opcode: :text]}, %{authenticated?: false} = state) do
     case Jason.decode(encoded_message) do
       {:ok, %{"type" => "controlMessage", "data" => %{"type" => "authRequest", "token" => token}}} ->
-        if token == Application.fetch_env!(:jellyfish, :token) do
+        if token == Application.fetch_env!(:jellyfish, :server_api_token) do
           :ok = Phoenix.PubSub.subscribe(Jellyfish.PubSub, "server")
           Process.send_after(self(), :send_ping, @heartbeat_interval)
 
@@ -46,9 +46,9 @@ defmodule JellyfishWeb.ServerSocket do
           Closing the connection.
           """)
 
-          # TODO 
+          # TODO
           # this is not in the official Phoenix documentation
-          # but in the websock_adapter 
+          # but in the websock_adapter
           # https://github.com/phoenixframework/websock_adapter/blob/main/lib/websock_adapter/cowboy_adapter.ex#L74
           {:stop, :closed, {1000, "invalid token"}, state}
         end
@@ -67,7 +67,7 @@ defmodule JellyfishWeb.ServerSocket do
 
   def handle_in({encoded_message, [opcode: :text]}, state) do
     Logger.warn("""
-    Received message on server WS. 
+    Received message on server WS.
     Server WS doesn't expect to receive any messages.
     Closing the connection.
 
