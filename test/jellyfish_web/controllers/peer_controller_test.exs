@@ -25,7 +25,7 @@ defmodule JellyfishWeb.PeerControllerTest do
     test "renders peer when data is valid", %{conn: conn, room_id: room_id} do
       conn = post(conn, ~p"/room/#{room_id}/peer", type: @peer_type)
       response = json_response(conn, :created)
-      assert_response_schema(response, "PeerDetailsResponse", @schema)
+      assert_response_schema(response, "PeerWithTokenDetailsResponse", @schema)
 
       assert %{"peer" => %{"id" => peer_id, "type" => @peer_type}, "token" => token} =
                response["data"]

@@ -32,7 +32,7 @@ defmodule JellyfishWeb.PeerController do
          required: [:type]
        }},
     responses: [
-      created: ApiSpec.data("Peer successfully created", ApiSpec.PeerDetailsResponse),
+      created: ApiSpec.data("Peer successfully created", ApiSpec.PeerWithTokenDetailsResponse),
       bad_request: ApiSpec.error("Invalid request body structure"),
       not_found: ApiSpec.error("Room doesn't exist"),
       service_unavailable: ApiSpec.error("Peer limit has been reached"),
