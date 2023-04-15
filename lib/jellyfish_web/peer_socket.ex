@@ -9,10 +9,7 @@ defmodule JellyfishWeb.PeerSocket do
   @heartbeat_interval 30_000
 
   @impl true
-  def child_spec(_opts) do
-    # No additional processes are spawned, returning child_spec for dummy task
-    %{id: __MODULE__, start: {Task, :start_link, [fn -> :ok end]}, restart: :transient}
-  end
+  def child_spec(_opts), do: :ignore
 
   @impl true
   def connect(state) do
