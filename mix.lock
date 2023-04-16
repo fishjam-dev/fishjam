@@ -102,5 +102,6 @@
   "uuid": {:hex, :uuid, "1.1.8", "e22fc04499de0de3ed1116b770c7737779f226ceefa0badb3592e64d5cfb4eb9", [:mix], [], "hexpm", "c790593b4c3b601f5dc2378baae7efaf5b3d73c4c6456ba85759905be792f2ac"},
   "websock": {:hex, :websock, "0.5.0", "f6bbce90226121d62a0715bca7c986c5e43de0ccc9475d79c55381d1796368cc", [:mix], [], "hexpm", "b51ac706df8a7a48a2c622ee02d09d68be8c40418698ffa909d73ae207eb5fb8"},
   "websock_adapter": {:hex, :websock_adapter, "0.5.0", "cea35d8bbf1a6964e32d4b02ceb561dfb769c04f16d60d743885587e7d2ca55b", [:mix], [{:bandit, "~> 0.6", [hex: :bandit, repo: "hexpm", optional: true]}, {:plug, "~> 1.14", [hex: :plug, repo: "hexpm", optional: false]}, {:plug_cowboy, "~> 2.6", [hex: :plug_cowboy, repo: "hexpm", optional: true]}, {:websock, "~> 0.5", [hex: :websock, repo: "hexpm", optional: false]}], "hexpm", "16318b124effab8209b1eb7906c636374f623dc9511a8278ad09c083cea5bb83"},
+  "websockex": {:hex, :websockex, "0.4.3", "92b7905769c79c6480c02daacaca2ddd49de936d912976a4d3c923723b647bf0", [:mix], [], "hexpm", "95f2e7072b85a3a4cc385602d42115b73ce0b74a9121d0d6dbbf557645ac53e4"},
   "ymlr": {:hex, :ymlr, "3.0.1", "c7b459262aa52cbfee5d324995ac1bff8c765983460b1a4bb792f0f4db392232", [:mix], [], "hexpm", "759ce05102f7cb741cc65148044443d330cc75c9abd0769d5735bbf522219309"},
 }

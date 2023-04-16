@@ -82,6 +82,7 @@ defmodule Jellyfish.MixProject do
       {:credo, ">= 0.0.0", only: :dev, runtime: false},
 
       # Test deps
+      {:websockex, "~> 0.4.3", only: :test, runtime: false},
       {:excoveralls, "~> 0.15.0", only: :test, runtime: false}
     ]
   end
