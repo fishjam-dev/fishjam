@@ -47,7 +47,7 @@ defmodule JellyfishWeb.PeerController do
         description: "Room ID",
         type: :string
       ],
-      peer_id: [
+      id: [
         in: :path,
         description: "Peer id",
         type: :string

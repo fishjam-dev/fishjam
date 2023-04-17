@@ -52,8 +52,8 @@ defmodule JellyfishWeb.ApiSpec.Peer do
     properties: %{
       id: %Schema{type: :string, description: "Assigned peer id", example: "peer-1"},
       type: Type,
-      status: Status,
-      token: Token
-    }
+      status: Status
+    },
+    required: [:id, :type, :status]
   })
 end

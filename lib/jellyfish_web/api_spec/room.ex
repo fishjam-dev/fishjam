@@ -40,6 +40,7 @@ defmodule JellyfishWeb.ApiSpec.Room do
         type: :array,
         items: Peer
       }
-    }
+    },
+    required: [:id, :config, :components, :peers]
   })
 end
