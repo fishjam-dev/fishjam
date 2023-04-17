@@ -38,6 +38,26 @@ defmodule JellyfishWeb.ComponentControllerTest do
              } = json_response(conn, :ok)["data"]
     end
 
+    test "renders component with required options", %{conn: conn, room_id: room_id} do
+      conn =
+        post(conn, ~p"/room/#{room_id}/component",
+          type: "rtsp",
+          options: %{sourceUri: "rtsp://placeholder-19inrifjbsjb.it:12345/afwefae"}
+        )
+
+      assert response = %{"data" => %{"id" => id}} = json_response(conn, :created)
+      assert_response_schema(response, "ComponentDetailsResponse", @schema)
+
+      conn = get(conn, ~p"/room/#{room_id}")
+
+      assert %{
+               "id" => ^room_id,
+               "components" => [
+                 %{"id" => ^id, "type" => "rtsp"}
+               ]
+             } = json_response(conn, :ok)["data"]
+    end
+
     test "renders errors when component type is invalid", %{conn: conn, room_id: room_id} do
       conn = post(conn, ~p"/room/#{room_id}/component", type: "invalid_type")
 
@@ -52,6 +72,15 @@ defmodule JellyfishWeb.ComponentControllerTest do
 
     test "renders errors when request body structure is invalid", %{conn: conn, room_id: room_id} do
       conn = post(conn, ~p"/room/#{room_id}/component", invalid_parameter: @component_type)
+
+      assert json_response(conn, :bad_request)["errors"] == "Invalid request body structure"
+    end
+
+    test "renders errors when component requires options not present in request", %{
+      conn: conn,
+      room_id: room_id
+    } do
+      conn = post(conn, ~p"/room/#{room_id}/component", type: "rtsp")
 
       assert json_response(conn, :bad_request)["errors"] == "Invalid request body structure"
     end

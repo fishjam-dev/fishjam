@@ -72,32 +72,37 @@ components:
     ComponentOptionsRTSP:
       description: Options specific to the RTSP component
       properties:
-        keep_alive_interval:
+        keepAliveInterval:
+          default: 15000
           description: Interval (in ms) in which keep-alive RTSP messages will be sent to the remote stream source
           minimum: 0
           type: integer
-        max_reconnect_attempts:
+        maxReconnectAttempts:
+          default: 3
           description: How many times the component will attempt to reconnect before hibernating
           minimum: 0
           type: integer
-        pierce_nat:
+        pierceNat:
+          default: true
           description: Whether to attempt to create client-side NAT binding by sending an empty datagram from client to source, after the completion of RTSP setup
           type: boolean
-        reconnect_delay:
+        reconnectDelay:
+          default: 15000
           description: Delay (in ms) between successive reconnect attempts
           minimum: 0
           type: integer
-        rtp_port:
+        rtpPort:
+          default: 20000
           description: Local port RTP stream will be received at
           maximum: 65535
           minimum: 1
           type: integer
-        source_uri:
+        sourceUri:
           description: URI of RTSP source stream
           example: rtsp://localhost:554/stream
           type: string
       required:
-        - source_uri
+        - sourceUri
       title: ComponentOptionsRTSP
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.RTSP
