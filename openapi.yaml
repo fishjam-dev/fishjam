@@ -17,6 +17,9 @@ components:
           type: string
         type:
           $ref: '#/components/schemas/ComponentType'
+      required:
+        - id
+        - type
       title: Component
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component
@@ -50,6 +53,8 @@ components:
           description: Error details
           example: Token has expired
           type: string
+      required:
+        - errors
       title: Error
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Error
@@ -62,18 +67,28 @@ components:
           type: string
         status:
           $ref: '#/components/schemas/PeerStatus'
-        token:
-          $ref: '#/components/schemas/AuthToken'
         type:
           $ref: '#/components/schemas/PeerType'
+      required:
+        - id
+        - type
+        - status
       title: Peer
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Peer
     PeerDetailsResponse:
-      description: Response containing peer details
+      description: Response containing peer details and their token
       properties:
         data:
-          $ref: '#/components/schemas/Peer'
+          properties:
+            peer:
+              $ref: '#/components/schemas/Peer'
+            token:
+              $ref: '#/components/schemas/AuthToken'
+          required:
+            - peer
+            - token
+          type: object
       required:
         - data
       title: PeerDetailsResponse
@@ -111,6 +126,11 @@ components:
           items:
             $ref: '#/components/schemas/Peer'
           type: array
+      required:
+        - id
+        - config
+        - components
+        - peers
       title: Room
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Room
@@ -430,7 +450,7 @@ paths:
             type: string
         - description: Peer id
           in: path
-          name: peer_id
+          name: id
           required: true
           schema:
             type: string
