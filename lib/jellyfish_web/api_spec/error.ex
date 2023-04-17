@@ -14,6 +14,7 @@ defmodule JellyfishWeb.ApiSpec.Error do
         description: "Error details",
         example: "Token has expired"
       }
-    }
+    },
+    required: [:errors]
   })
 end

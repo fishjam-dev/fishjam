@@ -40,6 +40,7 @@ defmodule JellyfishWeb.ApiSpec.Component do
     properties: %{
       id: %Schema{type: :string, description: "Assigned component id", example: "component-1"},
       type: Type
-    }
+    },
+    required: [:id, :type]
   })
 end
