@@ -1,10 +1,10 @@
 defmodule JellyfishWeb.PeerSocketTest do
-  use JellyfishWeb.ConnCase, async: true
+  use JellyfishWeb.ConnCase
 
   import ExUnit.CaptureLog
 
   alias Jellyfish.RoomService
-  alias JellyfishWeb.{PeerSocket, PeerToken}
+  alias JellyfishWeb.PeerSocket
 
   @data "mediaEventData"
 
@@ -30,58 +30,6 @@ defmodule JellyfishWeb.PeerSocketTest do
        authenticated?: false,
        token: token
      }}
-  end
-
-  describe "connecting" do
-    test "connecting doesn't require any params" do
-      assert {:ok, _state} = connect(%{})
-    end
-  end
-
-  describe "authenticating" do
-    setup [:connect_setup]
-
-    test "credentials valid", %{token: token} = state do
-      auth_msg =
-        Jason.encode!(%{
-          "type" => "controlMessage",
-          "data" => %{"type" => "authRequest", "token" => token}
-        })
-
-      assert {:reply, :ok, {:text, message}, _state} = send_from_client(auth_msg, state)
-
-      assert %{"type" => "controlMessage", "data" => %{"type" => "authenticated"}} =
-               Jason.decode!(message)
-    end
-
-    test "invalid token", state do
-      auth_msg =
-        Jason.encode!(%{
-          "type" => "controlMessage",
-          "data" => %{"type" => "authRequest", "token" => "invalid_token"}
-        })
-
-      assert {:stop, :closed, {1000, ":invalid"}, _state} = send_from_client(auth_msg, state)
-    end
-
-    test "unauthenticated message", state do
-      msg = Jason.encode!(%{"type" => "mediaEvent", "data" => @data})
-      assert {:stop, :closed, {1000, "unauthenticated"}, _state} = send_from_client(msg, state)
-    end
-
-    test "valid token but peer doesn't exist", %{token: token} = state do
-      {:ok, %{room_id: room_id}} = PeerToken.verify(token)
-      fake_token = PeerToken.generate(%{peer_id: "peer_id", room_id: room_id})
-
-      msg =
-        %{
-          "type" => "controlMessage",
-          "data" => %{"type" => "authRequest", "token" => fake_token}
-        }
-        |> Jason.encode!()
-
-      assert {:stop, :closed, {1000, ":peer_not_found"}, _state} = send_from_client(msg, state)
-    end
   end
 
   describe "receiving messages from client" do

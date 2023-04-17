@@ -1,5 +1,5 @@
 defmodule JellyfishWeb.ComponentControllerTest do
-  use JellyfishWeb.ConnCase, async: true
+  use JellyfishWeb.ConnCase
 
   import OpenApiSpex.TestAssertions
 

@@ -1,5 +1,5 @@
-defmodule JellyfishWeb.ServerSocketTest do
-  use ExUnit.Case, async: true
+defmodule JellyfishWeb.Integration.ServerSocketTest do
+  use ExUnit.Case
 
   alias __MODULE__.Endpoint
   alias JellyfishWeb.{ServerSocket, WS}
@@ -26,7 +26,7 @@ defmodule JellyfishWeb.ServerSocketTest do
   end
 
   setup_all do
-    Endpoint.start_link()
+    assert {:ok, _pid} = Endpoint.start_link()
     :ok
   end
 

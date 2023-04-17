@@ -55,6 +55,12 @@ defmodule JellyfishWeb.PeerSocket do
           {:reply, :ok, {:text, message}, state}
         else
           {:error, reason} ->
+            reason =
+              case reason do
+                :invalid -> :invalid_token
+                other -> other
+              end
+
             Logger.warn("""
             Authentication failed, reason: #{reason}.
             Closing the connection.
