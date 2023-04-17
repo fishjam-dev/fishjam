@@ -1,6 +1,5 @@
 Mix.install([
-  # TODO: change after new release
-  {:jellyfish_server_sdk, "~> 0.1.0"}
+  {:jellyfish_server_sdk, "~> 0.1.1"}
 ])
 
 defmodule Example do
