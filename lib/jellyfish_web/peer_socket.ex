@@ -55,18 +55,14 @@ defmodule JellyfishWeb.PeerSocket do
           {:reply, :ok, {:text, message}, state}
         else
           {:error, reason} ->
-            reason =
-              case reason do
-                :invalid -> :invalid_token
-                other -> other
-              end
+            reason = reason_to_string(reason)
 
             Logger.warn("""
             Authentication failed, reason: #{reason}.
             Closing the connection.
             """)
 
-            {:stop, :closed, {1000, inspect(reason)}, state}
+            {:stop, :closed, {1000, reason}, state}
         end
 
       _other ->
@@ -170,6 +166,14 @@ defmodule JellyfishWeb.PeerSocket do
 
     :ok
   end
+
+  defp reason_to_string(:invalid), do: "invalid token"
+  defp reason_to_string(:missing), do: "missing token"
+  defp reason_to_string(:expired), do: "expired token"
+  defp reason_to_string(:room_not_found), do: "room not found"
+  defp reason_to_string(:peer_not_found), do: "peer not found"
+  defp reason_to_string(:peer_already_connected), do: "peer already connected"
+  defp reason_to_string(other), do: "#{other}"
 
   defp control_message(data) do
     %{

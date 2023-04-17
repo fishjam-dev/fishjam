@@ -7,6 +7,12 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
 
   @port 5908
   @path "ws://127.0.0.1:#{@port}/socket/peer/websocket"
+  @auth_response %{
+    "type" => "controlMessage",
+    "data" => %{
+      "type" => "authenticated"
+    }
+  }
 
   Application.put_env(
     :jellyfish,
@@ -35,8 +41,8 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
-    room_conn = post(conn, ~p"/room", maxPeers: 1)
-    assert %{"id" => room_id} = json_response(room_conn, :created)["data"]
+    conn = post(conn, ~p"/room", maxPeers: 1)
+    assert %{"id" => room_id} = json_response(conn, :created)["data"]
     {:ok, _room_pid} = RoomService.find_room(room_id)
 
     conn = post(conn, ~p"/room/#{room_id}/peer", type: "webrtc")
@@ -62,7 +68,7 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
 
     :ok = WS.send_frame(ws, auth_request)
 
-    assert_receive {:disconnected, {:remote, 1000, ":invalid_token"}}, 1000
+    assert_receive {:disconnected, {:remote, 1000, "invalid token"}}, 1000
   end
 
   test "correct token", %{token: token} do
@@ -72,13 +78,7 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
 
     :ok = WS.send_frame(ws, auth_request)
 
-    assert_receive %{
-                     "type" => "controlMessage",
-                     "data" => %{
-                       "type" => "authenticated"
-                     }
-                   },
-                   1000
+    assert_receive @auth_response, 1000
   end
 
   test "valid token but peer doesn't exist", %{room_id: room_id} do
@@ -89,17 +89,7 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
 
     :ok = WS.send_frame(ws, auth_request)
 
-    assert_receive {:disconnected, {:remote, 1000, ":peer_not_found"}}, 1000
-  end
-
-  defp auth_request(token) do
-    %{
-      type: "controlMessage",
-      data: %{
-        type: "authRequest",
-        token: token
-      }
-    }
+    assert_receive {:disconnected, {:remote, 1000, "peer not found"}}, 1000
   end
 
   test "message from unauthenticated peer" do
@@ -110,5 +100,15 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
     :ok = WS.send_frame(ws, msg)
 
     assert_receive {:disconnected, {:remote, 1000, "unauthenticated"}}, 1000
+  end
+
+  defp auth_request(token) do
+    %{
+      type: "controlMessage",
+      data: %{
+        type: "authRequest",
+        token: token
+      }
+    }
   end
 end

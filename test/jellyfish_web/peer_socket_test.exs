@@ -12,8 +12,8 @@ defmodule JellyfishWeb.PeerSocketTest do
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
-    room_conn = post(conn, ~p"/room", maxPeers: 1)
-    assert %{"id" => room_id} = json_response(room_conn, :created)["data"]
+    conn = post(conn, ~p"/room", maxPeers: 1)
+    assert %{"id" => room_id} = json_response(conn, :created)["data"]
     {:ok, _room_pid} = RoomService.find_room(room_id)
 
     conn = post(conn, ~p"/room/#{room_id}/peer", type: "webrtc")
