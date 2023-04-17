@@ -88,7 +88,7 @@ defmodule JellyfishWeb.ServerSocket do
           control_message(%{type: "peerConnected", id: peer_id})
 
         {:peer_disconnected, peer_id} ->
-          control_message(%{type: "peerDisonnected", id: peer_id})
+          control_message(%{type: "peerDisconnected", id: peer_id})
 
         {:room_crashed, room_id} ->
           control_message(%{type: "roomCrashed", id: room_id})
