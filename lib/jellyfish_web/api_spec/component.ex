@@ -19,46 +19,18 @@ defmodule JellyfishWeb.ApiSpec.Component do
     })
   end
 
-  [HLS, RTSP]
-  |> Enum.map(fn module ->
-    type_str = Module.split(module) |> List.last()
-    config_module = Module.concat(module, Config)
-
-    defmodule config_module do
-      require OpenApiSpex
-
-      OpenApiSpex.schema(%{
-        title: "ComponentConfig#{type_str}",
-        description: "Config specific to the #{type_str} component",
-        type: :object,
-        properties: %{
-          type: Type,
-          options: module
-        },
-        required: [:type, :options]
-      })
-    end
-  end)
-
-  defmodule Config do
+  defmodule Options do
     @moduledoc false
 
     require OpenApiSpex
 
     OpenApiSpex.schema(%{
-      title: "ComponentConfig",
-      description: "Component-specific config",
+      title: "ComponentOptions",
+      description: "Component-specific options",
       type: :object,
-      discriminator: %OpenApiSpex.Discriminator{
-        propertyName: "type",
-        mapping: %{
-          "hls" => HLS.Config,
-          "rtsp" => RTSP.Config
-        }
-      },
       oneOf: [
-        HLS.Config,
-        RTSP.Config
+        HLS,
+        RTSP
       ]
     })
   end

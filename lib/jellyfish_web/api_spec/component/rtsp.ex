@@ -21,12 +21,6 @@ defmodule JellyfishWeb.ApiSpec.Component.RTSP do
         maximum: 65_535,
         default: 20_000
       },
-      maxReconnectAttempts: %Schema{
-        type: :integer,
-        description: "How many times the component will attempt to reconnect before hibernating",
-        minimum: 0,
-        default: 3
-      },
       reconnectDelay: %Schema{
         type: :integer,
         description: "Delay (in ms) between successive reconnect attempts",

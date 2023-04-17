@@ -1,4 +1,5 @@
 Mix.install([
+  # TODO: change after new release
   {:jellyfish_server_sdk, "~> 0.1.0"}
 ])
 
@@ -7,16 +8,17 @@ defmodule Example do
 
   @jellyfish_hostname "localhost"
   @jellyfish_port 4000
-  @stream_uri "PUT_STREAM_URI_HERE"
+  @jellyfish_token "development"
 
-  def run() do
-    client = Jellyfish.Client.new("http://#{@jellyfish_hostname}:#{@jellyfish_port}")
+  def run(stream_uri) do
+    client =
+      Jellyfish.Client.new("http://#{@jellyfish_hostname}:#{@jellyfish_port}", @jellyfish_token)
 
     with {:ok, %Jellyfish.Room{id: room_id}} <- Jellyfish.Room.create(client),
          {:ok, %Jellyfish.Component{id: _hls_component_id}} <-
            Jellyfish.Room.add_component(client, room_id, "hls"),
          {:ok, %Jellyfish.Component{id: _rtsp_component_id}} <-
-           Jellyfish.Room.add_component(client, room_id, "rtsp", source_uri: @stream_uri) do
+           Jellyfish.Room.add_component(client, room_id, "rtsp", sourceUri: stream_uri) do
       Logger.info("Components added successfully")
     else
       {:error, reason} ->
@@ -28,4 +30,7 @@ defmodule Example do
   end
 end
 
-Example.run()
+case System.argv() do
+  [stream_uri | _rest] -> Example.run(stream_uri)
+  _empty -> raise("No stream URI specified, make sure you pass it as the argument to this script")
+end

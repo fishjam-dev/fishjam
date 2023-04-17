@@ -6,7 +6,7 @@ defmodule JellyfishWeb.ComponentController do
   alias Jellyfish.Room
   alias Jellyfish.RoomService
   alias JellyfishWeb.ApiSpec
-  alias OpenApiSpex.Response
+  alias OpenApiSpex.{Response, Schema}
 
   action_fallback JellyfishWeb.FallbackController
 
@@ -21,7 +21,16 @@ defmodule JellyfishWeb.ComponentController do
         description: "Room ID"
       ]
     ],
-    request_body: {"Component config", "application/json", ApiSpec.Component.Config},
+    request_body:
+      {"Component config", "application/json",
+       %Schema{
+         type: :object,
+         properties: %{
+           options: ApiSpec.Component.Options,
+           type: ApiSpec.Component.Type
+         },
+         required: [:type, :options]
+       }},
     responses: [
       created: ApiSpec.data("Successfully added component", ApiSpec.ComponentDetailsResponse),
       bad_request: ApiSpec.error("Invalid request"),

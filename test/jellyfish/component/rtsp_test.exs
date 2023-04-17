@@ -13,7 +13,11 @@ defmodule Jellyfish.Component.RTSPTest do
   test "sourceUri, default opts" do
     options = Map.put(@jellyfish_opts, "sourceUri", @source_uri)
 
-    expected = %Endpoint.RTSP{rtc_engine: @engine_pid, source_uri: @source_uri}
+    expected = %Endpoint.RTSP{
+      rtc_engine: @engine_pid,
+      source_uri: @source_uri,
+      max_reconnect_attempts: :infinity
+    }
 
     {:ok, ^expected} = Component.RTSP.config(options)
   end
@@ -22,7 +26,6 @@ defmodule Jellyfish.Component.RTSPTest do
     custom_opts = %{
       "sourceUri" => @source_uri,
       "rtpPort" => 34_567,
-      "maxReconnectAttempts" => 10,
       "reconnectDelay" => 500,
       "keepAliveInterval" => 20_000,
       "pierceNat" => false
@@ -33,12 +36,13 @@ defmodule Jellyfish.Component.RTSPTest do
     expected =
       Map.new(custom_opts, fn {k, v} -> {Macro.underscore(k) |> String.to_atom(), v} end)
       |> Map.put(:rtc_engine, @engine_pid)
+      |> Map.put(:max_reconnect_attempts, :infinity)
       |> then(&struct(Endpoint.RTSP, &1))
 
     {:ok, ^expected} = Component.RTSP.config(options)
   end
 
-  test "error on no sourceUri" do
+  test "missing required sourceUri" do
     expected_reason = [
       %OpenApiSpex.Cast.Error{
         reason: :missing_field,

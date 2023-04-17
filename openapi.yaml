@@ -23,45 +23,6 @@ components:
       title: Component
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component
-    ComponentConfig:
-      description: Component-specific config
-      discriminator:
-        mapping:
-          hls: '#/components/schemas/ComponentConfigHLS'
-          rtsp: '#/components/schemas/ComponentConfigRTSP'
-        propertyName: type
-      oneOf:
-        - $ref: '#/components/schemas/ComponentConfigHLS'
-        - $ref: '#/components/schemas/ComponentConfigRTSP'
-      title: ComponentConfig
-      type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Config
-    ComponentConfigHLS:
-      description: Config specific to the HLS component
-      properties:
-        options:
-          $ref: '#/components/schemas/ComponentOptionsHLS'
-        type:
-          $ref: '#/components/schemas/ComponentType'
-      required:
-        - type
-        - options
-      title: ComponentConfigHLS
-      type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS.Config
-    ComponentConfigRTSP:
-      description: Config specific to the RTSP component
-      properties:
-        options:
-          $ref: '#/components/schemas/ComponentOptionsRTSP'
-        type:
-          $ref: '#/components/schemas/ComponentType'
-      required:
-        - type
-        - options
-      title: ComponentConfigRTSP
-      type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.RTSP.Config
     ComponentDetailsResponse:
       description: Response containing component details
       properties:
@@ -72,6 +33,14 @@ components:
       title: ComponentDetailsResponse
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.ComponentDetailsResponse
+    ComponentOptions:
+      description: Component-specific options
+      oneOf:
+        - $ref: '#/components/schemas/ComponentOptionsHLS'
+        - $ref: '#/components/schemas/ComponentOptionsRTSP'
+      title: ComponentOptions
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Options
     ComponentOptionsHLS:
       description: Options specific to the HLS component
       properties: {}
@@ -84,11 +53,6 @@ components:
         keepAliveInterval:
           default: 15000
           description: Interval (in ms) in which keep-alive RTSP messages will be sent to the remote stream source
-          minimum: 0
-          type: integer
-        maxReconnectAttempts:
-          default: 3
-          description: How many times the component will attempt to reconnect before hibernating
           minimum: 0
           type: integer
         pierceNat:
@@ -382,7 +346,15 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ComponentConfig'
+              properties:
+                options:
+                  $ref: '#/components/schemas/ComponentOptions'
+                type:
+                  $ref: '#/components/schemas/ComponentType'
+              required:
+                - type
+                - options
+              type: object
         description: Component config
         required: false
       responses:

@@ -21,6 +21,7 @@ defmodule Jellyfish.Component.RTSP do
           {Atom.to_string(k) |> Macro.underscore() |> String.to_atom(), v}
         end)
         |> Map.put(:rtc_engine, engine)
+        |> Map.put(:max_reconnect_attempts, :infinity)
         |> then(&struct(RTSP, &1))
 
       {:ok, component_spec}
