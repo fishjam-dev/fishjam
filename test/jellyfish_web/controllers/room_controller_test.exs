@@ -1,5 +1,6 @@
 defmodule JellyfishWeb.RoomControllerTest do
-  use JellyfishWeb.ConnCase
+  use JellyfishWeb.ConnCase, async: true
+
   import OpenApiSpex.TestAssertions
   alias Jellyfish.RoomService
 

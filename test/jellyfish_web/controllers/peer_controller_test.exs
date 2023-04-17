@@ -1,5 +1,5 @@
 defmodule JellyfishWeb.PeerControllerTest do
-  use JellyfishWeb.ConnCase
+  use JellyfishWeb.ConnCase, async: true
 
   import OpenApiSpex.TestAssertions
 

@@ -1,5 +1,5 @@
 defmodule JellyfishWeb.PeerSocketTest do
-  use JellyfishWeb.ConnCase
+  use JellyfishWeb.ConnCase, async: true
 
   import ExUnit.CaptureLog
 
