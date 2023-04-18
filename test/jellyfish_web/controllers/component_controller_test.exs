@@ -20,6 +20,20 @@ defmodule JellyfishWeb.ComponentControllerTest do
     {:ok, %{conn: put_req_header(conn, "accept", "application/json"), room_id: id}}
   end
 
+  describe "create component" do
+    test "renders errors when component type is invalid", %{conn: conn, room_id: room_id} do
+      conn = post(conn, ~p"/room/#{room_id}/component", type: "invalid_type")
+
+      assert json_response(conn, :bad_request)["errors"] == "Invalid component type"
+    end
+
+    test "renders errors when room doesn't exists", %{conn: conn} do
+      room_id = "abc"
+      conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
+      assert json_response(conn, :not_found)["errors"] == "Room #{room_id} does not exist"
+    end
+  end
+
   describe "create hls component" do
     test "renders component when data is valid", %{conn: conn, room_id: room_id} do
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
@@ -35,18 +49,6 @@ defmodule JellyfishWeb.ComponentControllerTest do
                  %{"id" => ^id, "type" => "hls"}
                ]
              } = json_response(conn, :ok)["data"]
-    end
-
-    test "renders errors when component type is invalid", %{conn: conn, room_id: room_id} do
-      conn = post(conn, ~p"/room/#{room_id}/component", type: "invalid_type")
-
-      assert json_response(conn, :bad_request)["errors"] == "Invalid component type"
-    end
-
-    test "renders errors when room doesn't exists", %{conn: conn} do
-      room_id = "abc"
-      conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
-      assert json_response(conn, :not_found)["errors"] == "Room #{room_id} does not exist"
     end
 
     test "renders errors when request body structure is invalid", %{conn: conn, room_id: room_id} do
