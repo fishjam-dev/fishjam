@@ -46,7 +46,11 @@ defmodule JellyfishWeb.PeerSocket do
               room_pid: room_pid
             })
 
-          Phoenix.PubSub.broadcast(Jellyfish.PubSub, "server", {:peer_connected, peer_id})
+          Phoenix.PubSub.broadcast(
+            Jellyfish.PubSub,
+            "server",
+            {:peer_connected, room_id, peer_id}
+          )
 
           {:reply, :ok, {:text, message}, state}
         else
@@ -151,7 +155,11 @@ defmodule JellyfishWeb.PeerSocket do
     """)
 
     if Map.has_key?(state, :peer_id) do
-      Phoenix.PubSub.broadcast(Jellyfish.PubSub, "server", {:peer_disconnected, state.peer_id})
+      Phoenix.PubSub.broadcast(
+        Jellyfish.PubSub,
+        "server",
+        {:peer_disconnected, state.room_id, state.peer_id}
+      )
     end
 
     :ok
