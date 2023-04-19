@@ -85,19 +85,23 @@ defmodule JellyfishWeb.ServerSocket do
     msg =
       case msg do
         {:room_crashed, room_id} ->
-          control_message(%{type: "roomCrashed", id: room_id})
+          control_message(%{"type" => "roomCrashed", "roomId" => room_id})
 
         {:peer_connected, room_id, peer_id} ->
-          control_message(%{type: "peerConnected", room_id: room_id, id: peer_id})
+          control_message(%{"type" => "peerConnected", "roomId" => room_id, "id" => peer_id})
 
         {:peer_disconnected, room_id, peer_id} ->
-          control_message(%{type: "peerDisconnected", room_id: room_id, id: peer_id})
+          control_message(%{"type" => "peerDisconnected", "roomId" => room_id, "id" => peer_id})
 
         {:peer_crashed, room_id, peer_id} ->
-          control_message(%{type: "peerCrashed", room_id: room_id, id: peer_id})
+          control_message(%{"type" => "peerCrashed", "roomId" => room_id, "id" => peer_id})
 
         {:component_crashed, room_id, component_id} ->
-          control_message(%{type: "componentCrashed", room_id: room_id, id: component_id})
+          control_message(%{
+            "type" => "componentCrashed",
+            "roomId" => room_id,
+            "id" => component_id
+          })
       end
 
     {:push, {:text, msg}, state}
