@@ -248,7 +248,7 @@ defmodule Jellyfish.Room do
     Logger.error("RTC Engine endpoint #{inspect(endpoint_id)} crashed")
 
     if Map.has_key?(state.peers, endpoint_id) do
-      Phoenix.PubSub.broadcast(Jellyfish.PubSub, "server", {:peer_crashed, endpoint_id})
+      Phoenix.PubSub.broadcast(Jellyfish.PubSub, "server", {:peer_crashed, state.id, endpoint_id})
 
       peer = Map.fetch!(state.peers, endpoint_id)
 
@@ -256,7 +256,11 @@ defmodule Jellyfish.Room do
         send(peer.socket_pid, {:stop_connection, :endpoint_crashed})
       end
     else
-      Phoenix.PubSub.broadcast(Jellyfish.PubSub, "server", {:component_crashed, endpoint_id})
+      Phoenix.PubSub.broadcast(
+        Jellyfish.PubSub,
+        "server",
+        {:component_crashed, state.id, endpoint_id}
+      )
     end
 
     {:noreply, state}
