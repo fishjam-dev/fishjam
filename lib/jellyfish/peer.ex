@@ -44,10 +44,12 @@ defmodule Jellyfish.Peer do
     id = UUID.uuid4()
     options = Map.put(options, :peer_id, id)
 
+    {:ok, endpoint} = type.config(options)
+
     %__MODULE__{
       id: id,
       type: type,
-      engine_endpoint: type.config(options)
+      engine_endpoint: endpoint
     }
   end
 end

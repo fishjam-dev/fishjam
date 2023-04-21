@@ -11,7 +11,7 @@ defmodule JellyfishWeb.ApiSpec do
     %OpenApiSpex.OpenApi{
       info: %Info{
         title: "Jellyfish Media Server",
-        version: "0.1.0"
+        version: "0.2.0"
       },
       paths: Paths.from_router(JellyfishWeb.Router),
       components: %Components{

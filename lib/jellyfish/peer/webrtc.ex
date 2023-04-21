@@ -38,20 +38,21 @@ defmodule Jellyfish.Peer.WebRTC do
 
     webrtc_extensions = [Mid, Rid, TWCC]
 
-    %WebRTC{
-      rtc_engine: options.engine_pid,
-      ice_name: options.peer_id,
-      owner: self(),
-      integrated_turn_options: network_options[:integrated_turn_options],
-      integrated_turn_domain: network_options[:integrated_turn_domain],
-      handshake_opts: handshake_options,
-      log_metadata: [peer_id: options.peer_id],
-      trace_context: nil,
-      webrtc_extensions: webrtc_extensions,
-      simulcast_config: %SimulcastConfig{
-        enabled: simulcast?,
-        initial_target_variant: fn _track -> :medium end
-      }
-    }
+    {:ok,
+     %WebRTC{
+       rtc_engine: options.engine_pid,
+       ice_name: options.peer_id,
+       owner: self(),
+       integrated_turn_options: network_options[:integrated_turn_options],
+       integrated_turn_domain: network_options[:integrated_turn_domain],
+       handshake_opts: handshake_options,
+       log_metadata: [peer_id: options.peer_id],
+       trace_context: nil,
+       webrtc_extensions: webrtc_extensions,
+       simulcast_config: %SimulcastConfig{
+         enabled: simulcast?,
+         initial_target_variant: fn _track -> :medium end
+       }
+     }}
   end
 end

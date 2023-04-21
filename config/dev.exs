@@ -1,6 +1,6 @@
 import Config
 
-config :jellyfish, server_api_token: "development"
+config :jellyfish, server_api_token: "development", dev_routes: true
 
 # For development, we disable any cache and enable
 # debugging and code reloading.

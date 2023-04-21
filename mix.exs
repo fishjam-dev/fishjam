@@ -66,10 +66,16 @@ defmodule Jellyfish.MixProject do
       {:membrane_realtimer_plugin, "~> 0.6.0"},
       {:membrane_audio_mix_plugin, "~> 0.12.0"},
       {:membrane_raw_audio_format, "~> 0.10.0"},
-      {:membrane_h264_ffmpeg_plugin, "~> 0.25.2"},
+      {:membrane_h264_ffmpeg_plugin, "~> 0.26.2"},
+      {:membrane_h264_plugin, "~> 0.2.0"},
       {:membrane_audio_filler_plugin, "~> 0.1.0"},
       {:membrane_video_compositor_plugin, "~> 0.2.1"},
       {:membrane_http_adaptive_stream_plugin, "~> 0.12.0"},
+
+      # RTSP endpoints deps
+      {:connection, "~> 1.1"},
+      {:membrane_rtsp, "~> 0.5.0"},
+      {:membrane_udp_plugin, "~> 0.9.2"},
 
       # Dialyzer and credo
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},

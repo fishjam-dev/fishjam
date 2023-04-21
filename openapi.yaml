@@ -35,11 +35,50 @@ components:
       x-struct: Elixir.JellyfishWeb.ApiSpec.ComponentDetailsResponse
     ComponentOptions:
       description: Component-specific options
-      example:
-        output_path: /hls-output
+      oneOf:
+        - $ref: '#/components/schemas/ComponentOptionsHLS'
+        - $ref: '#/components/schemas/ComponentOptionsRTSP'
       title: ComponentOptions
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Options
+    ComponentOptionsHLS:
+      description: Options specific to the HLS component
+      properties: {}
+      title: ComponentOptionsHLS
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS
+    ComponentOptionsRTSP:
+      description: Options specific to the RTSP component
+      properties:
+        keepAliveInterval:
+          default: 15000
+          description: Interval (in ms) in which keep-alive RTSP messages will be sent to the remote stream source
+          minimum: 0
+          type: integer
+        pierceNat:
+          default: true
+          description: Whether to attempt to create client-side NAT binding by sending an empty datagram from client to source, after the completion of RTSP setup
+          type: boolean
+        reconnectDelay:
+          default: 15000
+          description: Delay (in ms) between successive reconnect attempts
+          minimum: 0
+          type: integer
+        rtpPort:
+          default: 20000
+          description: Local port RTP stream will be received at
+          maximum: 65535
+          minimum: 1
+          type: integer
+        sourceUri:
+          description: URI of RTSP source stream
+          example: rtsp://localhost:554/stream
+          type: string
+      required:
+        - sourceUri
+      title: ComponentOptionsRTSP
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.RTSP
     ComponentType:
       description: Component type
       example: hls
@@ -174,7 +213,7 @@ components:
       type: http
 info:
   title: Jellyfish Media Server
-  version: 0.1.0
+  version: 0.2.0
 openapi: 3.0.0
 paths:
   /room:
@@ -314,6 +353,7 @@ paths:
                   $ref: '#/components/schemas/ComponentType'
               required:
                 - type
+                - options
               type: object
         description: Component config
         required: false
