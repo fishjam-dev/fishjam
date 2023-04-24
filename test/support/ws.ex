@@ -11,6 +11,10 @@ defmodule JellyfishWeb.WS do
     WebSockex.send_frame(ws, {:text, Jason.encode!(msg)})
   end
 
+  def send_frame_raw(ws, msg) do
+    WebSockex.send_frame(ws, {:text, msg})
+  end
+
   @impl true
   def handle_frame({:text, msg}, state) do
     send(state.caller, Jason.decode!(msg))

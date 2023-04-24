@@ -62,20 +62,11 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
   end
 
   test "correct token" do
-    {:ok, ws} = WS.start_link(@path)
-    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
-    auth_request = auth_request(server_api_token)
-
-    :ok = WS.send_frame(ws, auth_request)
-    assert_receive @auth_response, 1000
+    create_and_authenticate()
   end
 
   test "closes on receiving a message from a client" do
-    {:ok, ws} = WS.start_link(@path)
-    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
-    auth_request = auth_request(server_api_token)
-
-    :ok = WS.send_frame(ws, auth_request)
+    ws = create_and_authenticate()
 
     :ok = WS.send_frame(ws, %{type: "controlMessage", data: "dummy data"})
 
@@ -83,11 +74,8 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
   end
 
   test "sends a message when room crashes", %{conn: conn} do
-    {:ok, ws} = WS.start_link(@path)
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
-    auth_request = auth_request(server_api_token)
-
-    :ok = WS.send_frame(ws, auth_request)
+    create_and_authenticate()
 
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
@@ -104,11 +92,8 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
   end
 
   test "sends a message when peer connects", %{conn: conn} do
-    {:ok, ws} = WS.start_link(@path)
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
-    auth_request = auth_request(server_api_token)
-
-    :ok = WS.send_frame(ws, auth_request)
+    create_and_authenticate()
 
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
@@ -138,6 +123,16 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
       "data" => %{"id" => ^peer_id, "type" => "peerDisconnected"},
       "type" => "controlMessage"
     }
+  end
+
+  def create_and_authenticate(token \\ Application.fetch_env!(:jellyfish, :server_api_token)) do
+    auth_request = auth_request(token)
+
+    {:ok, ws} = WS.start_link(@path)
+    :ok = WS.send_frame(ws, auth_request)
+    assert_receive @auth_response, 1000
+
+    ws
   end
 
   defp auth_request(token) do
