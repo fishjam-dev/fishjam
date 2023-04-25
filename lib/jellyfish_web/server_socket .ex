@@ -58,7 +58,7 @@ defmodule JellyfishWeb.ServerSocket do
         Message: #{inspect(encoded_message)}
         """)
 
-        {:stop, :closed, 1000, state}
+        {:stop, :closed, {1000, "invalid auth request"}, state}
     end
   end
 
@@ -71,7 +71,7 @@ defmodule JellyfishWeb.ServerSocket do
     Message: #{inspect(encoded_message)}
     """)
 
-    {:stop, :closed, 1000, state}
+    {:stop, :closed, {1003, "operation not allowed"}, state}
   end
 
   @impl true
