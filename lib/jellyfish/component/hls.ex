@@ -10,11 +10,14 @@ defmodule Jellyfish.Component.HLS do
 
   @impl true
   def config(options) do
+    base_path = Application.fetch_env!(:jellyfish, :output_base_path)
+    output_dir = Path.join([base_path, "hls_output", "#{options.room_id}"])
+
     {:ok,
      %HLS{
        rtc_engine: options.engine_pid,
        owner: self(),
-       output_directory: "output/#{options.room_id}",
+       output_directory: output_dir,
        mixer_config: nil,
        hls_config: %HLSConfig{}
      }}
