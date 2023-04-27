@@ -54,6 +54,8 @@ defmodule Jellyfish.MixProject do
       {:cors_plug, "~> 3.0"},
       {:open_api_spex, "~> 3.16"},
       {:ymlr, "~> 3.0"},
+      # protobuf deps
+      {:protobuf, "~> 0.10.0"},
 
       # Membrane deps
       {:membrane_rtc_engine, github: "jellyfish-dev/membrane_rtc_engine"},

@@ -2,6 +2,16 @@ defmodule JellyfishWeb.ServerSocket do
   @moduledoc false
   @behaviour Phoenix.Socket.Transport
   require Logger
+  alias Jellyfish.Server.ControlMessage
+
+  alias Jellyfish.Server.ClientMessage.TokenMessage
+
+  alias Jellyfish.Server.ServerNotification.{
+    RoomNotification,
+    PeerNotification,
+    ComponentNotification,
+    Authenticated
+  }
 
   @heartbeat_interval 30_000
 
@@ -21,22 +31,21 @@ defmodule JellyfishWeb.ServerSocket do
   end
 
   @impl true
-  def handle_in({encoded_message, [opcode: :text]}, %{authenticated?: false} = state) do
-    case Jason.decode(encoded_message) do
-      {:ok, %{"type" => "controlMessage", "data" => %{"type" => "authRequest", "token" => token}}} ->
+  def handle_in({encoded_message, [opcode: :binary]}, %{authenticated?: false} = state) do
+    case ControlMessage.decode(encoded_message) do
+      %ControlMessage{content: {:authRequest, %TokenMessage{token: token}}} ->
         if token == Application.fetch_env!(:jellyfish, :server_api_token) do
           :ok = Phoenix.PubSub.subscribe(Jellyfish.PubSub, "server")
           Process.send_after(self(), :send_ping, @heartbeat_interval)
 
-          message =
-            %{"type" => "authenticated"}
-            |> control_message()
+          encoded_message =
+            ControlMessage.encode(%ControlMessage{content: {:roomCrashed, %Authenticated{}}})
 
           state = %{state | authenticated?: true}
 
           Logger.info("Server WS authenticated.")
 
-          {:reply, :ok, {:text, message}, state}
+          {:reply, :ok, {:binary, encoded_message}, state}
         else
           Logger.warn("""
           Authentication failed, reason: invalid token.
@@ -62,7 +71,7 @@ defmodule JellyfishWeb.ServerSocket do
     end
   end
 
-  def handle_in({encoded_message, [opcode: :text]}, state) do
+  def handle_in({encoded_message, [opcode: :binary]}, state) do
     Logger.warn("""
     Received message on server WS.
     Server WS doesn't expect to receive any messages.
@@ -85,26 +94,34 @@ defmodule JellyfishWeb.ServerSocket do
     msg =
       case msg do
         {:room_crashed, room_id} ->
-          control_message(%{"type" => "roomCrashed", "roomId" => room_id})
+          %ControlMessage{content: {:roomCrashed, %RoomNotification{roomId: room_id}}}
 
         {:peer_connected, room_id, peer_id} ->
-          control_message(%{"type" => "peerConnected", "roomId" => room_id, "id" => peer_id})
+          %ControlMessage{
+            content: {:peerConnected, %PeerNotification{roomId: room_id, peerId: peer_id}}
+          }
 
         {:peer_disconnected, room_id, peer_id} ->
-          control_message(%{"type" => "peerDisconnected", "roomId" => room_id, "id" => peer_id})
+          %ControlMessage{
+            content: {:peerDisconnected, %PeerNotification{roomId: room_id, peerId: peer_id}}
+          }
 
         {:peer_crashed, room_id, peer_id} ->
-          control_message(%{"type" => "peerCrashed", "roomId" => room_id, "id" => peer_id})
+          %ControlMessage{
+            content: {:peerCrashed, %PeerNotification{roomId: room_id, peerId: peer_id}}
+          }
 
         {:component_crashed, room_id, component_id} ->
-          control_message(%{
-            "type" => "componentCrashed",
-            "roomId" => room_id,
-            "id" => component_id
-          })
+          %ControlMessage{
+            content:
+              {:componentCrashed,
+               %ComponentNotification{roomId: room_id, componentId: component_id}}
+          }
       end
 
-    {:push, {:text, msg}, state}
+    encoded_msg = ControlMessage.encode(msg)
+
+    {:push, {:binary, encoded_msg}, state}
   end
 
   @impl true
@@ -112,13 +129,5 @@ defmodule JellyfishWeb.ServerSocket do
     Logger.info("Server WebSocket stopped #{inspect(reason)}")
 
     :ok
-  end
-
-  defp control_message(data) do
-    %{
-      "type" => "controlMessage",
-      "data" => data
-    }
-    |> Jason.encode!()
   end
 end

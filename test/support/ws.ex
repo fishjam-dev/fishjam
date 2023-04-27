@@ -15,6 +15,16 @@ defmodule JellyfishWeb.WS do
     WebSockex.send_frame(ws, {:text, msg})
   end
 
+  def send_binary_frame(ws, msg) do
+    WebSockex.send_frame(ws, {:binary, msg})
+  end
+
+  @impl true
+  def handle_frame({:binary, msg}, state) do
+    send(state.caller, msg)
+    {:ok, state}
+  end
+
   @impl true
   def handle_frame({:text, msg}, state) do
     send(state.caller, Jason.decode!(msg))

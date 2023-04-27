@@ -13,10 +13,10 @@ for dep in $deps; do
 done
 
 
-printf "Synchronising submodules... "
-git submodule sync --recursive >> /dev/null
-git submodule update --recursive --init >> /dev/null
-printf "DONE\n\n"
+# printf "Synchronising submodules... "
+# git submodule sync --recursive >> /dev/null
+# git submodule update --recursive --init >> /dev/null
+# printf "DONE\n\n"
 
 files=$(find protos/jellyfish -name "*.proto")
 
