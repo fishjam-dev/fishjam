@@ -7,10 +7,10 @@ defmodule JellyfishWeb.ServerSocket do
   alias Jellyfish.Server.ClientMessage.TokenMessage
 
   alias Jellyfish.Server.ServerNotification.{
-    RoomNotification,
-    PeerNotification,
+    Authenticated,
     ComponentNotification,
-    Authenticated
+    PeerNotification,
+    RoomNotification
   }
 
   @heartbeat_interval 30_000

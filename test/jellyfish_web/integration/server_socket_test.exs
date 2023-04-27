@@ -2,16 +2,17 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
   use JellyfishWeb.ConnCase
 
   alias __MODULE__.Endpoint
-  alias JellyfishWeb.{PeerSocket, ServerSocket, WS}
   alias Jellyfish.Server.ControlMessage
 
   alias Jellyfish.Server.ClientMessage.TokenMessage
 
   alias Jellyfish.Server.ServerNotification.{
-    RoomNotification,
+    Authenticated,
     PeerNotification,
-    Authenticated
+    RoomNotification
   }
+
+  alias JellyfishWeb.{PeerSocket, ServerSocket, WS}
 
   @port 5907
   @path "ws://127.0.0.1:#{@port}/socket/server/websocket"
