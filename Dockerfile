@@ -96,7 +96,7 @@ WORKDIR /app
 # base path where jellyfish saves its artefacts
 ENV OUTPUT_BASE_PATH=./jellyfish_output
 
-RUN mkdir ${OUTPUT_BASE_PATH}
+RUN mkdir ${OUTPUT_BASE_PATH} && chown jellyfish:jellyfish ${OUTPUT_BASE_PATH}
 
 COPY --from=build /app/_build/prod/rel/jellyfish ./
 
