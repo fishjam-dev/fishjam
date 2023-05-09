@@ -56,7 +56,7 @@ defmodule Jellyfish.MixProject do
       {:ymlr, "~> 3.0"},
 
       # Membrane deps
-      {:membrane_rtc_engine, github: "jellyfish-dev/membrane_rtc_engine"},
+      {:membrane_rtc_engine, github: "jellyfish-dev/membrane_rtc_engine", branch: "master"},
 
       # HLS endpoints deps
       {:membrane_aac_plugin, "~> 0.13.0"},
@@ -71,6 +71,7 @@ defmodule Jellyfish.MixProject do
       {:membrane_audio_filler_plugin, "~> 0.1.0"},
       {:membrane_video_compositor_plugin, "~> 0.2.1"},
       {:membrane_http_adaptive_stream_plugin, "~> 0.12.0"},
+      {:fake_turn, github: "jellyfish-dev/fake_turn", branch: "flajajo", override: true},
 
       # RTSP endpoints deps
       {:connection, "~> 1.1"},
