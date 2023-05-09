@@ -318,11 +318,12 @@ defmodule Jellyfish.Room do
 
         turn_mock_ip = Application.fetch_env!(:jellyfish, :integrated_turn_ip)
 
-        {:ok, turn_ip} = :inet.getaddr('fly-global-services', :inet)
-        # turn_ip = if @is_prod, do: prod_ip, else: turn_mock_ip
-        # turn_ip = if @is_prod, do: {0, 0, 0, 0}, else: turn_mock_ip
-
-        IO.inspect(turn_ip, label: :ip)
+        turn_ip =
+          if @is_prod do
+            Application.fetch_env!(:jellyfish, :integrated_turn_prod_ip)
+          else
+            turn_mock_ip
+          end
 
         integrated_turn_options = [
           ip: turn_ip,

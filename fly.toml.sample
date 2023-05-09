@@ -1,17 +1,12 @@
-# fly.toml file generated for jellyfish-media-server on 2023-04-13T16:32:52+02:00
-
-app = "jellyfish-media-server"
 kill_signal = "SIGTERM"
 kill_timeout = 5
-primary_region = "waw"
 processes = []
 
 [env]
   INTEGRATED_TCP_TURN_PORT = "49999"
-  INTEGRATED_TURN_IP = "168.220.83.55"
+  INTEGRATED_TURN_IP = "127.0.0.1"
   INTEGRATED_TURN_PORT_RANGE = "50000-59999"
   PORT = "4000"
-  VIRTUAL_HOST = "jellyfish-media-server.fly.dev"
   WEBRTC_USED = "true"
 
 [experimental]
