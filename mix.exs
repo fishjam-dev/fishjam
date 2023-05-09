@@ -56,7 +56,7 @@ defmodule Jellyfish.MixProject do
       {:ymlr, "~> 3.0"},
 
       # Membrane deps
-      {:membrane_rtc_engine, github: "jellyfish-dev/membrane_rtc_engine", branch: "master"},
+      {:membrane_rtc_engine, github: "jellyfish-dev/membrane_rtc_engine"},
 
       # HLS endpoints deps
       {:membrane_aac_plugin, "~> 0.13.0"},

@@ -7,19 +7,7 @@ import Config
 # any compile-time configuration in here, as it won't be applied.
 # The block below contains prod specific runtime configuration.
 defmodule ConfigParser do
-  def parse_integrated_turn_ip(ip) do
-    with {:ok, parsed_ip} <- ip |> to_charlist() |> :inet.parse_address() do
-      parsed_ip
-    else
-      _ ->
-        raise("""
-        Bad integrated TURN IP format. Expected IPv4, got: \
-        #{inspect(ip)}
-        """)
-    end
-  end
-
-  def parse_integrated_turn_prod_address(addr) do
+  def parse_integrated_turn_ip(addr) do
     addr = addr |> to_charlist()
 
     case :inet.parse_address(addr) do
@@ -79,15 +67,12 @@ config :jellyfish,
   webrtc_used: String.downcase(System.get_env("WEBRTC_USED", "true")) not in ["false", "f", "0"],
   integrated_turn_ip:
     System.get_env("INTEGRATED_TURN_IP", "127.0.0.1") |> ConfigParser.parse_integrated_turn_ip(),
-  integrated_turn_prod_ip:
-    System.get_env("INTEGRATED_TURN_PROD_ADDR", "0.0.0.0")
-    |> ConfigParser.parse_integrated_turn_prod_address(),
+  integrated_turn_listen_ip:
+    System.get_env("INTEGRATED_TURN_LISTEN_IP", "0.0.0.0")
+    |> ConfigParser.parse_integrated_turn_ip(),
   integrated_turn_port_range:
     System.get_env("INTEGRATED_TURN_PORT_RANGE", "50000-59999")
     |> ConfigParser.parse_integrated_turn_port_range(),
-  integrated_tcp_turn_port:
-    System.get_env("INTEGRATED_TCP_TURN_PORT")
-    |> ConfigParser.parse_port_number("INTEGRATED_TCP_TURN_PORT"),
   integrated_tls_turn_port:
     System.get_env("INTEGRATED_TLS_TURN_PORT")
     |> ConfigParser.parse_port_number("INTEGRATED_TLS_TURN_PORT"),
@@ -133,11 +118,9 @@ if config_env() == :prod do
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
       # See the documentation on https://hexdocs.pm/plug_cowboy/Plug.Cowboy.html
       # for details about using IPv6 vs IPv4 and loopback vs public addresses.
-      # ip: {0, 0, 0, 0, 0, 0, 0, 0},
-      ip: {0, 0, 0, 0},
+      ip: {0, 0, 0, 0, 0, 0, 0, 0},
       port: port
     ],
-    check_origin: false,
     secret_key_base: secret_key_base
 
   # ## SSL Support

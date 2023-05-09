@@ -3,9 +3,9 @@ kill_timeout = 5
 processes = []
 
 [env]
-  INTEGRATED_TCP_TURN_PORT = "49999"
-  INTEGRATED_TURN_IP = "127.0.0.1"
+  INTEGRATED_TURN_IP = "<ip obtained with fly ips allocate-v4>"
   INTEGRATED_TURN_PORT_RANGE = "50000-59999"
+  INTEGRATED_TURN_LISTEN_IP = "fly-global-services"
   PORT = "4000"
   WEBRTC_USED = "true"
 
@@ -15,7 +15,6 @@ processes = []
 [[services]]
   http_checks = []
   internal_port = 4000
-  processes = ["app"]
   protocol = "tcp"
   script_checks = []
   [services.concurrency]
