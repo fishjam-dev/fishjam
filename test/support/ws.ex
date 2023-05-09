@@ -2,6 +2,7 @@ defmodule JellyfishWeb.WS do
   @moduledoc false
 
   use WebSockex
+  alias Jellyfish.Server.ControlMessage
 
   def start_link(url) do
     WebSockex.start_link(url, __MODULE__, %{caller: self()})
@@ -21,7 +22,7 @@ defmodule JellyfishWeb.WS do
 
   @impl true
   def handle_frame({:binary, msg}, state) do
-    send(state.caller, msg)
+    send(state.caller, ControlMessage.decode(msg))
     {:ok, state}
   end
 

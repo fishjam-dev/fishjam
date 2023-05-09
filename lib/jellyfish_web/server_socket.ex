@@ -4,13 +4,14 @@ defmodule JellyfishWeb.ServerSocket do
   require Logger
   alias Jellyfish.Server.ControlMessage
 
-  alias Jellyfish.Server.ClientMessage.TokenMessage
-
-  alias Jellyfish.Server.ServerNotification.{
+  alias Jellyfish.Server.ControlMessage.{
     Authenticated,
-    ComponentNotification,
-    PeerNotification,
-    RoomNotification
+    AuthRequest,
+    ComponentCrashed,
+    PeerConnected,
+    PeerCrashed,
+    PeerDisconnected,
+    RoomCrashed
   }
 
   @heartbeat_interval 30_000
@@ -33,13 +34,13 @@ defmodule JellyfishWeb.ServerSocket do
   @impl true
   def handle_in({encoded_message, [opcode: :binary]}, %{authenticated?: false} = state) do
     case ControlMessage.decode(encoded_message) do
-      %ControlMessage{content: {:authRequest, %TokenMessage{token: token}}} ->
+      %ControlMessage{content: {:authRequest, %AuthRequest{token: token}}} ->
         if token == Application.fetch_env!(:jellyfish, :server_api_token) do
           :ok = Phoenix.PubSub.subscribe(Jellyfish.PubSub, "server")
           Process.send_after(self(), :send_ping, @heartbeat_interval)
 
           encoded_message =
-            ControlMessage.encode(%ControlMessage{content: {:roomCrashed, %Authenticated{}}})
+            ControlMessage.encode(%ControlMessage{content: {:authenticated, %Authenticated{}}})
 
           state = %{state | authenticated?: true}
 
@@ -94,28 +95,27 @@ defmodule JellyfishWeb.ServerSocket do
     msg =
       case msg do
         {:room_crashed, room_id} ->
-          %ControlMessage{content: {:roomCrashed, %RoomNotification{roomId: room_id}}}
+          %ControlMessage{content: {:roomCrashed, %RoomCrashed{room_id: room_id}}}
 
         {:peer_connected, room_id, peer_id} ->
           %ControlMessage{
-            content: {:peerConnected, %PeerNotification{roomId: room_id, peerId: peer_id}}
+            content: {:peerConnected, %PeerConnected{room_id: room_id, peer_id: peer_id}}
           }
 
         {:peer_disconnected, room_id, peer_id} ->
           %ControlMessage{
-            content: {:peerDisconnected, %PeerNotification{roomId: room_id, peerId: peer_id}}
+            content: {:peerDisconnected, %PeerDisconnected{room_id: room_id, peer_id: peer_id}}
           }
 
         {:peer_crashed, room_id, peer_id} ->
           %ControlMessage{
-            content: {:peerCrashed, %PeerNotification{roomId: room_id, peerId: peer_id}}
+            content: {:peerCrashed, %PeerCrashed{room_id: room_id, peer_id: peer_id}}
           }
 
         {:component_crashed, room_id, component_id} ->
           %ControlMessage{
             content:
-              {:componentCrashed,
-               %ComponentNotification{roomId: room_id, componentId: component_id}}
+              {:componentCrashed, %ComponentCrashed{room_id: room_id, component_id: component_id}}
           }
       end
 
@@ -127,7 +127,6 @@ defmodule JellyfishWeb.ServerSocket do
   @impl true
   def terminate(reason, _state) do
     Logger.info("Server WebSocket stopped #{inspect(reason)}")
-
     :ok
   end
 end

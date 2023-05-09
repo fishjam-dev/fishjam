@@ -4,19 +4,21 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
   alias __MODULE__.Endpoint
   alias Jellyfish.Server.ControlMessage
 
-  alias Jellyfish.Server.ClientMessage.TokenMessage
-
-  alias Jellyfish.Server.ServerNotification.{
+  alias Jellyfish.Server.ControlMessage.{
     Authenticated,
-    PeerNotification,
-    RoomNotification
+    AuthRequest,
+    PeerConnected,
+    PeerDisconnected,
+    RoomCrashed
   }
 
   alias JellyfishWeb.{PeerSocket, ServerSocket, WS}
 
   @port 5907
   @path "ws://127.0.0.1:#{@port}/socket/server/websocket"
-  @auth_response ControlMessage.encode(%ControlMessage{content: {:roomCrashed, %Authenticated{}}})
+  @auth_response %ControlMessage{
+                   content: {:authenticated, %Authenticated{}}
+                 }
 
   Application.put_env(
     :jellyfish,
@@ -82,12 +84,10 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
 
     Process.exit(room_pid, :kill)
 
-    receive do
-      msg when is_binary(msg) ->
-        assert %ControlMessage{
-                 content: {:roomCrashed, %RoomNotification{roomId: ^room_id}}
-               } = ControlMessage.decode(msg)
-    end
+
+    assert_receive %ControlMessage{
+      content: {:roomCrashed, %RoomCrashed{room_id: ^room_id}}
+    }
   end
 
   test "sends a message when peer connects", %{conn: conn} do
@@ -110,23 +110,19 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
 
     :ok = WS.send_frame(peer_ws, auth_request)
 
-    assert_receive %{"data" => %{"type" => "authenticated"}, "type" => "controlMessage"}
+    assert_receive %ControlMessage{
+      content:
+        {:peerConnected, %PeerConnected{peer_id: ^peer_id, room_id: ^room_id}}
+    }
 
     conn = delete(conn, ~p"/room/#{room_id}/")
     response(conn, :no_content)
 
-    receive do
-      msg when is_binary(msg) ->
-        case ControlMessage.decode(msg) do
-          %ControlMessage{
-            content: {:peerDisconnected, %PeerNotification{peerId: ^peer_id, roomId: ^room_id}}
-          } ->
-            assert true
+    assert_receive %ControlMessage{
+      content:
+        {:peerDisconnected, %PeerDisconnected{peer_id: ^peer_id, room_id: ^room_id}}
+    }
 
-          _other ->
-            nil
-        end
-    end
   end
 
   def create_and_authenticate(token \\ Application.fetch_env!(:jellyfish, :server_api_token)) do
@@ -140,7 +136,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
   end
 
   defp auth_request(token) do
-    ControlMessage.encode(%ControlMessage{content: {:authRequest, %TokenMessage{token: token}}})
+    ControlMessage.encode(%ControlMessage{content: {:authRequest, %AuthRequest{token: token}}})
   end
 
   defp peer_auth_request(token) do

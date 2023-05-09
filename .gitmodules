@@ -1,4 +1,4 @@
 [submodule "protos"]
 	path = protos
 	url = https://github.com/jellyfish-dev/protos.git
-    branch = jellyfish_notifications
+    branch = RTC-231-move-server-notifications-to-protobuffs
