@@ -41,8 +41,6 @@ defmodule Jellyfish.Room do
           network_options: map()
         }
 
-  @is_prod Mix.env() == :prod
-
   @spec start(max_peers()) :: {:ok, pid(), id()}
   def start(max_peers) do
     id = UUID.uuid4()
@@ -316,9 +314,8 @@ defmodule Jellyfish.Room do
             :error -> nil
           end
 
+        turn_ip = Application.fetch_env!(:jellyfish, :integrated_turn_listen_ip)
         turn_mock_ip = Application.fetch_env!(:jellyfish, :integrated_turn_ip)
-
-        turn_ip = if @is_prod, do: {0, 0, 0, 0}, else: turn_mock_ip
 
         integrated_turn_options = [
           ip: turn_ip,

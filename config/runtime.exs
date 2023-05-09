@@ -7,15 +7,23 @@ import Config
 # any compile-time configuration in here, as it won't be applied.
 # The block below contains prod specific runtime configuration.
 defmodule ConfigParser do
-  def parse_integrated_turn_ip(ip) do
-    with {:ok, parsed_ip} <- ip |> to_charlist() |> :inet.parse_address() do
-      parsed_ip
-    else
-      _ ->
-        raise("""
-        Bad integrated TURN IP format. Expected IPv4, got: \
-        #{inspect(ip)}
-        """)
+  def parse_integrated_turn_ip(addr) do
+    addr = addr |> to_charlist()
+
+    case :inet.parse_address(addr) do
+      {:ok, parsed_ip} ->
+        parsed_ip
+
+      _error ->
+        with {:ok, parsed_ip} <- :inet.getaddr(addr, :inet) do
+          parsed_ip
+        else
+          _error ->
+            raise("""
+            Bad integrated TURN address. Expected IPv4 or a valid hostname, got: \
+            #{inspect(addr)}
+            """)
+        end
     end
   end
 
@@ -59,6 +67,9 @@ config :jellyfish,
   webrtc_used: String.downcase(System.get_env("WEBRTC_USED", "true")) not in ["false", "f", "0"],
   integrated_turn_ip:
     System.get_env("INTEGRATED_TURN_IP", "127.0.0.1") |> ConfigParser.parse_integrated_turn_ip(),
+  integrated_turn_listen_ip:
+    System.get_env("INTEGRATED_TURN_LISTEN_IP", "0.0.0.0")
+    |> ConfigParser.parse_integrated_turn_ip(),
   integrated_turn_port_range:
     System.get_env("INTEGRATED_TURN_PORT_RANGE", "50000-59999")
     |> ConfigParser.parse_integrated_turn_port_range(),
