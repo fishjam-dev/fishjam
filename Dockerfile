@@ -1,15 +1,15 @@
 FROM elixir:1.14.3-otp-24-alpine as build
 
 RUN \
-	apk add --no-cache \
-	build-base \
-	git \
-	openssl1.1-compat-dev \
-	libsrtp-dev \
-	ffmpeg-dev \
-	fdk-aac-dev \
-	opus-dev \
-	curl
+  apk add --no-cache \
+  build-base \
+  git \
+  openssl1.1-compat-dev \
+  libsrtp-dev \
+  ffmpeg-dev \
+  fdk-aac-dev \
+  opus-dev \
+  curl
 
 WORKDIR /app
 
@@ -19,7 +19,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 RUN mix local.hex --force && \
-	mix local.rebar --force
+  mix local.rebar --force
 
 ENV MIX_ENV=prod
 
@@ -58,38 +58,38 @@ ENV GOSU_VERSION 1.16
 RUN set -eux; \
 	\
 	apk add --no-cache --virtual .gosu-deps \
-	ca-certificates \
-	dpkg \
-	gnupg \
+		ca-certificates \
+		dpkg \
+		gnupg \
 	; \
 	\
 	dpkgArch="$(dpkg --print-architecture | awk -F- '{ print $NF }')"; \
 	wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch"; \
 	wget -O /usr/local/bin/gosu.asc "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch.asc"; \
 	\
-	# verify the signature
+# verify the signature
 	export GNUPGHOME="$(mktemp -d)"; \
 	gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4; \
 	gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu; \
 	command -v gpgconf && gpgconf --kill all || :; \
 	rm -rf "$GNUPGHOME" /usr/local/bin/gosu.asc; \
 	\
-	# clean up fetch dependencies
+# clean up fetch dependencies
 	apk del --no-network .gosu-deps; \
 	\
 	chmod +x /usr/local/bin/gosu; \
-	# verify that the binary works
+# verify that the binary works
 	gosu --version; \
 	gosu nobody true
 
 RUN \
-	apk add --no-cache \
-	openssl1.1-compat \
-	libsrtp \
-	ffmpeg \
-	fdk-aac \
-	opus \
-	curl
+  apk add --no-cache \
+  openssl1.1-compat \
+  libsrtp \
+  ffmpeg \
+  fdk-aac \
+  opus \
+  curl
 
 WORKDIR /app
 
