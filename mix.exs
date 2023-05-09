@@ -71,7 +71,6 @@ defmodule Jellyfish.MixProject do
       {:membrane_audio_filler_plugin, "~> 0.1.0"},
       {:membrane_video_compositor_plugin, "~> 0.2.1"},
       {:membrane_http_adaptive_stream_plugin, "~> 0.12.0"},
-      {:fake_turn, github: "jellyfish-dev/fake_turn", branch: "flajajo", override: true},
 
       # RTSP endpoints deps
       {:connection, "~> 1.1"},

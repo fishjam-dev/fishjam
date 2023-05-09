@@ -1,4 +1,4 @@
-# fly.toml file generated for jellyfish-media-server on 2023-04-13T15:31:21+02:00
+# fly.toml file generated for jellyfish-media-server on 2023-04-13T16:32:52+02:00
 
 app = "jellyfish-media-server"
 kill_signal = "SIGTERM"
@@ -8,7 +8,7 @@ processes = []
 
 [env]
   INTEGRATED_TCP_TURN_PORT = "49999"
-  INTEGRATED_TURN_IP = "168.220.94.27"
+  INTEGRATED_TURN_IP = "168.220.83.55"
   INTEGRATED_TURN_PORT_RANGE = "50000-59999"
   PORT = "4000"
   VIRTUAL_HOST = "jellyfish-media-server.fly.dev"
@@ -42,3 +42,10 @@ processes = []
     interval = "15s"
     restart_limit = 0
     timeout = "2s"
+
+[[services]]
+  internal_port = 50000
+  protocol = "udp"
+
+  [[services.ports]]
+    port = 50000
