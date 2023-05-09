@@ -73,6 +73,9 @@ config :jellyfish,
   integrated_turn_port_range:
     System.get_env("INTEGRATED_TURN_PORT_RANGE", "50000-59999")
     |> ConfigParser.parse_integrated_turn_port_range(),
+  integrated_tcp_turn_port:
+    System.get_env("INTEGRATED_TCP_TURN_PORT")
+    |> ConfigParser.parse_port_number("INTEGRATED_TCP_TURN_PORT"),
   integrated_tls_turn_port:
     System.get_env("INTEGRATED_TLS_TURN_PORT")
     |> ConfigParser.parse_port_number("INTEGRATED_TLS_TURN_PORT"),
