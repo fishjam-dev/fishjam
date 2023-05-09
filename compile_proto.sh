@@ -3,7 +3,7 @@
 # Terminate on errors
 set -e
 
-deps="printf find git protoc"
+deps="printf find git protoc protoc-gen-elixir echo"
 
 for dep in $deps; do
   if ! [[ $(which $dep) ]]; then
@@ -13,10 +13,10 @@ for dep in $deps; do
 done
 
 
-# printf "Synchronising submodules... "
-# git submodule sync --recursive >> /dev/null
-# git submodule update --recursive --init >> /dev/null
-# printf "DONE\n\n"
+printf "Synchronising submodules... "
+git submodule sync --recursive >> /dev/null
+git submodule update --recursive --remote --init >> /dev/null
+printf "DONE\n\n"
 
 files=$(find protos/jellyfish -name "*.proto")
 
@@ -24,7 +24,10 @@ printf "Compiling:\n"
 count=1
 total=${#files[@]}
 for file in $files; do
-  printf "[%i/%i] %s ... " $count $total $file
+  printf "Compile file %s %s ... " $count $file
   protoc --elixir_out=./lib/ $file
   printf "DONE\n"
+  count=$(expr $count + 1)
 done
+
+mix format "lib/protos/**/*.ex"
