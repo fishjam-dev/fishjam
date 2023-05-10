@@ -63,11 +63,35 @@ defmodule Jellyfish.Server.ControlMessage do
 
   oneof :content, 0
 
-  field :roomCrashed, 1, type: Jellyfish.Server.ControlMessage.RoomCrashed, oneof: 0
-  field :peerConnected, 2, type: Jellyfish.Server.ControlMessage.PeerConnected, oneof: 0
-  field :peerDisconnected, 3, type: Jellyfish.Server.ControlMessage.PeerDisconnected, oneof: 0
-  field :peerCrashed, 4, type: Jellyfish.Server.ControlMessage.PeerCrashed, oneof: 0
-  field :componentCrashed, 5, type: Jellyfish.Server.ControlMessage.ComponentCrashed, oneof: 0
+  field :room_crashed, 1,
+    type: Jellyfish.Server.ControlMessage.RoomCrashed,
+    json_name: "roomCrashed",
+    oneof: 0
+
+  field :peer_connected, 2,
+    type: Jellyfish.Server.ControlMessage.PeerConnected,
+    json_name: "peerConnected",
+    oneof: 0
+
+  field :peer_disconnected, 3,
+    type: Jellyfish.Server.ControlMessage.PeerDisconnected,
+    json_name: "peerDisconnected",
+    oneof: 0
+
+  field :peer_crashed, 4,
+    type: Jellyfish.Server.ControlMessage.PeerCrashed,
+    json_name: "peerCrashed",
+    oneof: 0
+
+  field :component_crashed, 5,
+    type: Jellyfish.Server.ControlMessage.ComponentCrashed,
+    json_name: "componentCrashed",
+    oneof: 0
+
   field :authenticated, 6, type: Jellyfish.Server.ControlMessage.Authenticated, oneof: 0
-  field :authRequest, 7, type: Jellyfish.Server.ControlMessage.AuthRequest, oneof: 0
+
+  field :auth_request, 7,
+    type: Jellyfish.Server.ControlMessage.AuthRequest,
+    json_name: "authRequest",
+    oneof: 0
 end

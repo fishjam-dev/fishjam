@@ -22,7 +22,8 @@ defmodule JellyfishWeb.WS do
 
   @impl true
   def handle_frame({:binary, msg}, state) do
-    send(state.caller, ControlMessage.decode(msg))
+    %ControlMessage{content: {_atom, content}} = ControlMessage.decode(msg)
+    send(state.caller, content)
     {:ok, state}
   end
 

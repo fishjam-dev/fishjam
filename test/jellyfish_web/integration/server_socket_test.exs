@@ -16,9 +16,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
 
   @port 5907
   @path "ws://127.0.0.1:#{@port}/socket/server/websocket"
-  @auth_response %ControlMessage{
-    content: {:authenticated, %Authenticated{}}
-  }
+  @auth_response %Authenticated{}
 
   Application.put_env(
     :jellyfish,
@@ -33,13 +31,15 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
 
     alias JellyfishWeb.ServerSocket
 
-    socket "/socket/server", ServerSocket,
+    socket("/socket/server", ServerSocket,
       websocket: true,
       longpoll: false
+    )
 
-    socket "/socket/peer", PeerSocket,
+    socket("/socket/peer", PeerSocket,
       websocket: true,
       longpoll: false
+    )
   end
 
   setup_all do
@@ -84,9 +84,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
 
     Process.exit(room_pid, :kill)
 
-    assert_receive %ControlMessage{
-      content: {:roomCrashed, %RoomCrashed{room_id: ^room_id}}
-    }
+    assert_receive %RoomCrashed{room_id: ^room_id}
   end
 
   test "sends a message when peer connects", %{conn: conn} do
@@ -109,16 +107,12 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
 
     :ok = WS.send_frame(peer_ws, auth_request)
 
-    assert_receive %ControlMessage{
-      content: {:peerConnected, %PeerConnected{peer_id: ^peer_id, room_id: ^room_id}}
-    }
+    assert_receive %PeerConnected{peer_id: ^peer_id, room_id: ^room_id}
 
     conn = delete(conn, ~p"/room/#{room_id}/")
     response(conn, :no_content)
 
-    assert_receive %ControlMessage{
-      content: {:peerDisconnected, %PeerDisconnected{peer_id: ^peer_id, room_id: ^room_id}}
-    }
+    assert_receive %PeerDisconnected{peer_id: ^peer_id, room_id: ^room_id}
   end
 
   def create_and_authenticate(token \\ Application.fetch_env!(:jellyfish, :server_api_token)) do
@@ -132,7 +126,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
   end
 
   defp auth_request(token) do
-    ControlMessage.encode(%ControlMessage{content: {:authRequest, %AuthRequest{token: token}}})
+    ControlMessage.encode(%ControlMessage{content: {:auth_request, %AuthRequest{token: token}}})
   end
 
   defp peer_auth_request(token) do

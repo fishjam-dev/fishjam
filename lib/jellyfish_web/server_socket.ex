@@ -34,7 +34,7 @@ defmodule JellyfishWeb.ServerSocket do
   @impl true
   def handle_in({encoded_message, [opcode: :binary]}, %{authenticated?: false} = state) do
     case ControlMessage.decode(encoded_message) do
-      %ControlMessage{content: {:authRequest, %AuthRequest{token: token}}} ->
+      %ControlMessage{content: {:auth_request, %AuthRequest{token: token}}} ->
         if token == Application.fetch_env!(:jellyfish, :server_api_token) do
           :ok = Phoenix.PubSub.subscribe(Jellyfish.PubSub, "server")
           Process.send_after(self(), :send_ping, @heartbeat_interval)
@@ -62,7 +62,7 @@ defmodule JellyfishWeb.ServerSocket do
 
       _other ->
         Logger.warn("""
-        Received message on server WS that is not authRequest.
+        Received message on server WS that is not auth_request.
         Closing the connection.
 
         Message: #{inspect(encoded_message)}
@@ -95,27 +95,28 @@ defmodule JellyfishWeb.ServerSocket do
     msg =
       case msg do
         {:room_crashed, room_id} ->
-          %ControlMessage{content: {:roomCrashed, %RoomCrashed{room_id: room_id}}}
+          %ControlMessage{content: {:room_crashed, %RoomCrashed{room_id: room_id}}}
 
         {:peer_connected, room_id, peer_id} ->
           %ControlMessage{
-            content: {:peerConnected, %PeerConnected{room_id: room_id, peer_id: peer_id}}
+            content: {:peer_connected, %PeerConnected{room_id: room_id, peer_id: peer_id}}
           }
 
         {:peer_disconnected, room_id, peer_id} ->
           %ControlMessage{
-            content: {:peerDisconnected, %PeerDisconnected{room_id: room_id, peer_id: peer_id}}
+            content: {:peer_disconnected, %PeerDisconnected{room_id: room_id, peer_id: peer_id}}
           }
 
         {:peer_crashed, room_id, peer_id} ->
           %ControlMessage{
-            content: {:peerCrashed, %PeerCrashed{room_id: room_id, peer_id: peer_id}}
+            content: {:peer_crashed, %PeerCrashed{room_id: room_id, peer_id: peer_id}}
           }
 
         {:component_crashed, room_id, component_id} ->
           %ControlMessage{
             content:
-              {:componentCrashed, %ComponentCrashed{room_id: room_id, component_id: component_id}}
+              {:component_crashed,
+               %ComponentCrashed{room_id: room_id, component_id: component_id}}
           }
       end
 

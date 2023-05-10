@@ -3,15 +3,6 @@
 # Terminate on errors
 set -e
 
-deps="printf find git protoc protoc-gen-elixir echo"
-
-for dep in $deps; do
-  if ! [[ $(which $dep) ]]; then
-    echo "Missing dependency: $dep"
-    exit 1
-  fi
-done
-
 
 printf "Synchronising submodules... "
 git submodule sync --recursive >> /dev/null
