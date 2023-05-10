@@ -18,7 +18,7 @@ for file in $files; do
   printf "Compile file %s %s ... " $count $file
   protoc --elixir_out=./lib/ $file
   printf "DONE\n"
-  count=$(expr $count + 1)
+  count=$(($count + 1))
 done
 
 mix format "lib/protos/**/*.ex"
