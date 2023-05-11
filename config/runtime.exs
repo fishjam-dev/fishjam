@@ -82,7 +82,6 @@ config :jellyfish,
   integrated_turn_pkey: System.get_env("INTEGRATED_TURN_PKEY"),
   integrated_turn_cert: System.get_env("INTEGRATED_TURN_CERT"),
   integrated_turn_domain: System.get_env("VIRTUAL_HOST"),
-  auth_salt: System.get_env("AUTH_SALT", "7d8ecfca-aeaf-43b1-81fa-5eb6d4b0557a"),
   jwt_max_age: 24 * 3600,
   output_base_path: System.get_env("OUTPUT_BASE_PATH", "jellyfish_output") |> Path.expand()
 
