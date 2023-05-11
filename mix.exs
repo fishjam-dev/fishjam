@@ -54,6 +54,8 @@ defmodule Jellyfish.MixProject do
       {:cors_plug, "~> 3.0"},
       {:open_api_spex, "~> 3.16"},
       {:ymlr, "~> 3.0"},
+      # protobuf deps
+      {:protobuf, "~> 0.10.0"},
 
       # Membrane deps
       {:membrane_rtc_engine, github: "jellyfish-dev/membrane_rtc_engine"},
@@ -69,8 +71,8 @@ defmodule Jellyfish.MixProject do
       {:membrane_h264_ffmpeg_plugin, "~> 0.26.2"},
       {:membrane_h264_plugin, "~> 0.2.0"},
       {:membrane_audio_filler_plugin, "~> 0.1.0"},
-      {:membrane_video_compositor_plugin, "~> 0.2.1"},
-      {:membrane_http_adaptive_stream_plugin, "~> 0.12.0"},
+      {:membrane_video_compositor_plugin, "~> 0.3.1"},
+      {:membrane_http_adaptive_stream_plugin, "~> 0.13.0"},
 
       # RTSP endpoints deps
       {:connection, "~> 1.1"},

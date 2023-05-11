@@ -98,7 +98,7 @@ defmodule JellyfishWeb.RoomController do
         send_resp(conn, :no_content, "")
 
       {:error, :room_not_found} ->
-        {:error, :not_found, "Room #{id} doest not exist"}
+        {:error, :not_found, "Room #{id} does not exist"}
     end
   end
 

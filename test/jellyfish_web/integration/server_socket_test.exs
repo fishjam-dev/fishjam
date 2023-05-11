@@ -2,16 +2,21 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
   use JellyfishWeb.ConnCase
 
   alias __MODULE__.Endpoint
+  alias Jellyfish.Server.ControlMessage
+
+  alias Jellyfish.Server.ControlMessage.{
+    Authenticated,
+    AuthRequest,
+    PeerConnected,
+    PeerDisconnected,
+    RoomCrashed
+  }
+
   alias JellyfishWeb.{PeerSocket, ServerSocket, WS}
 
   @port 5907
   @path "ws://127.0.0.1:#{@port}/socket/server/websocket"
-  @auth_response %{
-    "type" => "controlMessage",
-    "data" => %{
-      "type" => "authenticated"
-    }
-  }
+  @auth_response %Authenticated{}
 
   Application.put_env(
     :jellyfish,
@@ -26,13 +31,15 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
 
     alias JellyfishWeb.ServerSocket
 
-    socket "/socket/server", ServerSocket,
+    socket("/socket/server", ServerSocket,
       websocket: true,
       longpoll: false
+    )
 
-    socket "/socket/peer", PeerSocket,
+    socket("/socket/peer", PeerSocket,
       websocket: true,
       longpoll: false
+    )
   end
 
   setup_all do
@@ -45,20 +52,8 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     server_api_token = "invalid" <> Application.fetch_env!(:jellyfish, :server_api_token)
     auth_request = auth_request(server_api_token)
 
-    :ok = WS.send_frame(ws, auth_request)
+    :ok = WS.send_binary_frame(ws, auth_request)
     assert_receive {:disconnected, {:remote, 1000, "invalid token"}}, 1000
-  end
-
-  test "missing token" do
-    {:ok, ws} = WS.start_link(@path)
-
-    {_server_api_token, auth_request} =
-      Application.fetch_env!(:jellyfish, :server_api_token)
-      |> auth_request()
-      |> pop_in([:data, :token])
-
-    :ok = WS.send_frame(ws, auth_request)
-    assert_receive {:disconnected, {:remote, 1000, "invalid auth request"}}, 1000
   end
 
   test "correct token" do
@@ -68,7 +63,11 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
   test "closes on receiving a message from a client" do
     ws = create_and_authenticate()
 
-    :ok = WS.send_frame(ws, %{type: "controlMessage", data: "dummy data"})
+    :ok =
+      WS.send_binary_frame(
+        ws,
+        ControlMessage.encode(%ControlMessage{content: {:authenticated, %Authenticated{}}})
+      )
 
     assert_receive {:disconnected, {:remote, 1003, "operation not allowed"}}, 1000
   end
@@ -85,10 +84,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
 
     Process.exit(room_pid, :kill)
 
-    assert_receive %{
-      "data" => %{"roomId" => ^room_id, "type" => "roomCrashed"},
-      "type" => "controlMessage"
-    }
+    assert_receive %RoomCrashed{room_id: ^room_id}
   end
 
   test "sends a message when peer connects", %{conn: conn} do
@@ -107,41 +103,36 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
 
     {:ok, peer_ws} = WS.start_link("ws://127.0.0.1:#{@port}/socket/peer/websocket")
 
-    auth_request = auth_request(peer_token)
+    auth_request = peer_auth_request(peer_token)
 
     :ok = WS.send_frame(peer_ws, auth_request)
 
-    assert_receive %{
-      "data" => %{"id" => ^peer_id, "type" => "peerConnected"},
-      "type" => "controlMessage"
-    }
+    assert_receive %PeerConnected{peer_id: ^peer_id, room_id: ^room_id}
 
     conn = delete(conn, ~p"/room/#{room_id}/")
     response(conn, :no_content)
 
-    assert_receive %{
-      "data" => %{"id" => ^peer_id, "type" => "peerDisconnected"},
-      "type" => "controlMessage"
-    }
+    assert_receive %PeerDisconnected{peer_id: ^peer_id, room_id: ^room_id}
   end
 
   def create_and_authenticate(token \\ Application.fetch_env!(:jellyfish, :server_api_token)) do
     auth_request = auth_request(token)
 
     {:ok, ws} = WS.start_link(@path)
-    :ok = WS.send_frame(ws, auth_request)
+    :ok = WS.send_binary_frame(ws, auth_request)
     assert_receive @auth_response, 1000
 
     ws
   end
 
   defp auth_request(token) do
+    ControlMessage.encode(%ControlMessage{content: {:auth_request, %AuthRequest{token: token}}})
+  end
+
+  defp peer_auth_request(token) do
     %{
-      type: "controlMessage",
-      data: %{
-        type: "authRequest",
-        token: token
-      }
+      "type" => "controlMessage",
+      "data" => %{"type" => "authRequest", "token" => token}
     }
   end
 end
