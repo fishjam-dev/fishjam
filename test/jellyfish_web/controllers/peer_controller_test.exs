@@ -46,7 +46,7 @@ defmodule JellyfishWeb.PeerControllerTest do
       assert {:ok, %{peer_id: ^peer_id, room_id: ^room_id}} =
                Phoenix.Token.verify(
                  JellyfishWeb.Endpoint,
-                 Application.get_env(:jellyfish, :auth_salt),
+                 Application.fetch_env!(:jellyfish, JellyfishWeb.Endpoint)[:secret_key_base],
                  token
                )
     end
