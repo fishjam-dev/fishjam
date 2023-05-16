@@ -2,8 +2,11 @@ name: Build and publish Docker image
 
 on:
   push:
+    branches:
+      - add-edge-docker-image
     tags:
       - "v*.*.*"
+
 
 env:
   REGISTRY: ghcr.io
@@ -32,8 +35,10 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags:
+          tags: |
             type=semver,pattern={{version}}
+            type=edge,branch=add-edge-docker-image
+            
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
