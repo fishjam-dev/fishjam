@@ -3,10 +3,10 @@ defmodule JellyfishWeb.PeerSocket do
   @behaviour Phoenix.Socket.Transport
   require Logger
 
-  alias Jellyfish.{Room, RoomService}
-  alias JellyfishWeb.PeerToken
   alias Jellyfish.Peer.ControlMessage
   alias Jellyfish.Peer.ControlMessage.{Authenticated, AuthRequest, MediaEvent}
+  alias Jellyfish.{Room, RoomService}
+  alias JellyfishWeb.PeerToken
 
   @heartbeat_interval 30_000
 
