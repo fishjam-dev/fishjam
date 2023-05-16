@@ -96,6 +96,11 @@ defmodule Jellyfish.Room do
     GenServer.call(registry_id(room_id), {:remove_component, component_id})
   end
 
+  @spec pass_media_event(id(), Peer.id(), String.t()) :: :ok
+  def pass_media_event(room_id, peer_id, event) do
+    GenServer.cast(registry_id(room_id), {:media_event, peer_id, event})
+  end
+
   @impl true
   def init([id, max_peers]) do
     state = new(id, max_peers)
@@ -227,6 +232,12 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
+  def handle_cast({:media_event, peer_id, event}, state) do
+    Engine.message_endpoint(state.engine_pid, peer_id, {:media_event, event})
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_info(%Message.EndpointMessage{endpoint_id: to, message: {:media_event, data}}, state) do
     with {:ok, peer} <- Map.fetch(state.peers, to),
          socket_pid when is_pid(socket_pid) <- Map.get(peer, :socket_pid) do
@@ -266,12 +277,6 @@ defmodule Jellyfish.Room do
       )
     end
 
-    {:noreply, state}
-  end
-
-  @impl true
-  def handle_info({:media_event, to, event}, state) do
-    Engine.message_endpoint(state.engine_pid, to, {:media_event, event})
     {:noreply, state}
   end
 

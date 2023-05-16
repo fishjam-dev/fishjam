@@ -28,16 +28,14 @@ defmodule JellyfishWeb.PeerSocket do
   @impl true
   def handle_in({encoded_message, [opcode: :binary]}, %{authenticated?: false} = state) do
     case ControlMessage.decode(encoded_message) do
-      %ControlMessage{content: {:auth_request, %AuthRequest{token: token}}} -> 
+      %ControlMessage{content: {:auth_request, %AuthRequest{token: token}}} ->
         with {:ok, %{peer_id: peer_id, room_id: room_id}} <- PeerToken.verify(token),
              {:ok, room_pid} <- RoomService.find_room(room_id),
              :ok <- Room.set_peer_connected(room_id, peer_id),
              :ok <- Phoenix.PubSub.subscribe(Jellyfish.PubSub, room_id) do
           Process.send_after(self(), :send_ping, @heartbeat_interval)
 
-          IO.inspect("AUTH_REQUEST")
-
-          encoded_message = 
+          encoded_message =
             ControlMessage.encode(%ControlMessage{content: {:authenticated, %Authenticated{}}})
 
           state =
@@ -81,8 +79,7 @@ defmodule JellyfishWeb.PeerSocket do
   def handle_in({encoded_message, [opcode: :binary]}, state) do
     case ControlMessage.decode(encoded_message) do
       %ControlMessage{content: {:media_event, %MediaEvent{data: data}}} ->
-        IO.inspect(data, label: :MEDIA_EVENT)
-        send(state.room_pid, {:media_event, state.peer_id, data})
+        Room.pass_media_event(state.room_id, state.peer_id, data)
 
       _other ->
         Logger.warn("""
