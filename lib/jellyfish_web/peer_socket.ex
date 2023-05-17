@@ -76,6 +76,7 @@ defmodule JellyfishWeb.PeerSocket do
     end
   end
 
+  @impl true
   def handle_in({encoded_message, [opcode: :binary]}, state) do
     case PeerMessage.decode(encoded_message) do
       %PeerMessage{content: {:media_event, %MediaEvent{data: data}}} ->
@@ -87,6 +88,15 @@ defmodule JellyfishWeb.PeerSocket do
         room: #{inspect(state.room_id)}
         """)
     end
+
+    {:ok, state}
+  end
+
+  def handle_in({_msg, [opcode: :text]}, state) do
+    Logger.warn("""
+    Received unexpected text message from #{inspect(state.peer_id)}, \
+    room: #{inspect(state.room_id)}
+    """)
 
     {:ok, state}
   end

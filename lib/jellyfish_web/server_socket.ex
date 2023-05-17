@@ -73,7 +73,7 @@ defmodule JellyfishWeb.ServerSocket do
     end
   end
 
-  def handle_in({encoded_message, [opcode: :binary]}, state) do
+  def handle_in({encoded_message, [opcode: _type]}, state) do
     Logger.warn("""
     Received message on server WS.
     Server WS doesn't expect to receive any messages.
