@@ -3,8 +3,8 @@ defmodule JellyfishWeb.PeerSocket do
   @behaviour Phoenix.Socket.Transport
   require Logger
 
-  alias Jellyfish.Peer.ControlMessage
-  alias Jellyfish.Peer.ControlMessage.{Authenticated, AuthRequest, MediaEvent}
+  alias Jellyfish.PeerMessage
+  alias Jellyfish.PeerMessage.{Authenticated, AuthRequest, MediaEvent}
   alias Jellyfish.{Room, RoomService}
   alias JellyfishWeb.PeerToken
 
@@ -27,8 +27,8 @@ defmodule JellyfishWeb.PeerSocket do
 
   @impl true
   def handle_in({encoded_message, [opcode: :binary]}, %{authenticated?: false} = state) do
-    case ControlMessage.decode(encoded_message) do
-      %ControlMessage{content: {:auth_request, %AuthRequest{token: token}}} ->
+    case PeerMessage.decode(encoded_message) do
+      %PeerMessage{content: {:auth_request, %AuthRequest{token: token}}} ->
         with {:ok, %{peer_id: peer_id, room_id: room_id}} <- PeerToken.verify(token),
              {:ok, room_pid} <- RoomService.find_room(room_id),
              :ok <- Room.set_peer_connected(room_id, peer_id),
@@ -36,7 +36,7 @@ defmodule JellyfishWeb.PeerSocket do
           Process.send_after(self(), :send_ping, @heartbeat_interval)
 
           encoded_message =
-            ControlMessage.encode(%ControlMessage{content: {:authenticated, %Authenticated{}}})
+            PeerMessage.encode(%PeerMessage{content: {:authenticated, %Authenticated{}}})
 
           state =
             state
@@ -77,8 +77,8 @@ defmodule JellyfishWeb.PeerSocket do
   end
 
   def handle_in({encoded_message, [opcode: :binary]}, state) do
-    case ControlMessage.decode(encoded_message) do
-      %ControlMessage{content: {:media_event, %MediaEvent{data: data}}} ->
+    case PeerMessage.decode(encoded_message) do
+      %PeerMessage{content: {:media_event, %MediaEvent{data: data}}} ->
         Room.pass_media_event(state.room_id, state.peer_id, data)
 
       _other ->
@@ -94,7 +94,7 @@ defmodule JellyfishWeb.PeerSocket do
   @impl true
   def handle_info({:media_event, data}, state) when is_binary(data) do
     encoded_message =
-      ControlMessage.encode(%ControlMessage{content: {:media_event, %MediaEvent{data: data}}})
+      PeerMessage.encode(%PeerMessage{content: {:media_event, %MediaEvent{data: data}}})
 
     {:push, {:binary, encoded_message}, state}
   end

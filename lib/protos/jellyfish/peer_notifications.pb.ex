@@ -1,10 +1,10 @@
-defmodule Jellyfish.Peer.ControlMessage.Authenticated do
+defmodule Jellyfish.PeerMessage.Authenticated do
   @moduledoc false
 
   use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
 end
 
-defmodule Jellyfish.Peer.ControlMessage.AuthRequest do
+defmodule Jellyfish.PeerMessage.AuthRequest do
   @moduledoc false
 
   use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
@@ -12,7 +12,7 @@ defmodule Jellyfish.Peer.ControlMessage.AuthRequest do
   field :token, 1, type: :string
 end
 
-defmodule Jellyfish.Peer.ControlMessage.MediaEvent do
+defmodule Jellyfish.PeerMessage.MediaEvent do
   @moduledoc false
 
   use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
@@ -20,22 +20,19 @@ defmodule Jellyfish.Peer.ControlMessage.MediaEvent do
   field :data, 1, type: :string
 end
 
-defmodule Jellyfish.Peer.ControlMessage do
+defmodule Jellyfish.PeerMessage do
   @moduledoc false
 
   use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
 
   oneof :content, 0
 
-  field :authenticated, 1, type: Jellyfish.Peer.ControlMessage.Authenticated, oneof: 0
+  field :authenticated, 1, type: Jellyfish.PeerMessage.Authenticated, oneof: 0
 
   field :auth_request, 2,
-    type: Jellyfish.Peer.ControlMessage.AuthRequest,
+    type: Jellyfish.PeerMessage.AuthRequest,
     json_name: "authRequest",
     oneof: 0
 
-  field :media_event, 3,
-    type: Jellyfish.Peer.ControlMessage.MediaEvent,
-    json_name: "mediaEvent",
-    oneof: 0
+  field :media_event, 3, type: Jellyfish.PeerMessage.MediaEvent, json_name: "mediaEvent", oneof: 0
 end

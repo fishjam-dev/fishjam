@@ -2,9 +2,10 @@ defmodule JellyfishWeb.ServerSocket do
   @moduledoc false
   @behaviour Phoenix.Socket.Transport
   require Logger
-  alias Jellyfish.Server.ControlMessage
 
-  alias Jellyfish.Server.ControlMessage.{
+  alias Jellyfish.ServerMessage
+
+  alias Jellyfish.ServerMessage.{
     Authenticated,
     AuthRequest,
     ComponentCrashed,
@@ -33,14 +34,14 @@ defmodule JellyfishWeb.ServerSocket do
 
   @impl true
   def handle_in({encoded_message, [opcode: :binary]}, %{authenticated?: false} = state) do
-    case ControlMessage.decode(encoded_message) do
-      %ControlMessage{content: {:auth_request, %AuthRequest{token: token}}} ->
+    case ServerMessage.decode(encoded_message) do
+      %ServerMessage{content: {:auth_request, %AuthRequest{token: token}}} ->
         if token == Application.fetch_env!(:jellyfish, :server_api_token) do
           :ok = Phoenix.PubSub.subscribe(Jellyfish.PubSub, "server")
           Process.send_after(self(), :send_ping, @heartbeat_interval)
 
           encoded_message =
-            ControlMessage.encode(%ControlMessage{content: {:authenticated, %Authenticated{}}})
+            ServerMessage.encode(%ServerMessage{content: {:authenticated, %Authenticated{}}})
 
           state = %{state | authenticated?: true}
 
@@ -95,32 +96,32 @@ defmodule JellyfishWeb.ServerSocket do
     msg =
       case msg do
         {:room_crashed, room_id} ->
-          %ControlMessage{content: {:room_crashed, %RoomCrashed{room_id: room_id}}}
+          %ServerMessage{content: {:room_crashed, %RoomCrashed{room_id: room_id}}}
 
         {:peer_connected, room_id, peer_id} ->
-          %ControlMessage{
+          %ServerMessage{
             content: {:peer_connected, %PeerConnected{room_id: room_id, peer_id: peer_id}}
           }
 
         {:peer_disconnected, room_id, peer_id} ->
-          %ControlMessage{
+          %ServerMessage{
             content: {:peer_disconnected, %PeerDisconnected{room_id: room_id, peer_id: peer_id}}
           }
 
         {:peer_crashed, room_id, peer_id} ->
-          %ControlMessage{
+          %ServerMessage{
             content: {:peer_crashed, %PeerCrashed{room_id: room_id, peer_id: peer_id}}
           }
 
         {:component_crashed, room_id, component_id} ->
-          %ControlMessage{
+          %ServerMessage{
             content:
               {:component_crashed,
                %ComponentCrashed{room_id: room_id, component_id: component_id}}
           }
       end
 
-    encoded_msg = ControlMessage.encode(msg)
+    encoded_msg = ServerMessage.encode(msg)
 
     {:push, {:binary, encoded_msg}, state}
   end
