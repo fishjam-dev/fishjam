@@ -2,10 +2,13 @@ defmodule JellyfishWeb.WS do
   @moduledoc false
 
   use WebSockex
-  alias Jellyfish.Server.ControlMessage
 
-  def start_link(url) do
-    WebSockex.start_link(url, __MODULE__, %{caller: self()})
+  alias Jellyfish.PeerMessage
+  alias Jellyfish.ServerMessage
+
+  def start_link(url, type) do
+    state = %{caller: self(), type: type}
+    WebSockex.start_link(url, __MODULE__, state)
   end
 
   def send_frame(ws, msg) do
@@ -22,7 +25,7 @@ defmodule JellyfishWeb.WS do
 
   @impl true
   def handle_frame({:binary, msg}, state) do
-    %ControlMessage{content: {_atom, content}} = ControlMessage.decode(msg)
+    content = decode_binary(msg, state.type)
     send(state.caller, content)
     {:ok, state}
   end
@@ -37,5 +40,15 @@ defmodule JellyfishWeb.WS do
   def handle_disconnect(conn_status, state) do
     send(state.caller, {:disconnected, conn_status.reason})
     {:ok, state}
+  end
+
+  defp decode_binary(msg, :peer) do
+    %PeerMessage{content: {_atom, content}} = PeerMessage.decode(msg)
+    content
+  end
+
+  defp decode_binary(msg, :server) do
+    %ServerMessage{content: {_atom, content}} = ServerMessage.decode(msg)
+    content
   end
 end

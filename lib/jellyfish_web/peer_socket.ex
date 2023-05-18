@@ -3,6 +3,8 @@ defmodule JellyfishWeb.PeerSocket do
   @behaviour Phoenix.Socket.Transport
   require Logger
 
+  alias Jellyfish.PeerMessage
+  alias Jellyfish.PeerMessage.{Authenticated, AuthRequest, MediaEvent}
   alias Jellyfish.{Room, RoomService}
   alias JellyfishWeb.PeerToken
 
@@ -24,18 +26,17 @@ defmodule JellyfishWeb.PeerSocket do
   end
 
   @impl true
-  def handle_in({encoded_message, [opcode: :text]}, %{authenticated?: false} = state) do
-    case Jason.decode(encoded_message) do
-      {:ok, %{"type" => "controlMessage", "data" => %{"type" => "authRequest", "token" => token}}} ->
+  def handle_in({encoded_message, [opcode: :binary]}, %{authenticated?: false} = state) do
+    case PeerMessage.decode(encoded_message) do
+      %PeerMessage{content: {:auth_request, %AuthRequest{token: token}}} ->
         with {:ok, %{peer_id: peer_id, room_id: room_id}} <- PeerToken.verify(token),
              {:ok, room_pid} <- RoomService.find_room(room_id),
              :ok <- Room.set_peer_connected(room_id, peer_id),
              :ok <- Phoenix.PubSub.subscribe(Jellyfish.PubSub, room_id) do
           Process.send_after(self(), :send_ping, @heartbeat_interval)
 
-          message =
-            %{"type" => "authenticated"}
-            |> control_message()
+          encoded_message =
+            PeerMessage.encode(%PeerMessage{content: {:authenticated, %Authenticated{}}})
 
           state =
             state
@@ -52,7 +53,7 @@ defmodule JellyfishWeb.PeerSocket do
             {:peer_connected, room_id, peer_id}
           )
 
-          {:reply, :ok, {:text, message}, state}
+          {:reply, :ok, {:binary, encoded_message}, state}
         else
           {:error, reason} ->
             reason = reason_to_string(reason)
@@ -75,57 +76,37 @@ defmodule JellyfishWeb.PeerSocket do
     end
   end
 
-  def handle_in({encoded_message, [opcode: :text]}, state) do
-    case Jason.decode(encoded_message) do
-      {:ok, %{"type" => "mediaEvent", "data" => data}} ->
-        send(state.room_pid, {:media_event, state.peer_id, data})
+  @impl true
+  def handle_in({encoded_message, [opcode: :binary]}, state) do
+    case PeerMessage.decode(encoded_message) do
+      %PeerMessage{content: {:media_event, %MediaEvent{data: data}}} ->
+        Room.receive_media_event(state.room_id, state.peer_id, data)
 
-      {:error, %Jason.DecodeError{}} ->
+      other ->
         Logger.warn("""
-        Failed to decode message from peer #{inspect(state.peer_id)}, \
+        Received unexpected message #{inspect(other)} from #{inspect(state.peer_id)}, \
         room: #{inspect(state.room_id)}
-        """)
-
-      {:ok, %{"type" => "controlMessage", "data" => data}} ->
-        handle_control_message(data, state)
-
-      {:ok, %{"type" => type}} ->
-        Logger.warn("""
-        Received message with unexpected type #{inspect(type)} from peer \
-        #{inspect(state.peer_id)}, room: #{inspect(state.room_id)}
-        """)
-
-      {:ok, _message} ->
-        Logger.warn("""
-        Received message with invalid structure from peer \
-        #{inspect(state.peer_id)}, room: #{inspect(state.room_id)}
         """)
     end
 
     {:ok, state}
   end
 
-  defp handle_control_message(%{"type" => "authRequest"}, state) do
+  def handle_in({msg, [opcode: :text]}, state) do
     Logger.warn("""
-    Received authRequest from #{inspect(state.peer_id)}, \
-    room: #{inspect(state.room_id)}, but peer already connected
+    Received unexpected text message #{msg} from #{inspect(state.peer_id)}, \
+    room: #{inspect(state.room_id)}
     """)
-  end
 
-  defp handle_control_message(message, state) do
-    Logger.warn("""
-    Received unknown controlMessage: #{inspect(message)} \
-    from #{inspect(state.peer_id)}, room: #{inspect(state.room_id)}
-    """)
+    {:ok, state}
   end
 
   @impl true
   def handle_info({:media_event, data}, state) when is_binary(data) do
-    message =
-      %{"type" => "mediaEvent", "data" => data}
-      |> Jason.encode!()
+    encoded_message =
+      PeerMessage.encode(%PeerMessage{content: {:media_event, %MediaEvent{data: data}}})
 
-    {:push, {:text, message}, state}
+    {:push, {:binary, encoded_message}, state}
   end
 
   @impl true
@@ -174,12 +155,4 @@ defmodule JellyfishWeb.PeerSocket do
   defp reason_to_string(:peer_not_found), do: "peer not found"
   defp reason_to_string(:peer_already_connected), do: "peer already connected"
   defp reason_to_string(other), do: "#{other}"
-
-  defp control_message(data) do
-    %{
-      "type" => "controlMessage",
-      "data" => data
-    }
-    |> Jason.encode!()
-  end
 end

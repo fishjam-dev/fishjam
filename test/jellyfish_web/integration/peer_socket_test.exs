@@ -2,17 +2,14 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
   use JellyfishWeb.ConnCase
 
   alias __MODULE__.Endpoint
+  alias Jellyfish.PeerMessage
+  alias Jellyfish.PeerMessage.{Authenticated, AuthRequest, MediaEvent}
   alias Jellyfish.RoomService
   alias JellyfishWeb.{PeerSocket, WS}
 
   @port 5908
   @path "ws://127.0.0.1:#{@port}/socket/peer/websocket"
-  @auth_response %{
-    "type" => "controlMessage",
-    "data" => %{
-      "type" => "authenticated"
-    }
-  }
+  @auth_response %Authenticated{}
 
   Application.put_env(
     :jellyfish,
@@ -64,9 +61,9 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
   end
 
   test "invalid token", %{token: token} do
-    {:ok, ws} = WS.start_link(@path)
+    {:ok, ws} = WS.start_link(@path, :peer)
     auth_request = auth_request("invalid" <> token)
-    :ok = WS.send_frame(ws, auth_request)
+    :ok = WS.send_binary_frame(ws, auth_request)
 
     assert_receive {:disconnected, {:remote, 1000, "invalid token"}}, 1000
   end
@@ -76,12 +73,12 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
   end
 
   test "valid token but peer doesn't exist", %{room_id: room_id} do
-    {:ok, ws} = WS.start_link(@path)
+    {:ok, ws} = WS.start_link(@path, :peer)
 
     unadded_peer_token = JellyfishWeb.PeerToken.generate(%{peer_id: "peer_id", room_id: room_id})
     auth_request = auth_request(unadded_peer_token)
 
-    :ok = WS.send_frame(ws, auth_request)
+    :ok = WS.send_binary_frame(ws, auth_request)
 
     assert_receive {:disconnected, {:remote, 1000, "peer not found"}}, 1000
   end
@@ -89,9 +86,9 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
   test "valid token but room doesn't exist", %{room_id: room_id, token: token, conn: conn} do
     _conn = delete(conn, ~p"/room/#{room_id}")
 
-    {:ok, ws} = WS.start_link(@path)
+    {:ok, ws} = WS.start_link(@path, :peer)
     auth_request = auth_request(token)
-    :ok = WS.send_frame(ws, auth_request)
+    :ok = WS.send_binary_frame(ws, auth_request)
 
     assert_receive {:disconnected, {:remote, 1000, "room not found"}}, 1000
   end
@@ -100,7 +97,7 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
     ws = create_and_authenticate(token)
 
     auth_request = auth_request(token)
-    :ok = WS.send_frame(ws, auth_request)
+    :ok = WS.send_binary_frame(ws, auth_request)
     refute_receive @auth_response, 1000
     refute_receive {:disconnected, {:remote, 1000, _msg}}
   end
@@ -108,17 +105,22 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
   test "two web sockets", %{token: token} do
     create_and_authenticate(token)
 
-    {:ok, ws2} = WS.start_link(@path)
+    {:ok, ws2} = WS.start_link(@path, :peer)
     auth_request = auth_request(token)
-    :ok = WS.send_frame(ws2, auth_request)
+    :ok = WS.send_binary_frame(ws2, auth_request)
 
     assert_receive {:disconnected, {:remote, 1000, "peer already connected"}}, 1000
   end
 
   test "message from unauthenticated peer" do
-    {:ok, ws} = WS.start_link(@path)
-    msg = Jason.encode!(%{"type" => "mediaEvent", "data" => "some data"})
-    :ok = WS.send_frame(ws, msg)
+    {:ok, ws} = WS.start_link(@path, :peer)
+
+    msg =
+      PeerMessage.encode(%PeerMessage{
+        content: {:media_event, %MediaEvent{data: "some data"}}
+      })
+
+    :ok = WS.send_binary_frame(ws, msg)
 
     assert_receive {:disconnected, {:remote, 1000, "unauthenticated"}}, 1000
   end
@@ -136,9 +138,10 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
     ws = create_and_authenticate(token)
 
     data = Jason.encode!(%{"type" => "custom", "data" => %{"type" => "renegotiateTracks"}})
-    :ok = WS.send_frame(ws, %{"type" => "mediaEvent", "data" => data})
+    msg = PeerMessage.encode(%PeerMessage{content: {:media_event, %MediaEvent{data: data}}})
+    :ok = WS.send_binary_frame(ws, msg)
 
-    assert_receive %{"type" => "mediaEvent", "data" => _data}, 1000
+    assert_receive %MediaEvent{data: _data}, 1000
   end
 
   test "peer removal", %{room_id: room_id, peer_id: peer_id, token: token, conn: conn} do
@@ -167,20 +170,14 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
   def create_and_authenticate(token) do
     auth_request = auth_request(token)
 
-    {:ok, ws} = WS.start_link(@path)
-    :ok = WS.send_frame(ws, auth_request)
+    {:ok, ws} = WS.start_link(@path, :peer)
+    :ok = WS.send_binary_frame(ws, auth_request)
     assert_receive @auth_response, 1000
 
     ws
   end
 
   defp auth_request(token) do
-    %{
-      type: "controlMessage",
-      data: %{
-        type: "authRequest",
-        token: token
-      }
-    }
+    PeerMessage.encode(%PeerMessage{content: {:auth_request, %AuthRequest{token: token}}})
   end
 end
