@@ -84,7 +84,7 @@ defmodule JellyfishWeb.PeerSocket do
 
       other ->
         Logger.warn("""
-        Received unexpected message #{other} from #{inspect(state.peer_id)}, \
+        Received unexpected message #{inspect(other)} from #{inspect(state.peer_id)}, \
         room: #{inspect(state.room_id)}
         """)
     end
