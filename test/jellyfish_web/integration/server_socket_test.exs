@@ -59,7 +59,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     assert_receive {:disconnected, {:remote, 1000, "invalid token"}}, 1000
   end
 
-  test "disconnecte when first message is not auth" do
+  test "invalid first message" do
     {:ok, ws} = WS.start_link(@path, :server)
     msg = ServerMessage.encode(%ServerMessage{content: {:authenticated, %Authenticated{}}})
 

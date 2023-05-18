@@ -96,8 +96,8 @@ defmodule Jellyfish.Room do
     GenServer.call(registry_id(room_id), {:remove_component, component_id})
   end
 
-  @spec pass_media_event(id(), Peer.id(), String.t()) :: :ok
-  def pass_media_event(room_id, peer_id, event) do
+  @spec receive_media_event(id(), Peer.id(), String.t()) :: :ok
+  def receive_media_event(room_id, peer_id, event) do
     GenServer.cast(registry_id(room_id), {:media_event, peer_id, event})
   end
 
