@@ -2,6 +2,8 @@ name: Build and publish Docker image
 
 on:
   push:
+    branches:
+      - main
     tags:
       - "v*.*.*"
 
@@ -32,8 +34,10 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags:
+          tags: |
             type=semver,pattern={{version}}
+            type=edge,branch=main
+            
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
