@@ -13,7 +13,7 @@ It leverages the [Membrane RTC Engine](https://github.com/jellyfish-dev/membrane
 
 There are two ways of running Jellyfish:
 - building from source (requires Elixir and native dependencies)
-- using Jellyfish Docker images
+- using Jellyfish Docker images (Remember that you should set `INTEGRATED_TURN_IP` env to your public IP address and `INTEGRATED_TURN_LISTEN_IP` to `0.0.0.0`).
 
 To learn more, refer to [Installation page](https://jellyfish-dev.github.io/jellyfish-docs/getting_started/installation) in Jellyfish docs.
 
