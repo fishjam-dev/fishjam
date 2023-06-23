@@ -143,7 +143,7 @@ defmodule Jellyfish.Room do
           peer = %{peer | status: :connected, socket_pid: socket_pid}
           state = put_in(state, [:peers, peer_id], peer)
 
-          :ok = Engine.add_endpoint(state.engine_pid, peer.engine_endpoint, peer_id: peer_id)
+          :ok = Engine.add_endpoint(state.engine_pid, peer.engine_endpoint, id: peer_id)
 
           Logger.info("Peer #{inspect(peer_id)} connected")
 
@@ -201,8 +201,7 @@ defmodule Jellyfish.Room do
     with {:ok, component} <- Component.new(component_type, options) do
       state = put_in(state, [:components, component.id], component)
 
-      :ok =
-        Engine.add_endpoint(state.engine_pid, component.engine_endpoint, endpoint_id: component.id)
+      :ok = Engine.add_endpoint(state.engine_pid, component.engine_endpoint, id: component.id)
 
       Logger.info("Added component #{inspect(component.id)}")
 
