@@ -64,15 +64,17 @@ defmodule Jellyfish.MixProject do
       {:membrane_aac_plugin, "~> 0.13.0"},
       {:membrane_opus_plugin, "~> 0.16.0"},
       {:membrane_aac_fdk_plugin, "~> 0.14.0"},
-      {:membrane_generator_plugin, "~> 0.8.0"},
-      {:membrane_realtimer_plugin, "~> 0.6.0"},
-      {:membrane_audio_mix_plugin, "~> 0.12.0"},
+      {:membrane_generator_plugin, "~> 0.8.1"},
+      {:membrane_realtimer_plugin, "~> 0.6.1"},
+      {:membrane_audio_mix_plugin, "~> 0.13.0"},
       {:membrane_raw_audio_format, "~> 0.10.0"},
       {:membrane_h264_ffmpeg_plugin, "~> 0.26.2"},
       {:membrane_h264_plugin, "~> 0.2.0"},
       {:membrane_audio_filler_plugin, "~> 0.1.0"},
       {:membrane_video_compositor_plugin, "~> 0.3.1"},
-      {:membrane_http_adaptive_stream_plugin, "~> 0.13.0"},
+      {:membrane_http_adaptive_stream_plugin, "~> 0.14.0"},
+
+
 
       # RTSP endpoints deps
       {:connection, "~> 1.1"},
