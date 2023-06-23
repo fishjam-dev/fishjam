@@ -10,6 +10,7 @@ defmodule Jellyfish.Room do
 
   alias Jellyfish.Component
   alias Jellyfish.Peer
+  alias Membrane.ICE.TURNManager
   alias Membrane.RTC.Engine
   alias Membrane.RTC.Engine.Message
 
@@ -337,6 +338,12 @@ defmodule Jellyfish.Room do
       else
         []
       end
+
+    tcp_turn_port = Application.get_env(:videoroom, :integrated_turn_tcp_port)
+
+    TURNManager.ensure_tcp_turn_launched(network_options[:integrated_turn_options],
+      port: tcp_turn_port
+    )
 
     %__MODULE__{
       id: id,
