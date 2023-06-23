@@ -201,8 +201,7 @@ defmodule Jellyfish.Room do
     with {:ok, component} <- Component.new(component_type, options) do
       state = put_in(state, [:components, component.id], component)
 
-      :ok =
-        Engine.add_endpoint(state.engine_pid, component.engine_endpoint, endpoint_id: component.id)
+      :ok = Engine.add_endpoint(state.engine_pid, component.engine_endpoint, id: component.id)
 
       Logger.info("Added component #{inspect(component.id)}")
 
