@@ -13,6 +13,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     PeerConnected,
     PeerDisconnected,
     RoomCrashed,
+    RoomNotFound,
     RoomsState,
     RoomState,
     RoomStateRequest
@@ -134,6 +135,20 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
 
     conn = delete(conn, ~p"/room/#{room_id}/")
     assert response(conn, :no_content)
+  end
+
+  test "responds with room_not_found" do
+    ws = create_and_authenticate()
+
+    fake_room_id = "fake_room_id"
+
+    msg = %ServerMessage{
+      content: {:room_state_request, %RoomStateRequest{content: {:id, fake_room_id}}}
+    }
+
+    :ok = WS.send_binary_frame(ws, ServerMessage.encode(msg))
+
+    assert_receive %RoomNotFound{id: ^fake_room_id}
   end
 
   test "sends a message when room crashes", %{conn: conn} do
