@@ -1,3 +1,11 @@
+defmodule Jellyfish.ServerMessage.RoomStateRequest.Option do
+  @moduledoc false
+
+  use Protobuf, enum: true, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+
+  field :ALL, 0
+end
+
 defmodule Jellyfish.ServerMessage.RoomState.Peer.Type do
   @moduledoc false
 
@@ -87,7 +95,10 @@ defmodule Jellyfish.ServerMessage.RoomStateRequest do
 
   use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
 
-  field :id, 1, type: :string
+  oneof :content, 0
+
+  field :id, 1, type: :string, oneof: 0
+  field :option, 2, type: Jellyfish.ServerMessage.RoomStateRequest.Option, enum: true, oneof: 0
 end
 
 defmodule Jellyfish.ServerMessage.RoomState.Config do
@@ -126,6 +137,14 @@ defmodule Jellyfish.ServerMessage.RoomState do
   field :config, 2, type: Jellyfish.ServerMessage.RoomState.Config
   field :peers, 3, repeated: true, type: Jellyfish.ServerMessage.RoomState.Peer
   field :components, 4, repeated: true, type: Jellyfish.ServerMessage.RoomState.Component
+end
+
+defmodule Jellyfish.ServerMessage.RoomsState do
+  @moduledoc false
+
+  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+
+  field :rooms, 1, repeated: true, type: Jellyfish.ServerMessage.RoomState
 end
 
 defmodule Jellyfish.ServerMessage.RoomNotFound do
@@ -182,7 +201,12 @@ defmodule Jellyfish.ServerMessage do
 
   field :room_state, 9, type: Jellyfish.ServerMessage.RoomState, json_name: "roomState", oneof: 0
 
-  field :room_not_found, 10,
+  field :rooms_state, 10,
+    type: Jellyfish.ServerMessage.RoomsState,
+    json_name: "roomsState",
+    oneof: 0
+
+  field :room_not_found, 11,
     type: Jellyfish.ServerMessage.RoomNotFound,
     json_name: "roomNotFound",
     oneof: 0

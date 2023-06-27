@@ -15,12 +15,13 @@ defmodule JellyfishWeb.ServerSocket do
     PeerCrashed,
     PeerDisconnected,
     RoomCrashed,
-    RoomStateRequest,
+    RoomNotFound,
+    RoomsState,
     RoomState,
-    RoomNotFound
+    RoomStateRequest
   }
 
-  alias Jellyfish.ServerMessage.RoomState.{Component, Peer, Config}
+  alias Jellyfish.ServerMessage.RoomState.{Component, Config, Peer}
 
   @heartbeat_interval 30_000
 
@@ -81,21 +82,16 @@ defmodule JellyfishWeb.ServerSocket do
   end
 
   def handle_in({encoded_message, [opcode: :binary]}, state) do
-    case ServerMessage.decode(encoded_message) do
-      %ServerMessage{content: {:room_state_request, %RoomStateRequest{id: id}}} ->
-        reply =
-          case RoomService.get_room(id) do
-            {:ok, room} ->
-              room = to_room_state_message(room)
-              %ServerMessage{content: {:room_state, room}}
+    with %ServerMessage{content: request} <- ServerMessage.decode(encoded_message),
+         {:room_state_request, %RoomStateRequest{content: {_variant, option}}} <- request do
+      room_state = get_room_state(option)
 
-            {:error, :room_not_found} ->
-              %ServerMessage{content: {:room_not_found, %RoomNotFound{id: id}}}
-          end
+      reply =
+        %ServerMessage{content: room_state}
+        |> ServerMessage.encode()
 
-        reply = ServerMessage.encode(reply)
-        {:reply, :ok, {:binary, reply}, state}
-
+      {:reply, :ok, {:binary, reply}, state}
+    else
       _other ->
         Logger.warn("""
         Received unexpected message on server WS.
@@ -164,6 +160,25 @@ defmodule JellyfishWeb.ServerSocket do
   def terminate(reason, _state) do
     Logger.info("Server WebSocket stopped #{inspect(reason)}")
     :ok
+  end
+
+  defp get_room_state(:ALL) do
+    rooms =
+      RoomService.list_rooms()
+      |> Enum.map(&to_room_state_message/1)
+
+    {:rooms_state, %RoomsState{rooms: rooms}}
+  end
+
+  defp get_room_state(id) do
+    case RoomService.get_room(id) do
+      {:ok, room} ->
+        room = to_room_state_message(room)
+        {:room_state, room}
+
+      {:error, :room_not_found} ->
+        {:room_not_found, %RoomNotFound{id: id}}
+    end
   end
 
   defp to_room_state_message(room) do
