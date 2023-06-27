@@ -313,12 +313,6 @@ defmodule Jellyfish.Room do
 
     network_options =
       if Application.fetch_env!(:jellyfish, :webrtc_used) do
-        turn_cert_file =
-          case Application.fetch_env(:jellyfish, :integrated_turn_cert_pkey) do
-            {:ok, val} -> val
-            :error -> nil
-          end
-
         turn_ip = Application.fetch_env!(:jellyfish, :integrated_turn_listen_ip)
         turn_mock_ip = Application.fetch_env!(:jellyfish, :integrated_turn_ip)
 
@@ -326,24 +320,26 @@ defmodule Jellyfish.Room do
           ip: turn_ip,
           mock_ip: turn_mock_ip,
           ports_range: Application.fetch_env!(:jellyfish, :integrated_turn_port_range),
-          cert_file: turn_cert_file
+          cert_file: nil
         ]
 
         [
           integrated_turn_options: integrated_turn_options,
-          integrated_turn_domain: Application.fetch_env!(:jellyfish, :integrated_turn_domain),
-          dtls_pkey: Application.get_env(:jellyfish, :dtls_pkey),
-          dtls_cert: Application.get_env(:jellyfish, :dtls_cert)
+          integrated_turn_domain: Application.fetch_env!(:jellyfish, :integrated_turn_domain)
         ]
       else
         []
       end
 
-    tcp_turn_port = Application.get_env(:videoroom, :integrated_turn_tcp_port)
+    case Application.fetch_env(:jellyfish, :integrated_turn_tcp_port) do
+      {:ok, tcp_turn_port} ->
+        TURNManager.ensure_tcp_turn_launched(network_options[:integrated_turn_options],
+          port: tcp_turn_port
+        )
 
-    TURNManager.ensure_tcp_turn_launched(network_options[:integrated_turn_options],
-      port: tcp_turn_port
-    )
+      :error ->
+        :pass
+    end
 
     %__MODULE__{
       id: id,
