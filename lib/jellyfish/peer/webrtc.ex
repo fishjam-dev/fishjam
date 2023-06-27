@@ -7,7 +7,7 @@ defmodule Jellyfish.Peer.WebRTC do
 
   alias Membrane.RTC.Engine.Endpoint.WebRTC
   alias Membrane.RTC.Engine.Endpoint.WebRTC.SimulcastConfig
-  alias Membrane.WebRTC.Extension.{Mid, Rid, TWCC}
+  alias Membrane.WebRTC.Extension.{Mid, RepairedRid, Rid, TWCC}
 
   @impl true
   def config(options) do
@@ -17,14 +17,13 @@ defmodule Jellyfish.Peer.WebRTC do
           "WebRTC peers can be used only if WEBRTC_USED environmental variable is not set to \"false\""
         )
 
-    simulcast? = true
-
     handshake_options = [
       client_mode: false,
       dtls_srtp: true
     ]
 
-    webrtc_extensions = [Mid, Rid, TWCC]
+    simulcast? = true
+    webrtc_extensions = [Mid, Rid, RepairedRid, TWCC]
     network_options = options.network_options
 
     {:ok,
