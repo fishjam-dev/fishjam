@@ -331,14 +331,14 @@ defmodule Jellyfish.Room do
         []
       end
 
-    case Application.fetch_env(:jellyfish, :integrated_turn_tcp_port) do
-      {:ok, tcp_turn_port} ->
+    case Application.fetch_env!(:jellyfish, :integrated_turn_tcp_port) do
+      nil ->
+        :pass
+
+      tcp_turn_port ->
         TURNManager.ensure_tcp_turn_launched(network_options[:integrated_turn_options],
           port: tcp_turn_port
         )
-
-      :error ->
-        :pass
     end
 
     %__MODULE__{
