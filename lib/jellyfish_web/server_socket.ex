@@ -92,12 +92,12 @@ defmodule JellyfishWeb.ServerSocket do
 
       {:reply, :ok, {:binary, reply}, state}
     else
-      _other ->
+      other ->
         Logger.warn("""
         Received unexpected message on server WS.
         Closing the connection.
 
-        Message: #{inspect(encoded_message)}
+        Message: #{inspect(other)}
         """)
 
         {:stop, :closed, {1003, "operation not allowed"}, state}
