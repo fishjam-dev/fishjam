@@ -3,6 +3,8 @@ defmodule JellyfishWeb.ServerSocket do
   @behaviour Phoenix.Socket.Transport
   require Logger
 
+  alias Jellyfish.RoomService
+
   alias Jellyfish.ServerMessage
 
   alias Jellyfish.ServerMessage.{
@@ -12,8 +14,14 @@ defmodule JellyfishWeb.ServerSocket do
     PeerConnected,
     PeerCrashed,
     PeerDisconnected,
-    RoomCrashed
+    RoomCrashed,
+    RoomNotFound,
+    RoomsState,
+    RoomState,
+    RoomStateRequest
   }
+
+  alias Jellyfish.ServerMessage.RoomState.{Component, Config, Peer}
 
   @heartbeat_interval 30_000
 
@@ -73,10 +81,32 @@ defmodule JellyfishWeb.ServerSocket do
     end
   end
 
+  def handle_in({encoded_message, [opcode: :binary]}, state) do
+    with %ServerMessage{content: request} <- ServerMessage.decode(encoded_message),
+         {:room_state_request, %RoomStateRequest{content: {_variant, option}}} <- request do
+      room_state = get_room_state(option)
+
+      reply =
+        %ServerMessage{content: room_state}
+        |> ServerMessage.encode()
+
+      {:reply, :ok, {:binary, reply}, state}
+    else
+      other ->
+        Logger.warn("""
+        Received unexpected message on server WS.
+        Closing the connection.
+
+        Message: #{inspect(other)}
+        """)
+
+        {:stop, :closed, {1003, "operation not allowed"}, state}
+    end
+  end
+
   def handle_in({encoded_message, [opcode: _type]}, state) do
     Logger.warn("""
-    Received message on server WS.
-    Server WS doesn't expect to receive any messages.
+    Received unexpected message on server WS.
     Closing the connection.
 
     Message: #{inspect(encoded_message)}
@@ -131,4 +161,48 @@ defmodule JellyfishWeb.ServerSocket do
     Logger.info("Server WebSocket stopped #{inspect(reason)}")
     :ok
   end
+
+  defp get_room_state(:ALL) do
+    rooms =
+      RoomService.list_rooms()
+      |> Enum.map(&to_room_state_message/1)
+
+    {:rooms_state, %RoomsState{rooms: rooms}}
+  end
+
+  defp get_room_state(id) do
+    case RoomService.get_room(id) do
+      {:ok, room} ->
+        room = to_room_state_message(room)
+        {:room_state, room}
+
+      {:error, :room_not_found} ->
+        {:room_not_found, %RoomNotFound{id: id}}
+    end
+  end
+
+  defp to_room_state_message(room) do
+    components =
+      room.components
+      |> Map.values()
+      |> Enum.map(&%Component{id: &1.id, type: to_proto_type(&1.type)})
+
+    peers =
+      room.peers
+      |> Map.values()
+      |> Enum.map(
+        &%Peer{id: &1.id, type: to_proto_type(&1.type), status: to_proto_status(&1.status)}
+      )
+
+    config = struct!(Config, room.config)
+
+    %RoomState{id: room.id, config: config, peers: peers, components: components}
+  end
+
+  defp to_proto_type(Jellyfish.Component.HLS), do: :HLS
+  defp to_proto_type(Jellyfish.Component.RTSP), do: :HLS
+  defp to_proto_type(Jellyfish.Peer.WebRTC), do: :WEBRTC
+
+  defp to_proto_status(:disconnected), do: :DISCONNECTED
+  defp to_proto_status(:connected), do: :CONNECTED
 end
