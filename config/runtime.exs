@@ -76,9 +76,6 @@ config :jellyfish,
   integrated_turn_tcp_port:
     System.get_env("INTEGRATED_TURN_TCP_PORT")
     |> ConfigParser.parse_port_number("INTEGRATED_TURN_TCP_PORT"),
-  integrated_turn_pkey: System.get_env("INTEGRATED_TURN_PKEY"),
-  integrated_turn_cert: System.get_env("INTEGRATED_TURN_CERT"),
-  integrated_turn_domain: System.get_env("VIRTUAL_HOST"),
   jwt_max_age: 24 * 3600,
   output_base_path: System.get_env("OUTPUT_BASE_PATH", "jellyfish_output") |> Path.expand()
 

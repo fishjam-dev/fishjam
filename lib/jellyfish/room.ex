@@ -311,41 +311,31 @@ defmodule Jellyfish.Room do
     Engine.register(pid, self())
     Process.monitor(pid)
 
-    network_options =
+    integrated_turn_options =
       if Application.fetch_env!(:jellyfish, :webrtc_used) do
         turn_ip = Application.fetch_env!(:jellyfish, :integrated_turn_listen_ip)
         turn_mock_ip = Application.fetch_env!(:jellyfish, :integrated_turn_ip)
 
-        integrated_turn_options = [
+        [
           ip: turn_ip,
           mock_ip: turn_mock_ip,
-          ports_range: Application.fetch_env!(:jellyfish, :integrated_turn_port_range),
-          cert_file: nil
-        ]
-
-        [
-          integrated_turn_options: integrated_turn_options,
-          integrated_turn_domain: Application.fetch_env!(:jellyfish, :integrated_turn_domain)
+          ports_range: Application.fetch_env!(:jellyfish, :integrated_turn_port_range)
         ]
       else
         []
       end
 
-    case Application.fetch_env!(:jellyfish, :integrated_turn_tcp_port) do
-      nil ->
-        :pass
+    tcp_turn_port = Application.fetch_env!(:jellyfish, :integrated_turn_tcp_port)
 
-      tcp_turn_port ->
-        TURNManager.ensure_tcp_turn_launched(network_options[:integrated_turn_options],
-          port: tcp_turn_port
-        )
+    if tcp_turn_port do
+      TURNManager.ensure_tcp_turn_launched(integrated_turn_options, port: tcp_turn_port)
     end
 
     %__MODULE__{
       id: id,
       config: %{max_peers: max_peers},
       engine_pid: pid,
-      network_options: network_options
+      network_options: [integrated_turn_options: integrated_turn_options]
     }
   end
 
