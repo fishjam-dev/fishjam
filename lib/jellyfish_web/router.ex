@@ -19,7 +19,7 @@ defmodule JellyfishWeb.Router do
 
     scope "/:room_id/hls" do
       pipe_through [:fetch_session, :protect_from_forgery]
-      get "/:filename", JellyfishWeb.HLSController, :index
+      get "/:filename", HLSController, :index
     end
   end
 
