@@ -16,6 +16,11 @@ defmodule JellyfishWeb.Router do
 
     resources("/:room_id/peer", PeerController, only: [:create, :delete])
     resources("/:room_id/component", ComponentController, only: [:create, :delete])
+
+    scope "/:room_id/hls" do
+      pipe_through [:fetch_session, :protect_from_forgery]
+      get "/:filename", JellyfishWeb.HLSController, :index
+    end
   end
 
   # Enable LiveDashboard in development
