@@ -3,6 +3,8 @@ defmodule JellyfishWeb.HLSController do
 
   alias Plug.Conn
 
+  action_fallback JellyfishWeb.FallbackController
+
   @spec index(Conn.t(), map) :: Conn.t()
   def index(
         conn,
