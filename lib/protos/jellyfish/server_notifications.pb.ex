@@ -3,7 +3,8 @@ defmodule Jellyfish.ServerMessage.RoomStateRequest.Option do
 
   use Protobuf, enum: true, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
 
-  field :ALL, 0
+  field :OPTION_UNSPECIFIED, 0
+  field :OPTION_ALL, 1
 end
 
 defmodule Jellyfish.ServerMessage.RoomState.Peer.Type do
@@ -11,7 +12,8 @@ defmodule Jellyfish.ServerMessage.RoomState.Peer.Type do
 
   use Protobuf, enum: true, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
 
-  field :WEBRTC, 0
+  field :TYPE_UNSPECIFIED, 0
+  field :TYPE_WEBRTC, 1
 end
 
 defmodule Jellyfish.ServerMessage.RoomState.Peer.Status do
@@ -19,8 +21,9 @@ defmodule Jellyfish.ServerMessage.RoomState.Peer.Status do
 
   use Protobuf, enum: true, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
 
-  field :CONNECTED, 0
-  field :DISCONNECTED, 1
+  field :STATUS_UNSPECIFIED, 0
+  field :STATUS_CONNECTED, 1
+  field :STATUS_DISCONNECTED, 2
 end
 
 defmodule Jellyfish.ServerMessage.RoomState.Component.Type do
@@ -28,8 +31,18 @@ defmodule Jellyfish.ServerMessage.RoomState.Component.Type do
 
   use Protobuf, enum: true, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
 
-  field :HLS, 0
-  field :RTSP, 1
+  field :TYPE_UNSPECIFIED, 0
+  field :TYPE_HLS, 1
+  field :TYPE_RTSP, 2
+end
+
+defmodule Jellyfish.ServerMessage.SubscribeRequest.EventType do
+  @moduledoc false
+
+  use Protobuf, enum: true, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+
+  field :EVENT_TYPE_UNSPECIFIED, 0
+  field :EVENT_TYPE_SERVER_NOTIFICATION, 1
 end
 
 defmodule Jellyfish.ServerMessage.RoomCrashed do
@@ -155,6 +168,24 @@ defmodule Jellyfish.ServerMessage.RoomNotFound do
   field :id, 1, type: :string
 end
 
+defmodule Jellyfish.ServerMessage.SubscribeRequest do
+  @moduledoc false
+
+  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+
+  field :event_types, 1,
+    repeated: true,
+    type: Jellyfish.ServerMessage.SubscribeRequest.EventType,
+    json_name: "eventTypes",
+    enum: true
+end
+
+defmodule Jellyfish.ServerMessage.SubscriptionResponse do
+  @moduledoc false
+
+  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+end
+
 defmodule Jellyfish.ServerMessage do
   @moduledoc false
 
@@ -209,5 +240,15 @@ defmodule Jellyfish.ServerMessage do
   field :room_not_found, 11,
     type: Jellyfish.ServerMessage.RoomNotFound,
     json_name: "roomNotFound",
+    oneof: 0
+
+  field :subscribe_request, 12,
+    type: Jellyfish.ServerMessage.SubscribeRequest,
+    json_name: "subscribeRequest",
+    oneof: 0
+
+  field :subscription_response, 13,
+    type: Jellyfish.ServerMessage.SubscriptionResponse,
+    json_name: "subscriptionResponse",
     oneof: 0
 end

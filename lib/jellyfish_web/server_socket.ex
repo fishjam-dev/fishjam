@@ -18,7 +18,9 @@ defmodule JellyfishWeb.ServerSocket do
     RoomNotFound,
     RoomsState,
     RoomState,
-    RoomStateRequest
+    RoomStateRequest,
+    SubscribeRequest,
+    SubscriptionResponse
   }
 
   alias Jellyfish.ServerMessage.RoomState.{Component, Config, Peer}
@@ -45,7 +47,6 @@ defmodule JellyfishWeb.ServerSocket do
     case ServerMessage.decode(encoded_message) do
       %ServerMessage{content: {:auth_request, %AuthRequest{token: token}}} ->
         if token == Application.fetch_env!(:jellyfish, :server_api_token) do
-          :ok = Phoenix.PubSub.subscribe(Jellyfish.PubSub, "server")
           Process.send_after(self(), :send_ping, @heartbeat_interval)
 
           encoded_message =
@@ -83,13 +84,7 @@ defmodule JellyfishWeb.ServerSocket do
 
   def handle_in({encoded_message, [opcode: :binary]}, state) do
     with %ServerMessage{content: request} <- ServerMessage.decode(encoded_message),
-         {:room_state_request, %RoomStateRequest{content: {_variant, option}}} <- request do
-      room_state = get_room_state(option)
-
-      reply =
-        %ServerMessage{content: room_state}
-        |> ServerMessage.encode()
-
+         {:ok, reply} <- handle_request(request) do
       {:reply, :ok, {:binary, reply}, state}
     else
       other ->
@@ -114,6 +109,27 @@ defmodule JellyfishWeb.ServerSocket do
 
     {:stop, :closed, {1003, "operation not allowed"}, state}
   end
+
+  defp handle_request({:room_state_request, %RoomStateRequest{content: {_variant, option}}}) do
+    room_state = get_room_state(option)
+
+    %ServerMessage{content: room_state}
+    |> ServerMessage.encode()
+    |> then(&{:ok, &1})
+  end
+
+  defp handle_request({:subscribe_request, %SubscribeRequest{event_types: event_types}}) do
+    event_types
+    |> Enum.each(fn event ->
+      :ok = Phoenix.PubSub.subscribe(Jellyfish.PubSub, event_type_to_topic(event))
+    end)
+
+    %ServerMessage{content: {:subscription_response, %SubscriptionResponse{}}}
+    |> ServerMessage.encode()
+    |> then(&{:ok, &1})
+  end
+
+  defp handle_request(request), do: request
 
   @impl true
   def handle_info(:send_ping, state) do
@@ -162,7 +178,7 @@ defmodule JellyfishWeb.ServerSocket do
     :ok
   end
 
-  defp get_room_state(:ALL) do
+  defp get_room_state(:OPTION_ALL) do
     rooms =
       RoomService.list_rooms()
       |> Enum.map(&to_room_state_message/1)
@@ -199,10 +215,12 @@ defmodule JellyfishWeb.ServerSocket do
     %RoomState{id: room.id, config: config, peers: peers, components: components}
   end
 
-  defp to_proto_type(Jellyfish.Component.HLS), do: :HLS
-  defp to_proto_type(Jellyfish.Component.RTSP), do: :HLS
-  defp to_proto_type(Jellyfish.Peer.WebRTC), do: :WEBRTC
+  defp to_proto_type(Jellyfish.Component.HLS), do: :TYPE_HLS
+  defp to_proto_type(Jellyfish.Component.RTSP), do: :TYPE_RTSP
+  defp to_proto_type(Jellyfish.Peer.WebRTC), do: :TYPE_WEBRTC
 
-  defp to_proto_status(:disconnected), do: :DISCONNECTED
-  defp to_proto_status(:connected), do: :CONNECTED
+  defp to_proto_status(:disconnected), do: :STATUS_DISCONNECTED
+  defp to_proto_status(:connected), do: :STATUS_CONNECTED
+
+  defp event_type_to_topic(:EVENT_TYPE_SERVER_NOTIFICATION), do: "server_notification"
 end
