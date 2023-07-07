@@ -8,7 +8,7 @@ defmodule JellyfishWeb.HLSController do
         conn,
         %{
           "room_id" => room_id,
-          "filename" => filename,
+          "filename" => filename
         }
       ) do
     base_path = Application.fetch_env!(:jellyfish, :output_base_path)
