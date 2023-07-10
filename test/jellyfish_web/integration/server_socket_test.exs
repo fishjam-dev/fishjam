@@ -58,6 +58,22 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     :ok
   end
 
+  setup(%{conn: conn}) do
+    on_exit(fn ->
+      server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+      conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
+
+      conn = get(conn, ~p"/room")
+      rooms = json_response(conn, :ok)["data"]
+
+      rooms
+      |> Enum.each(fn %{"id" => id} ->
+        conn = delete(conn, ~p"/room/#{id}")
+        response(conn, 204)
+      end)
+    end)
+  end
+
   test "invalid token" do
     {:ok, ws} = WS.start_link(@path, :server)
     server_api_token = "invalid" <> Application.fetch_env!(:jellyfish, :server_api_token)
@@ -156,11 +172,9 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
   test "doesn't send messages if not subscribed", %{conn: conn} do
     create_auth_subscribe([])
 
-    cleanup = trigger_notification(conn)
+    trigger_notification(conn)
 
     refute_receive %PeerConnected{}, 200
-
-    cleanup.()
   end
 
   test "sends a message when room crashes", %{conn: conn} do
@@ -247,15 +261,10 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
 
   defp trigger_notification(conn) do
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
-    {room_id, _peer_id, peer_token, conn} = add_room_and_peer(conn, server_api_token)
+    {_room_id, _peer_id, peer_token, _conn} = add_room_and_peer(conn, server_api_token)
 
     {:ok, peer_ws} = WS.start_link("ws://127.0.0.1:#{@port}/socket/peer/websocket", :peer)
     auth_request = peer_auth_request(peer_token)
     :ok = WS.send_binary_frame(peer_ws, auth_request)
-
-    fn ->
-      conn = delete(conn, ~p"/room/#{room_id}/")
-      assert response(conn, :no_content)
-    end
   end
 end

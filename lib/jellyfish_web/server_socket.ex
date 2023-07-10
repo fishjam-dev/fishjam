@@ -113,9 +113,11 @@ defmodule JellyfishWeb.ServerSocket do
   defp handle_request({:room_state_request, %RoomStateRequest{content: {_variant, option}}}) do
     room_state = get_room_state(option)
 
-    %ServerMessage{content: room_state}
-    |> ServerMessage.encode()
-    |> then(&{:ok, &1})
+    msg =
+      %ServerMessage{content: room_state}
+      |> ServerMessage.encode()
+
+    {:ok, msg}
   end
 
   defp handle_request({:subscribe_request, %SubscribeRequest{event_types: event_types}}) do
@@ -124,9 +126,11 @@ defmodule JellyfishWeb.ServerSocket do
       :ok = Phoenix.PubSub.subscribe(Jellyfish.PubSub, event_type_to_topic(event))
     end)
 
-    %ServerMessage{content: {:subscription_response, %SubscriptionResponse{}}}
-    |> ServerMessage.encode()
-    |> then(&{:ok, &1})
+    msg =
+      %ServerMessage{content: {:subscription_response, %SubscriptionResponse{}}}
+      |> ServerMessage.encode()
+
+    {:ok, msg}
   end
 
   defp handle_request(request), do: request
