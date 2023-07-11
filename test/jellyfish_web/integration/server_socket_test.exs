@@ -13,13 +13,12 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     PeerConnected,
     PeerDisconnected,
     RoomCrashed,
-    RoomNotFound,
-    RoomsState,
-    RoomState,
-    RoomStateRequest,
     SubscribeRequest,
     SubscriptionResponse
   }
+
+  alias Jellyfish.ServerMessage.SubscribeRequest.ServerNotification
+  alias Jellyfish.ServerMessage.SubscriptionResponse.{RoomNotFound, RoomsState, RoomState}
 
   alias JellyfishWeb.{PeerSocket, ServerSocket, WS}
 
@@ -92,11 +91,11 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
   end
 
   test "correct token" do
-    create_auth_subscribe()
+    create_and_authenticate()
   end
 
   test "closes on receiving an invalid message from a client" do
-    ws = create_auth_subscribe()
+    ws = create_and_authenticate()
 
     :ok =
       WS.send_binary_frame(
@@ -109,21 +108,29 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
 
   test "responds with room state", %{conn: conn} do
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
-    ws = create_auth_subscribe()
+    ws = create_and_authenticate()
     {room_id, peer_id, _token, conn} = add_room_and_peer(conn, server_api_token)
 
-    msg = %ServerMessage{
-      content: {:room_state_request, %RoomStateRequest{content: {:id, room_id}}}
-    }
+    response =
+      subscribe(ws, "1", {:server_notification, %ServerNotification{room_id: {:id, room_id}}})
 
-    :ok = WS.send_binary_frame(ws, ServerMessage.encode(msg))
-
-    assert_receive %RoomState{
-      id: ^room_id,
-      config: %{max_peers: @max_peers},
-      components: [],
-      peers: [%RoomState.Peer{id: ^peer_id, type: :TYPE_WEBRTC, status: :STATUS_DISCONNECTED}]
-    }
+    assert %SubscriptionResponse{
+             id: "1",
+             content:
+               {:room_state,
+                %RoomState{
+                  id: ^room_id,
+                  config: %{max_peers: @max_peers},
+                  components: [],
+                  peers: [
+                    %RoomState.Peer{
+                      id: ^peer_id,
+                      type: :TYPE_WEBRTC,
+                      status: :STATUS_DISCONNECTED
+                    }
+                  ]
+                }}
+           } = response
 
     conn = delete(conn, ~p"/room/#{room_id}/")
     assert response(conn, :no_content)
@@ -131,46 +138,67 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
 
   test "responds with all of the room states", %{conn: conn} do
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
-    ws = create_auth_subscribe()
+    ws = create_and_authenticate()
+
     {room_id, peer_id, _token, conn} = add_room_and_peer(conn, server_api_token)
 
-    msg = %ServerMessage{
-      content: {:room_state_request, %RoomStateRequest{content: {:option, :OPTION_ALL}}}
-    }
+    response =
+      subscribe(
+        ws,
+        "1",
+        {:server_notification, %ServerNotification{room_id: {:option, :OPTION_ALL}}}
+      )
 
-    :ok = WS.send_binary_frame(ws, ServerMessage.encode(msg))
-
-    assert_receive %RoomsState{
-      rooms: [
-        %RoomState{
-          id: ^room_id,
-          config: %{max_peers: @max_peers},
-          components: [],
-          peers: [%RoomState.Peer{id: ^peer_id, type: :TYPE_WEBRTC, status: :STATUS_DISCONNECTED}]
-        }
-      ]
-    }
+    assert %SubscriptionResponse{
+             id: "1",
+             content:
+               {:rooms_state,
+                %RoomsState{
+                  rooms: [
+                    %RoomState{
+                      id: ^room_id,
+                      config: %{max_peers: @max_peers},
+                      components: [],
+                      peers: [
+                        %RoomState.Peer{
+                          id: ^peer_id,
+                          type: :TYPE_WEBRTC,
+                          status: :STATUS_DISCONNECTED
+                        }
+                      ]
+                    }
+                  ]
+                }}
+           } = response
 
     conn = delete(conn, ~p"/room/#{room_id}/")
     assert response(conn, :no_content)
   end
 
   test "responds with room_not_found" do
-    ws = create_auth_subscribe()
+    ws = create_and_authenticate()
 
     fake_room_id = "fake_room_id"
 
-    msg = %ServerMessage{
-      content: {:room_state_request, %RoomStateRequest{content: {:id, fake_room_id}}}
-    }
+    response =
+      subscribe(
+        ws,
+        "1",
+        {:server_notification, %ServerNotification{room_id: {:id, fake_room_id}}}
+      )
 
-    :ok = WS.send_binary_frame(ws, ServerMessage.encode(msg))
-
-    assert_receive %RoomNotFound{id: ^fake_room_id}
+    assert %SubscriptionResponse{
+             id: "1",
+             content:
+               {:room_not_found,
+                %RoomNotFound{
+                  id: ^fake_room_id
+                }}
+           } = response
   end
 
   test "doesn't send messages if not subscribed", %{conn: conn} do
-    create_auth_subscribe([])
+    create_and_authenticate()
 
     trigger_notification(conn)
 
@@ -179,7 +207,13 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
 
   test "sends a message when room crashes", %{conn: conn} do
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
-    create_auth_subscribe()
+    ws = create_and_authenticate()
+
+    subscribe(
+      ws,
+      "1",
+      {:server_notification, %ServerNotification{room_id: {:option, :OPTION_ALL}}}
+    )
 
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
@@ -194,7 +228,13 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
 
   test "sends a message when peer connects", %{conn: conn} do
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
-    create_auth_subscribe()
+    ws = create_and_authenticate()
+
+    subscribe(
+      ws,
+      "1",
+      {:server_notification, %ServerNotification{room_id: {:option, :OPTION_ALL}}}
+    )
 
     {room_id, peer_id, peer_token, conn} = add_room_and_peer(conn, server_api_token)
 
@@ -210,7 +250,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     assert_receive %PeerDisconnected{peer_id: ^peer_id, room_id: ^room_id}
   end
 
-  def create_auth_subscribe(subscribe_events \\ [:EVENT_TYPE_SERVER_NOTIFICATION]) do
+  def create_and_authenticate() do
     token = Application.fetch_env!(:jellyfish, :server_api_token)
     auth_request = auth_request(token)
 
@@ -218,21 +258,23 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     :ok = WS.send_binary_frame(ws, auth_request)
     assert_receive @auth_response, 1000
 
-    subscribe_request =
-      %ServerMessage{
-        content:
-          {:subscribe_request,
-           %SubscribeRequest{
-             event_types: subscribe_events
-           }}
-      }
-      |> ServerMessage.encode()
-
-    :ok = WS.send_binary_frame(ws, subscribe_request)
-
-    assert_receive %SubscriptionResponse{}
-
     ws
+  end
+
+  def subscribe(ws, id, event_type) do
+    msg = %ServerMessage{
+      content:
+        {:subscribe_request,
+         %SubscribeRequest{
+           id: id,
+           event_type: event_type
+         }}
+    }
+
+    :ok = WS.send_binary_frame(ws, ServerMessage.encode(msg))
+
+    assert_receive %SubscriptionResponse{id: ^id} = response
+    response
   end
 
   defp add_room_and_peer(conn, server_api_token) do
