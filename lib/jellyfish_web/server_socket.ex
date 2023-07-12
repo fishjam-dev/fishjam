@@ -15,6 +15,8 @@ defmodule JellyfishWeb.ServerSocket do
     PeerCrashed,
     PeerDisconnected,
     RoomCrashed,
+    RoomCreated,
+    RoomDeleted,
     SubscribeRequest,
     SubscriptionResponse
   }
@@ -143,6 +145,12 @@ defmodule JellyfishWeb.ServerSocket do
   def handle_info(msg, state) do
     msg =
       case msg do
+        {:room_created, room_id} ->
+          %ServerMessage{content: {:room_created, %RoomCreated{room_id: room_id}}}
+
+        {:room_deleted, room_id} ->
+          %ServerMessage{content: {:room_deleted, %RoomDeleted{room_id: room_id}}}
+
         {:room_crashed, room_id} ->
           %ServerMessage{content: {:room_crashed, %RoomCrashed{room_id: room_id}}}
 

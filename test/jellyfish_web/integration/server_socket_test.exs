@@ -13,6 +13,8 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     PeerConnected,
     PeerDisconnected,
     RoomCrashed,
+    RoomCreated,
+    RoomDeleted,
     SubscribeRequest,
     SubscriptionResponse
   }
@@ -203,6 +205,29 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     trigger_notification(conn)
 
     refute_receive %PeerConnected{}, 200
+  end
+
+  test "sends a message when room gets created and deleted", %{conn: conn} do
+    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+    ws = create_and_authenticate()
+
+    subscribe(
+      ws,
+      "1",
+      {:server_notification, %ServerNotification{room_id: {:option, :OPTION_ALL}}}
+    )
+
+    conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
+
+    conn = post(conn, ~p"/room", maxPeers: 1)
+    assert %{"id" => room_id} = json_response(conn, :created)["data"]
+
+    assert_receive %RoomCreated{room_id: ^room_id}
+
+    conn = delete(conn, ~p"/room/#{room_id}")
+    assert response(conn, :no_content)
+
+    assert_receive %RoomDeleted{room_id: ^room_id}
   end
 
   test "sends a message when room crashes", %{conn: conn} do
