@@ -68,7 +68,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
       rooms
       |> Enum.each(fn %{"id" => id} ->
         conn = delete(conn, ~p"/room/#{id}")
-        response(conn, 204)
+        assert response(conn, 204)
       end)
     end)
   end

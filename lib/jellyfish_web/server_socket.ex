@@ -88,24 +88,24 @@ defmodule JellyfishWeb.ServerSocket do
 
       {:reply, :ok, {:binary, reply}, state}
     else
+      {:error, request} ->
+        unexpected_message_error(request, state)
+
       other ->
-        Logger.warn("""
-        Received unexpected message on server WS.
-        Closing the connection.
-
-        Message: #{inspect(other)}
-        """)
-
-        {:stop, :closed, {1003, "operation not allowed"}, state}
+        unexpected_message_error(other, state)
     end
   end
 
   def handle_in({encoded_message, [opcode: _type]}, state) do
+    unexpected_message_error(encoded_message, state)
+  end
+
+  defp unexpected_message_error(msg, state) do
     Logger.warn("""
     Received unexpected message on server WS.
     Closing the connection.
 
-    Message: #{inspect(encoded_message)}
+    Message: #{inspect(msg)}
     """)
 
     {:stop, :closed, {1003, "operation not allowed"}, state}
@@ -131,7 +131,7 @@ defmodule JellyfishWeb.ServerSocket do
     {:ok, msg}
   end
 
-  defp handle_subscribe(request), do: request
+  defp handle_subscribe(request), do: {:error, request}
 
   @impl true
   def handle_info(:send_ping, state) do
