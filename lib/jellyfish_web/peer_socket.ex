@@ -49,7 +49,7 @@ defmodule JellyfishWeb.PeerSocket do
 
           Phoenix.PubSub.broadcast(
             Jellyfish.PubSub,
-            "server",
+            "server_notification",
             {:peer_connected, room_id, peer_id}
           )
 
@@ -140,7 +140,7 @@ defmodule JellyfishWeb.PeerSocket do
     if Map.has_key?(state, :peer_id) do
       Phoenix.PubSub.broadcast(
         Jellyfish.PubSub,
-        "server",
+        "server_notification",
         {:peer_disconnected, state.room_id, state.peer_id}
       )
     end
