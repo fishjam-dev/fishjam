@@ -24,7 +24,7 @@ defmodule Jellyfish.Room do
 
   @type id :: String.t()
   @type max_peers :: non_neg_integer() | nil
-  @type video_encoding :: :h264 | :vp8 | nil
+  @type video_encoding :: :ENCODING_H264 | :ENCODING_VP8 | :ENCODING_UNSPECIFIED
 
   @typedoc """
   This module contains:
@@ -133,7 +133,7 @@ defmodule Jellyfish.Room do
         options = %{
           engine_pid: state.engine_pid,
           network_options: state.network_options,
-          video_encoding: state.config.video_config
+          video_encoding: state.config.video_encoding
         }
 
         peer = Peer.new(peer_type, options)

@@ -87,7 +87,7 @@ defmodule Jellyfish.RoomService do
   end
 
   @impl true
-  def handle_call({:create_room, _max_peers}, _from, state),
+  def handle_call({:create_room, _max_peers, _video_encoding}, _from, state),
     do: {:reply, {:error, :bad_arg}, state}
 
   @impl true

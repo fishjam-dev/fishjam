@@ -67,21 +67,20 @@ defmodule JellyfishWeb.RoomController do
   end
 
   def create(conn, params) do
-    video_encoding = Map.get(params, "enforceVideoEncoding")
+    video_encoding =
+      case Map.get(params, "enforceVideoEncoding") do
+        "h264" ->
+          :ENCODING_H264
 
-    case video_encoding do
-      "h264" ->
-        :h264
+        "vp8" ->
+          :ENCODING_VP8
 
-      "vp8" ->
-        :vp8
+        nil ->
+          :ENCODING_UNSPECIFIED
 
-      nil ->
-        nil
-
-      _else ->
-        {:error, :bad_request, "enforceVideoEncoding must be a h264 or vp8"}
-    end
+        _else ->
+          {:error, :bad_request, "enforceVideoEncoding must be a h264 or vp8"}
+      end
 
     with max_peers <- Map.get(params, "maxPeers"),
          {:ok, room} <- RoomService.create_room(max_peers, video_encoding) do
