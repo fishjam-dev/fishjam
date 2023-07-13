@@ -54,9 +54,10 @@ defmodule Jellyfish.RoomService do
     |> Enum.reject(&(&1 == nil))
   end
 
-  @spec create_room(Room.max_peers()) :: {:ok, Room.t()} | {:error, :bad_arg}
-  def create_room(max_peers) do
-    GenServer.call(__MODULE__, {:create_room, max_peers})
+  @spec create_room(Room.max_peers(), Room.video_encoding()) ::
+          {:ok, Room.t()} | {:error, :bad_arg}
+  def create_room(max_peers, video_encoding) do
+    GenServer.call(__MODULE__, {:create_room, max_peers, video_encoding})
   end
 
   @spec delete_room(Room.id()) :: :ok | {:error, :room_not_found}
@@ -70,9 +71,9 @@ defmodule Jellyfish.RoomService do
   end
 
   @impl true
-  def handle_call({:create_room, max_peers}, _from, state)
+  def handle_call({:create_room, max_peers, video_encoding}, _from, state)
       when is_nil(max_peers) or (is_integer(max_peers) and max_peers >= 0) do
-    {:ok, room_pid, room_id} = Room.start(max_peers)
+    {:ok, room_pid, room_id} = Room.start(max_peers, video_encoding)
     room = Room.get_state(room_id)
     Process.monitor(room_pid)
 

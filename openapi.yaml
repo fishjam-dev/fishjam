@@ -182,6 +182,11 @@ components:
           minimum: 1
           nullable: true
           type: integer
+        enforceVideoEncoding:
+          description: Enforces video codec for each peer in the room
+          type: string
+          enum: ["h264", "vp8"]
+          nullable: true
       title: RoomConfig
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Room.Config
