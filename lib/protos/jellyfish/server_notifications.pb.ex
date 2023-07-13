@@ -109,6 +109,12 @@ defmodule Jellyfish.ServerMessage.SubscribeRequest.ServerNotification do
     oneof: 0
 end
 
+defmodule Jellyfish.ServerMessage.SubscribeRequest.Metrics do
+  @moduledoc false
+
+  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+end
+
 defmodule Jellyfish.ServerMessage.SubscribeRequest do
   @moduledoc false
 
@@ -122,6 +128,8 @@ defmodule Jellyfish.ServerMessage.SubscribeRequest do
     type: Jellyfish.ServerMessage.SubscribeRequest.ServerNotification,
     json_name: "serverNotification",
     oneof: 0
+
+  field :metrics, 3, type: Jellyfish.ServerMessage.SubscribeRequest.Metrics, oneof: 0
 end
 
 defmodule Jellyfish.ServerMessage.SubscriptionResponse.RoomState.Config do
@@ -234,6 +242,14 @@ defmodule Jellyfish.ServerMessage.RoomDeleted do
   field :room_id, 1, type: :string, json_name: "roomId"
 end
 
+defmodule Jellyfish.ServerMessage.MetricsReport do
+  @moduledoc false
+
+  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+
+  field :metrics, 1, type: :string
+end
+
 defmodule Jellyfish.ServerMessage do
   @moduledoc false
 
@@ -291,5 +307,10 @@ defmodule Jellyfish.ServerMessage do
   field :room_deleted, 11,
     type: Jellyfish.ServerMessage.RoomDeleted,
     json_name: "roomDeleted",
+    oneof: 0
+
+  field :metrics_report, 12,
+    type: Jellyfish.ServerMessage.MetricsReport,
+    json_name: "metricsReport",
     oneof: 0
 end

@@ -10,6 +10,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
   alias Jellyfish.ServerMessage.{
     Authenticated,
     AuthRequest,
+    MetricsReport,
     PeerConnected,
     PeerDisconnected,
     RoomCrashed,
@@ -19,7 +20,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     SubscriptionResponse
   }
 
-  alias Jellyfish.ServerMessage.SubscribeRequest.ServerNotification
+  alias Jellyfish.ServerMessage.SubscribeRequest.{Metrics, ServerNotification}
   alias Jellyfish.ServerMessage.SubscriptionResponse.{RoomNotFound, RoomsState, RoomState}
 
   alias JellyfishWeb.{PeerSocket, ServerSocket, WS}
@@ -284,6 +285,39 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     assert_receive @auth_response, 1000
 
     ws
+  end
+
+  test "sends metrics", %{conn: conn} do
+    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+    ws = create_and_authenticate()
+
+    subscribe(
+      ws,
+      "1",
+      {:server_notification, %ServerNotification{room_id: {:option, :OPTION_ALL}}}
+    )
+
+    {room_id, peer_id, peer_token, conn} = add_room_and_peer(conn, server_api_token)
+
+    {:ok, peer_ws} = WS.start_link("ws://127.0.0.1:#{@port}/socket/peer/websocket", :peer)
+    auth_request = peer_auth_request(peer_token)
+    :ok = WS.send_binary_frame(peer_ws, auth_request)
+
+    assert_receive %PeerConnected{peer_id: ^peer_id, room_id: ^room_id}
+
+    subscribe(ws, "2", {:metrics, %Metrics{}})
+    assert_receive %MetricsReport{metrics: metrics} when metrics != "{}", 200
+
+    metrics = Jason.decode!(metrics)
+
+    endpoint_id = metrics["room_id=#{room_id}"] |> Map.keys() |> hd()
+
+    assert String.contains?(endpoint_id, "endpoint_id")
+
+    conn = delete(conn, ~p"/room/#{room_id}/")
+    assert response(conn, :no_content)
+
+    assert_receive %PeerDisconnected{peer_id: ^peer_id, room_id: ^room_id}
   end
 
   def subscribe(ws, id, event_type) do

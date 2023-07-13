@@ -56,11 +56,12 @@ defmodule Jellyfish.MixProject do
       {:ymlr, "~> 3.0"},
 
       # protobuf deps
-      {:protobuf, "~> 0.10.0"},
+      {:protobuf, "~> 0.12.0"},
 
       # Membrane deps
       {:membrane_rtc_engine, "~> 0.14.0"},
       {:membrane_ice_plugin, "~> 0.15.0"},
+      {:membrane_telemetry_metrics, "~> 0.1.0"},
 
       # HLS endpoints deps
       {:membrane_aac_plugin, "~> 0.13.0"},

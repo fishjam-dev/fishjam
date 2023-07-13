@@ -11,6 +11,7 @@ defmodule JellyfishWeb.ServerSocket do
     Authenticated,
     AuthRequest,
     ComponentCrashed,
+    MetricsReport,
     PeerConnected,
     PeerCrashed,
     PeerDisconnected,
@@ -85,7 +86,9 @@ defmodule JellyfishWeb.ServerSocket do
            ServerMessage.decode(encoded_message),
          {:ok, response} <- handle_subscribe(request) do
       reply =
-        %ServerMessage{content: response}
+        %ServerMessage{
+          content: {:subscription_response, response}
+        }
         |> ServerMessage.encode()
 
       {:reply, :ok, {:binary, reply}, state}
@@ -123,14 +126,16 @@ defmodule JellyfishWeb.ServerSocket do
 
     room_state = get_room_state(option)
 
-    msg =
-      {:subscription_response,
-       %SubscriptionResponse{
-         id: id,
-         content: room_state
-       }}
+    {:ok, %SubscriptionResponse{id: id, content: room_state}}
+  end
 
-    {:ok, msg}
+  defp handle_subscribe(%SubscribeRequest{
+         id: id,
+         event_type: {:metrics, %SubscribeRequest.Metrics{}}
+       }) do
+    :ok = Phoenix.PubSub.subscribe(Jellyfish.PubSub, "metrics")
+
+    {:ok, %SubscriptionResponse{id: id}}
   end
 
   defp handle_subscribe(request), do: {:error, request}
@@ -174,6 +179,15 @@ defmodule JellyfishWeb.ServerSocket do
             content:
               {:component_crashed,
                %ComponentCrashed{room_id: room_id, component_id: component_id}}
+          }
+
+        {:metrics, report} ->
+          %ServerMessage{
+            content:
+              {:metrics_report,
+               %MetricsReport{
+                 metrics: report
+               }}
           }
       end
 

@@ -7,18 +7,19 @@ defmodule Jellyfish.Application do
 
   @impl true
   def start(_type, _args) do
+    scrape_interval = Application.fetch_env!(:jellyfish, :metrics_scrape_interval)
+
     children = [
+      {Phoenix.PubSub, name: Jellyfish.PubSub},
       # Start the Telemetry supervisor
       JellyfishWeb.Telemetry,
-      # Start the PubSub system
-      {Phoenix.PubSub, name: Jellyfish.PubSub},
-      # Start the Endpoint (http/https)
+      {Membrane.TelemetryMetrics.Reporter,
+       [metrics: Membrane.RTC.Engine.Metrics.metrics(), name: JellyfishMetricsReporter]},
+      {Jellyfish.MetricsScraper, scrape_interval},
       JellyfishWeb.Endpoint,
       # Start the RoomService
       Jellyfish.RoomService,
       {Registry, keys: :unique, name: Jellyfish.RoomRegistry}
-      # Start a worker by calling: Jellyfish.Worker.start_link(arg)
-      # {Jellyfish.Worker, arg}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

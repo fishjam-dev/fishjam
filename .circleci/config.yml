@@ -21,8 +21,8 @@ workflows:
   build:
     jobs:
       - elixir/build_test:
-          cache-version: 2
+          cache-version: 3
       - test
       - elixir/lint:
-          cache-version: 2
+          cache-version: 3
           docs: false
