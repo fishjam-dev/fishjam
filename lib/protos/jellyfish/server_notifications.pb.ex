@@ -218,6 +218,22 @@ defmodule Jellyfish.ServerMessage.SubscriptionResponse do
     oneof: 0
 end
 
+defmodule Jellyfish.ServerMessage.RoomCreated do
+  @moduledoc false
+
+  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+
+  field :room_id, 1, type: :string, json_name: "roomId"
+end
+
+defmodule Jellyfish.ServerMessage.RoomDeleted do
+  @moduledoc false
+
+  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+
+  field :room_id, 1, type: :string, json_name: "roomId"
+end
+
 defmodule Jellyfish.ServerMessage do
   @moduledoc false
 
@@ -265,5 +281,15 @@ defmodule Jellyfish.ServerMessage do
   field :subscription_response, 9,
     type: Jellyfish.ServerMessage.SubscriptionResponse,
     json_name: "subscriptionResponse",
+    oneof: 0
+
+  field :room_created, 10,
+    type: Jellyfish.ServerMessage.RoomCreated,
+    json_name: "roomCreated",
+    oneof: 0
+
+  field :room_deleted, 11,
+    type: Jellyfish.ServerMessage.RoomDeleted,
+    json_name: "roomDeleted",
     oneof: 0
 end

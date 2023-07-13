@@ -79,6 +79,9 @@ defmodule Jellyfish.RoomService do
     state = put_in(state, [:rooms, room_pid], room_id)
 
     Logger.info("Created room #{inspect(room.id)}")
+
+    Phoenix.PubSub.broadcast(Jellyfish.PubSub, "server_notification", {:room_created, room_id})
+
     {:reply, {:ok, room}, state}
   end
 
@@ -130,6 +133,8 @@ defmodule Jellyfish.RoomService do
     try do
       :ok = GenServer.stop(room, :normal)
       Logger.info("Deleted room #{inspect(room_id)}")
+
+      Phoenix.PubSub.broadcast(Jellyfish.PubSub, "server_notification", {:room_deleted, room_id})
     catch
       :exit, {:noproc, {GenServer, :stop, [^room, :normal, :infinity]}} ->
         Logger.warn("Room process with id #{inspect(room_id)} doesn't exist")
