@@ -10,7 +10,7 @@ defmodule Jellyfish.Component.HLS do
   alias Membrane.Time
 
   @segment_duration Time.seconds(4)
-  @partial_segment_duration Time.milliseconds(400)
+  @partial_segment_duration nil
 
   @impl true
   def config(options) do
