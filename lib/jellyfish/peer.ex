@@ -28,7 +28,7 @@ defmodule Jellyfish.Peer do
           type: peer(),
           status: status(),
           socket_pid: pid() | nil,
-          engine_endpoint: Membrane.ChildrenSpec.child_definition_t()
+          engine_endpoint: Membrane.ChildrenSpec.child_definition()
         }
 
   @spec parse_type(String.t()) :: {:ok, peer()} | {:error, :invalid_type}
