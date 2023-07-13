@@ -184,3 +184,6 @@ $RECYCLE.BIN/
 
 # asdf
 .tool-versions
+
+# hls
+jellyfish_output/
