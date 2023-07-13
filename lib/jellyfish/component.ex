@@ -29,7 +29,7 @@ defmodule Jellyfish.Component do
   @type t :: %__MODULE__{
           id: id(),
           type: component(),
-          engine_endpoint: Membrane.ChildrenSpec.child_definition_t()
+          engine_endpoint: Membrane.ChildrenSpec.child_definition()
         }
 
   @spec parse_type(String.t()) :: {:ok, component()} | {:error, :invalid_type}
