@@ -55,7 +55,7 @@ defmodule Jellyfish.RoomService do
   end
 
   @spec create_room(Room.max_peers(), Room.enforce_encoding()) ::
-          {:ok, Room.t()} | {:error, :bad_arg, :max_peers | :enforceEncoding}
+          {:ok, Room.t()} | {:error, :invalid_max_peers | :invalid_enforce_encoding}
   def create_room(max_peers, enforce_encoding) do
     GenServer.call(__MODULE__, {:create_room, max_peers, enforce_encoding})
   end
@@ -91,10 +91,10 @@ defmodule Jellyfish.RoomService do
       {:reply, {:ok, room}, state}
     else
       {:error, :max_peers} ->
-        {:reply, {:error, :bad_arg, :max_peers}, state}
+        {:reply, {:error, :invalid_max_peers}, state}
 
       {:error, :enforce_encoding} ->
-        {:reply, {:error, :bad_arg, :enforce_encoding}, state}
+        {:reply, {:error, :invalid_enforce_encoding}, state}
     end
   end
 
@@ -150,10 +150,8 @@ defmodule Jellyfish.RoomService do
     end
   end
 
-  defp validate_max_peers(max_peers)
-       when is_nil(max_peers) or (is_integer(max_peers) and max_peers >= 0),
-       do: :ok
-
+  defp validate_max_peers(nil), do: :ok
+  defp validate_max_peers(max_peers) when is_integer(max_peers) and max_peers >= 0, do: :ok
   defp validate_max_peers(_max_peers), do: {:error, :max_peers}
 
   defp encoding_to_atom("h264"), do: {:ok, :h264}

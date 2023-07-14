@@ -104,7 +104,7 @@ defmodule JellyfishWeb.RoomControllerTest do
       conn = post(conn, ~p"/room", enforceEncoding: "nan")
 
       assert json_response(conn, :bad_request)["errors"] ==
-               "enforceEncoding must be a h264 or vp8"
+               "enforceEncoding must be 'h264' or 'vp8'"
     end
   end
 

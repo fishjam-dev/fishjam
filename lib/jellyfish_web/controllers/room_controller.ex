@@ -75,11 +75,11 @@ defmodule JellyfishWeb.RoomController do
       |> put_status(:created)
       |> render("show.json", room: room)
     else
-      {:error, :bad_arg, :max_peers} ->
+      {:error, :invalid_max_peers} ->
         {:error, :bad_request, "maxPeers must be a number"}
 
-      {:error, :bad_arg, :enforce_encoding} ->
-        {:error, :bad_request, "enforceEncoding must be a h264 or vp8"}
+      {:error, :invalid_enforce_encoding} ->
+        {:error, :bad_request, "enforceEncoding must be 'h264' or 'vp8'"}
     end
   end
 
