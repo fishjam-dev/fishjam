@@ -29,7 +29,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
   @auth_response %Authenticated{}
 
   @max_peers 1
-  @video_encoding :ENCODING_H264
+  @enforce_encoding :ENCODING_H264
 
   Application.put_env(
     :jellyfish,
@@ -160,7 +160,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
                   rooms: [
                     %RoomState{
                       id: ^room_id,
-                      config: %{max_peers: @max_peers, video_encoding: @video_encoding},
+                      config: %{max_peers: @max_peers, enforce_encoding: @enforce_encoding},
                       components: [],
                       peers: [
                         %RoomState.Peer{
@@ -306,7 +306,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
   defp add_room_and_peer(conn, server_api_token) do
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
-    conn = post(conn, ~p"/room", maxPeers: @max_peers, enforceVideoEncoding: "h264")
+    conn = post(conn, ~p"/room", maxPeers: @max_peers, enforceEncoding: "h264")
     assert %{"id" => room_id} = json_response(conn, :created)["data"]
 
     conn = post(conn, ~p"/room/#{room_id}/peer", type: "webrtc")

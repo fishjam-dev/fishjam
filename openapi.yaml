@@ -176,7 +176,7 @@ components:
     RoomConfig:
       description: Room configuration
       properties:
-        enforceVideoEncoding:
+        enforceEncoding:
           description: Enforces video codec for each peer in the room
           enum:
             - h264

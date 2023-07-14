@@ -141,9 +141,9 @@ defmodule Jellyfish.ServerMessage.SubscriptionResponse.RoomState.Config do
 
   field :max_peers, 1, type: :uint32, json_name: "maxPeers"
 
-  field :video_encoding, 2,
+  field :enforce_encoding, 2,
     type: Jellyfish.ServerMessage.SubscriptionResponse.RoomState.Config.Encoding,
-    json_name: "videoEncoding",
+    json_name: "enforceEncoding",
     enum: true
 end
 

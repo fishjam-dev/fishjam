@@ -54,10 +54,10 @@ defmodule Jellyfish.RoomService do
     |> Enum.reject(&(&1 == nil))
   end
 
-  @spec create_room(Room.max_peers(), Room.video_encoding()) ::
-          {:ok, Room.t()} | {:error, :bad_arg}
-  def create_room(max_peers, video_encoding) do
-    GenServer.call(__MODULE__, {:create_room, max_peers, video_encoding})
+  @spec create_room(Room.max_peers(), Room.enforce_encoding()) ::
+          {:ok, Room.t()} | {:error, :bad_arg, :max_peers | :enforceEncoding}
+  def create_room(max_peers, enforce_encoding) do
+    GenServer.call(__MODULE__, {:create_room, max_peers, enforce_encoding})
   end
 
   @spec delete_room(Room.id()) :: :ok | {:error, :room_not_found}
@@ -71,24 +71,32 @@ defmodule Jellyfish.RoomService do
   end
 
   @impl true
-  def handle_call({:create_room, max_peers, video_encoding}, _from, state)
-      when is_nil(max_peers) or (is_integer(max_peers) and max_peers >= 0) do
-    {:ok, room_pid, room_id} = Room.start(max_peers, video_encoding)
-    room = Room.get_state(room_id)
-    Process.monitor(room_pid)
+  def handle_call({:create_room, max_peers, enforce_encoding}, _from, state) do
+    with :ok <- validate_max_peers(max_peers),
+         {:ok, enforce_encoding} <- encoding_to_atom(enforce_encoding),
+         {:ok, room_pid, room_id} <- Room.start(max_peers, enforce_encoding) do
+      room = Room.get_state(room_id)
+      Process.monitor(room_pid)
 
-    state = put_in(state, [:rooms, room_pid], room_id)
+      state = put_in(state, [:rooms, room_pid], room_id)
 
-    Logger.info("Created room #{inspect(room.id)}")
+      Logger.info("Created room #{inspect(room.id)}")
 
-    Phoenix.PubSub.broadcast(Jellyfish.PubSub, "server_notification", {:room_created, room_id})
+      Phoenix.PubSub.broadcast(
+        Jellyfish.PubSub,
+        "server_notification",
+        {:room_created, room_id}
+      )
 
-    {:reply, {:ok, room}, state}
+      {:reply, {:ok, room}, state}
+    else
+      {:error, :max_peers} ->
+        {:reply, {:error, :bad_arg, :max_peers}, state}
+
+      {:error, :enforce_encoding} ->
+        {:reply, {:error, :bad_arg, :enforce_encoding}, state}
+    end
   end
-
-  @impl true
-  def handle_call({:create_room, _max_peers, _video_encoding}, _from, state),
-    do: {:reply, {:error, :bad_arg}, state}
 
   @impl true
   def handle_call({:delete_room, room_id}, _from, state) do
@@ -141,4 +149,15 @@ defmodule Jellyfish.RoomService do
         Logger.warn("Room process with id #{inspect(room_id)} doesn't exist")
     end
   end
+
+  defp validate_max_peers(max_peers)
+       when is_nil(max_peers) or (is_integer(max_peers) and max_peers >= 0),
+       do: :ok
+
+  defp validate_max_peers(_max_peers), do: {:error, :max_peers}
+
+  defp encoding_to_atom("h264"), do: {:ok, :h264}
+  defp encoding_to_atom("vp8"), do: {:ok, :vp8}
+  defp encoding_to_atom(nil), do: {:ok, nil}
+  defp encoding_to_atom(_encoding), do: {:error, :enforce_encoding}
 end

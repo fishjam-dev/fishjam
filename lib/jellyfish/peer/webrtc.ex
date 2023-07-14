@@ -28,14 +28,14 @@ defmodule Jellyfish.Peer.WebRTC do
     network_options = options.network_options
 
     filter_codecs =
-      case options.video_encoding do
-        :ENCODING_H264 ->
+      case options.enforce_encoding do
+        :h264 ->
           &filter_codecs_h264/1
 
-        :ENCODING_VP8 ->
+        :vp8 ->
           &filter_codecs_vp8/1
 
-        :ENCODING_UNSPECIFIED ->
+        nil ->
           &any_codecs/1
       end
 
