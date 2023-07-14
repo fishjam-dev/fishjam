@@ -100,6 +100,11 @@ defmodule JellyfishWeb.RoomControllerTest do
 
       assert json_response(conn, :bad_request)["errors"] ==
                "maxPeers must be a number"
+
+      conn = post(conn, ~p"/room", enforceEncoding: "nan")
+
+      assert json_response(conn, :bad_request)["errors"] ==
+               "enforceEncoding must be 'h264' or 'vp8'"
     end
   end
 

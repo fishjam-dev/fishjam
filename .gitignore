@@ -184,3 +184,7 @@ $RECYCLE.BIN/
 
 # Default Jellyfish output directory
 jellyfish_output
+
+
+# asdf
+.tool-versions
