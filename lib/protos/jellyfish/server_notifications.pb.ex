@@ -7,7 +7,17 @@ defmodule Jellyfish.ServerMessage.SubscribeRequest.ServerNotification.Option do
   field :OPTION_ALL, 1
 end
 
-defmodule Jellyfish.ServerMessage.SubscriptionResponse.RoomState.Peer.Type do
+defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomState.Config.Encoding do
+  @moduledoc false
+
+  use Protobuf, enum: true, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+
+  field :ENCODING_UNSPECIFIED, 0
+  field :ENCODING_H264, 1
+  field :ENCODING_VP8, 2
+end
+
+defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomState.Peer.Type do
   @moduledoc false
 
   use Protobuf, enum: true, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
@@ -16,7 +26,7 @@ defmodule Jellyfish.ServerMessage.SubscriptionResponse.RoomState.Peer.Type do
   field :TYPE_WEBRTC, 1
 end
 
-defmodule Jellyfish.ServerMessage.SubscriptionResponse.RoomState.Peer.Status do
+defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomState.Peer.Status do
   @moduledoc false
 
   use Protobuf, enum: true, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
@@ -26,7 +36,7 @@ defmodule Jellyfish.ServerMessage.SubscriptionResponse.RoomState.Peer.Status do
   field :STATUS_DISCONNECTED, 2
 end
 
-defmodule Jellyfish.ServerMessage.SubscriptionResponse.RoomState.Component.Type do
+defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomState.Component.Type do
   @moduledoc false
 
   use Protobuf, enum: true, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
@@ -132,31 +142,33 @@ defmodule Jellyfish.ServerMessage.SubscribeRequest do
   field :metrics, 3, type: Jellyfish.ServerMessage.SubscribeRequest.Metrics, oneof: 0
 end
 
-defmodule Jellyfish.ServerMessage.SubscriptionResponse.RoomState.Config do
+defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomState.Config do
   @moduledoc false
 
   use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
 
   field :max_peers, 1, type: :uint32, json_name: "maxPeers"
+
+  field :enforce_encoding, 2,
+    type: Jellyfish.ServerMessage.SubscribeResponse.RoomState.Config.Encoding,
+    json_name: "enforceEncoding",
+    enum: true
 end
 
-defmodule Jellyfish.ServerMessage.SubscriptionResponse.RoomState.Peer do
+defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomState.Peer do
   @moduledoc false
 
   use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
 
   field :id, 1, type: :string
-
-  field :type, 2,
-    type: Jellyfish.ServerMessage.SubscriptionResponse.RoomState.Peer.Type,
-    enum: true
+  field :type, 2, type: Jellyfish.ServerMessage.SubscribeResponse.RoomState.Peer.Type, enum: true
 
   field :status, 3,
-    type: Jellyfish.ServerMessage.SubscriptionResponse.RoomState.Peer.Status,
+    type: Jellyfish.ServerMessage.SubscribeResponse.RoomState.Peer.Status,
     enum: true
 end
 
-defmodule Jellyfish.ServerMessage.SubscriptionResponse.RoomState.Component do
+defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomState.Component do
   @moduledoc false
 
   use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
@@ -164,36 +176,33 @@ defmodule Jellyfish.ServerMessage.SubscriptionResponse.RoomState.Component do
   field :id, 1, type: :string
 
   field :type, 2,
-    type: Jellyfish.ServerMessage.SubscriptionResponse.RoomState.Component.Type,
+    type: Jellyfish.ServerMessage.SubscribeResponse.RoomState.Component.Type,
     enum: true
 end
 
-defmodule Jellyfish.ServerMessage.SubscriptionResponse.RoomState do
+defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomState do
   @moduledoc false
 
   use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
 
   field :id, 1, type: :string
-  field :config, 2, type: Jellyfish.ServerMessage.SubscriptionResponse.RoomState.Config
-
-  field :peers, 3,
-    repeated: true,
-    type: Jellyfish.ServerMessage.SubscriptionResponse.RoomState.Peer
+  field :config, 2, type: Jellyfish.ServerMessage.SubscribeResponse.RoomState.Config
+  field :peers, 3, repeated: true, type: Jellyfish.ServerMessage.SubscribeResponse.RoomState.Peer
 
   field :components, 4,
     repeated: true,
-    type: Jellyfish.ServerMessage.SubscriptionResponse.RoomState.Component
+    type: Jellyfish.ServerMessage.SubscribeResponse.RoomState.Component
 end
 
-defmodule Jellyfish.ServerMessage.SubscriptionResponse.RoomsState do
+defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomsState do
   @moduledoc false
 
   use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
 
-  field :rooms, 1, repeated: true, type: Jellyfish.ServerMessage.SubscriptionResponse.RoomState
+  field :rooms, 1, repeated: true, type: Jellyfish.ServerMessage.SubscribeResponse.RoomState
 end
 
-defmodule Jellyfish.ServerMessage.SubscriptionResponse.RoomNotFound do
+defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomNotFound do
   @moduledoc false
 
   use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
@@ -201,7 +210,7 @@ defmodule Jellyfish.ServerMessage.SubscriptionResponse.RoomNotFound do
   field :id, 1, type: :string
 end
 
-defmodule Jellyfish.ServerMessage.SubscriptionResponse do
+defmodule Jellyfish.ServerMessage.SubscribeResponse do
   @moduledoc false
 
   use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
@@ -211,17 +220,17 @@ defmodule Jellyfish.ServerMessage.SubscriptionResponse do
   field :id, 1, type: :string
 
   field :room_state, 2,
-    type: Jellyfish.ServerMessage.SubscriptionResponse.RoomState,
+    type: Jellyfish.ServerMessage.SubscribeResponse.RoomState,
     json_name: "roomState",
     oneof: 0
 
   field :rooms_state, 3,
-    type: Jellyfish.ServerMessage.SubscriptionResponse.RoomsState,
+    type: Jellyfish.ServerMessage.SubscribeResponse.RoomsState,
     json_name: "roomsState",
     oneof: 0
 
   field :room_not_found, 4,
-    type: Jellyfish.ServerMessage.SubscriptionResponse.RoomNotFound,
+    type: Jellyfish.ServerMessage.SubscribeResponse.RoomNotFound,
     json_name: "roomNotFound",
     oneof: 0
 end
@@ -294,9 +303,9 @@ defmodule Jellyfish.ServerMessage do
     json_name: "subscribeRequest",
     oneof: 0
 
-  field :subscription_response, 9,
-    type: Jellyfish.ServerMessage.SubscriptionResponse,
-    json_name: "subscriptionResponse",
+  field :subscribe_response, 9,
+    type: Jellyfish.ServerMessage.SubscribeResponse,
+    json_name: "subscribeResponse",
     oneof: 0
 
   field :room_created, 10,

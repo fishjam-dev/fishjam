@@ -75,20 +75,20 @@ defmodule Jellyfish.MetricsScraper do
     report =
       report
       |> Map.take(@metrics_to_derive)
-      |> Enum.map(fn {key, value} when is_number(value) ->
+      |> Enum.flat_map(fn {key, value} when is_number(value) ->
         case get_in(state, [:prev_report | path ++ [key]]) do
           old_value when is_number(old_value) ->
             derivative = (value - old_value) * 1000 / (time - state.prev_report_ts)
-            {"#{key}-per-second", derivative}
+            [{"#{key}-per-second", derivative}]
 
           _otherwise ->
-            nil
+            []
         end
       end)
-      |> Enum.reject(&is_nil/1)
       |> Enum.into(report)
 
-    for {m1, m2, res} <- @compound_metrics_to_derive do
+    @compound_metrics_to_derive
+    |> Enum.flat_map(fn {m1, m2, res} ->
       case report do
         %{^m1 => m1_v, ^m2 => m2_v} ->
           old_values = get_in(state.prev_report, path) || %{}
@@ -102,13 +102,12 @@ defmodule Jellyfish.MetricsScraper do
               0
             end
 
-          {"#{res}", metric}
+          [{"#{res}", metric}]
 
         _otherwise ->
-          nil
+          []
       end
-    end
-    |> Enum.reject(&is_nil/1)
+    end)
     |> Enum.into(report)
   end
 
