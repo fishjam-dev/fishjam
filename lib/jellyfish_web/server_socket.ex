@@ -11,6 +11,7 @@ defmodule JellyfishWeb.ServerSocket do
     Authenticated,
     AuthRequest,
     ComponentCrashed,
+    MetricsReport,
     PeerConnected,
     PeerCrashed,
     PeerDisconnected,
@@ -18,10 +19,10 @@ defmodule JellyfishWeb.ServerSocket do
     RoomCreated,
     RoomDeleted,
     SubscribeRequest,
-    SubscriptionResponse
+    SubscribeResponse
   }
 
-  alias Jellyfish.ServerMessage.SubscriptionResponse.{RoomNotFound, RoomsState, RoomState}
+  alias Jellyfish.ServerMessage.SubscribeResponse.{RoomNotFound, RoomsState, RoomState}
 
   @heartbeat_interval 30_000
 
@@ -85,7 +86,9 @@ defmodule JellyfishWeb.ServerSocket do
            ServerMessage.decode(encoded_message),
          {:ok, response} <- handle_subscribe(request) do
       reply =
-        %ServerMessage{content: response}
+        %ServerMessage{
+          content: {:subscribe_response, response}
+        }
         |> ServerMessage.encode()
 
       {:reply, :ok, {:binary, reply}, state}
@@ -123,14 +126,16 @@ defmodule JellyfishWeb.ServerSocket do
 
     room_state = get_room_state(option)
 
-    msg =
-      {:subscription_response,
-       %SubscriptionResponse{
-         id: id,
-         content: room_state
-       }}
+    {:ok, %SubscribeResponse{id: id, content: room_state}}
+  end
 
-    {:ok, msg}
+  defp handle_subscribe(%SubscribeRequest{
+         id: id,
+         event_type: {:metrics, %SubscribeRequest.Metrics{}}
+       }) do
+    :ok = Phoenix.PubSub.subscribe(Jellyfish.PubSub, "metrics")
+
+    {:ok, %SubscribeResponse{id: id}}
   end
 
   defp handle_subscribe(request), do: {:error, request}
@@ -143,41 +148,34 @@ defmodule JellyfishWeb.ServerSocket do
 
   @impl true
   def handle_info(msg, state) do
-    msg =
+    content =
       case msg do
         {:room_created, room_id} ->
-          %ServerMessage{content: {:room_created, %RoomCreated{room_id: room_id}}}
+          {:room_created, %RoomCreated{room_id: room_id}}
 
         {:room_deleted, room_id} ->
-          %ServerMessage{content: {:room_deleted, %RoomDeleted{room_id: room_id}}}
+          {:room_deleted, %RoomDeleted{room_id: room_id}}
 
         {:room_crashed, room_id} ->
-          %ServerMessage{content: {:room_crashed, %RoomCrashed{room_id: room_id}}}
+          {:room_crashed, %RoomCrashed{room_id: room_id}}
 
         {:peer_connected, room_id, peer_id} ->
-          %ServerMessage{
-            content: {:peer_connected, %PeerConnected{room_id: room_id, peer_id: peer_id}}
-          }
+          {:peer_connected, %PeerConnected{room_id: room_id, peer_id: peer_id}}
 
         {:peer_disconnected, room_id, peer_id} ->
-          %ServerMessage{
-            content: {:peer_disconnected, %PeerDisconnected{room_id: room_id, peer_id: peer_id}}
-          }
+          {:peer_disconnected, %PeerDisconnected{room_id: room_id, peer_id: peer_id}}
 
         {:peer_crashed, room_id, peer_id} ->
-          %ServerMessage{
-            content: {:peer_crashed, %PeerCrashed{room_id: room_id, peer_id: peer_id}}
-          }
+          {:peer_crashed, %PeerCrashed{room_id: room_id, peer_id: peer_id}}
 
         {:component_crashed, room_id, component_id} ->
-          %ServerMessage{
-            content:
-              {:component_crashed,
-               %ComponentCrashed{room_id: room_id, component_id: component_id}}
-          }
+          {:component_crashed, %ComponentCrashed{room_id: room_id, component_id: component_id}}
+
+        {:metrics, report} ->
+          {:metrics_report, %MetricsReport{metrics: report}}
       end
 
-    encoded_msg = ServerMessage.encode(msg)
+    encoded_msg = %ServerMessage{content: content} |> ServerMessage.encode()
 
     {:push, {:binary, encoded_msg}, state}
   end
