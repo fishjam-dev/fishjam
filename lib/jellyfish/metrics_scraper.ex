@@ -75,40 +75,44 @@ defmodule Jellyfish.MetricsScraper do
     report =
       report
       |> Map.take(@metrics_to_derive)
-      |> Enum.flat_map(fn {key, value} when is_number(value) ->
-        case get_in(state, [:prev_report | path ++ [key]]) do
-          old_value when is_number(old_value) ->
-            derivative = (value - old_value) * 1000 / (time - state.prev_report_ts)
-            [{"#{key}-per-second", derivative}]
-
-          _otherwise ->
-            []
-        end
-      end)
+      |> Enum.flat_map(&add_basic_derivative(&1, time, state, path))
       |> Enum.into(report)
 
     @compound_metrics_to_derive
-    |> Enum.flat_map(fn {m1, m2, res} ->
-      case report do
-        %{^m1 => m1_v, ^m2 => m2_v} ->
-          old_values = get_in(state.prev_report, path) || %{}
-          old_m1_v = Map.get(old_values, m1, 0)
-          old_m2_v = Map.get(old_values, m2, 0)
-
-          metric =
-            if m2_v != old_m2_v do
-              (m1_v - old_m1_v) / (m2_v - old_m2_v)
-            else
-              0
-            end
-
-          [{"#{res}", metric}]
-
-        _otherwise ->
-          []
-      end
-    end)
+    |> Enum.flat_map(&add_compound_derivative(&1, report, state, path))
     |> Enum.into(report)
+  end
+
+  defp add_basic_derivative({key, value}, time, state, path) when is_number(value) do
+    case get_in(state, [:prev_report | path ++ [key]]) do
+      old_value when is_number(old_value) ->
+        derivative = (value - old_value) * 1000 / (time - state.prev_report_ts)
+        [{"#{key}-per-second", derivative}]
+
+      _otherwise ->
+        []
+    end
+  end
+
+  defp add_compound_derivative({m1, m2, res}, report, state, path) do
+    case report do
+      %{^m1 => m1_v, ^m2 => m2_v} ->
+        old_values = get_in(state.prev_report, path) || %{}
+        old_m1_v = Map.get(old_values, m1, 0)
+        old_m2_v = Map.get(old_values, m2, 0)
+
+        metric =
+          if m2_v != old_m2_v do
+            (m1_v - old_m1_v) / (m2_v - old_m2_v)
+          else
+            0
+          end
+
+        [{"#{res}", metric}]
+
+      _otherwise ->
+        []
+    end
   end
 
   defp jsonify(report) when is_map(report) do
