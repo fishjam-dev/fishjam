@@ -6,7 +6,11 @@ defmodule Jellyfish.Component.HLS do
   @behaviour Jellyfish.Endpoint.Config
 
   alias Membrane.RTC.Engine.Endpoint.HLS
-  alias Membrane.RTC.Engine.Endpoint.HLS.HLSConfig
+  alias Membrane.RTC.Engine.Endpoint.HLS.{CompositorConfig, HLSConfig, MixerConfig}
+  alias Membrane.Time
+
+  @segment_duration Time.seconds(4)
+  @partial_segment_duration Time.milliseconds(400)
 
   @impl true
   def config(options) do
@@ -18,8 +22,24 @@ defmodule Jellyfish.Component.HLS do
        rtc_engine: options.engine_pid,
        owner: self(),
        output_directory: output_dir,
-       mixer_config: nil,
-       hls_config: %HLSConfig{}
+       mixer_config: %MixerConfig{
+         video: %CompositorConfig{
+           stream_format: %Membrane.RawVideo{
+             width: 1920,
+             height: 1080,
+             pixel_format: :I420,
+             framerate: {24, 1},
+             aligned: true
+           }
+         }
+       },
+       hls_config: %HLSConfig{
+         hls_mode: :muxed_av,
+         mode: :live,
+         target_window_duration: :infinity,
+         segment_duration: @segment_duration,
+         partial_segment_duration: @partial_segment_duration
+       }
      }}
   end
 end

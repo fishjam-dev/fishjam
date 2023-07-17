@@ -227,7 +227,10 @@ defmodule JellyfishWeb.ServerSocket do
         }
       )
 
-    config = struct!(RoomState.Config, room.config)
+    config =
+      room.config
+      |> Map.update!(:enforce_encoding, &to_proto_encoding/1)
+      |> then(&struct!(RoomState.Config, &1))
 
     %RoomState{id: room.id, config: config, peers: peers, components: components}
   end
@@ -235,6 +238,10 @@ defmodule JellyfishWeb.ServerSocket do
   defp to_proto_type(Jellyfish.Component.HLS), do: :TYPE_HLS
   defp to_proto_type(Jellyfish.Component.RTSP), do: :TYPE_RTSP
   defp to_proto_type(Jellyfish.Peer.WebRTC), do: :TYPE_WEBRTC
+
+  defp to_proto_encoding(:h264), do: :ENCODING_H264
+  defp to_proto_encoding(:vp8), do: :ENCODING_VP8
+  defp to_proto_encoding(nil), do: :ENCODING_UNSPECIFIED
 
   defp to_proto_status(:disconnected), do: :STATUS_DISCONNECTED
   defp to_proto_status(:connected), do: :STATUS_CONNECTED

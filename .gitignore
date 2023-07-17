@@ -181,3 +181,10 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.gitignore.io/api/c,vim,linux,macos,elixir,windows,visualstudiocode
+
+# Default Jellyfish output directory
+jellyfish_output
+
+
+# asdf
+.tool-versions
