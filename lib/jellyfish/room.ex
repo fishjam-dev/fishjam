@@ -95,7 +95,7 @@ defmodule Jellyfish.Room do
   end
 
   @spec add_component(id(), Component.component(), map() | nil) ::
-          {:ok, Component.t()} | :error | {:error, :wrong_codec}
+          {:ok, Component.t()} | :error | {:error, :incompatible_codec}
   def add_component(room_id, component_type, options) do
     GenServer.call(registry_id(room_id), {:add_component, component_type, options})
   end
@@ -226,8 +226,8 @@ defmodule Jellyfish.Room do
 
       {:reply, {:ok, component}, state}
     else
-      {:error, :wrong_codec} ->
-        {:reply, {:error, :wrong_codec}, state}
+      {:error, :incompatible_codec} ->
+        {:reply, {:error, :incompatible_codec}, state}
 
       {:error, reason} ->
         Logger.warn("Unable to add component: #{inspect(reason)}")
@@ -367,6 +367,6 @@ defmodule Jellyfish.Room do
   defp registry_id(room_id), do: {:via, Registry, {Jellyfish.RoomRegistry, room_id}}
 
   defp check_video_codec(:h264, Jellyfish.Component.HLS), do: :ok
-  defp check_video_codec(_codec, Jellyfish.Component.HLS), do: {:error, :wrong_codec}
+  defp check_video_codec(_codec, Jellyfish.Component.HLS), do: {:error, :incompatible_codec}
   defp check_video_codec(_codec, _component), do: :ok
 end

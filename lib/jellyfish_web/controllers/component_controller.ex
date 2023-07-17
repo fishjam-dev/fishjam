@@ -78,7 +78,7 @@ defmodule JellyfishWeb.ComponentController do
       {:error, :room_not_found} ->
         {:error, :not_found, "Room #{room_id} does not exist"}
 
-      {:error, :wrong_codec} ->
+      {:error, :incompatible_codec} ->
         {:error, :bad_request, "HLS component needs room with video codec 'h264' enforced"}
     end
   end

@@ -335,7 +335,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
   defp add_room_and_peer(conn, server_api_token) do
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
-    conn = post(conn, ~p"/room", maxPeers: @max_peers, enforcedVideoCodec: "h264")
+    conn = post(conn, ~p"/room", maxPeers: @max_peers, videoCodec: "h264")
     assert %{"id" => room_id} = json_response(conn, :created)["data"]
 
     conn = post(conn, ~p"/room/#{room_id}/peer", type: "webrtc")
