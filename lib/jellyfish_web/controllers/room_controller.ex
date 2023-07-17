@@ -68,8 +68,8 @@ defmodule JellyfishWeb.RoomController do
 
   def create(conn, params) do
     with max_peers <- Map.get(params, "maxPeers"),
-         enforce_encoding <- Map.get(params, "enforceEncoding"),
-         {:ok, room} <- RoomService.create_room(max_peers, enforce_encoding) do
+         video_codec <- Map.get(params, "enforcedVideoCodec"),
+         {:ok, room} <- RoomService.create_room(max_peers, video_codec) do
       conn
       |> put_resp_content_type("application/json")
       |> put_status(:created)
@@ -78,8 +78,8 @@ defmodule JellyfishWeb.RoomController do
       {:error, :invalid_max_peers} ->
         {:error, :bad_request, "maxPeers must be a number"}
 
-      {:error, :invalid_enforce_encoding} ->
-        {:error, :bad_request, "enforceEncoding must be 'h264' or 'vp8'"}
+      {:error, :invalid_video_codec} ->
+        {:error, :bad_request, "enforcedVideoCodec must be 'h264' or 'vp8'"}
     end
   end
 

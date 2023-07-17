@@ -24,7 +24,7 @@ defmodule Jellyfish.Room do
 
   @type id :: String.t()
   @type max_peers :: non_neg_integer() | nil
-  @type enforce_encoding :: :h264 | :vp8 | nil
+  @type video_codec :: :h264 | :vp8 | nil
 
   @typedoc """
   This module contains:
@@ -38,7 +38,7 @@ defmodule Jellyfish.Room do
           id: id(),
           config: %{
             max_peers: max_peers(),
-            enforce_encoding: enforce_encoding(),
+            video_codec: video_codec(),
             simulcast?: boolean()
           },
           components: %{Component.id() => Component.t()},
@@ -47,12 +47,11 @@ defmodule Jellyfish.Room do
           network_options: map()
         }
 
-  @spec start(max_peers(), enforce_encoding()) :: {:ok, pid(), id()}
-  def start(max_peers, enforce_encoding) do
+  @spec start(max_peers(), video_codec()) :: {:ok, pid(), id()}
+  def start(max_peers, video_codec) do
     id = UUID.uuid4()
 
-    {:ok, pid} =
-      GenServer.start(__MODULE__, [id, max_peers, enforce_encoding], name: registry_id(id))
+    {:ok, pid} = GenServer.start(__MODULE__, [id, max_peers, video_codec], name: registry_id(id))
 
     {:ok, pid, id}
   end
@@ -111,8 +110,8 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def init([id, max_peers, enforce_encoding]) do
-    state = new(id, max_peers, enforce_encoding)
+  def init([id, max_peers, video_codec]) do
+    state = new(id, max_peers, video_codec)
     Logger.metadata(room_id: id)
     Logger.info("Initialize room")
 
@@ -133,7 +132,7 @@ defmodule Jellyfish.Room do
         options = %{
           engine_pid: state.engine_pid,
           network_options: state.network_options,
-          enforce_encoding: state.config.enforce_encoding
+          video_codec: state.config.video_codec
         }
 
         peer = Peer.new(peer_type, options)
@@ -319,7 +318,7 @@ defmodule Jellyfish.Room do
     {:noreply, state}
   end
 
-  defp new(id, max_peers, enforce_encoding) do
+  defp new(id, max_peers, video_codec) do
     rtc_engine_options = [
       id: id
     ]
@@ -350,7 +349,7 @@ defmodule Jellyfish.Room do
 
     %__MODULE__{
       id: id,
-      config: %{max_peers: max_peers, enforce_encoding: enforce_encoding},
+      config: %{max_peers: max_peers, video_codec: video_codec},
       engine_pid: pid,
       network_options: [integrated_turn_options: integrated_turn_options]
     }

@@ -21,7 +21,7 @@ defmodule JellyfishWeb.ApiSpec.Room do
           description: "Maximum amount of peers allowed into the room",
           nullable: true
         },
-        enforceEncoding: %Schema{
+        enforcedVideoCodec: %Schema{
           description: "Enforces video codec for each peer in the room",
           type: :string,
           enum: ["h264", "vp8"],

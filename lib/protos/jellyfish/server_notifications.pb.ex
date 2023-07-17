@@ -7,14 +7,14 @@ defmodule Jellyfish.ServerMessage.SubscribeRequest.ServerNotification.Option do
   field :OPTION_ALL, 1
 end
 
-defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomState.Config.Encoding do
+defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomState.Config.Codec do
   @moduledoc false
 
   use Protobuf, enum: true, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
 
-  field :ENCODING_UNSPECIFIED, 0
-  field :ENCODING_H264, 1
-  field :ENCODING_VP8, 2
+  field :CODEC_UNSPECIFIED, 0
+  field :CODEC_H264, 1
+  field :CODEC_VP8, 2
 end
 
 defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomState.Peer.Type do
@@ -149,9 +149,9 @@ defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomState.Config do
 
   field :max_peers, 1, type: :uint32, json_name: "maxPeers"
 
-  field :enforce_encoding, 2,
-    type: Jellyfish.ServerMessage.SubscribeResponse.RoomState.Config.Encoding,
-    json_name: "enforceEncoding",
+  field :video_codec, 2,
+    type: Jellyfish.ServerMessage.SubscribeResponse.RoomState.Config.Codec,
+    json_name: "videoCodec",
     enum: true
 end
 
