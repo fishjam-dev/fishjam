@@ -69,9 +69,17 @@ defmodule JellyfishWeb.ComponentController do
       |> put_status(:created)
       |> render("show.json", component: component)
     else
-      :error -> {:error, :bad_request, "Invalid request body structure"}
-      {:error, :invalid_type} -> {:error, :bad_request, "Invalid component type"}
-      {:error, :room_not_found} -> {:error, :not_found, "Room #{room_id} does not exist"}
+      :error ->
+        {:error, :bad_request, "Invalid request body structure"}
+
+      {:error, :invalid_type} ->
+        {:error, :bad_request, "Invalid component type"}
+
+      {:error, :room_not_found} ->
+        {:error, :not_found, "Room #{room_id} does not exist"}
+
+      {:error, :wrong_codec} ->
+        {:error, :bad_request, "HLS component needs room with video codec 'h264' enforced"}
     end
   end
 

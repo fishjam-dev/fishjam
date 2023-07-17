@@ -94,7 +94,8 @@ defmodule Jellyfish.Room do
     GenServer.call(registry_id(room_id), {:remove_peer, peer_id})
   end
 
-  @spec add_component(id(), Component.component(), map() | nil) :: {:ok, Component.t()} | :error
+  @spec add_component(id(), Component.component(), map() | nil) ::
+          {:ok, Component.t()} | :error | {:error, :wrong_codec}
   def add_component(room_id, component_type, options) do
     GenServer.call(registry_id(room_id), {:add_component, component_type, options})
   end
@@ -204,14 +205,19 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def handle_call({:add_component, component_type, options}, _from, state) do
+  def handle_call(
+        {:add_component, component_type, options},
+        _from,
+        %{config: %{video_codec: video_codec}} = state
+      ) do
     options =
       Map.merge(
         %{engine_pid: state.engine_pid, room_id: state.id},
         if(is_nil(options), do: %{}, else: options)
       )
 
-    with {:ok, component} <- Component.new(component_type, options) do
+    with :ok <- check_video_codec(video_codec, component_type),
+         {:ok, component} <- Component.new(component_type, options) do
       state = put_in(state, [:components, component.id], component)
 
       :ok = Engine.add_endpoint(state.engine_pid, component.engine_endpoint, id: component.id)
@@ -220,6 +226,9 @@ defmodule Jellyfish.Room do
 
       {:reply, {:ok, component}, state}
     else
+      {:error, :wrong_codec} ->
+        {:reply, {:error, :wrong_codec}, state}
+
       {:error, reason} ->
         Logger.warn("Unable to add component: #{inspect(reason)}")
         {:reply, :error, state}
@@ -356,4 +365,8 @@ defmodule Jellyfish.Room do
   end
 
   defp registry_id(room_id), do: {:via, Registry, {Jellyfish.RoomRegistry, room_id}}
+
+  defp check_video_codec(:h264, Jellyfish.Component.HLS), do: :ok
+  defp check_video_codec(_codec, Jellyfish.Component.HLS), do: {:error, :wrong_codec}
+  defp check_video_codec(_codec, _component), do: :ok
 end

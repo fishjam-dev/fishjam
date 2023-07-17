@@ -9,7 +9,7 @@ defmodule JellyfishWeb.ComponentControllerTest do
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
-    room_conn = post(conn, ~p"/room")
+    room_conn = post(conn, ~p"/room", enforcedVideoCodec: "h264")
     assert %{"id" => id} = json_response(room_conn, :created)["data"]
 
     on_exit(fn ->
@@ -55,6 +55,19 @@ defmodule JellyfishWeb.ComponentControllerTest do
       conn = post(conn, ~p"/room/#{room_id}/component", invalid_parameter: "hls")
 
       assert json_response(conn, :bad_request)["errors"] == "Invalid request body structure"
+    end
+
+    test "renders errors when video codec is different than h264", %{conn: conn} do
+      room_conn = post(conn, ~p"/room")
+      assert %{"id" => room_id} = json_response(room_conn, :created)["data"]
+
+      conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
+
+      assert json_response(conn, :bad_request)["errors"] ==
+               "HLS component needs room with video codec 'h264' enforced"
+
+      room_conn = delete(conn, ~p"/room/#{room_id}")
+      assert response(room_conn, :no_content)
     end
   end
 
