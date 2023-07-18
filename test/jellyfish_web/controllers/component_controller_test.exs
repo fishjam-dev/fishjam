@@ -4,6 +4,7 @@ defmodule JellyfishWeb.ComponentControllerTest do
   import OpenApiSpex.TestAssertions
 
   @schema JellyfishWeb.ApiSpec.spec()
+  @source_uri "rtsp://placeholder-19inrifjbsjb.it:12345/afwefae"
 
   setup %{conn: conn} do
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
@@ -35,7 +36,10 @@ defmodule JellyfishWeb.ComponentControllerTest do
   end
 
   describe "create hls component" do
-    test "renders component when data is valid", %{conn: conn, room_id: room_id} do
+    test "renders component when data is valid", %{conn: conn} do
+      room_conn = post(conn, ~p"/room", videoCodec: "h264")
+      assert %{"id" => room_id} = json_response(room_conn, :created)["data"]
+
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
 
       assert response = %{"data" => %{"id" => id}} = json_response(conn, :created)
@@ -49,12 +53,22 @@ defmodule JellyfishWeb.ComponentControllerTest do
                  %{"id" => ^id, "type" => "hls"}
                ]
              } = json_response(conn, :ok)["data"]
+
+      room_conn = delete(conn, ~p"/room/#{room_id}")
+      assert response(room_conn, :no_content)
     end
 
     test "renders errors when request body structure is invalid", %{conn: conn, room_id: room_id} do
       conn = post(conn, ~p"/room/#{room_id}/component", invalid_parameter: "hls")
 
       assert json_response(conn, :bad_request)["errors"] == "Invalid request body structure"
+    end
+
+    test "renders errors when video codec is different than h264", %{conn: conn, room_id: room_id} do
+      conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
+
+      assert json_response(conn, :bad_request)["errors"] ==
+               "HLS component needs room with video codec 'h264' enforced"
     end
   end
 
@@ -63,7 +77,7 @@ defmodule JellyfishWeb.ComponentControllerTest do
       conn =
         post(conn, ~p"/room/#{room_id}/component",
           type: "rtsp",
-          options: %{sourceUri: "rtsp://placeholder-19inrifjbsjb.it:12345/afwefae"}
+          options: %{sourceUri: @source_uri}
         )
 
       assert response = %{"data" => %{"id" => id}} = json_response(conn, :created)
@@ -90,7 +104,7 @@ defmodule JellyfishWeb.ComponentControllerTest do
   end
 
   describe "delete component" do
-    setup [:create_hls_component]
+    setup [:create_rtsp_component]
 
     test "deletes chosen component", %{conn: conn, room_id: room_id, component_id: component_id} do
       conn = delete(conn, ~p"/room/#{room_id}/component/#{component_id}")
@@ -120,8 +134,12 @@ defmodule JellyfishWeb.ComponentControllerTest do
     end
   end
 
-  defp create_hls_component(state) do
-    conn = post(state.conn, ~p"/room/#{state.room_id}/component", type: "hls")
+  defp create_rtsp_component(state) do
+    conn =
+      post(state.conn, ~p"/room/#{state.room_id}/component",
+        type: "rtsp",
+        options: %{sourceUri: @source_uri}
+      )
 
     assert %{"id" => id} = json_response(conn, :created)["data"]
 

@@ -24,7 +24,7 @@ defmodule Jellyfish.Room do
 
   @type id :: String.t()
   @type max_peers :: non_neg_integer() | nil
-  @type enforce_encoding :: :h264 | :vp8 | nil
+  @type video_codec :: :h264 | :vp8 | nil
 
   @typedoc """
   This module contains:
@@ -38,7 +38,7 @@ defmodule Jellyfish.Room do
           id: id(),
           config: %{
             max_peers: max_peers(),
-            enforce_encoding: enforce_encoding(),
+            video_codec: video_codec(),
             simulcast?: boolean()
           },
           components: %{Component.id() => Component.t()},
@@ -47,12 +47,11 @@ defmodule Jellyfish.Room do
           network_options: map()
         }
 
-  @spec start(max_peers(), enforce_encoding()) :: {:ok, pid(), id()}
-  def start(max_peers, enforce_encoding) do
+  @spec start(max_peers(), video_codec()) :: {:ok, pid(), id()}
+  def start(max_peers, video_codec) do
     id = UUID.uuid4()
 
-    {:ok, pid} =
-      GenServer.start(__MODULE__, [id, max_peers, enforce_encoding], name: registry_id(id))
+    {:ok, pid} = GenServer.start(__MODULE__, [id, max_peers, video_codec], name: registry_id(id))
 
     {:ok, pid, id}
   end
@@ -95,7 +94,8 @@ defmodule Jellyfish.Room do
     GenServer.call(registry_id(room_id), {:remove_peer, peer_id})
   end
 
-  @spec add_component(id(), Component.component(), map() | nil) :: {:ok, Component.t()} | :error
+  @spec add_component(id(), Component.component(), map() | nil) ::
+          {:ok, Component.t()} | :error | {:error, :incompatible_codec}
   def add_component(room_id, component_type, options) do
     GenServer.call(registry_id(room_id), {:add_component, component_type, options})
   end
@@ -111,8 +111,8 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def init([id, max_peers, enforce_encoding]) do
-    state = new(id, max_peers, enforce_encoding)
+  def init([id, max_peers, video_codec]) do
+    state = new(id, max_peers, video_codec)
     Logger.metadata(room_id: id)
     Logger.info("Initialize room")
 
@@ -133,7 +133,7 @@ defmodule Jellyfish.Room do
         options = %{
           engine_pid: state.engine_pid,
           network_options: state.network_options,
-          enforce_encoding: state.config.enforce_encoding
+          video_codec: state.config.video_codec
         }
 
         peer = Peer.new(peer_type, options)
@@ -205,14 +205,19 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def handle_call({:add_component, component_type, options}, _from, state) do
+  def handle_call(
+        {:add_component, component_type, options},
+        _from,
+        %{config: %{video_codec: video_codec}} = state
+      ) do
     options =
       Map.merge(
         %{engine_pid: state.engine_pid, room_id: state.id},
         if(is_nil(options), do: %{}, else: options)
       )
 
-    with {:ok, component} <- Component.new(component_type, options) do
+    with :ok <- check_video_codec(video_codec, component_type),
+         {:ok, component} <- Component.new(component_type, options) do
       state = put_in(state, [:components, component.id], component)
 
       :ok = Engine.add_endpoint(state.engine_pid, component.engine_endpoint, id: component.id)
@@ -221,6 +226,9 @@ defmodule Jellyfish.Room do
 
       {:reply, {:ok, component}, state}
     else
+      {:error, :incompatible_codec} ->
+        {:reply, {:error, :incompatible_codec}, state}
+
       {:error, reason} ->
         Logger.warn("Unable to add component: #{inspect(reason)}")
         {:reply, :error, state}
@@ -319,7 +327,7 @@ defmodule Jellyfish.Room do
     {:noreply, state}
   end
 
-  defp new(id, max_peers, enforce_encoding) do
+  defp new(id, max_peers, video_codec) do
     rtc_engine_options = [
       id: id
     ]
@@ -350,11 +358,15 @@ defmodule Jellyfish.Room do
 
     %__MODULE__{
       id: id,
-      config: %{max_peers: max_peers, enforce_encoding: enforce_encoding},
+      config: %{max_peers: max_peers, video_codec: video_codec},
       engine_pid: pid,
       network_options: [integrated_turn_options: integrated_turn_options]
     }
   end
 
   defp registry_id(room_id), do: {:via, Registry, {Jellyfish.RoomRegistry, room_id}}
+
+  defp check_video_codec(:h264, Jellyfish.Component.HLS), do: :ok
+  defp check_video_codec(_codec, Jellyfish.Component.HLS), do: {:error, :incompatible_codec}
+  defp check_video_codec(_codec, _component), do: :ok
 end

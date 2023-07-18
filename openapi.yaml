@@ -176,19 +176,19 @@ components:
     RoomConfig:
       description: Room configuration
       properties:
-        enforceEncoding:
-          description: Enforces video codec for each peer in the room
-          enum:
-            - h264
-            - vp8
-          nullable: true
-          type: string
         maxPeers:
           description: Maximum amount of peers allowed into the room
           example: 10
           minimum: 1
           nullable: true
           type: integer
+        videoCodec:
+          description: Enforces video codec for each peer in the room
+          enum:
+            - h264
+            - vp8
+          nullable: true
+          type: string
       title: RoomConfig
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Room.Config
