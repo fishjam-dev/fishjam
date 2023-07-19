@@ -9,6 +9,7 @@ defmodule Jellyfish.RoomService do
 
   alias Jellyfish.Event
   alias Jellyfish.Room
+  alias Jellyfish.RoomService
 
   def start_link(args) do
     GenServer.start_link(__MODULE__, args, name: __MODULE__)
@@ -140,11 +141,6 @@ defmodule Jellyfish.RoomService do
   end
 
   @impl true
-  def handle_info({:resources, _node_name, _resources}, state) do
-    {:noreply, state}
-  end
-
-  @impl true
   def handle_info({:DOWN, _ref, :process, pid, :normal}, state) do
     {room_id, state} = pop_in(state, [:rooms, pid])
 
@@ -165,6 +161,10 @@ defmodule Jellyfish.RoomService do
     Event.broadcast(:server_notification, {:room_crashed, room_id})
 
     {:noreply, state}
+  end
+
+  defp get_resource_usage() do
+    RoomService.list_rooms() |> Enum.count()
   end
 
   defp remove_room(room_id) do
