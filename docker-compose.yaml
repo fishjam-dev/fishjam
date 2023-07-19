@@ -1,0 +1,71 @@
+version: "3"
+
+services:
+  test:
+    image: membraneframeworklabs/docker_membrane
+    command:
+      - sh
+      - -c
+      - |
+        cd app/ 
+        mix deps.get 
+        MIX_ENV=test_containerised mix test --only containerised
+    volumes:
+      - .:/app
+      - /app/_build
+      - /app/deps
+    networks:
+      - net1
+    depends_on:
+      - app1
+      - app2
+
+  app1:
+    build: .
+    restart: on-failure
+    healthcheck:
+      test: >
+        curl --fail -H "authorization: Bearer development" http://localhost:4001/room || exit 1
+      interval: 3s
+      retries: 2
+      timeout: 2s
+      start_period: 15s
+    environment:
+      ERLANG_COOKIE: "panuozzo-pollo-e-pancetta"
+      SERVER_API_TOKEN: "development"
+      SECRET_KEY_BASE: "super-secret-key"
+      VIRTUAL_HOST: "localhost"
+      RELEASE_NODE: app@app1
+      NODE_NAME: app@app1
+      PORT: 4001
+    ports:
+      - 4001:4001
+    networks:
+      - net1
+
+  app2:
+    build: .
+    restart: on-failure
+    healthcheck:
+      test: >
+        curl --fail -H "authorization: Bearer development" http://localhost:4002/room || exit 1
+      interval: 3s
+      retries: 2
+      timeout: 2s
+      start_period: 15s
+    environment:
+      ERLANG_COOKIE: "panuozzo-pollo-e-pancetta"
+      SERVER_API_TOKEN: "development"
+      SECRET_KEY_BASE: "super-secret-key"
+      VIRTUAL_HOST: "localhost"
+      RELEASE_NODE: app@app2
+      NODE_NAME: app@app2
+      PORT: 4002
+    ports:
+      - 4002:4002
+    networks:
+      - net1
+
+networks:
+  net1:
+    driver: bridge

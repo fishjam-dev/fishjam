@@ -7,6 +7,10 @@ defmodule JellyfishWeb.RoomJSON do
     %{data: rooms |> Enum.map(&data(&1))}
   end
 
+  def show(%{room: room, jellyfish_address: jellyfish_address}) do
+    %{data: data(room), jellyfish_address: jellyfish_address}
+  end
+
   def show(%{room: room}) do
     %{data: data(room)}
   end

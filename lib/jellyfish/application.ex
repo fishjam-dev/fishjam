@@ -8,6 +8,7 @@ defmodule Jellyfish.Application do
   @impl true
   def start(_type, _args) do
     scrape_interval = Application.fetch_env!(:jellyfish, :metrics_scrape_interval)
+    topologies = Application.get_env(:libcluster, :topologies) || []
 
     children = [
       {Phoenix.PubSub, name: Jellyfish.PubSub},
@@ -19,7 +20,8 @@ defmodule Jellyfish.Application do
       JellyfishWeb.Endpoint,
       # Start the RoomService
       Jellyfish.RoomService,
-      {Registry, keys: :unique, name: Jellyfish.RoomRegistry}
+      {Registry, keys: :unique, name: Jellyfish.RoomRegistry},
+      {Cluster.Supervisor, [topologies, [name: Jellyfish.ClusterSupervisor]]}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

@@ -3,7 +3,21 @@ orbs:
   elixir: membraneframework/elixir@1
   codecov: codecov/codecov@3.2.4
 
+executors:
+ machine_executor_amd64:
+   machine:
+     image: ubuntu-2204:2022.04.2
+   environment:
+     architecture: "amd64"
+     platform: "linux/amd64"
+
 jobs:
+  test_load_balancing:
+    executor: machine_executor_amd64
+    steps:
+      - checkout
+      - run: docker compose run test
+    
   test:
     docker:
       - image: membraneframeworklabs/docker_membrane:latest
@@ -23,6 +37,7 @@ workflows:
       - elixir/build_test:
           cache-version: 3
       - test
+      - test_load_balancing
       - elixir/lint:
           cache-version: 3
           docs: false

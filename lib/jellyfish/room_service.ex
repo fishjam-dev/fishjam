@@ -8,6 +8,7 @@ defmodule Jellyfish.RoomService do
   require Logger
 
   alias Jellyfish.Room
+  alias Jellyfish.RoomService
 
   def start_link(args) do
     GenServer.start_link(__MODULE__, args, name: __MODULE__)
@@ -55,9 +56,23 @@ defmodule Jellyfish.RoomService do
   end
 
   @spec create_room(Room.max_peers(), String.t()) ::
-          {:ok, Room.t()} | {:error, :invalid_max_peers | :invalid_video_codec}
+          {:ok, Room.t(), String.t()} | {:error, :invalid_max_peers | :invalid_video_codec}
   def create_room(max_peers, video_codec) do
-    GenServer.call(__MODULE__, {:create_room, max_peers, video_codec})
+    :ok = Phoenix.PubSub.broadcast(Jellyfish.PubSub, "jellyfishes", {:resource_usage, self()})
+
+    node_resources = receive_resources()
+
+    {min_node, _room_size} =
+      Enum.min_by(node_resources, fn {_node_name, room_num} -> room_num end)
+
+    Logger.info(node_resources)
+
+    if Enum.count(node_resources) > 1 do
+      Logger.info("Node with least used resources is #{inspect(min_node)}")
+      GenServer.call({__MODULE__, min_node}, {:create_room, max_peers, video_codec})
+    else
+      GenServer.call(__MODULE__, {:create_room, max_peers, video_codec})
+    end
   end
 
   @spec delete_room(Room.id()) :: :ok | {:error, :room_not_found}
@@ -67,7 +82,13 @@ defmodule Jellyfish.RoomService do
 
   @impl true
   def init(_opts) do
-    {:ok, %{rooms: %{}}}
+    {:ok, %{rooms: %{}}, {:continue, nil}}
+  end
+
+  @impl true
+  def handle_continue(_continue_arg, state) do
+    :ok = Phoenix.PubSub.subscribe(Jellyfish.PubSub, "jellyfishes")
+    {:noreply, state}
   end
 
   @impl true
@@ -89,7 +110,7 @@ defmodule Jellyfish.RoomService do
         {:room_created, room_id}
       )
 
-      {:reply, {:ok, room}, state}
+      {:reply, {:ok, room, "#{System.get_env("VIRTUAL_HOST")}:#{System.get_env("PORT")}"}, state}
     else
       {:error, :max_peers} ->
         {:reply, {:error, :invalid_max_peers}, state}
@@ -115,6 +136,18 @@ defmodule Jellyfish.RoomService do
   end
 
   @impl true
+  def handle_info({:resource_usage, node_pid}, state) do
+    send(node_pid, {:resources, Node.self(), get_resource_usage()})
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({:resources, _node_name, _resources}, state) do
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_info({:DOWN, _ref, :process, pid, :normal}, state) do
     {room_id, state} = pop_in(state, [:rooms, pid])
 
@@ -135,6 +168,40 @@ defmodule Jellyfish.RoomService do
     Phoenix.PubSub.broadcast(Jellyfish.PubSub, "server_notification", {:room_crashed, room_id})
 
     {:noreply, state}
+  end
+
+  defp receive_resources(results \\ [], nodes \\ []) do
+    receive do
+      {:resources, node_name, resource_usage} = msg ->
+        new_results = [resource_usage | results]
+        new_nodes = [node_name | nodes]
+
+        cond do
+          node_name in nodes ->
+            Process.send_after(self(), msg, 500)
+            receive_resources(results, nodes)
+
+          # Node.list() excludes local node
+          Enum.count(new_nodes) == Enum.count(Node.list()) + 1 ->
+            Enum.zip(new_nodes, new_results)
+
+          true ->
+            receive_resources(new_results, new_nodes)
+        end
+    after
+      1_000 ->
+        unknown_nodes = Node.list() |> Enum.reject(&(&1 in nodes))
+
+        Logger.warn(
+          "Nodes that don't respond on resource usage request #{inspect(unknown_nodes)}"
+        )
+
+        Enum.zip(nodes, results)
+    end
+  end
+
+  defp get_resource_usage() do
+    RoomService.list_rooms() |> Enum.count()
   end
 
   defp remove_room(room_id) do
