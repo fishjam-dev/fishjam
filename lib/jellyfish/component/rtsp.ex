@@ -9,6 +9,8 @@ defmodule Jellyfish.Component.RTSP do
 
   alias JellyfishWeb.ApiSpec
 
+  @type metadata :: %{}
+
   @impl true
   def config(%{engine_pid: engine} = options) do
     options = Map.drop(options, [:engine_pid, :room_id])

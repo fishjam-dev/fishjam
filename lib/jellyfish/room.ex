@@ -227,6 +227,7 @@ defmodule Jellyfish.Room do
       {:reply, {:ok, component}, state}
     else
       {:error, :incompatible_codec} ->
+        Logger.warn("Unable to add component: incompatible codec, HLS needs 'h264' video codec.")
         {:reply, {:error, :incompatible_codec}, state}
 
       {:error, reason} ->
@@ -317,6 +318,27 @@ defmodule Jellyfish.Room do
           peer = %{peer | status: :disconnected, socket_pid: nil}
           put_in(state, [:peers, peer_id], peer)
       end
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({:playlist_playable, :audio, _playlist_idl}, state), do: {:noreply, state}
+
+  @impl true
+  def handle_info({:playlist_playable, :video, _playlist_idl}, state) do
+    endpoint_id =
+      Enum.find_value(state.components, fn {id, %{type: type}} ->
+        if type == Component.HLS, do: id
+      end)
+
+    IO.inspect(endpoint_id, label: :endpoint_id)
+
+    Phoenix.PubSub.broadcast(
+      Jellyfish.PubSub,
+      "server_notification",
+      {:hls_playable, state.id, endpoint_id}
+    )
 
     {:noreply, state}
   end

@@ -42,7 +42,10 @@ defmodule JellyfishWeb.ComponentControllerTest do
 
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
 
-      assert response = %{"data" => %{"id" => id}} = json_response(conn, :created)
+      assert response =
+               %{"data" => %{"id" => id, "type" => "hls", "metadata" => %{"playable" => false}}} =
+               json_response(conn, :created)
+
       assert_response_schema(response, "ComponentDetailsResponse", @schema)
 
       conn = get(conn, ~p"/room/#{room_id}")
@@ -80,7 +83,10 @@ defmodule JellyfishWeb.ComponentControllerTest do
           options: %{sourceUri: @source_uri}
         )
 
-      assert response = %{"data" => %{"id" => id}} = json_response(conn, :created)
+      assert response =
+               %{"data" => %{"id" => id, "type" => "rtsp", "metadata" => %{}}} =
+               json_response(conn, :created)
+
       assert_response_schema(response, "ComponentDetailsResponse", @schema)
 
       conn = get(conn, ~p"/room/#{room_id}")

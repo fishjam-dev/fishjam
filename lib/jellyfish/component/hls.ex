@@ -12,6 +12,8 @@ defmodule Jellyfish.Component.HLS do
   @segment_duration Time.seconds(4)
   @partial_segment_duration Time.milliseconds(400)
 
+  @type metadata :: %{playable: boolean()}
+
   @impl true
   def config(options) do
     base_path = Application.fetch_env!(:jellyfish, :output_base_path)

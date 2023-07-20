@@ -19,7 +19,8 @@ defmodule JellyfishWeb.ServerSocket do
     RoomCreated,
     RoomDeleted,
     SubscribeRequest,
-    SubscribeResponse
+    SubscribeResponse,
+    HlsPlayable
   }
 
   alias Jellyfish.ServerMessage.SubscribeResponse.{RoomNotFound, RoomsState, RoomState}
@@ -173,6 +174,9 @@ defmodule JellyfishWeb.ServerSocket do
 
         {:metrics, report} ->
           {:metrics_report, %MetricsReport{metrics: report}}
+
+        {:hls_playable, room_id, component_id} ->
+          {:hls_playable, %HlsPlayable{room_id: room_id, component_id: component_id}}
       end
 
     encoded_msg = %ServerMessage{content: content} |> ServerMessage.encode()
@@ -212,7 +216,7 @@ defmodule JellyfishWeb.ServerSocket do
       |> Enum.map(
         &%RoomState.Component{
           id: &1.id,
-          type: to_proto_type(&1.type)
+          component: to_proto_component(&1)
         }
       )
 
@@ -235,8 +239,6 @@ defmodule JellyfishWeb.ServerSocket do
     %RoomState{id: room.id, config: config, peers: peers, components: components}
   end
 
-  defp to_proto_type(Jellyfish.Component.HLS), do: :TYPE_HLS
-  defp to_proto_type(Jellyfish.Component.RTSP), do: :TYPE_RTSP
   defp to_proto_type(Jellyfish.Peer.WebRTC), do: :TYPE_WEBRTC
 
   defp to_proto_codec(:h264), do: :CODEC_H264
@@ -245,4 +247,10 @@ defmodule JellyfishWeb.ServerSocket do
 
   defp to_proto_status(:disconnected), do: :STATUS_DISCONNECTED
   defp to_proto_status(:connected), do: :STATUS_CONNECTED
+
+  defp to_proto_component(%{type: Jellyfish.Component.HLS, metadata: %{playable: playable}}),
+    do: {:hls, %RoomState.Component.Hls{playable: playable}}
+
+  defp to_proto_component(%{type: Jellyfish.Component.RTSP}),
+    do: {:rtsp, %RoomState.Component.Rtsp{}}
 end

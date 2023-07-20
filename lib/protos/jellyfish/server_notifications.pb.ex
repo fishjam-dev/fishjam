@@ -36,16 +36,6 @@ defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomState.Peer.Status do
   field :STATUS_DISCONNECTED, 2
 end
 
-defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomState.Component.Type do
-  @moduledoc false
-
-  use Protobuf, enum: true, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
-
-  field :TYPE_UNSPECIFIED, 0
-  field :TYPE_HLS, 1
-  field :TYPE_RTSP, 2
-end
-
 defmodule Jellyfish.ServerMessage.RoomCrashed do
   @moduledoc false
 
@@ -168,16 +158,33 @@ defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomState.Peer do
     enum: true
 end
 
+defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomState.Component.Hls do
+  @moduledoc false
+
+  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+
+  field :playable, 1, type: :bool
+end
+
+defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomState.Component.Rtsp do
+  @moduledoc false
+
+  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+end
+
 defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomState.Component do
   @moduledoc false
 
   use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
 
-  field :id, 1, type: :string
+  oneof :component, 0
 
-  field :type, 2,
-    type: Jellyfish.ServerMessage.SubscribeResponse.RoomState.Component.Type,
-    enum: true
+  field :id, 1, type: :string
+  field :hls, 2, type: Jellyfish.ServerMessage.SubscribeResponse.RoomState.Component.Hls, oneof: 0
+
+  field :rtsp, 3,
+    type: Jellyfish.ServerMessage.SubscribeResponse.RoomState.Component.Rtsp,
+    oneof: 0
 end
 
 defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomState do
@@ -259,6 +266,15 @@ defmodule Jellyfish.ServerMessage.MetricsReport do
   field :metrics, 1, type: :string
 end
 
+defmodule Jellyfish.ServerMessage.HlsPlayable do
+  @moduledoc false
+
+  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+
+  field :room_id, 1, type: :string, json_name: "roomId"
+  field :component_id, 2, type: :string, json_name: "componentId"
+end
+
 defmodule Jellyfish.ServerMessage do
   @moduledoc false
 
@@ -321,5 +337,10 @@ defmodule Jellyfish.ServerMessage do
   field :metrics_report, 12,
     type: Jellyfish.ServerMessage.MetricsReport,
     json_name: "metricsReport",
+    oneof: 0
+
+  field :hls_playable, 13,
+    type: Jellyfish.ServerMessage.HlsPlayable,
+    json_name: "hlsPlayable",
     oneof: 0
 end
