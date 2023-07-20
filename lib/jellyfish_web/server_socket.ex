@@ -11,6 +11,7 @@ defmodule JellyfishWeb.ServerSocket do
     Authenticated,
     AuthRequest,
     ComponentCrashed,
+    HlsPlayable,
     MetricsReport,
     PeerConnected,
     PeerCrashed,
@@ -19,8 +20,7 @@ defmodule JellyfishWeb.ServerSocket do
     RoomCreated,
     RoomDeleted,
     SubscribeRequest,
-    SubscribeResponse,
-    HlsPlayable
+    SubscribeResponse
   }
 
   alias Jellyfish.ServerMessage.SubscribeResponse.{RoomNotFound, RoomsState, RoomState}
@@ -149,40 +149,37 @@ defmodule JellyfishWeb.ServerSocket do
 
   @impl true
   def handle_info(msg, state) do
-    content =
-      case msg do
-        {:room_created, room_id} ->
-          {:room_created, %RoomCreated{room_id: room_id}}
-
-        {:room_deleted, room_id} ->
-          {:room_deleted, %RoomDeleted{room_id: room_id}}
-
-        {:room_crashed, room_id} ->
-          {:room_crashed, %RoomCrashed{room_id: room_id}}
-
-        {:peer_connected, room_id, peer_id} ->
-          {:peer_connected, %PeerConnected{room_id: room_id, peer_id: peer_id}}
-
-        {:peer_disconnected, room_id, peer_id} ->
-          {:peer_disconnected, %PeerDisconnected{room_id: room_id, peer_id: peer_id}}
-
-        {:peer_crashed, room_id, peer_id} ->
-          {:peer_crashed, %PeerCrashed{room_id: room_id, peer_id: peer_id}}
-
-        {:component_crashed, room_id, component_id} ->
-          {:component_crashed, %ComponentCrashed{room_id: room_id, component_id: component_id}}
-
-        {:metrics, report} ->
-          {:metrics_report, %MetricsReport{metrics: report}}
-
-        {:hls_playable, room_id, component_id} ->
-          {:hls_playable, %HlsPlayable{room_id: room_id, component_id: component_id}}
-      end
-
+    content = to_proto_notification(msg)
     encoded_msg = %ServerMessage{content: content} |> ServerMessage.encode()
-
     {:push, {:binary, encoded_msg}, state}
   end
+
+  defp to_proto_notification({:room_created, room_id}),
+    do: {:room_created, %RoomCreated{room_id: room_id}}
+
+  defp to_proto_notification({:room_deleted, room_id}),
+    do: {:room_deleted, %RoomDeleted{room_id: room_id}}
+
+  defp to_proto_notification({:room_crashed, room_id}),
+    do: {:room_crashed, %RoomCrashed{room_id: room_id}}
+
+  defp to_proto_notification({:peer_connected, room_id, peer_id}),
+    do: {:peer_connected, %PeerConnected{room_id: room_id, peer_id: peer_id}}
+
+  defp to_proto_notification({:peer_disconnected, room_id, peer_id}),
+    do: {:peer_disconnected, %PeerDisconnected{room_id: room_id, peer_id: peer_id}}
+
+  defp to_proto_notification({:peer_crashed, room_id, peer_id}),
+    do: {:peer_crashed, %PeerCrashed{room_id: room_id, peer_id: peer_id}}
+
+  defp to_proto_notification({:component_crashed, room_id, component_id}),
+    do: {:component_crashed, %ComponentCrashed{room_id: room_id, component_id: component_id}}
+
+  defp to_proto_notification({:metrics, report}),
+    do: {:metrics_report, %MetricsReport{metrics: report}}
+
+  defp to_proto_notification({:hls_playable, room_id, component_id}),
+    do: {:hls_playable, %HlsPlayable{room_id: room_id, component_id: component_id}}
 
   @impl true
   def terminate(reason, _state) do

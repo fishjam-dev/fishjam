@@ -1,16 +1,16 @@
 defmodule JellyfishWeb.Integration.ServerSocketTest do
-  alias Jellyfish.RoomService
   use JellyfishWeb.ConnCase
 
   alias __MODULE__.Endpoint
 
   alias Jellyfish.PeerMessage
-
+  alias Jellyfish.RoomService
   alias Jellyfish.ServerMessage
 
   alias Jellyfish.ServerMessage.{
     Authenticated,
     AuthRequest,
+    HlsPlayable,
     MetricsReport,
     PeerConnected,
     PeerDisconnected,
@@ -18,8 +18,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     RoomCreated,
     RoomDeleted,
     SubscribeRequest,
-    SubscribeResponse,
-    HlsPlayable
+    SubscribeResponse
   }
 
   alias Jellyfish.ServerMessage.SubscribeRequest.{Metrics, ServerNotification}

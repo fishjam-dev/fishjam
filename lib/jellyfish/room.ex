@@ -332,8 +332,6 @@ defmodule Jellyfish.Room do
         if type == Component.HLS, do: id
       end)
 
-    IO.inspect(endpoint_id, label: :endpoint_id)
-
     Phoenix.PubSub.broadcast(
       Jellyfish.PubSub,
       "server_notification",
