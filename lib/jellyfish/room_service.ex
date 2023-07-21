@@ -176,17 +176,11 @@ defmodule Jellyfish.RoomService do
         new_results = [resource_usage | results]
         new_nodes = [node_name | nodes]
 
-        cond do
-          node_name in nodes ->
-            Process.send_after(self(), msg, 500)
-            receive_resources(results, nodes)
-
-          # Node.list() excludes local node
-          Enum.count(new_nodes) == Enum.count(Node.list()) + 1 ->
-            Enum.zip(new_nodes, new_results)
-
-          true ->
-            receive_resources(new_results, new_nodes)
+        # Node.list() excludes local node
+        if Enum.count(new_nodes) == Enum.count(Node.list()) + 1 do
+          Enum.zip(new_nodes, new_results)
+        else
+          receive_resources(new_results, new_nodes)
         end
     after
       1_000 ->
