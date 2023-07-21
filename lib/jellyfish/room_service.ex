@@ -58,7 +58,7 @@ defmodule Jellyfish.RoomService do
   @spec create_room(Room.max_peers(), String.t()) ::
           {:ok, Room.t(), String.t()} | {:error, :invalid_max_peers | :invalid_video_codec}
   def create_room(max_peers, video_codec) do
-    :ok = Phoenix.PubSub.broadcast(Jellyfish.PubSub, "jellyfishes", {:resource_usage, self()})
+    :ok = Phoenix.PubSub.broadcast(Jellyfish.PubSub, "jellyfishes", {:get_resource_usage, self()})
 
     node_resources = receive_resources()
 
