@@ -163,10 +163,6 @@ defmodule Jellyfish.RoomService do
     {:noreply, state}
   end
 
-  defp get_resource_usage() do
-    RoomService.list_rooms() |> Enum.count()
-  end
-
   defp remove_room(room_id) do
     room = {:via, Registry, {Jellyfish.RoomRegistry, room_id}}
 
