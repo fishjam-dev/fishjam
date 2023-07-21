@@ -41,7 +41,7 @@ defmodule Jellyfish.Cluster.LoadBalancingTest do
     assert_rooms_number_on_jellyfish(node2, 1)
   end
 
-  defp add_romm(jellyfish_instance) do
+  defp add_room(jellyfish_instance) do
     assert {:ok, %HTTPoison.Response{status_code: 201, body: body}} =
              HTTPoison.post("http://#{jellyfish_instance}/room", [], @headers)
 
