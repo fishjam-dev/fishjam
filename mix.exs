@@ -92,7 +92,7 @@ defmodule Jellyfish.MixProject do
       "api.spec": ["openapi.spec.yaml --spec JellyfishWeb.ApiSpec"],
       test: ["test --exclude containerised"],
       test_containerised: ["test --only containerised"],
-      test_containerised_compose: ["cmd docker-compose run test; docker-compose stop"]
+      test_containerised_compose: ["cmd docker compose run test; docker compose stop"]
     ]
   end
 
