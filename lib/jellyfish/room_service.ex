@@ -136,7 +136,7 @@ defmodule Jellyfish.RoomService do
   end
 
   @impl true
-  def handle_info({:resource_usage, node_pid}, state) do
+  def handle_info({:get_resource_usage, node_pid}, state) do
     send(node_pid, {:resources, Node.self(), get_resource_usage()})
 
     {:noreply, state}

@@ -75,14 +75,14 @@ defmodule Jellyfish.MixProject do
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},
       {:credo, ">= 0.0.0", only: :dev, runtime: false},
 
+      # Load balancing
+      {:libcluster, "~> 3.3"},
+      {:httpoison, "~> 2.0"},
+
       # Test deps
       {:websockex, "~> 0.4.3", only: [:test, :test_containerised], runtime: false},
       {:excoveralls, "~> 0.15.0", only: :test, runtime: false},
-
-      # Load balancing
-      {:libcluster, "~> 3.3"},
-      {:divo, "~> 1.3.1", only: [:test, :test_containerised]},
-      {:httpoison, "~> 2.0"}
+      {:divo, "~> 1.3.1", only: [:test, :test_containerised]}
     ]
   end
 
