@@ -172,7 +172,7 @@ defmodule Jellyfish.RoomService do
 
   defp receive_resources(results \\ [], nodes \\ []) do
     receive do
-      {:resources, node_name, resource_usage} = msg ->
+      {:resources, node_name, resource_usage} ->
         new_results = [resource_usage | results]
         new_nodes = [node_name | nodes]
 
