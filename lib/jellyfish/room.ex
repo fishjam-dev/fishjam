@@ -73,6 +73,11 @@ defmodule Jellyfish.Room do
     end
   end
 
+  @spec request_forwarded_tracks_number_in_room(id()) :: :ok
+  def request_forwarded_tracks_number_in_room(room_id) do
+    GenServer.cast(registry_id(room_id), {:forwarded_tracks_number, self()})
+  end
+
   @spec add_peer(id(), Peer.peer(), map()) ::
           {:ok, Peer.t()} | :error | {:error, :reached_peers_limit}
   def add_peer(room_id, peer_type, options \\ %{}) do
@@ -274,6 +279,13 @@ defmodule Jellyfish.Room do
   @impl true
   def handle_cast({:media_event, peer_id, event}, state) do
     Engine.message_endpoint(state.engine_pid, peer_id, {:media_event, event})
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_cast({:forwarded_tracks_number, receiver}, state) do
+    reply = Engine.get_num_forwarded_tracks(state.engine_pid)
+    send(receiver, {state.id, reply})
     {:noreply, state}
   end
 

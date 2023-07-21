@@ -100,7 +100,7 @@ defmodule Jellyfish.MixProject do
       "api.spec": &generate_api_spec/1,
       test: ["test --exclude cluster"],
       "test.cluster": ["test --only cluster"],
-      "test.cluster.ci": ["cmd docker compose run test; docker compose stop"]
+      "test.cluster.ci": ["cmd docker compose run test; docker compose down"]
     ]
   end
 
