@@ -38,6 +38,7 @@ services:
       RELEASE_NODE: app@app1
       NODE_NAME: app@app1
       PORT: 4001
+      NODES: "app@app1 app@app2"
     ports:
       - 4001:4001
     networks:
@@ -61,6 +62,7 @@ services:
       RELEASE_NODE: app@app2
       NODE_NAME: app@app2
       PORT: 4002
+      NODES: "app@app1 app@app2"
     ports:
       - 4002:4002
     networks:

@@ -63,6 +63,22 @@ defmodule ConfigParser do
   end
 end
 
+hosts =
+  (System.get_env("NODES", nil) || "")
+  |> String.split(" ")
+  |> Enum.reject(&(&1 == ""))
+  |> Enum.map(&String.to_atom(&1))
+
+IO.inspect(hosts, label: :hosts)
+
+config :libcluster,
+  topologies: [
+    example: [
+      strategy: Cluster.Strategy.Epmd,
+      config: [hosts: hosts]
+    ]
+  ]
+
 config :jellyfish,
   webrtc_used: String.downcase(System.get_env("WEBRTC_USED", "true")) not in ["false", "f", "0"],
   integrated_turn_ip:

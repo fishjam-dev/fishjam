@@ -24,12 +24,4 @@ config :jellyfish,
   divo: "docker-compose.yaml",
   divo_wait: [dwell: 1_500, max_tries: 50]
 
-config :libcluster,
-  topologies: [
-    example: [
-      strategy: Cluster.Strategy.Epmd,
-      config: [hosts: [:app@app1, :app@app2]]
-    ]
-  ]
-
 import_config "#{config_env()}.exs"
