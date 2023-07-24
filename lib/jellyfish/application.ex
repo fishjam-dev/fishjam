@@ -8,6 +8,7 @@ defmodule Jellyfish.Application do
   @impl true
   def start(_type, _args) do
     scrape_interval = Application.fetch_env!(:jellyfish, :metrics_scrape_interval)
+
     topologies = Application.get_env(:libcluster, :topologies) || []
 
     topologies = Application.get_env(:libcluster, :topologies) || []

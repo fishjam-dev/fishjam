@@ -9,7 +9,6 @@ defmodule Jellyfish.RoomService do
 
   alias Jellyfish.Event
   alias Jellyfish.Room
-  alias Jellyfish.RoomService
 
   def start_link(args) do
     GenServer.start_link(__MODULE__, args, name: __MODULE__)
