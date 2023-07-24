@@ -107,7 +107,7 @@ defmodule Jellyfish.RoomService do
         {:room_created, room_id}
       )
 
-      {:reply, {:ok, room, Application.fetch_env(:jellyfish, :address)}, state}
+      {:reply, {:ok, room, Application.fetch_env!(:jellyfish, :address)}, state}
     else
       {:error, :max_peers} ->
         {:reply, {:error, :invalid_max_peers}, state}
@@ -192,7 +192,7 @@ defmodule Jellyfish.RoomService do
   end
 
   defp get_resource_usage() do
-    RoomService.list_rooms() |> Enum.count()
+    list_rooms() |> Enum.count()
   end
 
   defp remove_room(room_id) do
