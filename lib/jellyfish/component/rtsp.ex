@@ -4,6 +4,7 @@ defmodule Jellyfish.Component.RTSP do
   """
 
   @behaviour Jellyfish.Endpoint.Config
+  @behaviour Jellyfish.Component
 
   alias Membrane.RTC.Engine.Endpoint.RTSP
 
@@ -31,4 +32,7 @@ defmodule Jellyfish.Component.RTSP do
       {:error, _reason} = error -> error
     end
   end
+
+  @impl true
+  def metadata(), do: %{}
 end

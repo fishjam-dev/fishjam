@@ -154,33 +154,6 @@ defmodule JellyfishWeb.ServerSocket do
     {:push, {:binary, encoded_msg}, state}
   end
 
-  defp to_proto_notification({:room_created, room_id}),
-    do: {:room_created, %RoomCreated{room_id: room_id}}
-
-  defp to_proto_notification({:room_deleted, room_id}),
-    do: {:room_deleted, %RoomDeleted{room_id: room_id}}
-
-  defp to_proto_notification({:room_crashed, room_id}),
-    do: {:room_crashed, %RoomCrashed{room_id: room_id}}
-
-  defp to_proto_notification({:peer_connected, room_id, peer_id}),
-    do: {:peer_connected, %PeerConnected{room_id: room_id, peer_id: peer_id}}
-
-  defp to_proto_notification({:peer_disconnected, room_id, peer_id}),
-    do: {:peer_disconnected, %PeerDisconnected{room_id: room_id, peer_id: peer_id}}
-
-  defp to_proto_notification({:peer_crashed, room_id, peer_id}),
-    do: {:peer_crashed, %PeerCrashed{room_id: room_id, peer_id: peer_id}}
-
-  defp to_proto_notification({:component_crashed, room_id, component_id}),
-    do: {:component_crashed, %ComponentCrashed{room_id: room_id, component_id: component_id}}
-
-  defp to_proto_notification({:metrics, report}),
-    do: {:metrics_report, %MetricsReport{metrics: report}}
-
-  defp to_proto_notification({:hls_playable, room_id, component_id}),
-    do: {:hls_playable, %HlsPlayable{room_id: room_id, component_id: component_id}}
-
   @impl true
   def terminate(reason, _state) do
     Logger.info("Server WebSocket stopped #{inspect(reason)}")
@@ -235,6 +208,33 @@ defmodule JellyfishWeb.ServerSocket do
 
     %RoomState{id: room.id, config: config, peers: peers, components: components}
   end
+
+  defp to_proto_notification({:room_created, room_id}),
+    do: {:room_created, %RoomCreated{room_id: room_id}}
+
+  defp to_proto_notification({:room_deleted, room_id}),
+    do: {:room_deleted, %RoomDeleted{room_id: room_id}}
+
+  defp to_proto_notification({:room_crashed, room_id}),
+    do: {:room_crashed, %RoomCrashed{room_id: room_id}}
+
+  defp to_proto_notification({:peer_connected, room_id, peer_id}),
+    do: {:peer_connected, %PeerConnected{room_id: room_id, peer_id: peer_id}}
+
+  defp to_proto_notification({:peer_disconnected, room_id, peer_id}),
+    do: {:peer_disconnected, %PeerDisconnected{room_id: room_id, peer_id: peer_id}}
+
+  defp to_proto_notification({:peer_crashed, room_id, peer_id}),
+    do: {:peer_crashed, %PeerCrashed{room_id: room_id, peer_id: peer_id}}
+
+  defp to_proto_notification({:component_crashed, room_id, component_id}),
+    do: {:component_crashed, %ComponentCrashed{room_id: room_id, component_id: component_id}}
+
+  defp to_proto_notification({:metrics, report}),
+    do: {:metrics_report, %MetricsReport{metrics: report}}
+
+  defp to_proto_notification({:hls_playable, room_id, component_id}),
+    do: {:hls_playable, %HlsPlayable{room_id: room_id, component_id: component_id}}
 
   defp to_proto_type(Jellyfish.Peer.WebRTC), do: :TYPE_WEBRTC
 

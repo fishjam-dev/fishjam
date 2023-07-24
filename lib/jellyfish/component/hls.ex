@@ -4,6 +4,7 @@ defmodule Jellyfish.Component.HLS do
   """
 
   @behaviour Jellyfish.Endpoint.Config
+  @behaviour Jellyfish.Component
 
   alias Membrane.RTC.Engine.Endpoint.HLS
   alias Membrane.RTC.Engine.Endpoint.HLS.{CompositorConfig, HLSConfig, MixerConfig}
@@ -44,4 +45,7 @@ defmodule Jellyfish.Component.HLS do
        }
      }}
   end
+
+  @impl true
+  def metadata(), do: %{playable: false}
 end

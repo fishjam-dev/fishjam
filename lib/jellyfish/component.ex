@@ -10,6 +10,8 @@ defmodule Jellyfish.Component do
 
   alias Jellyfish.Component.{HLS, RTSP}
 
+  @callback metadata() :: map()
+
   @enforce_keys [
     :id,
     :type,
@@ -48,7 +50,7 @@ defmodule Jellyfish.Component do
   @spec new(component(), map()) :: {:ok, t()} | {:error, term()}
   def new(type, options) do
     with {:ok, endpoint} <- type.config(options) do
-      metadata = get_metadata(type)
+      metadata = type.metadata()
 
       {:ok,
        %__MODULE__{
@@ -61,7 +63,4 @@ defmodule Jellyfish.Component do
       {:error, _reason} = error -> error
     end
   end
-
-  defp get_metadata(RTSP), do: %{}
-  defp get_metadata(HLS), do: %{playable: false}
 end

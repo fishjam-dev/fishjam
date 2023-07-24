@@ -184,15 +184,13 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
                 }}
            } = response
 
-    correct_components? =
-      components
-      |> Enum.map(fn %Component{component: component} -> component end)
-      |> Enum.all?(fn
-        {:hls, %Hls{playable: false}} -> true
-        {:rtsp, %Rtsp{}} -> true
-      end)
-
-    assert correct_components?
+    assert components
+           |> Enum.map(fn %Component{component: component} -> component end)
+           |> Enum.all?(fn
+             {:hls, %Hls{playable: false}} -> true
+             {:rtsp, %Rtsp{}} -> true
+             _other -> false
+           end)
 
     {:ok, room_pid} = RoomService.find_room(room_id)
 

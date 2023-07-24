@@ -338,6 +338,7 @@ defmodule Jellyfish.Room do
       {:hls_playable, state.id, endpoint_id}
     )
 
+    state = update_in(state, [:components, endpoint_id], &Map.put(&1, :playable, true))
     {:noreply, state}
   end
 
