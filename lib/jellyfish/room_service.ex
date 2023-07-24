@@ -8,7 +8,6 @@ defmodule Jellyfish.RoomService do
   require Logger
 
   alias Jellyfish.Room
-  alias Jellyfish.RoomService
 
   def start_link(args) do
     GenServer.start_link(__MODULE__, args, name: __MODULE__)
@@ -65,8 +64,6 @@ defmodule Jellyfish.RoomService do
     {min_node, _room_size} =
       Enum.min_by(node_resources, fn {_node_name, room_num} -> room_num end)
 
-    Logger.info(node_resources)
-
     if Enum.count(node_resources) > 1 do
       Logger.info("Node with least used resources is #{inspect(min_node)}")
       GenServer.call({__MODULE__, min_node}, {:create_room, max_peers, video_codec})
@@ -110,7 +107,7 @@ defmodule Jellyfish.RoomService do
         {:room_created, room_id}
       )
 
-      {:reply, {:ok, room, "#{System.get_env("VIRTUAL_HOST")}:#{System.get_env("PORT")}"}, state}
+      {:reply, {:ok, room, Application.fetch_env(:jellyfish, :address)}, state}
     else
       {:error, :max_peers} ->
         {:reply, {:error, :invalid_max_peers}, state}

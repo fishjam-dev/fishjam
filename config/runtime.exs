@@ -64,20 +64,20 @@ defmodule ConfigParser do
 end
 
 hosts =
-  (System.get_env("NODES", nil) || "")
+  System.get_env("NODES", "")
   |> String.split(" ")
   |> Enum.reject(&(&1 == ""))
   |> Enum.map(&String.to_atom(&1))
 
-IO.inspect(hosts, label: :hosts)
-
-config :libcluster,
-  topologies: [
-    example: [
-      strategy: Cluster.Strategy.Epmd,
-      config: [hosts: hosts]
+unless Enum.empty?(hosts) do
+  config :libcluster,
+    topologies: [
+      example: [
+        strategy: Cluster.Strategy.Epmd,
+        config: [hosts: hosts]
+      ]
     ]
-  ]
+end
 
 config :jellyfish,
   webrtc_used: String.downcase(System.get_env("WEBRTC_USED", "true")) not in ["false", "f", "0"],
@@ -93,7 +93,8 @@ config :jellyfish,
     System.get_env("INTEGRATED_TURN_TCP_PORT")
     |> ConfigParser.parse_port_number("INTEGRATED_TURN_TCP_PORT"),
   jwt_max_age: 24 * 3600,
-  output_base_path: System.get_env("OUTPUT_BASE_PATH", "jellyfish_output") |> Path.expand()
+  output_base_path: System.get_env("OUTPUT_BASE_PATH", "jellyfish_output") |> Path.expand(),
+  address: "#{System.get_env("VIRTUAL_HOST")}:#{System.get_env("PORT")}"
 
 config :opentelemetry, traces_exporter: :none
 

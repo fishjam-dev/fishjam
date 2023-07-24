@@ -55,7 +55,8 @@ defmodule Jellyfish.Cluster.LoadBalancingTest do
       %{
         @node1 => "app1:4001",
         @node2 => "app2:4002"
-      }[jellyfish]
+      }
+      |> Map.get(jellyfish)
     end
   end
 
