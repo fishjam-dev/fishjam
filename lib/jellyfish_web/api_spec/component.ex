@@ -35,14 +35,30 @@ defmodule JellyfishWeb.ApiSpec.Component do
     })
   end
 
+  defmodule Metadata do
+    @moduledoc false
+
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "ComponentMetadata",
+      description: "Component-specific metadata",
+      type: :object,
+      properties: %{
+        playable: %Schema{type: :boolean}
+      }
+    })
+  end
+
   OpenApiSpex.schema(%{
     title: "Component",
     description: "Describes component",
     type: :object,
     properties: %{
       id: %Schema{type: :string, description: "Assigned component id", example: "component-1"},
-      type: Type
+      type: Type,
+      metadata: Metadata
     },
-    required: [:id, :type]
+    required: [:id, :type, :metadata]
   })
 end
