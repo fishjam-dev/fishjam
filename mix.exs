@@ -60,7 +60,13 @@ defmodule Jellyfish.MixProject do
 
       # Membrane deps
       {:membrane_rtc_engine, "~> 0.15.0"},
-      {:membrane_ice_plugin, "~> 0.16.0"},
+      # {:membrane_webrtc_plugin, path: "../../membrane_webrtc_plugin", override: true},
+      {:membrane_webrtc_plugin, github: "jellyfish-dev/membrane_webrtc_plugin", branch: "ex-ice", override: true},
+      # {:membrane_ice_plugin, path: "../../membrane_ice_plugin", override: true},
+      {:membrane_ice_plugin, github: "jellyfish-dev/membrane_ice_plugin", branch: "ex-ice",  override: true},
+      # {:ex_ice, path: "../../elixir-webrtc/ex_ice", override: true},
+      {:ex_ice, github: "elixir-webrtc/ex_ice", override: true},
+      # {:membrane_ice_plugin, "~> 0.16.0"},
       {:membrane_telemetry_metrics, "~> 0.1.0"},
 
       # HLS endpoints deps

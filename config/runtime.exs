@@ -63,6 +63,8 @@ defmodule ConfigParser do
   end
 end
 
+config :membrane_webrtc_plugin, ice_mode: :full_ice
+
 config :jellyfish,
   webrtc_used: String.downcase(System.get_env("WEBRTC_USED", "true")) not in ["false", "f", "0"],
   integrated_turn_ip:
