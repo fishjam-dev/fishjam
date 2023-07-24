@@ -10,22 +10,20 @@ defmodule JellyfishWeb.ServerSocket do
   alias Jellyfish.ServerMessage.{
     Authenticated,
     AuthRequest,
-    ComponentCrashed,
-    MetricsReport,
-    PeerConnected,
-    PeerCrashed,
-    PeerDisconnected,
-    RoomCrashed,
-    RoomCreated,
-    RoomDeleted,
+    RoomNotFound,
+    RoomState,
+    RoomStateRequest,
     SubscribeRequest,
     SubscribeResponse
   }
 
-  alias Jellyfish.ServerMessage.SubscribeResponse.{RoomNotFound, RoomsState, RoomState}
+  alias Jellyfish.Event
+  alias Jellyfish.Room
+
+  alias Jellyfish.ServerMessage.SubscribeRequest.{Metrics, ServerNotification}
+  alias Jellyfish.ServerMessage.SubscribeResponse.RoomStates
 
   @heartbeat_interval 30_000
-  @valid_subscribe_topics [:server_notification, :metrics]
 
   @impl true
   def child_spec(_opts), do: :ignore
@@ -90,16 +88,9 @@ defmodule JellyfishWeb.ServerSocket do
   end
 
   def handle_in({encoded_message, [opcode: :binary]}, state) do
-    with %ServerMessage{content: {:subscribe_request, request}} <-
-           ServerMessage.decode(encoded_message),
-         {:ok, response, state} <- handle_subscribe(request, state) do
-      reply =
-        %ServerMessage{
-          content: {:subscribe_response, response}
-        }
-        |> ServerMessage.encode()
-
-      {:reply, :ok, {:binary, reply}, state}
+    with %ServerMessage{content: content} <- ServerMessage.decode(encoded_message),
+         {:ok, ret_val} <- handle_message(content, state) do
+      ret_val
     else
       {:error, request} ->
         unexpected_message_error(request, state)
@@ -124,33 +115,92 @@ defmodule JellyfishWeb.ServerSocket do
     {:stop, :closed, {1003, "operation not allowed"}, state}
   end
 
-  defp handle_subscribe(
-         %SubscribeRequest{
-           id: id,
-           event_type: {topic, event_type}
-         },
-         state
-       )
-       when topic in @valid_subscribe_topics do
-    unless MapSet.member?(state.subscriptions, topic) do
-      :ok = Phoenix.PubSub.subscribe(Jellyfish.PubSub, Atom.to_string(topic))
+  defp handle_message({:room_state_request, %RoomStateRequest{room_id: room_id}}, state) do
+    case Room.request_state(room_id) do
+      :ok ->
+        {:ok, {:ok, state}}
+
+      {:error, :room_not_found} ->
+        msg =
+          %ServerMessage{content: {:room_not_found, %RoomNotFound{room_id: room_id}}}
+          |> ServerMessage.encode()
+
+        {:ok, {:reply, :ok, {:binary, msg}, state}}
     end
+  end
 
-    state = update_in(state.subscriptions, &MapSet.put(&1, topic))
+  defp handle_message(
+         {:subscribe_request, %SubscribeRequest{id: id, event_type: {_type, event_type}}},
+         state
+       ) do
+    with {:ok, content, state} <- handle_subscribe(event_type, state) do
+      reply =
+        %ServerMessage{
+          content: {:subscribe_response, %SubscribeResponse{id: id, content: content}}
+        }
+        |> ServerMessage.encode()
 
-    content =
-      case event_type do
-        %SubscribeRequest.ServerNotification{room_id: {_variant, option}} ->
-          get_room_state(option)
+      {:ok, {:reply, :ok, {:binary, reply}, state}}
+    end
+  end
 
-        %SubscribeRequest.Metrics{} ->
-          nil
-      end
+  defp handle_message(message, state) do
+    unexpected_message_error(message, state)
+  end
 
-    {:ok, %SubscribeResponse{id: id, content: content}, state}
+  defp handle_subscribe(%ServerNotification{}, state) do
+    state = ensure_subscribed(:server_notification, state)
+
+    RoomService.request_all_room_ids()
+    {:ok, room_ids} = await_all_room_ids()
+
+    room_ids |> Enum.each(&Room.request_state/1)
+
+    room_states =
+      room_ids
+      |> Enum.flat_map(&await_room_state/1)
+      |> Enum.map(&to_room_state_message/1)
+
+    {:ok, {:room_states, %RoomStates{rooms: room_states}}, state}
+  end
+
+  defp handle_subscribe(%Metrics{}, state) do
+    state = ensure_subscribed(:metrics, state)
+
+    {:ok, nil, state}
   end
 
   defp handle_subscribe(request, _state), do: {:error, request}
+
+  defp await_all_room_ids() do
+    receive do
+      {:all_room_ids, all_room_ids} -> {:ok, all_room_ids}
+      {:server_notification, _notification} -> await_all_room_ids()
+    after
+      5000 -> {:error, :timeout}
+    end
+  end
+
+  defp await_room_state(room_id) do
+    receive do
+      {:room_state, room_state} ->
+        [room_state]
+
+      # Dump all notifications from the room until it sends its state
+      {:server_notification, notification} when elem(notification, 1) == room_id ->
+        await_room_state(room_id)
+    after
+      5000 -> []
+    end
+  end
+
+  @impl true
+  def handle_info({:room_state, room_state}, state) do
+    room_state = to_room_state_message(room_state)
+    msg = %ServerMessage{content: {:room_state, room_state}} |> ServerMessage.encode()
+
+    {:reply, :ok, {:binary, msg}, state}
+  end
 
   @impl true
   def handle_info(:send_ping, state) do
@@ -160,32 +210,7 @@ defmodule JellyfishWeb.ServerSocket do
 
   @impl true
   def handle_info(msg, state) do
-    content =
-      case msg do
-        {:room_created, room_id} ->
-          {:room_created, %RoomCreated{room_id: room_id}}
-
-        {:room_deleted, room_id} ->
-          {:room_deleted, %RoomDeleted{room_id: room_id}}
-
-        {:room_crashed, room_id} ->
-          {:room_crashed, %RoomCrashed{room_id: room_id}}
-
-        {:peer_connected, room_id, peer_id} ->
-          {:peer_connected, %PeerConnected{room_id: room_id, peer_id: peer_id}}
-
-        {:peer_disconnected, room_id, peer_id} ->
-          {:peer_disconnected, %PeerDisconnected{room_id: room_id, peer_id: peer_id}}
-
-        {:peer_crashed, room_id, peer_id} ->
-          {:peer_crashed, %PeerCrashed{room_id: room_id, peer_id: peer_id}}
-
-        {:component_crashed, room_id, component_id} ->
-          {:component_crashed, %ComponentCrashed{room_id: room_id, component_id: component_id}}
-
-        {:metrics, report} ->
-          {:metrics_report, %MetricsReport{metrics: report}}
-      end
+    content = Event.to_proto(msg)
 
     encoded_msg = %ServerMessage{content: content} |> ServerMessage.encode()
 
@@ -198,22 +223,12 @@ defmodule JellyfishWeb.ServerSocket do
     :ok
   end
 
-  defp get_room_state(:OPTION_ALL) do
-    rooms =
-      RoomService.list_rooms()
-      |> Enum.map(&to_room_state_message/1)
-
-    {:rooms_state, %RoomsState{rooms: rooms}}
-  end
-
-  defp get_room_state(id) do
-    case RoomService.get_room(id) do
-      {:ok, room} ->
-        room = to_room_state_message(room)
-        {:room_state, room}
-
-      {:error, :room_not_found} ->
-        {:room_not_found, %RoomNotFound{id: id}}
+  defp ensure_subscribed(event_type, state) do
+    if MapSet.member?(state.subscriptions, event_type) do
+      state
+    else
+      :ok = Event.subscribe(event_type)
+      update_in(state.subscriptions, &MapSet.put(&1, event_type))
     end
   end
 

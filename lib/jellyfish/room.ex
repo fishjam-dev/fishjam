@@ -9,6 +9,7 @@ defmodule Jellyfish.Room do
   require Logger
 
   alias Jellyfish.Component
+  alias Jellyfish.Event
   alias Jellyfish.Peer
   alias Membrane.ICE.TURNManager
   alias Membrane.RTC.Engine
@@ -61,14 +62,22 @@ defmodule Jellyfish.Room do
     registry_room_id = registry_id(room_id)
 
     try do
-      GenServer.call(registry_room_id, :state)
+      GenServer.call(registry_room_id, :get_state)
     catch
-      :exit, {:noproc, {GenServer, :call, [^registry_room_id, :state, _timeout]}} ->
+      :exit, {:noproc, {GenServer, :call, [^registry_room_id, :get_state, _timeout]}} ->
         Logger.warn(
           "Cannot get state of #{inspect(room_id)}, the room's process doesn't exist anymore"
         )
 
         nil
+    end
+  end
+
+  @spec request_state(id()) :: :ok | {:error, :room_not_found}
+  def request_state(room_id) do
+    case Registry.lookup(Jellyfish.RoomRegistry, room_id) do
+      [] -> {:error, :room_not_found}
+      _room -> GenServer.cast(registry_id(room_id), {:request_state, self()})
     end
   end
 
@@ -120,7 +129,7 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def handle_call(:state, _from, state) do
+  def handle_call(:get_state, _from, state) do
     {:reply, state, state}
   end
 
@@ -259,6 +268,12 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
+  def handle_cast({:request_state, caller_pid}, state) do
+    send(caller_pid, {:room_state, state})
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_info(%Message.EndpointMessage{endpoint_id: to, message: {:media_event, data}}, state) do
     with {:ok, peer} <- Map.fetch(state.peers, to),
          socket_pid when is_pid(socket_pid) <- Map.get(peer, :socket_pid) do
@@ -283,11 +298,7 @@ defmodule Jellyfish.Room do
     Logger.error("RTC Engine endpoint #{inspect(endpoint_id)} crashed")
 
     if Map.has_key?(state.peers, endpoint_id) do
-      Phoenix.PubSub.broadcast(
-        Jellyfish.PubSub,
-        "server_notification",
-        {:peer_crashed, state.id, endpoint_id}
-      )
+      Event.broadcast(:server_notification, {:peer_crashed, state.id, endpoint_id})
 
       peer = Map.fetch!(state.peers, endpoint_id)
 
@@ -295,11 +306,7 @@ defmodule Jellyfish.Room do
         send(peer.socket_pid, {:stop_connection, :endpoint_crashed})
       end
     else
-      Phoenix.PubSub.broadcast(
-        Jellyfish.PubSub,
-        "server_notification",
-        {:component_crashed, state.id, endpoint_id}
-      )
+      Event.broadcast(:server_notification, {:component_crashed, state.id, endpoint_id})
     end
 
     {:noreply, state}

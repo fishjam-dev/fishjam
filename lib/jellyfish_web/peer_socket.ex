@@ -3,6 +3,7 @@ defmodule JellyfishWeb.PeerSocket do
   @behaviour Phoenix.Socket.Transport
   require Logger
 
+  alias Jellyfish.Event
   alias Jellyfish.PeerMessage
   alias Jellyfish.PeerMessage.{Authenticated, AuthRequest, MediaEvent}
   alias Jellyfish.{Room, RoomService}
@@ -47,11 +48,7 @@ defmodule JellyfishWeb.PeerSocket do
               room_pid: room_pid
             })
 
-          Phoenix.PubSub.broadcast(
-            Jellyfish.PubSub,
-            "server_notification",
-            {:peer_connected, room_id, peer_id}
-          )
+          Event.broadcast(:server_notification, {:peer_connected, room_id, peer_id})
 
           {:reply, :ok, {:binary, encoded_message}, state}
         else
@@ -138,11 +135,7 @@ defmodule JellyfishWeb.PeerSocket do
     """)
 
     if Map.has_key?(state, :peer_id) do
-      Phoenix.PubSub.broadcast(
-        Jellyfish.PubSub,
-        "server_notification",
-        {:peer_disconnected, state.room_id, state.peer_id}
-      )
+      Event.broadcast(:server_notification, {:peer_disconnected, state.room_id, state.peer_id})
     end
 
     :ok

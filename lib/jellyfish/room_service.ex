@@ -7,6 +7,7 @@ defmodule Jellyfish.RoomService do
 
   require Logger
 
+  alias Jellyfish.Event
   alias Jellyfish.Room
 
   def start_link(args) do
@@ -54,6 +55,11 @@ defmodule Jellyfish.RoomService do
     |> Enum.reject(&(&1 == nil))
   end
 
+  @spec request_all_room_ids() :: :ok
+  def request_all_room_ids() do
+    GenServer.cast(__MODULE__, {:request_all_room_ids, self()})
+  end
+
   @spec create_room(Room.max_peers(), String.t()) ::
           {:ok, Room.t()} | {:error, :invalid_max_peers | :invalid_video_codec}
   def create_room(max_peers, video_codec) do
@@ -83,11 +89,7 @@ defmodule Jellyfish.RoomService do
 
       Logger.info("Created room #{inspect(room.id)}")
 
-      Phoenix.PubSub.broadcast(
-        Jellyfish.PubSub,
-        "server_notification",
-        {:room_created, room_id}
-      )
+      Event.broadcast(:server_notification, {:room_created, room_id})
 
       {:reply, {:ok, room}, state}
     else
@@ -115,6 +117,16 @@ defmodule Jellyfish.RoomService do
   end
 
   @impl true
+  def handle_cast({:request_all_room_ids, caller_pid}, state) do
+    all_room_ids =
+      Jellyfish.RoomRegistry
+      |> Registry.select([{{:"$1", :_, :_}, [], [:"$1"]}])
+
+    send(caller_pid, {:all_room_ids, all_room_ids})
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_info({:DOWN, _ref, :process, pid, :normal}, state) do
     {room_id, state} = pop_in(state, [:rooms, pid])
 
@@ -132,7 +144,7 @@ defmodule Jellyfish.RoomService do
     Logger.warn("Process #{room_id} is down with reason: #{reason}")
 
     Phoenix.PubSub.broadcast(Jellyfish.PubSub, room_id, :room_crashed)
-    Phoenix.PubSub.broadcast(Jellyfish.PubSub, "server_notification", {:room_crashed, room_id})
+    Event.broadcast(:server_notification, {:room_crashed, room_id})
 
     {:noreply, state}
   end
@@ -144,7 +156,7 @@ defmodule Jellyfish.RoomService do
       :ok = GenServer.stop(room, :normal)
       Logger.info("Deleted room #{inspect(room_id)}")
 
-      Phoenix.PubSub.broadcast(Jellyfish.PubSub, "server_notification", {:room_deleted, room_id})
+      Event.broadcast(:server_notification, {:room_deleted, room_id})
     catch
       :exit, {:noproc, {GenServer, :stop, [^room, :normal, :infinity]}} ->
         Logger.warn("Room process with id #{inspect(room_id)} doesn't exist")
