@@ -97,6 +97,11 @@ config :jellyfish,
 
 config :opentelemetry, traces_exporter: :none
 
+host = System.get_env("VIRTUAL_HOST") || "example.com"
+port = String.to_integer(System.get_env("PORT") || "4000")
+
+config :jellyfish, address: "#{host}:#{port}"
+
 if config_env() == :prod do
   token =
     System.fetch_env!("SERVER_API_TOKEN") ||
@@ -119,11 +124,6 @@ if config_env() == :prod do
       environment variable SECRET_KEY_BASE is missing.
       You can generate one by calling: mix phx.gen.secret
       """
-
-  host = System.get_env("VIRTUAL_HOST") || "example.com"
-  port = String.to_integer(System.get_env("PORT") || "4000")
-
-  config :jellyfish, address: "#{host}:#{port}"
 
   config :jellyfish, JellyfishWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
