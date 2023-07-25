@@ -167,27 +167,12 @@ defmodule Jellyfish.ServerMessage.SubscribeRequest do
   field :metrics, 3, type: Jellyfish.ServerMessage.SubscribeRequest.Metrics, oneof: 0
 end
 
-defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomStates do
-  @moduledoc false
-
-  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
-
-  field :rooms, 1, repeated: true, type: Jellyfish.ServerMessage.RoomState
-end
-
 defmodule Jellyfish.ServerMessage.SubscribeResponse do
   @moduledoc false
 
   use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
 
-  oneof :content, 0
-
   field :id, 1, type: :string
-
-  field :room_states, 2,
-    type: Jellyfish.ServerMessage.SubscribeResponse.RoomStates,
-    json_name: "roomStates",
-    oneof: 0
 end
 
 defmodule Jellyfish.ServerMessage.RoomCreated do
@@ -228,6 +213,20 @@ defmodule Jellyfish.ServerMessage.RoomNotFound do
   use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
 
   field :room_id, 1, type: :string, json_name: "roomId"
+end
+
+defmodule Jellyfish.ServerMessage.GetRoomIds do
+  @moduledoc false
+
+  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+end
+
+defmodule Jellyfish.ServerMessage.RoomIds do
+  @moduledoc false
+
+  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+
+  field :ids, 1, repeated: true, type: :string
 end
 
 defmodule Jellyfish.ServerMessage do
@@ -305,4 +304,11 @@ defmodule Jellyfish.ServerMessage do
     type: Jellyfish.ServerMessage.RoomNotFound,
     json_name: "roomNotFound",
     oneof: 0
+
+  field :get_room_ids, 16,
+    type: Jellyfish.ServerMessage.GetRoomIds,
+    json_name: "getRoomIds",
+    oneof: 0
+
+  field :room_ids, 17, type: Jellyfish.ServerMessage.RoomIds, json_name: "roomIds", oneof: 0
 end

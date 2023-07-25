@@ -10,6 +10,8 @@ defmodule JellyfishWeb.ServerSocket do
   alias Jellyfish.ServerMessage.{
     Authenticated,
     AuthRequest,
+    GetRoomIds,
+    RoomIds,
     RoomNotFound,
     RoomState,
     RoomStateRequest,
@@ -19,9 +21,6 @@ defmodule JellyfishWeb.ServerSocket do
 
   alias Jellyfish.Event
   alias Jellyfish.Room
-
-  alias Jellyfish.ServerMessage.SubscribeRequest.{Metrics, ServerNotification}
-  alias Jellyfish.ServerMessage.SubscribeResponse.RoomStates
 
   @heartbeat_interval 30_000
 
@@ -130,74 +129,41 @@ defmodule JellyfishWeb.ServerSocket do
   end
 
   defp handle_message(
-         {:subscribe_request, %SubscribeRequest{id: id, event_type: {_type, event_type}}},
+         {:subscribe_request, %SubscribeRequest{id: id, event_type: {event_type, _event}}},
          state
-       ) do
-    with {:ok, content, state} <- handle_subscribe(event_type, state) do
-      reply =
-        %ServerMessage{
-          content: {:subscribe_response, %SubscribeResponse{id: id, content: content}}
-        }
-        |> ServerMessage.encode()
+       )
+       when event_type in [:server_notification, :metrics] do
+    state = ensure_subscribed(event_type, state)
 
-      {:ok, {:reply, :ok, {:binary, reply}, state}}
-    end
+    reply =
+      %ServerMessage{content: {:subscribe_response, %SubscribeResponse{id: id}}}
+      |> ServerMessage.encode()
+
+    {:ok, {:reply, :ok, {:binary, reply}, state}}
   end
 
-  defp handle_message(message, state) do
-    unexpected_message_error(message, state)
-  end
-
-  defp handle_subscribe(%ServerNotification{}, state) do
-    state = ensure_subscribed(:server_notification, state)
-
+  defp handle_message({:get_room_ids, %GetRoomIds{}}, state) do
     RoomService.request_all_room_ids()
-    {:ok, room_ids} = await_all_room_ids()
-
-    room_ids |> Enum.each(&Room.request_state/1)
-
-    room_states =
-      room_ids
-      |> Enum.flat_map(&await_room_state/1)
-      |> Enum.map(&to_room_state_message/1)
-
-    {:ok, {:room_states, %RoomStates{rooms: room_states}}, state}
+    {:ok, {:ok, state}}
   end
 
-  defp handle_subscribe(%Metrics{}, state) do
-    state = ensure_subscribed(:metrics, state)
-
-    {:ok, nil, state}
-  end
-
-  defp handle_subscribe(request, _state), do: {:error, request}
-
-  defp await_all_room_ids() do
-    receive do
-      {:all_room_ids, all_room_ids} -> {:ok, all_room_ids}
-      {:server_notification, _notification} -> await_all_room_ids()
-    after
-      5000 -> {:error, :timeout}
-    end
-  end
-
-  defp await_room_state(room_id) do
-    receive do
-      {:room_state, room_state} ->
-        [room_state]
-
-      # Dump all notifications from the room until it sends its state
-      {:server_notification, notification} when elem(notification, 1) == room_id ->
-        await_room_state(room_id)
-    after
-      5000 -> []
-    end
+  defp handle_message(message, _state) do
+    {:error, message}
   end
 
   @impl true
   def handle_info({:room_state, room_state}, state) do
     room_state = to_room_state_message(room_state)
     msg = %ServerMessage{content: {:room_state, room_state}} |> ServerMessage.encode()
+
+    {:reply, :ok, {:binary, msg}, state}
+  end
+
+  @impl true
+  def handle_info({:all_room_ids, all_room_ids}, state) do
+    msg =
+      %ServerMessage{content: {:room_ids, %RoomIds{ids: all_room_ids}}}
+      |> ServerMessage.encode()
 
     {:reply, :ok, {:binary, msg}, state}
   end
