@@ -93,8 +93,7 @@ config :jellyfish,
     System.get_env("INTEGRATED_TURN_TCP_PORT")
     |> ConfigParser.parse_port_number("INTEGRATED_TURN_TCP_PORT"),
   jwt_max_age: 24 * 3600,
-  output_base_path: System.get_env("OUTPUT_BASE_PATH", "jellyfish_output") |> Path.expand(),
-  address: "#{System.get_env("VIRTUAL_HOST")}:#{System.get_env("PORT")}"
+  output_base_path: System.get_env("OUTPUT_BASE_PATH", "jellyfish_output") |> Path.expand()
 
 config :opentelemetry, traces_exporter: :none
 
@@ -123,6 +122,8 @@ if config_env() == :prod do
 
   host = System.get_env("VIRTUAL_HOST") || "example.com"
   port = String.to_integer(System.get_env("PORT") || "4000")
+
+  config :jellyfish, address: "#{host}:#{port}"
 
   config :jellyfish, JellyfishWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
