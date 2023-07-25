@@ -63,7 +63,12 @@ defmodule ConfigParser do
   end
 end
 
-config :membrane_webrtc_plugin, ice_mode: :full_ice
+config :membrane_webrtc_plugin,
+  ice_mode: :full_ice,
+  turn_ip: System.get_env("TURN_IP", "127.0.0.1") |> ConfigParser.parse_integrated_turn_ip(),
+  turn_port: System.get_env("TURN_PORT", "3478") |> ConfigParser.parse_port_number("TURN_PORT"),
+  turn_password: System.get_env("TURN_PASSWORD", "membrejn"),
+  turn_username: System.get_env("TURN_USERNAME", "membrejn")
 
 config :jellyfish,
   webrtc_used: String.downcase(System.get_env("WEBRTC_USED", "true")) not in ["false", "f", "0"],
