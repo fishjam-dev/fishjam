@@ -8,7 +8,7 @@ defmodule Jellyfish.Cluster.LoadBalancingTest do
   @token Application.compile_env(:jellyfish, :server_api_token)
   @headers [Authorization: "Bearer #{@token}", Accept: "Application/json; Charset=utf-8"]
 
-  @moduletag :containerised
+  @moduletag :cluster
   @max_test_duration 400_000
 
   setup do
