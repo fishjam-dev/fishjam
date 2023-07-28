@@ -40,7 +40,7 @@ defmodule Jellyfish.MixProject do
 
   # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["lib", "test/support"]
-  defp elixirc_paths(_), do: ["lib"]
+  defp elixirc_paths(_env), do: ["lib"]
 
   defp deps do
     [
@@ -59,25 +59,16 @@ defmodule Jellyfish.MixProject do
       {:protobuf, "~> 0.12.0"},
 
       # Membrane deps
-      {:membrane_rtc_engine, "~> 0.15.0"},
+      {:membrane_rtc_engine, "~> 0.16.0"},
+      {:membrane_rtc_engine_webrtc, "~> 0.1.0"},
+      {:membrane_rtc_engine_hls, "~> 0.1.0"},
+      {:membrane_rtc_engine_rtsp, "~> 0.1.0"},
       {:membrane_ice_plugin, "~> 0.16.0"},
       {:membrane_telemetry_metrics, "~> 0.1.0"},
 
       # HLS endpoints deps
-      {:membrane_aac_plugin, "~> 0.15.0"},
-      {:membrane_opus_plugin, "~> 0.17.1"},
-      {:membrane_aac_fdk_plugin, "~> 0.15.1"},
       {:membrane_audio_mix_plugin, "~> 0.15.2"},
-      {:membrane_raw_audio_format, "~> 0.11.0"},
-      {:membrane_h264_ffmpeg_plugin, "~> 0.27.0"},
-      {:membrane_h264_plugin, "~> 0.4.0"},
       {:membrane_video_compositor_plugin, "~> 0.5.1"},
-      {:membrane_http_adaptive_stream_plugin, "~> 0.15.0"},
-
-      # RTSP endpoints deps
-      {:connection, "~> 1.1"},
-      {:membrane_rtsp, "~> 0.5.0"},
-      {:membrane_udp_plugin, "~> 0.10.0"},
 
       # Dialyzer and credo
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},
