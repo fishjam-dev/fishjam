@@ -23,7 +23,6 @@ defmodule Jellyfish.Cluster.LoadBalancingTest do
         ["app1:4001", "app2:4002"]
       else
         Divo.Suite.start(services: [:app1, :app2]) |> on_exit()
-        # Divo.Suite.start(services: [:app1, :app2], auto_cleanup?: false)
         [@node1, @node2]
       end
 

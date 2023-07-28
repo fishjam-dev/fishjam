@@ -58,13 +58,11 @@ defmodule Jellyfish.RoomService do
           {:ok, Room.t(), String.t()} | {:error, :invalid_max_peers | :invalid_video_codec}
   def create_room(max_peers, video_codec) do
     {node_resources, failed_nodes} =
-      :rpc.multicall(Node.list(), :"Jellyfish.RoomService", :resource_usage, [])
+      :rpc.multicall(Jellyfish.RoomService, :get_resource_usage, [])
 
-    unless Enum.empty?(node_resources) do
+    if Enum.count(failed_nodes) > 0 do
       Logger.warn("Nodes that don't respond on resource usage request #{inspect(failed_nodes)}")
     end
-
-    node_resources = [{Node.self(), get_resource_usage()} | node_resources]
 
     {min_node, _room_size} =
       Enum.min_by(node_resources, fn {_node_name, room_num} -> room_num end)
@@ -80,6 +78,11 @@ defmodule Jellyfish.RoomService do
   @spec delete_room(Room.id()) :: :ok | {:error, :room_not_found}
   def delete_room(room_id) do
     GenServer.call(__MODULE__, {:delete_room, room_id})
+  end
+
+  @spec get_resource_usage() :: {Node.t(), integer()}
+  def get_resource_usage() do
+    list_rooms() |> Enum.count() |> then(&{Node.self(), &1})
   end
 
   @impl true
@@ -138,13 +141,6 @@ defmodule Jellyfish.RoomService do
   end
 
   @impl true
-  def handle_info({:get_resource_usage, node_pid}, state) do
-    send(node_pid, {:resources, Node.self(), get_resource_usage()})
-
-    {:noreply, state}
-  end
-
-  @impl true
   def handle_info({:resources, _node_name, _resources}, state) do
     {:noreply, state}
   end
@@ -170,10 +166,6 @@ defmodule Jellyfish.RoomService do
     Phoenix.PubSub.broadcast(Jellyfish.PubSub, "server_notification", {:room_crashed, room_id})
 
     {:noreply, state}
-  end
-
-  defp get_resource_usage() do
-    list_rooms() |> Enum.count()
   end
 
   defp remove_room(room_id) do
