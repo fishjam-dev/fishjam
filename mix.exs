@@ -86,11 +86,11 @@ defmodule Jellyfish.MixProject do
       {:httpoison, "~> 2.0"},
 
       # Test deps
-      {:websockex, "~> 0.4.3", only: [:test, :test_containerised], runtime: false},
+      {:websockex, "~> 0.4.3", only: [:test, :ci], runtime: false},
       {:excoveralls, "~> 0.15.0", only: :test, runtime: false},
 
       # Load balancing tests
-      {:divo, "~> 1.3.1", only: [:test, :test_containerised]}
+      {:divo, "~> 1.3.1", only: [:test, :ci]}
     ]
   end
 

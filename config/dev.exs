@@ -2,8 +2,6 @@ import Config
 
 config :jellyfish, server_api_token: "development", dev_routes: true
 
-port = String.to_integer(System.get_env("PORT") || "5002")
-
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #
@@ -13,7 +11,7 @@ port = String.to_integer(System.get_env("PORT") || "5002")
 config :jellyfish, JellyfishWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
-  http: [ip: {127, 0, 0, 1}, port: port],
+  http: [ip: {127, 0, 0, 1}, port: 5002],
   check_origin: false,
   code_reloader: true,
   debug_errors: true,

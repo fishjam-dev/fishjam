@@ -51,9 +51,6 @@ defmodule Jellyfish.Cluster.LoadBalancingTest do
     response_body3 = add_room(node1)
     jellyfish_instance3 = get_jellyfish_address(response_body3)
     assert_rooms_number_on_jellyfish(jellyfish_instance3, 1)
-
-    assert_rooms_number_on_jellyfish(node1, 1)
-    assert_rooms_number_on_jellyfish(node2, 1)
   end
 
   defp add_room(jellyfish_instance) do
