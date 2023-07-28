@@ -61,7 +61,7 @@ defmodule Jellyfish.RoomService do
       :rpc.multicall(Jellyfish.RoomService, :get_resource_usage, [])
 
     if Enum.count(failed_nodes) > 0 do
-      Logger.warn("Nodes that don't respond on resource usage request #{inspect(failed_nodes)}")
+      Logger.warn("Couldn't get resource usage of the following nodes. Reason: nodes don't exist. Nodes: #{inspect(failed_nodes)}")
     end
 
     {min_node, _room_size} =
