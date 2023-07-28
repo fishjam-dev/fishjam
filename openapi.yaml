@@ -211,7 +211,7 @@ components:
             room: 
               $ref: '#/components/schemas/Room'
             jellyfish_address:
-              description: Jellyfish instance address
+              description: Jellyfish instance address where the room was created. This might be different than the address of Jellyfish where the request was sent only when running a cluster of Jellyfishes. 
               example: "jellyfish1:5003"
               type: string
       required:
