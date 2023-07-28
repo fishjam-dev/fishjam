@@ -285,7 +285,7 @@ defmodule Jellyfish.Room do
   @impl true
   def handle_cast({:forwarded_tracks_number, receiver}, state) do
     reply = Engine.get_num_forwarded_tracks(state.engine_pid)
-    send(receiver, {state.id, reply})
+    send(receiver, {:forwarded_tracks_number, state.id, reply})
     {:noreply, state}
   end
 

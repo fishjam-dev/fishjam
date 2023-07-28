@@ -10,7 +10,6 @@ defmodule Jellyfish.RoomService do
   alias Jellyfish.Event
   alias Jellyfish.Room
 
-  @other_jellyfish_response_timeout 1_000
   @engine_response_timeout 500
 
   def start_link(args) do
@@ -69,8 +68,29 @@ defmodule Jellyfish.RoomService do
       )
     end
 
-    {min_node, _room_size} =
-      Enum.min_by(node_resources, fn {_node_name, room_num} -> room_num end)
+    {failed_rpcs, node_resources} =
+      Enum.split_with(node_resources, fn
+        {:badrpc, _info} -> true
+        _other -> false
+      end)
+
+    unless Enum.empty?(failed_rpcs) do
+      Logger.warn("These RPC calls fail: #{inspect(failed_rpcs)}")
+    end
+
+    %{node: min_node} =
+      Enum.min(
+        node_resources,
+        fn
+          %{forwarded_tracks_number: forwarded_tracks, rooms_number: rooms_num1},
+          %{forwarded_tracks_number: forwarded_tracks, rooms_number: rooms_num2} ->
+            rooms_num1 < rooms_num2
+
+          %{forwarded_tracks_number: forwarded_tracks1},
+          %{forwarded_tracks_number: forwarded_tracks2} ->
+            forwarded_tracks1 < forwarded_tracks2
+        end
+      )
 
     if Enum.count(node_resources) > 1 do
       Logger.info("Node with least used resources is #{inspect(min_node)}")
@@ -85,13 +105,21 @@ defmodule Jellyfish.RoomService do
     GenServer.call(__MODULE__, {:delete_room, room_id})
   end
 
-  @spec get_resource_usage() :: {Node.t(), integer()}
-  defp get_resource_usage() do
+  @spec get_resource_usage() :: %{
+          node: Node.t(),
+          forwarded_tracks_number: integer(),
+          rooms_number: integer()
+        }
+  def get_resource_usage() do
     room_ids = get_rooms_ids()
 
     Enum.each(room_ids, &Room.request_forwarded_tracks_number_in_room(&1))
 
-    room_ids |> accumulate_resource_responses() |> then(&{Node.self(), &1})
+    room_ids
+    |> accumulate_resource_responses()
+    |> then(
+      &%{node: Node.self(), forwarded_tracks_number: &1, rooms_number: Enum.count(room_ids)}
+    )
   end
 
   @impl true
@@ -170,7 +198,7 @@ defmodule Jellyfish.RoomService do
 
   defp accumulate_resource_responses(room_ids, acc \\ 0, responses \\ []) do
     receive do
-      {room_id, resource} ->
+      {:forwarded_tracks_number, room_id, resource} ->
         acc = acc + resource
         responses = [room_id | responses]
 
@@ -182,7 +210,11 @@ defmodule Jellyfish.RoomService do
     after
       @engine_response_timeout ->
         room_ids = Enum.reject(room_ids, &(&1 in responses))
-        Logger.warn("Rooms that don't respond #{inspect(room_ids)}")
+
+        unless Enum.empty?(room_ids) do
+          Logger.warn("Rooms that don't respond #{inspect(room_ids)}")
+        end
+
         acc
     end
   end
