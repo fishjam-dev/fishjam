@@ -49,8 +49,11 @@ defmodule Jellyfish.Component.HLS.FileStorage do
         %{mode: :binary, type: :segment},
         %__MODULE__{directory: directory} = state
       ) do
-    result = File.write(Path.join(directory, segment_filename), content, [:binary])
-    {result, state}
+    unless File.exists?(Path.join(directory, segment_filename)) do
+      File.write(Path.join(directory, segment_filename), content, [:binary])
+    end
+
+    {:ok, state}
   end
 
   @impl true

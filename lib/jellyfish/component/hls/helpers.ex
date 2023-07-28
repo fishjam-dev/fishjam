@@ -33,7 +33,7 @@ defmodule Jellyfish.Component.HLS.Helpers do
 
   @spec parse_filename(binary) :: {integer, binary}
   def parse_filename(segment_filename) do
-    [type, "segment", segment, manifest_name] =
+    [_type, "segment", segment, manifest_name] =
       segment_filename
       |> String.replace(".m4s", "")
       |> String.split("_")

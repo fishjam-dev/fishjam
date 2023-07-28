@@ -27,9 +27,8 @@ defmodule JellyfishWeb.HLSController do
           "filename" => filename,
           "_HLS_msn" => segment,
           "_HLS_part" => partial
-        } = params
+        }
       ) do
-    # prefix = Path.join(event_id, Map.get(params, "stream_id", ""))
     segment = String.to_integer(segment)
     partial = String.to_integer(partial)
 
@@ -54,7 +53,7 @@ defmodule JellyfishWeb.HLSController do
 
   defp handle_partial_segment_request(
          conn,
-         %{"room_id" => room_id, "filename" => segment_filename} = params
+         %{"room_id" => room_id, "filename" => segment_filename}
        ) do
     {offset, length} = conn |> get_req_header("range") |> Helpers.parse_bytes_range()
 
@@ -67,7 +66,7 @@ defmodule JellyfishWeb.HLSController do
     end
   end
 
-  defp handle_playlist_request(conn, %{"room_id" => room_id, "filename" => filename} = params) do
+  defp handle_playlist_request(conn, %{"room_id" => room_id, "filename" => filename}) do
     path = Helpers.hls_output_path(room_id, filename)
 
     if File.exists?(path) do
@@ -92,7 +91,7 @@ defmodule JellyfishWeb.HLSController do
     send_playlist(conn, path)
   end
 
-  defp handle_other_file_request(conn, %{"room_id" => room_id, "filename" => filename} = params) do
+  defp handle_other_file_request(conn, %{"room_id" => room_id, "filename" => filename}) do
     path = Helpers.hls_output_path(room_id, filename)
 
     if File.exists?(path) do
