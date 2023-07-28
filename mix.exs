@@ -25,7 +25,7 @@ defmodule Jellyfish.MixProject do
         "coveralls.html": :test,
         "coveralls.json": :test,
         "test.cluster": :test,
-        "test.cluster.compose": :test
+        "test.cluster.ci": :test
       ]
     ]
   end
@@ -91,9 +91,9 @@ defmodule Jellyfish.MixProject do
     [
       setup: ["deps.get"],
       "api.spec": ["openapi.spec.yaml --spec JellyfishWeb.ApiSpec"],
-      test: ["test --exclude containerised"],
-      "test.cluster": ["test --only containerised"],
-      "test.cluster.compose": ["cmd docker compose run test; docker compose stop"]
+      test: ["test --exclude cluster"],
+      "test.cluster": ["test --only cluster"],
+      "test.cluster.ci": ["cmd docker compose run test; docker compose stop"]
     ]
   end
 
