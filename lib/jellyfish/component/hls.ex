@@ -5,9 +5,9 @@ defmodule Jellyfish.Component.HLS do
 
   @behaviour Jellyfish.Endpoint.Config
 
+  alias Jellyfish.Component.HLS.FileStorage
   alias Membrane.RTC.Engine.Endpoint.HLS
   alias Membrane.RTC.Engine.Endpoint.HLS.{CompositorConfig, HLSConfig, MixerConfig}
-  alias Membrane.HTTPAdaptiveStream.Storages.SendStorage
   alias Membrane.Time
 
   @segment_duration Time.seconds(4)
@@ -40,7 +40,7 @@ defmodule Jellyfish.Component.HLS do
          target_window_duration: :infinity,
          segment_duration: @segment_duration,
          storage: fn directory ->
-          %SendStorage{destination: Jellyfish.Component.HLS.Broadcaster.new(directory: directory, room_id: options.room_id)}
+           %FileStorage.Config{directory: directory} |> FileStorage.init()
          end,
          partial_segment_duration: @partial_segment_duration
        }

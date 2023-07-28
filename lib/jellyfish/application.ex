@@ -21,6 +21,8 @@ defmodule Jellyfish.Application do
       # {Jellyfish.Worker, arg}
     ]
 
+    :ets.new(:partial_segments, [:public, :set, :named_table])
+
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Jellyfish.Supervisor]
