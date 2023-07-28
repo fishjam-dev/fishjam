@@ -57,9 +57,14 @@ defmodule Jellyfish.RoomService do
   @spec create_room(Room.max_peers(), String.t()) ::
           {:ok, Room.t(), String.t()} | {:error, :invalid_max_peers | :invalid_video_codec}
   def create_room(max_peers, video_codec) do
-    :ok = Phoenix.PubSub.broadcast(Jellyfish.PubSub, "jellyfishes", {:get_resource_usage, self()})
+    {node_resources, failed_nodes} =
+      :rpc.multicall(Node.list(), :"Jellyfish.RoomService", :resource_usage, [])
 
-    node_resources = receive_resources()
+    unless Enum.empty?(node_resources) do
+      Logger.warn("Nodes that don't respond on resource usage request #{inspect(failed_nodes)}")
+    end
+
+    node_resources = [{Node.self(), get_resource_usage()} | node_resources]
 
     {min_node, _room_size} =
       Enum.min_by(node_resources, fn {_node_name, room_num} -> room_num end)
@@ -165,30 +170,6 @@ defmodule Jellyfish.RoomService do
     Phoenix.PubSub.broadcast(Jellyfish.PubSub, "server_notification", {:room_crashed, room_id})
 
     {:noreply, state}
-  end
-
-  defp receive_resources(results \\ [], nodes \\ []) do
-    receive do
-      {:resources, node_name, resource_usage} ->
-        new_results = [resource_usage | results]
-        new_nodes = [node_name | nodes]
-
-        # Node.list() excludes local node
-        if Enum.count(new_nodes) == Enum.count(Node.list()) + 1 do
-          Enum.zip(new_nodes, new_results)
-        else
-          receive_resources(new_results, new_nodes)
-        end
-    after
-      1_000 ->
-        unknown_nodes = Node.list() |> Enum.reject(&(&1 in nodes))
-
-        Logger.warn(
-          "Nodes that don't respond on resource usage request #{inspect(unknown_nodes)}"
-        )
-
-        Enum.zip(nodes, results)
-    end
   end
 
   defp get_resource_usage() do
