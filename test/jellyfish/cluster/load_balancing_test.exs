@@ -18,32 +18,48 @@ defmodule Jellyfish.Cluster.LoadBalancingTest do
   @tag timeout: @max_test_duration
   test "spawning tasks on a cluster" do
     [node1, node2] =
-      if Mix.env() == :test do
-        Divo.Suite.start(services: [:app1, :app2]) |> on_exit()
-        [@node1, @node2]
-      else
+      if Mix.env() == :ci do
+        # On CI we don't use Divo, because we don't want to run Docker in Docker
         ["app1:4001", "app2:4002"]
+      else
+        Divo.Suite.start(services: [:app1, :app2]) |> on_exit()
+        # Divo.Suite.start(services: [:app1, :app2], auto_cleanup?: false)
+        [@node1, @node2]
       end
 
-    response_body = add_room(node1)
+    response_body1 = add_room(node1)
 
-    jellyfish_instance = get_jellyfish_address(response_body)
+    jellyfish_instance1 = get_jellyfish_address(response_body1)
 
-    assert_rooms_number_on_jellyfish(jellyfish_instance, 1)
+    assert_rooms_number_on_jellyfish(jellyfish_instance1, 1)
 
-    response_body = add_room(node1)
+    response_body2 = add_room(node1)
 
-    jellyfish_instance = get_jellyfish_address(response_body)
+    jellyfish_instance2 = get_jellyfish_address(response_body2)
 
-    assert_rooms_number_on_jellyfish(jellyfish_instance, 1)
+    assert_rooms_number_on_jellyfish(jellyfish_instance2, 1)
 
     assert_rooms_number_on_jellyfish(node1, 1)
     assert_rooms_number_on_jellyfish(node2, 1)
+
+    room_id = response_body1 |> Jason.decode!() |> get_in(["data", "id"])
+
+    delete_room(jellyfish_instance1, room_id)
+
+    assert_rooms_number_on_jellyfish(jellyfish_instance1, 0)
+    assert_rooms_number_on_jellyfish(jellyfish_instance2, 1)
   end
 
   defp add_room(jellyfish_instance) do
     assert {:ok, %HTTPoison.Response{status_code: 201, body: body}} =
              HTTPoison.post("http://#{jellyfish_instance}/room", [], @headers)
+
+    body
+  end
+
+  defp delete_room(jellyfish_instance, room_id) do
+    assert {:ok, %HTTPoison.Response{status_code: 204, body: body}} =
+             HTTPoison.delete("http://#{jellyfish_instance}/room/#{room_id}", @headers)
 
     body
   end

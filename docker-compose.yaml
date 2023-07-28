@@ -33,7 +33,7 @@ services:
       - |
         cd app/ 
         mix deps.get 
-        MIX_ENV=test_containerised mix test --only containerised
+        MIX_ENV=ci mix test --only containerised
     volumes:
       - .:/app
       - /app/_build

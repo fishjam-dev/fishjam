@@ -203,6 +203,22 @@ components:
       title: RoomConfig
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Room.Config
+    RoomCreateDetailsResponse:
+      description: Response containing room details
+      properties:
+        data:
+          properties:
+            room: 
+              $ref: '#/components/schemas/Room'
+            jellyfish_address:
+              description: Jellyfish instance address
+              example: "jellyfish1:5003"
+              type: string
+      required:
+        - data
+      title: RoomDetailsResponse
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.RoomDetailsResponse
     RoomDetailsResponse:
       description: Response containing room details
       properties:
@@ -271,7 +287,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RoomDetailsResponse'
+                $ref: '#/components/schemas/RoomCreateDetailsResponse'
           description: Room successfully created
         '400':
           content:

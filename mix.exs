@@ -24,7 +24,8 @@ defmodule Jellyfish.MixProject do
         "coveralls.post": :test,
         "coveralls.html": :test,
         "coveralls.json": :test,
-        test_containerised: :test
+        "test.cluster": :test,
+        "test.cluster.compose": :test
       ]
     ]
   end
@@ -40,7 +41,7 @@ defmodule Jellyfish.MixProject do
   end
 
   # Specifies which paths to compile per environment.
-  defp elixirc_paths(env) when env in [:test, :test_containerised], do: ["lib", "test/support"]
+  defp elixirc_paths(env) when env in [:test, :ci], do: ["lib", "test/support"]
   defp elixirc_paths(_env), do: ["lib"]
 
   defp deps do
@@ -80,9 +81,9 @@ defmodule Jellyfish.MixProject do
       {:httpoison, "~> 2.0"},
 
       # Test deps
-      {:websockex, "~> 0.4.3", only: [:test, :test_containerised], runtime: false},
+      {:websockex, "~> 0.4.3", only: [:test, :ci], runtime: false},
       {:excoveralls, "~> 0.15.0", only: :test, runtime: false},
-      {:divo, "~> 1.3.1", only: [:test, :test_containerised]}
+      {:divo, "~> 1.3.1", only: [:test, :ci]}
     ]
   end
 
@@ -91,8 +92,8 @@ defmodule Jellyfish.MixProject do
       setup: ["deps.get"],
       "api.spec": ["openapi.spec.yaml --spec JellyfishWeb.ApiSpec"],
       test: ["test --exclude containerised"],
-      test_containerised: ["test --only containerised"],
-      test_containerised_compose: ["cmd docker compose run test; docker compose stop"]
+      "test.cluster": ["test --only containerised"],
+      "test.cluster.compose": ["cmd docker compose run test; docker compose stop"]
     ]
   end
 
