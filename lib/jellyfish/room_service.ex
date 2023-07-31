@@ -54,9 +54,10 @@ defmodule Jellyfish.RoomService do
     |> Enum.reject(&(&1 == nil))
   end
 
-  @spec create_room(Room.max_peers()) :: {:ok, Room.t()} | {:error, :bad_arg}
-  def create_room(max_peers) do
-    GenServer.call(__MODULE__, {:create_room, max_peers})
+  @spec create_room(Room.max_peers(), String.t()) ::
+          {:ok, Room.t()} | {:error, :invalid_max_peers | :invalid_video_codec}
+  def create_room(max_peers, video_codec) do
+    GenServer.call(__MODULE__, {:create_room, max_peers, video_codec})
   end
 
   @spec delete_room(Room.id()) :: :ok | {:error, :room_not_found}
@@ -70,24 +71,33 @@ defmodule Jellyfish.RoomService do
   end
 
   @impl true
-  def handle_call({:create_room, max_peers}, _from, state)
-      when is_nil(max_peers) or (is_integer(max_peers) and max_peers >= 0) do
-    {:ok, room_pid, room_id} = Room.start(max_peers)
-    room = Room.get_state(room_id)
-    Process.monitor(room_pid)
+  def handle_call({:create_room, max_peers, video_codec}, _from, state) do
+    with :ok <- validate_max_peers(max_peers),
+         {:ok, video_codec} <- codec_to_atom(video_codec) do
+      {:ok, room_pid, room_id} = Room.start(max_peers, video_codec)
 
-    state = put_in(state, [:rooms, room_pid], room_id)
+      room = Room.get_state(room_id)
+      Process.monitor(room_pid)
 
-    Logger.info("Created room #{inspect(room.id)}")
+      state = put_in(state, [:rooms, room_pid], room_id)
 
-    Phoenix.PubSub.broadcast(Jellyfish.PubSub, "server_notification", {:room_created, room_id})
+      Logger.info("Created room #{inspect(room.id)}")
 
-    {:reply, {:ok, room}, state}
+      Phoenix.PubSub.broadcast(
+        Jellyfish.PubSub,
+        "server_notification",
+        {:room_created, room_id}
+      )
+
+      {:reply, {:ok, room}, state}
+    else
+      {:error, :max_peers} ->
+        {:reply, {:error, :invalid_max_peers}, state}
+
+      {:error, :video_codec} ->
+        {:reply, {:error, :invalid_video_codec}, state}
+    end
   end
-
-  @impl true
-  def handle_call({:create_room, _max_peers}, _from, state),
-    do: {:reply, {:error, :bad_arg}, state}
 
   @impl true
   def handle_call({:delete_room, room_id}, _from, state) do
@@ -140,4 +150,13 @@ defmodule Jellyfish.RoomService do
         Logger.warn("Room process with id #{inspect(room_id)} doesn't exist")
     end
   end
+
+  defp validate_max_peers(nil), do: :ok
+  defp validate_max_peers(max_peers) when is_integer(max_peers) and max_peers >= 0, do: :ok
+  defp validate_max_peers(_max_peers), do: {:error, :max_peers}
+
+  defp codec_to_atom("h264"), do: {:ok, :h264}
+  defp codec_to_atom("vp8"), do: {:ok, :vp8}
+  defp codec_to_atom(nil), do: {:ok, nil}
+  defp codec_to_atom(_codec), do: {:error, :video_codec}
 end

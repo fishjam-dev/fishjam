@@ -15,11 +15,14 @@ components:
           description: Assigned component id
           example: component-1
           type: string
+        metadata:
+          $ref: '#/components/schemas/ComponentMetadata'
         type:
           $ref: '#/components/schemas/ComponentType'
       required:
         - id
         - type
+        - metadata
       title: Component
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component
@@ -33,6 +36,14 @@ components:
       title: ComponentDetailsResponse
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.ComponentDetailsResponse
+    ComponentMetadata:
+      description: Component-specific metadata
+      properties:
+        playable:
+          type: boolean
+      title: ComponentMetadata
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Metadata
     ComponentOptions:
       description: Component-specific options
       oneOf:
@@ -182,6 +193,13 @@ components:
           minimum: 1
           nullable: true
           type: integer
+        videoCodec:
+          description: Enforces video codec for each peer in the room
+          enum:
+            - h264
+            - vp8
+          nullable: true
+          type: string
       title: RoomConfig
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Room.Config

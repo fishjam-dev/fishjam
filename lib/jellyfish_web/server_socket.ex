@@ -11,6 +11,8 @@ defmodule JellyfishWeb.ServerSocket do
     Authenticated,
     AuthRequest,
     ComponentCrashed,
+    HlsPlayable,
+    MetricsReport,
     PeerConnected,
     PeerCrashed,
     PeerDisconnected,
@@ -18,12 +20,13 @@ defmodule JellyfishWeb.ServerSocket do
     RoomCreated,
     RoomDeleted,
     SubscribeRequest,
-    SubscriptionResponse
+    SubscribeResponse
   }
 
-  alias Jellyfish.ServerMessage.SubscriptionResponse.{RoomNotFound, RoomsState, RoomState}
+  alias Jellyfish.ServerMessage.SubscribeResponse.{RoomNotFound, RoomsState, RoomState}
 
   @heartbeat_interval 30_000
+  @valid_subscribe_topics [:server_notification, :metrics]
 
   @impl true
   def child_spec(_opts), do: :ignore
@@ -37,7 +40,14 @@ defmodule JellyfishWeb.ServerSocket do
 
   @impl true
   def init(state) do
-    {:ok, Map.put(state, :authenticated?, false)}
+    state =
+      state
+      |> Map.merge(%{
+        authenticated?: false,
+        subscriptions: MapSet.new()
+      })
+
+    {:ok, state}
   end
 
   @impl true
@@ -83,9 +93,11 @@ defmodule JellyfishWeb.ServerSocket do
   def handle_in({encoded_message, [opcode: :binary]}, state) do
     with %ServerMessage{content: {:subscribe_request, request}} <-
            ServerMessage.decode(encoded_message),
-         {:ok, response} <- handle_subscribe(request) do
+         {:ok, response, state} <- handle_subscribe(request, state) do
       reply =
-        %ServerMessage{content: response}
+        %ServerMessage{
+          content: {:subscribe_response, response}
+        }
         |> ServerMessage.encode()
 
       {:reply, :ok, {:binary, reply}, state}
@@ -113,27 +125,33 @@ defmodule JellyfishWeb.ServerSocket do
     {:stop, :closed, {1003, "operation not allowed"}, state}
   end
 
-  defp handle_subscribe(%SubscribeRequest{
-         id: id,
-         event_type:
-           {:server_notification,
-            %SubscribeRequest.ServerNotification{room_id: {_variant, option}}}
-       }) do
-    :ok = Phoenix.PubSub.subscribe(Jellyfish.PubSub, "server_notification")
+  defp handle_subscribe(
+         %SubscribeRequest{
+           id: id,
+           event_type: {topic, event_type}
+         },
+         state
+       )
+       when topic in @valid_subscribe_topics do
+    unless MapSet.member?(state.subscriptions, topic) do
+      :ok = Phoenix.PubSub.subscribe(Jellyfish.PubSub, Atom.to_string(topic))
+    end
 
-    room_state = get_room_state(option)
+    state = update_in(state.subscriptions, &MapSet.put(&1, topic))
 
-    msg =
-      {:subscription_response,
-       %SubscriptionResponse{
-         id: id,
-         content: room_state
-       }}
+    content =
+      case event_type do
+        %SubscribeRequest.ServerNotification{room_id: {_variant, option}} ->
+          get_room_state(option)
 
-    {:ok, msg}
+        %SubscribeRequest.Metrics{} ->
+          nil
+      end
+
+    {:ok, %SubscribeResponse{id: id, content: content}, state}
   end
 
-  defp handle_subscribe(request), do: {:error, request}
+  defp handle_subscribe(request, _state), do: {:error, request}
 
   @impl true
   def handle_info(:send_ping, state) do
@@ -143,42 +161,8 @@ defmodule JellyfishWeb.ServerSocket do
 
   @impl true
   def handle_info(msg, state) do
-    msg =
-      case msg do
-        {:room_created, room_id} ->
-          %ServerMessage{content: {:room_created, %RoomCreated{room_id: room_id}}}
-
-        {:room_deleted, room_id} ->
-          %ServerMessage{content: {:room_deleted, %RoomDeleted{room_id: room_id}}}
-
-        {:room_crashed, room_id} ->
-          %ServerMessage{content: {:room_crashed, %RoomCrashed{room_id: room_id}}}
-
-        {:peer_connected, room_id, peer_id} ->
-          %ServerMessage{
-            content: {:peer_connected, %PeerConnected{room_id: room_id, peer_id: peer_id}}
-          }
-
-        {:peer_disconnected, room_id, peer_id} ->
-          %ServerMessage{
-            content: {:peer_disconnected, %PeerDisconnected{room_id: room_id, peer_id: peer_id}}
-          }
-
-        {:peer_crashed, room_id, peer_id} ->
-          %ServerMessage{
-            content: {:peer_crashed, %PeerCrashed{room_id: room_id, peer_id: peer_id}}
-          }
-
-        {:component_crashed, room_id, component_id} ->
-          %ServerMessage{
-            content:
-              {:component_crashed,
-               %ComponentCrashed{room_id: room_id, component_id: component_id}}
-          }
-      end
-
-    encoded_msg = ServerMessage.encode(msg)
-
+    content = to_proto_notification(msg)
+    encoded_msg = %ServerMessage{content: content} |> ServerMessage.encode()
     {:push, {:binary, encoded_msg}, state}
   end
 
@@ -214,7 +198,7 @@ defmodule JellyfishWeb.ServerSocket do
       |> Enum.map(
         &%RoomState.Component{
           id: &1.id,
-          type: to_proto_type(&1.type)
+          component: to_proto_component(&1)
         }
       )
 
@@ -229,15 +213,53 @@ defmodule JellyfishWeb.ServerSocket do
         }
       )
 
-    config = struct!(RoomState.Config, room.config)
+    config =
+      room.config
+      |> Map.update!(:video_codec, &to_proto_codec/1)
+      |> then(&struct!(RoomState.Config, &1))
 
     %RoomState{id: room.id, config: config, peers: peers, components: components}
   end
 
-  defp to_proto_type(Jellyfish.Component.HLS), do: :TYPE_HLS
-  defp to_proto_type(Jellyfish.Component.RTSP), do: :TYPE_RTSP
+  defp to_proto_notification({:room_created, room_id}),
+    do: {:room_created, %RoomCreated{room_id: room_id}}
+
+  defp to_proto_notification({:room_deleted, room_id}),
+    do: {:room_deleted, %RoomDeleted{room_id: room_id}}
+
+  defp to_proto_notification({:room_crashed, room_id}),
+    do: {:room_crashed, %RoomCrashed{room_id: room_id}}
+
+  defp to_proto_notification({:peer_connected, room_id, peer_id}),
+    do: {:peer_connected, %PeerConnected{room_id: room_id, peer_id: peer_id}}
+
+  defp to_proto_notification({:peer_disconnected, room_id, peer_id}),
+    do: {:peer_disconnected, %PeerDisconnected{room_id: room_id, peer_id: peer_id}}
+
+  defp to_proto_notification({:peer_crashed, room_id, peer_id}),
+    do: {:peer_crashed, %PeerCrashed{room_id: room_id, peer_id: peer_id}}
+
+  defp to_proto_notification({:component_crashed, room_id, component_id}),
+    do: {:component_crashed, %ComponentCrashed{room_id: room_id, component_id: component_id}}
+
+  defp to_proto_notification({:metrics, report}),
+    do: {:metrics_report, %MetricsReport{metrics: report}}
+
+  defp to_proto_notification({:hls_playable, room_id, component_id}),
+    do: {:hls_playable, %HlsPlayable{room_id: room_id, component_id: component_id}}
+
   defp to_proto_type(Jellyfish.Peer.WebRTC), do: :TYPE_WEBRTC
+
+  defp to_proto_codec(:h264), do: :CODEC_H264
+  defp to_proto_codec(:vp8), do: :CODEC_VP8
+  defp to_proto_codec(nil), do: :CODEC_UNSPECIFIED
 
   defp to_proto_status(:disconnected), do: :STATUS_DISCONNECTED
   defp to_proto_status(:connected), do: :STATUS_CONNECTED
+
+  defp to_proto_component(%{type: Jellyfish.Component.HLS, metadata: %{playable: playable}}),
+    do: {:hls, %RoomState.Component.Hls{playable: playable}}
+
+  defp to_proto_component(%{type: Jellyfish.Component.RTSP}),
+    do: {:rtsp, %RoomState.Component.Rtsp{}}
 end

@@ -6,7 +6,7 @@ defmodule Example do
   require Logger
 
   @jellyfish_hostname "localhost"
-  @jellyfish_port 4000
+  @jellyfish_port 5002
   @jellyfish_token "development"
 
   def run(stream_uri) do

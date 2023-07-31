@@ -4,6 +4,7 @@ defmodule Jellyfish.Component.HLS do
   """
 
   @behaviour Jellyfish.Endpoint.Config
+  @behaviour Jellyfish.Component
 
   alias Jellyfish.Component.HLS.FileStorage
   alias Membrane.RTC.Engine.Endpoint.HLS
@@ -12,6 +13,8 @@ defmodule Jellyfish.Component.HLS do
 
   @segment_duration Time.seconds(4)
   @partial_segment_duration Time.milliseconds(400)
+
+  @type metadata :: %{playable: boolean()}
 
   @impl true
   def config(options) do
@@ -46,4 +49,7 @@ defmodule Jellyfish.Component.HLS do
        }
      }}
   end
+
+  @impl true
+  def metadata(), do: %{playable: false}
 end

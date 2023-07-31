@@ -24,6 +24,7 @@ defmodule Jellyfish.Room do
 
   @type id :: String.t()
   @type max_peers :: non_neg_integer() | nil
+  @type video_codec :: :h264 | :vp8 | nil
 
   @typedoc """
   This module contains:
@@ -35,17 +36,23 @@ defmodule Jellyfish.Room do
   """
   @type t :: %__MODULE__{
           id: id(),
-          config: %{max_peers: max_peers(), simulcast?: boolean()},
+          config: %{
+            max_peers: max_peers(),
+            video_codec: video_codec(),
+            simulcast?: boolean()
+          },
           components: %{Component.id() => Component.t()},
           peers: %{Peer.id() => Peer.t()},
           engine_pid: pid(),
           network_options: map()
         }
 
-  @spec start(max_peers()) :: {:ok, pid(), id()}
-  def start(max_peers) do
+  @spec start(max_peers(), video_codec()) :: {:ok, pid(), id()}
+  def start(max_peers, video_codec) do
     id = UUID.uuid4()
-    {:ok, pid} = GenServer.start(__MODULE__, [id, max_peers], name: registry_id(id))
+
+    {:ok, pid} = GenServer.start(__MODULE__, [id, max_peers, video_codec], name: registry_id(id))
+
     {:ok, pid, id}
   end
 
@@ -87,7 +94,8 @@ defmodule Jellyfish.Room do
     GenServer.call(registry_id(room_id), {:remove_peer, peer_id})
   end
 
-  @spec add_component(id(), Component.component(), map() | nil) :: {:ok, Component.t()} | :error
+  @spec add_component(id(), Component.component(), map() | nil) ::
+          {:ok, Component.t()} | :error | {:error, :incompatible_codec}
   def add_component(room_id, component_type, options) do
     GenServer.call(registry_id(room_id), {:add_component, component_type, options})
   end
@@ -103,8 +111,8 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def init([id, max_peers]) do
-    state = new(id, max_peers)
+  def init([id, max_peers, video_codec]) do
+    state = new(id, max_peers, video_codec)
     Logger.metadata(room_id: id)
     Logger.info("Initialize room")
 
@@ -122,7 +130,12 @@ defmodule Jellyfish.Room do
       if Enum.count(state.peers) == state.config.max_peers do
         {{:error, :reached_peers_limit}, state}
       else
-        options = %{engine_pid: state.engine_pid, network_options: state.network_options}
+        options = %{
+          engine_pid: state.engine_pid,
+          network_options: state.network_options,
+          video_codec: state.config.video_codec
+        }
+
         peer = Peer.new(peer_type, options)
         state = put_in(state, [:peers, peer.id], peer)
 
@@ -192,14 +205,19 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def handle_call({:add_component, component_type, options}, _from, state) do
+  def handle_call(
+        {:add_component, component_type, options},
+        _from,
+        %{config: %{video_codec: video_codec}} = state
+      ) do
     options =
       Map.merge(
         %{engine_pid: state.engine_pid, room_id: state.id},
         if(is_nil(options), do: %{}, else: options)
       )
 
-    with {:ok, component} <- Component.new(component_type, options) do
+    with :ok <- check_video_codec(video_codec, component_type),
+         {:ok, component} <- Component.new(component_type, options) do
       state = put_in(state, [:components, component.id], component)
 
       :ok = Engine.add_endpoint(state.engine_pid, component.engine_endpoint, id: component.id)
@@ -208,6 +226,10 @@ defmodule Jellyfish.Room do
 
       {:reply, {:ok, component}, state}
     else
+      {:error, :incompatible_codec} ->
+        Logger.warn("Unable to add component: incompatible codec, HLS needs 'h264' video codec.")
+        {:reply, {:error, :incompatible_codec}, state}
+
       {:error, reason} ->
         Logger.warn("Unable to add component: #{inspect(reason)}")
         {:reply, :error, state}
@@ -301,12 +323,32 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
+  def handle_info({:playlist_playable, :audio, _playlist_idl}, state), do: {:noreply, state}
+
+  @impl true
+  def handle_info({:playlist_playable, :video, _playlist_idl}, state) do
+    endpoint_id =
+      Enum.find_value(state.components, fn {id, %{type: type}} ->
+        if type == Component.HLS, do: id
+      end)
+
+    Phoenix.PubSub.broadcast(
+      Jellyfish.PubSub,
+      "server_notification",
+      {:hls_playable, state.id, endpoint_id}
+    )
+
+    state = update_in(state, [:components, endpoint_id], &Map.put(&1, :playable, true))
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_info(info, state) do
     Logger.warn("Received unexpected info: #{inspect(info)}")
     {:noreply, state}
   end
 
-  defp new(id, max_peers) do
+  defp new(id, max_peers, video_codec) do
     rtc_engine_options = [
       id: id
     ]
@@ -337,11 +379,15 @@ defmodule Jellyfish.Room do
 
     %__MODULE__{
       id: id,
-      config: %{max_peers: max_peers},
+      config: %{max_peers: max_peers, video_codec: video_codec},
       engine_pid: pid,
       network_options: [integrated_turn_options: integrated_turn_options]
     }
   end
 
   defp registry_id(room_id), do: {:via, Registry, {Jellyfish.RoomRegistry, room_id}}
+
+  defp check_video_codec(:h264, Jellyfish.Component.HLS), do: :ok
+  defp check_video_codec(_codec, Jellyfish.Component.HLS), do: {:error, :incompatible_codec}
+  defp check_video_codec(_codec, _component), do: :ok
 end

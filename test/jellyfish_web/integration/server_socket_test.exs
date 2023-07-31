@@ -4,23 +4,28 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
   alias __MODULE__.Endpoint
 
   alias Jellyfish.PeerMessage
-
+  alias Jellyfish.RoomService
   alias Jellyfish.ServerMessage
 
   alias Jellyfish.ServerMessage.{
     Authenticated,
     AuthRequest,
+    HlsPlayable,
+    MetricsReport,
     PeerConnected,
     PeerDisconnected,
     RoomCrashed,
     RoomCreated,
     RoomDeleted,
     SubscribeRequest,
-    SubscriptionResponse
+    SubscribeResponse
   }
 
-  alias Jellyfish.ServerMessage.SubscribeRequest.ServerNotification
-  alias Jellyfish.ServerMessage.SubscriptionResponse.{RoomNotFound, RoomsState, RoomState}
+  alias Jellyfish.ServerMessage.SubscribeRequest.{Metrics, ServerNotification}
+  alias Jellyfish.ServerMessage.SubscribeResponse.{RoomNotFound, RoomsState, RoomState}
+
+  alias Jellyfish.ServerMessage.SubscribeResponse.RoomState.Component
+  alias Jellyfish.ServerMessage.SubscribeResponse.RoomState.Component.{Hls, Rtsp}
 
   alias JellyfishWeb.{PeerSocket, ServerSocket, WS}
 
@@ -29,6 +34,9 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
   @auth_response %Authenticated{}
 
   @max_peers 1
+  @video_codec :CODEC_H264
+
+  @source_uri "rtsp://placeholder-19inrifjbsjb.it:12345/afwefae"
 
   Application.put_env(
     :jellyfish,
@@ -116,7 +124,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     response =
       subscribe(ws, "1", {:server_notification, %ServerNotification{room_id: {:id, room_id}}})
 
-    assert %SubscriptionResponse{
+    assert %SubscribeResponse{
              id: "1",
              content:
                {:room_state,
@@ -144,6 +152,9 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
 
     {room_id, peer_id, _token, conn} = add_room_and_peer(conn, server_api_token)
 
+    {conn, hls_id} = add_hls_component(conn, room_id)
+    {conn, _rtsp_id} = add_rtsp_component(conn, room_id)
+
     response =
       subscribe(
         ws,
@@ -151,7 +162,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
         {:server_notification, %ServerNotification{room_id: {:option, :OPTION_ALL}}}
       )
 
-    assert %SubscriptionResponse{
+    assert %SubscribeResponse{
              id: "1",
              content:
                {:rooms_state,
@@ -159,8 +170,8 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
                   rooms: [
                     %RoomState{
                       id: ^room_id,
-                      config: %{max_peers: @max_peers},
-                      components: [],
+                      config: %{max_peers: @max_peers, video_codec: @video_codec},
+                      components: components,
                       peers: [
                         %RoomState.Peer{
                           id: ^peer_id,
@@ -172,6 +183,19 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
                   ]
                 }}
            } = response
+
+    assert components
+           |> Enum.map(fn %Component{component: component} -> component end)
+           |> Enum.all?(fn
+             {:hls, %Hls{playable: false}} -> true
+             {:rtsp, %Rtsp{}} -> true
+             _other -> false
+           end)
+
+    {:ok, room_pid} = RoomService.find_room(room_id)
+
+    send(room_pid, {:playlist_playable, :video, "hls_output/#{room_id}"})
+    assert_receive %HlsPlayable{room_id: room_id, component_id: ^hls_id}
 
     conn = delete(conn, ~p"/room/#{room_id}/")
     assert response(conn, :no_content)
@@ -189,7 +213,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
         {:server_notification, %ServerNotification{room_id: {:id, fake_room_id}}}
       )
 
-    assert %SubscriptionResponse{
+    assert %SubscribeResponse{
              id: "1",
              content:
                {:room_not_found,
@@ -286,6 +310,34 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     ws
   end
 
+  test "sends metrics", %{conn: conn} do
+    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+    ws = create_and_authenticate()
+
+    subscribe(
+      ws,
+      "1",
+      {:server_notification, %ServerNotification{room_id: {:option, :OPTION_ALL}}}
+    )
+
+    {room_id, peer_id, peer_token, _conn} = add_room_and_peer(conn, server_api_token)
+
+    {:ok, peer_ws} = WS.start_link("ws://127.0.0.1:#{@port}/socket/peer/websocket", :peer)
+    auth_request = peer_auth_request(peer_token)
+    :ok = WS.send_binary_frame(peer_ws, auth_request)
+
+    assert_receive %PeerConnected{peer_id: ^peer_id, room_id: ^room_id}
+
+    subscribe(ws, "2", {:metrics, %Metrics{}})
+    assert_receive %MetricsReport{metrics: metrics} when metrics != "{}", 200
+
+    metrics = Jason.decode!(metrics)
+
+    [endpoint_id | _rest] = metrics["room_id=#{room_id}"] |> Map.keys()
+
+    assert String.contains?(endpoint_id, "endpoint_id")
+  end
+
   def subscribe(ws, id, event_type) do
     msg = %ServerMessage{
       content:
@@ -298,14 +350,14 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
 
     :ok = WS.send_binary_frame(ws, ServerMessage.encode(msg))
 
-    assert_receive %SubscriptionResponse{id: ^id} = response
+    assert_receive %SubscribeResponse{id: ^id} = response
     response
   end
 
   defp add_room_and_peer(conn, server_api_token) do
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
-    conn = post(conn, ~p"/room", maxPeers: @max_peers)
+    conn = post(conn, ~p"/room", maxPeers: @max_peers, videoCodec: "h264")
     assert %{"id" => room_id} = json_response(conn, :created)["data"]
 
     conn = post(conn, ~p"/room/#{room_id}/peer", type: "webrtc")
@@ -314,6 +366,25 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
              json_response(conn, :created)["data"]
 
     {room_id, peer_id, peer_token, conn}
+  end
+
+  defp add_hls_component(conn, room_id) do
+    conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
+
+    assert %{"id" => id, "metadata" => %{"playable" => false}, "type" => "hls"} =
+             json_response(conn, :created)["data"]
+
+    {conn, id}
+  end
+
+  defp add_rtsp_component(conn, room_id) do
+    conn =
+      post(conn, ~p"/room/#{room_id}/component", type: "rtsp", options: %{sourceUri: @source_uri})
+
+    assert %{"id" => id, "metadata" => %{}, "type" => "rtsp"} =
+             json_response(conn, :created)["data"]
+
+    {conn, id}
   end
 
   defp auth_request(token) do

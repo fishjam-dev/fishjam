@@ -4,10 +4,13 @@ defmodule Jellyfish.Component.RTSP do
   """
 
   @behaviour Jellyfish.Endpoint.Config
+  @behaviour Jellyfish.Component
 
   alias Membrane.RTC.Engine.Endpoint.RTSP
 
   alias JellyfishWeb.ApiSpec
+
+  @type metadata :: %{}
 
   @impl true
   def config(%{engine_pid: engine} = options) do
@@ -29,4 +32,7 @@ defmodule Jellyfish.Component.RTSP do
       {:error, _reason} = error -> error
     end
   end
+
+  @impl true
+  def metadata(), do: %{}
 end
