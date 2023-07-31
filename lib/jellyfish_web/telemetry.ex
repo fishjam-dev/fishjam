@@ -3,6 +3,7 @@ defmodule JellyfishWeb.Telemetry do
 
   use Supervisor
   import Telemetry.Metrics
+  alias JellyfishWeb.Telemetry.MetricsAggregator
 
   def start_link(arg) do
     Supervisor.start_link(__MODULE__, arg, name: __MODULE__)
@@ -11,61 +12,73 @@ defmodule JellyfishWeb.Telemetry do
   @impl true
   def init(_arg) do
     children = [
-      # Telemetry poller will execute the given period measurements
-      # every 10_000ms. Learn more here: https://hexdocs.pm/telemetry_metrics
-      {:telemetry_poller, measurements: periodic_measurements(), period: 10_000}
-      # Add reporters as children of your supervision tree.
-      # {Telemetry.Metrics.ConsoleReporter, metrics: metrics()}
+      MetricsAggregator,
+      {TelemetryMetricsPrometheus, metrics: metrics(&last_value/2)}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
   end
 
-  def metrics do
+  # Phoenix by default uses the `summary` metric type in `LiveDashboard`,
+  # but `TelemetryMetricsPrometheus` doesn't support it, so we have to use `last_value` instead
+  def metrics(metric_type \\ &summary/2) do
     [
       # Phoenix Metrics
-      summary("phoenix.endpoint.start.system_time",
-        unit: {:native, :millisecond}
+      metric_type.("phoenix.endpoint.start.system_time.seconds",
+        event_name: [:phoenix, :endpoint, :start],
+        measurement: :system_time,
+        unit: {:native, :second}
       ),
-      summary("phoenix.endpoint.stop.duration",
-        unit: {:native, :millisecond}
+      metric_type.("phoenix.endpoint.stop.duration.seconds",
+        event_name: [:phoenix, :endpoint, :stop],
+        measurement: :duration,
+        unit: {:native, :second}
       ),
-      summary("phoenix.router_dispatch.start.system_time",
+      metric_type.("phoenix.router_dispatch.start.system_time.seconds",
+        event_name: [:phoenix, :router_dispatch, :start],
+        measurement: :system_time,
         tags: [:route],
-        unit: {:native, :millisecond}
+        unit: {:native, :second}
       ),
-      summary("phoenix.router_dispatch.exception.duration",
+      metric_type.("phoenix.router_dispatch.exception.duration.seconds",
+        event_name: [:phoenix, :router_dispatch, :exception],
+        measurement: :duration,
         tags: [:route],
-        unit: {:native, :millisecond}
+        unit: {:native, :second}
       ),
-      summary("phoenix.router_dispatch.stop.duration",
+      metric_type.("phoenix.router_dispatch.stop.duration.seconds",
+        event_name: [:phoenix, :router_dispatch, :stop],
+        measurement: :duration,
         tags: [:route],
-        unit: {:native, :millisecond}
+        unit: {:native, :second}
       ),
-      summary("phoenix.socket_connected.duration",
-        unit: {:native, :millisecond}
+      metric_type.("phoenix.socket_connected.duration.seconds",
+        event_name: [:phoenix, :socket_connected],
+        measurement: :duration,
+        unit: {:native, :second}
       ),
-      summary("phoenix.channel_join.duration",
-        unit: {:native, :millisecond}
+      metric_type.("phoenix.channel_join.duration.seconds",
+        event_name: [:phoenix, :channel_join],
+        measurement: :duration,
+        unit: {:native, :second}
       ),
-      summary("phoenix.channel_handled_in.duration",
+      metric_type.("phoenix.channel_handled_in.duration.seconds",
+        event_name: [:phoenix, :channel_handled_in],
+        measurement: :duration,
         tags: [:event],
-        unit: {:native, :millisecond}
+        unit: {:native, :second}
       ),
 
       # VM Metrics
-      summary("vm.memory.total", unit: {:byte, :kilobyte}),
-      summary("vm.total_run_queue_lengths.total"),
-      summary("vm.total_run_queue_lengths.cpu"),
-      summary("vm.total_run_queue_lengths.io")
+      metric_type.("vm.memory.total.bytes",
+        event_name: [:vm, :memory],
+        measurement: :total
+      ),
+      metric_type.("vm.total_run_queue_lengths.total", []),
+      metric_type.("vm.total_run_queue_lengths.cpu", []),
+      metric_type.("vm.total_run_queue_lengths.io", [])
     ]
-  end
-
-  defp periodic_measurements do
-    [
-      # A module, function and arguments to be invoked periodically.
-      # This function must call :telemetry.execute/3 and a metric must be added above.
-      # {JellyfishWeb, :count_users, []}
-    ]
+    # Jellyfish Metrics
+    |> Enum.concat(MetricsAggregator.metrics())
   end
 end

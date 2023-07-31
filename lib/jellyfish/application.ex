@@ -11,15 +11,15 @@ defmodule Jellyfish.Application do
 
     children = [
       {Phoenix.PubSub, name: Jellyfish.PubSub},
-      # Start the Telemetry supervisor
-      JellyfishWeb.Telemetry,
       {Membrane.TelemetryMetrics.Reporter,
        [metrics: Membrane.RTC.Engine.Metrics.metrics(), name: JellyfishMetricsReporter]},
       {Jellyfish.MetricsScraper, scrape_interval},
       JellyfishWeb.Endpoint,
       # Start the RoomService
       Jellyfish.RoomService,
-      {Registry, keys: :unique, name: Jellyfish.RoomRegistry}
+      {Registry, keys: :unique, name: Jellyfish.RoomRegistry},
+      # Start the Telemetry supervisor (must be started after Jellyfish.RoomRegistry)
+      JellyfishWeb.Telemetry
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
