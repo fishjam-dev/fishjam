@@ -49,7 +49,8 @@ defmodule Jellyfish.Component.HLS.Helpers do
     end
   end
 
-  @spec get_last_partial(binary) :: {non_neg_integer, non_neg_integer}
+  @spec get_last_partial(binary) ::
+          {binary, non_neg_integer, non_neg_integer} | {:error, :no_partial_segments}
   def get_last_partial(binary) do
     partial_tags =
       binary
