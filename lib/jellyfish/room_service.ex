@@ -10,8 +10,6 @@ defmodule Jellyfish.RoomService do
   alias Jellyfish.Event
   alias Jellyfish.Room
 
-  @engine_response_timeout 500
-
   def start_link(args) do
     GenServer.start_link(__MODULE__, args, name: __MODULE__)
   end
@@ -113,10 +111,12 @@ defmodule Jellyfish.RoomService do
   def get_resource_usage() do
     room_ids = get_rooms_ids()
 
-    Enum.each(room_ids, &Room.request_forwarded_tracks_number_in_room(&1))
-
     room_ids
-    |> accumulate_resource_responses()
+    |> Enum.map(fn room_id ->
+      Task.async(fn -> Room.get_num_forwarded_tracks(room_id) end)
+    end)
+    |> Task.await_many()
+    |> Enum.sum()
     |> then(
       &%{node: Node.self(), forwarded_tracks_number: &1, rooms_number: Enum.count(room_ids)}
     )
@@ -194,29 +194,6 @@ defmodule Jellyfish.RoomService do
     Event.broadcast(:server_notification, {:room_crashed, room_id})
 
     {:noreply, state}
-  end
-
-  defp accumulate_resource_responses(room_ids, acc \\ 0, responses \\ []) do
-    receive do
-      {:forwarded_tracks_number, room_id, resource} ->
-        acc = acc + resource
-        responses = [room_id | responses]
-
-        if Enum.count(responses) == Enum.count(room_ids) do
-          acc
-        else
-          accumulate_resource_responses(room_ids, acc, responses)
-        end
-    after
-      @engine_response_timeout ->
-        room_ids = Enum.reject(room_ids, &(&1 in responses))
-
-        unless Enum.empty?(room_ids) do
-          Logger.warn("Rooms that don't respond #{inspect(room_ids)}")
-        end
-
-        acc
-    end
   end
 
   defp get_rooms_ids() do

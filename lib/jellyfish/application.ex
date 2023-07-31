@@ -11,8 +11,6 @@ defmodule Jellyfish.Application do
 
     topologies = Application.get_env(:libcluster, :topologies) || []
 
-    topologies = Application.get_env(:libcluster, :topologies) || []
-
     children = [
       {Phoenix.PubSub, name: Jellyfish.PubSub},
       {Membrane.TelemetryMetrics.Reporter,
