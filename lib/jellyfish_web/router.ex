@@ -20,7 +20,7 @@ defmodule JellyfishWeb.Router do
 
   scope "/hls", JellyfishWeb do
     pipe_through [:fetch_session, :protect_from_forgery]
-    get ":room_id/:filename", HLSController, :index
+    get "/:room_id/:filename", HLSController, :index
   end
 
   # Enable LiveDashboard in development
