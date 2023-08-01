@@ -55,9 +55,26 @@ defmodule Jellyfish.RoomService do
   end
 
   @spec create_room(Room.max_peers(), String.t()) ::
-          {:ok, Room.t()} | {:error, :invalid_max_peers | :invalid_video_codec}
+          {:ok, Room.t(), String.t()} | {:error, :invalid_max_peers | :invalid_video_codec}
   def create_room(max_peers, video_codec) do
-    GenServer.call(__MODULE__, {:create_room, max_peers, video_codec})
+    {node_resources, failed_nodes} =
+      :rpc.multicall(Jellyfish.RoomService, :get_resource_usage, [])
+
+    if Enum.count(failed_nodes) > 0 do
+      Logger.warn(
+        "Couldn't get resource usage of the following nodes. Reason: nodes don't exist. Nodes: #{inspect(failed_nodes)}"
+      )
+    end
+
+    {min_node, _room_size} =
+      Enum.min_by(node_resources, fn {_node_name, room_num} -> room_num end)
+
+    if Enum.count(node_resources) > 1 do
+      Logger.info("Node with least used resources is #{inspect(min_node)}")
+      GenServer.call({__MODULE__, min_node}, {:create_room, max_peers, video_codec})
+    else
+      GenServer.call(__MODULE__, {:create_room, max_peers, video_codec})
+    end
   end
 
   @spec delete_room(Room.id()) :: :ok | {:error, :room_not_found}
@@ -65,9 +82,20 @@ defmodule Jellyfish.RoomService do
     GenServer.call(__MODULE__, {:delete_room, room_id})
   end
 
+  @spec get_resource_usage() :: {Node.t(), integer()}
+  def get_resource_usage() do
+    list_rooms() |> Enum.count() |> then(&{Node.self(), &1})
+  end
+
   @impl true
   def init(_opts) do
-    {:ok, %{rooms: %{}}}
+    {:ok, %{rooms: %{}}, {:continue, nil}}
+  end
+
+  @impl true
+  def handle_continue(_continue_arg, state) do
+    :ok = Phoenix.PubSub.subscribe(Jellyfish.PubSub, "jellyfishes")
+    {:noreply, state}
   end
 
   @impl true
@@ -89,7 +117,7 @@ defmodule Jellyfish.RoomService do
         {:room_created, room_id}
       )
 
-      {:reply, {:ok, room}, state}
+      {:reply, {:ok, room, Application.fetch_env!(:jellyfish, :address)}, state}
     else
       {:error, :max_peers} ->
         {:reply, {:error, :invalid_max_peers}, state}
@@ -112,6 +140,11 @@ defmodule Jellyfish.RoomService do
       end
 
     {:reply, response, state}
+  end
+
+  @impl true
+  def handle_info({:resources, _node_name, _resources}, state) do
+    {:noreply, state}
   end
 
   @impl true

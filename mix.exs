@@ -23,7 +23,9 @@ defmodule Jellyfish.MixProject do
         "coveralls.detail": :test,
         "coveralls.post": :test,
         "coveralls.html": :test,
-        "coveralls.json": :test
+        "coveralls.json": :test,
+        "test.cluster": :test,
+        "test.cluster.ci": :test
       ]
     ]
   end
@@ -39,7 +41,7 @@ defmodule Jellyfish.MixProject do
   end
 
   # Specifies which paths to compile per environment.
-  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(env) when env in [:test, :ci], do: ["lib", "test/support"]
   defp elixirc_paths(_env), do: ["lib"]
 
   defp deps do
@@ -74,16 +76,24 @@ defmodule Jellyfish.MixProject do
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},
       {:credo, ">= 0.0.0", only: :dev, runtime: false},
 
+      # Load balancing
+      {:libcluster, "~> 3.3"},
+      {:httpoison, "~> 2.0"},
+
       # Test deps
-      {:websockex, "~> 0.4.3", only: :test, runtime: false},
-      {:excoveralls, "~> 0.15.0", only: :test, runtime: false}
+      {:websockex, "~> 0.4.3", only: [:test, :ci], runtime: false},
+      {:excoveralls, "~> 0.15.0", only: :test, runtime: false},
+      {:divo, "~> 1.3.1", only: [:test, :ci]}
     ]
   end
 
   defp aliases do
     [
       setup: ["deps.get"],
-      "api.spec": ["openapi.spec.yaml --spec JellyfishWeb.ApiSpec"]
+      "api.spec": ["openapi.spec.yaml --spec JellyfishWeb.ApiSpec"],
+      test: ["test --exclude cluster"],
+      "test.cluster": ["test --only cluster"],
+      "test.cluster.ci": ["cmd docker compose run test; docker compose stop"]
     ]
   end
 
