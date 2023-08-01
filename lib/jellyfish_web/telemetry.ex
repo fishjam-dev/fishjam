@@ -20,7 +20,12 @@ defmodule JellyfishWeb.Telemetry do
   end
 
   # Phoenix by default uses the `summary` metric type in `LiveDashboard`,
-  # but `TelemetryMetricsPrometheus` doesn't support it, so we have to use `last_value` instead
+  # but `TelemetryMetricsPrometheus` doesn't support it, so we have to use `last_value` instead.
+  #
+  # The metrics, events and measurements are named according to the Prometheus guidelines.
+  # For more information, refer to these links:
+  #   - https://prometheus.io/docs/practices/naming/
+  #   - https://hexdocs.pm/telemetry_metrics_prometheus_core/1.0.0/TelemetryMetricsPrometheus.Core.html#module-naming
   def metrics(metric_type \\ &summary/2) do
     [
       # Phoenix Metrics

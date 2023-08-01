@@ -13,15 +13,33 @@ defmodule JellyfishWeb.Telemetry.MetricsAggregator do
   def start_link(opts),
     do: GenServer.start_link(__MODULE__, opts, name: __MODULE__)
 
-  @spec handle_event(term(), map(), map(), map()) :: :ok
-  def handle_event(name, measurements, metadata, config),
-    do: GenServer.cast(config.handler, {:event, name, measurements, metadata})
+  @spec handle_event(
+          :telemetry.event_name(),
+          :telemetry.event_measurements(),
+          :telemetry.event_metadata(),
+          %{ets_table: :ets.table()}
+        ) :: :ok | {:error, atom()}
+  def handle_event(name, measurements, metadata, config)
+
+  def handle_event(@ice_received_event, %{bytes: bytes}, _metadata, %{ets_table: ets_table}) do
+    :ets.update_counter(ets_table, :ingress_delta, bytes, {:ingress_delta, 0})
+    :ok
+  end
+
+  def handle_event(@ice_sent_event, %{bytes: bytes}, _metadata, %{ets_table: ets_table}) do
+    :ets.update_counter(ets_table, :egress_delta, bytes, {:egress_delta, 0})
+    :ok
+  end
+
+  def handle_event(_name, _measurements, _metadata, _config), do: {:error, :unknown_event}
 
   @spec metrics() :: [Telemetry.Metrics.t()]
   def metrics() do
     import Telemetry.Metrics
 
     [
+      # FIXME: The traffic metrics work only with ICE events (emitted only by WebRTC components)
+      # which means they don't count the traffic from/to RTSP and HLS components
       sum("jellyfish.traffic.ingress.total.bytes",
         event_name: [:jellyfish],
         measurement: :traffic_ingress_total
@@ -39,6 +57,9 @@ defmodule JellyfishWeb.Telemetry.MetricsAggregator do
         measurement: :traffic_egress_throughput
       ),
       last_value("jellyfish.rooms"),
+
+      # FIXME: Prometheus warns about using labels to store dimensions with high cardinality,
+      # such as UUIDs. For more information refer here: https://prometheus.io/docs/practices/naming/#labels
       last_value("jellyfish.room.peers",
         tags: [:room_id]
       ),
@@ -52,38 +73,28 @@ defmodule JellyfishWeb.Telemetry.MetricsAggregator do
 
   @impl true
   def init(_args) do
+    ets_table = :ets.new(:measurements, [:public, :set, {:write_concurrency, true}])
+
     :telemetry.attach_many(
       __MODULE__,
       [@ice_received_event, @ice_sent_event],
       &__MODULE__.handle_event/4,
-      %{handler: self()}
+      %{ets_table: ets_table}
     )
 
     Process.send_after(self(), :forward_metrics, @metric_forwarding_interval * 1000)
 
-    state = %{
-      ingress_delta: 0,
-      egress_delta: 0
-    }
-
-    {:ok, state}
+    {:ok, %{ets_table: ets_table}}
   end
 
   @impl true
-  def handle_cast({:event, @ice_received_event, %{bytes: bytes}, _metadata}, state),
-    do: {:noreply, Map.update(state, :ingress_delta, 0, &(&1 + bytes))}
-
-  def handle_cast({:event, @ice_sent_event, %{bytes: bytes}, _metadata}, state),
-    do: {:noreply, Map.update(state, :egress_delta, 0, &(&1 + bytes))}
-
-  def handle_cast(_msg, state), do: {:noreply, state}
-
-  @impl true
-  def handle_info(
-        :forward_metrics,
-        %{ingress_delta: ingress_delta, egress_delta: egress_delta} = state
-      ) do
+  def handle_info(:forward_metrics, %{ets_table: ets_table} = state) do
     rooms = Jellyfish.RoomService.list_rooms()
+
+    [ingress_delta, egress_delta] =
+      :ets.tab2list(ets_table)
+      |> Enum.flat_map(fn {key, _val} -> :ets.take(ets_table, key) end)
+      |> then(fn kwl -> Enum.map([:ingress_delta, :egress_delta], &Keyword.get(kwl, &1, 0)) end)
 
     :telemetry.execute(
       [:jellyfish],
@@ -111,6 +122,6 @@ defmodule JellyfishWeb.Telemetry.MetricsAggregator do
 
     Process.send_after(self(), :forward_metrics, @metric_forwarding_interval * 1000)
 
-    {:noreply, Map.keys(state) |> Map.new(&{&1, 0})}
+    {:noreply, state}
   end
 end
