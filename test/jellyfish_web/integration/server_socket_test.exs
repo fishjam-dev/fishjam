@@ -25,8 +25,6 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     SubscribeResponse
   }
 
-  alias Jellyfish.ServerMessage.SubscribeRequest.{Metrics, ServerNotification}
-
   alias JellyfishWeb.{PeerSocket, ServerSocket, WS}
 
   @port 5907
@@ -119,9 +117,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
 
     {room_id, _peer_id, _token, conn} = add_room_and_peer(conn, server_api_token)
 
-    response = subscribe(ws, "1", {:server_notification, %ServerNotification{}})
-
-    assert %SubscribeResponse{id: "1"} = response
+    subscribe(ws, :server_notification)
 
     conn = delete(conn, ~p"/room/#{room_id}/")
     assert response(conn, :no_content)
@@ -185,11 +181,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
     ws = create_and_authenticate()
 
-    subscribe(
-      ws,
-      "1",
-      {:server_notification, %ServerNotification{}}
-    )
+    subscribe(ws, :server_notification)
 
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
@@ -208,11 +200,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
     ws = create_and_authenticate()
 
-    subscribe(
-      ws,
-      "1",
-      {:server_notification, %ServerNotification{}}
-    )
+    subscribe(ws, :server_notification)
 
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
@@ -229,11 +217,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
     ws = create_and_authenticate()
 
-    subscribe(
-      ws,
-      "1",
-      {:server_notification, %ServerNotification{}}
-    )
+    subscribe(ws, :server_notification)
 
     {room_id, peer_id, peer_token, conn} = add_room_and_peer(conn, server_api_token)
 
@@ -264,7 +248,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
     ws = create_and_authenticate()
 
-    subscribe(ws, "1", {:server_notification, %ServerNotification{}})
+    subscribe(ws, :server_notification)
 
     {room_id, peer_id, peer_token, _conn} = add_room_and_peer(conn, server_api_token)
 
@@ -274,7 +258,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
 
     assert_receive %PeerConnected{peer_id: ^peer_id, room_id: ^room_id}
 
-    subscribe(ws, "2", {:metrics, %Metrics{}})
+    subscribe(ws, :metrics)
     assert_receive %MetricsReport{metrics: metrics} when metrics != "{}", 200
 
     metrics = Jason.decode!(metrics)
@@ -284,19 +268,20 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     assert String.contains?(endpoint_id, "endpoint_id")
   end
 
-  def subscribe(ws, id, event_type) do
+  def subscribe(ws, event_type) do
+    proto_event_type = to_proto_event_type(event_type)
+
     msg = %ServerMessage{
       content:
         {:subscribe_request,
          %SubscribeRequest{
-           id: id,
-           event_type: event_type
+           event_type: proto_event_type
          }}
     }
 
     :ok = WS.send_binary_frame(ws, ServerMessage.encode(msg))
 
-    assert_receive %SubscribeResponse{id: ^id} = response
+    assert_receive %SubscribeResponse{event_type: ^proto_event_type} = response
     response
   end
 
@@ -332,4 +317,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     auth_request = peer_auth_request(peer_token)
     :ok = WS.send_binary_frame(peer_ws, auth_request)
   end
+
+  defp to_proto_event_type(:server_notification), do: :EVENT_TYPE_SERVER_NOTIFICATION
+  defp to_proto_event_type(:metrics), do: :EVENT_TYPE_METRICS
 end

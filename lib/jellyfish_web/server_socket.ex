@@ -129,14 +129,14 @@ defmodule JellyfishWeb.ServerSocket do
   end
 
   defp handle_message(
-         {:subscribe_request, %SubscribeRequest{id: id, event_type: {event_type, _event}}},
+         {:subscribe_request, %SubscribeRequest{event_type: proto_event_type}},
          state
-       )
-       when event_type in [:server_notification, :metrics] do
+       ) do
+    event_type = from_proto_event_type(proto_event_type)
     state = ensure_subscribed(event_type, state)
 
     reply =
-      %ServerMessage{content: {:subscribe_response, %SubscribeResponse{id: id}}}
+      %ServerMessage{content: {:subscribe_response, %SubscribeResponse{event_type: proto_event_type}}}
       |> ServerMessage.encode()
 
     {:ok, {:reply, :ok, {:binary, reply}, state}}
@@ -238,4 +238,7 @@ defmodule JellyfishWeb.ServerSocket do
 
   defp to_proto_status(:disconnected), do: :STATUS_DISCONNECTED
   defp to_proto_status(:connected), do: :STATUS_CONNECTED
+
+  defp from_proto_event_type(:EVENT_TYPE_SERVER_NOTIFICATION), do: :server_notification
+  defp from_proto_event_type(:EVENT_TYPE_METRICS), do: :metrics
 end
