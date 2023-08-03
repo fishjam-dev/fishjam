@@ -63,6 +63,25 @@ defmodule ConfigParser do
   end
 end
 
+hosts =
+  System.get_env("NODES", "")
+  |> String.split(" ")
+  |> Enum.reject(&(&1 == ""))
+  |> Enum.map(&String.to_atom(&1))
+
+unless Enum.empty?(hosts) do
+  config :libcluster,
+    topologies: [
+      epmd_cluster: [
+        strategy: Cluster.Strategy.Epmd,
+        config: [hosts: hosts]
+      ]
+    ]
+end
+
+host = System.get_env("VIRTUAL_HOST") || "example.com"
+port = String.to_integer(System.get_env("PORT") || "4000")
+
 config :jellyfish,
   webrtc_used: String.downcase(System.get_env("WEBRTC_USED", "true")) not in ["false", "f", "0"],
   integrated_turn_ip:
@@ -77,7 +96,8 @@ config :jellyfish,
     System.get_env("INTEGRATED_TURN_TCP_PORT")
     |> ConfigParser.parse_port_number("INTEGRATED_TURN_TCP_PORT"),
   jwt_max_age: 24 * 3600,
-  output_base_path: System.get_env("OUTPUT_BASE_PATH", "jellyfish_output") |> Path.expand()
+  output_base_path: System.get_env("OUTPUT_BASE_PATH", "jellyfish_output") |> Path.expand(),
+  address: "#{host}:#{port}"
 
 config :opentelemetry, traces_exporter: :none
 
@@ -103,9 +123,6 @@ if config_env() == :prod do
       environment variable SECRET_KEY_BASE is missing.
       You can generate one by calling: mix phx.gen.secret
       """
-
-  host = System.get_env("VIRTUAL_HOST") || "example.com"
-  port = String.to_integer(System.get_env("PORT") || "4000")
 
   config :jellyfish, JellyfishWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],

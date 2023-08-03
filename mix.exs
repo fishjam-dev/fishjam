@@ -23,7 +23,9 @@ defmodule Jellyfish.MixProject do
         "coveralls.detail": :test,
         "coveralls.post": :test,
         "coveralls.html": :test,
-        "coveralls.json": :test
+        "coveralls.json": :test,
+        "test.cluster": :test,
+        "test.cluster.ci": :test
       ]
     ]
   end
@@ -39,14 +41,15 @@ defmodule Jellyfish.MixProject do
   end
 
   # Specifies which paths to compile per environment.
-  defp elixirc_paths(:test), do: ["lib", "test/support"]
-  defp elixirc_paths(_), do: ["lib"]
+  defp elixirc_paths(env) when env in [:test, :ci], do: ["lib", "test/support"]
+  defp elixirc_paths(_env), do: ["lib"]
 
   defp deps do
     [
       {:phoenix, "~> 1.7.1"},
       {:phoenix_live_dashboard, "~> 0.7.2"},
       {:telemetry_metrics, "~> 0.6"},
+      {:telemetry_metrics_prometheus, "~> 1.1"},
       {:telemetry_poller, "~> 1.0"},
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
@@ -59,40 +62,39 @@ defmodule Jellyfish.MixProject do
       {:protobuf, "~> 0.12.0"},
 
       # Membrane deps
-      {:membrane_rtc_engine, "~> 0.15.0"},
+      {:membrane_rtc_engine, "~> 0.16.0"},
+      {:membrane_rtc_engine_webrtc, "~> 0.1.0"},
+      {:membrane_rtc_engine_hls, "~> 0.1.0"},
+      {:membrane_rtc_engine_rtsp, "~> 0.1.0"},
       {:membrane_ice_plugin, "~> 0.16.0"},
       {:membrane_telemetry_metrics, "~> 0.1.0"},
 
       # HLS endpoints deps
-      {:membrane_aac_plugin, "~> 0.15.0"},
-      {:membrane_opus_plugin, "~> 0.17.1"},
-      {:membrane_aac_fdk_plugin, "~> 0.15.1"},
       {:membrane_audio_mix_plugin, "~> 0.15.2"},
-      {:membrane_raw_audio_format, "~> 0.11.0"},
-      {:membrane_h264_ffmpeg_plugin, "~> 0.27.0"},
-      {:membrane_h264_plugin, "~> 0.4.0"},
       {:membrane_video_compositor_plugin, "~> 0.5.1"},
-      {:membrane_http_adaptive_stream_plugin, "~> 0.15.0"},
-
-      # RTSP endpoints deps
-      {:connection, "~> 1.1"},
-      {:membrane_rtsp, "~> 0.5.0"},
-      {:membrane_udp_plugin, "~> 0.10.0"},
 
       # Dialyzer and credo
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},
       {:credo, ">= 0.0.0", only: :dev, runtime: false},
 
+      # Load balancing
+      {:libcluster, "~> 3.3"},
+      {:httpoison, "~> 2.0"},
+
       # Test deps
-      {:websockex, "~> 0.4.3", only: :test, runtime: false},
-      {:excoveralls, "~> 0.15.0", only: :test, runtime: false}
+      {:websockex, "~> 0.4.3", only: [:test, :ci], runtime: false},
+      {:excoveralls, "~> 0.15.0", only: :test, runtime: false},
+      {:divo, "~> 1.3.1", only: [:test, :ci]}
     ]
   end
 
   defp aliases do
     [
       setup: ["deps.get"],
-      "api.spec": ["openapi.spec.yaml --spec JellyfishWeb.ApiSpec"]
+      "api.spec": ["openapi.spec.yaml --spec JellyfishWeb.ApiSpec"],
+      test: ["test --exclude cluster"],
+      "test.cluster": ["test --only cluster"],
+      "test.cluster.ci": ["cmd docker compose run test; docker compose stop"]
     ]
   end
 

@@ -136,7 +136,9 @@ defmodule JellyfishWeb.ServerSocket do
     state = ensure_subscribed(event_type, state)
 
     reply =
-      %ServerMessage{content: {:subscribe_response, %SubscribeResponse{event_type: proto_event_type}}}
+      %ServerMessage{
+        content: {:subscribe_response, %SubscribeResponse{event_type: proto_event_type}}
+      }
       |> ServerMessage.encode()
 
     {:ok, {:reply, :ok, {:binary, reply}, state}}
@@ -177,9 +179,7 @@ defmodule JellyfishWeb.ServerSocket do
   @impl true
   def handle_info(msg, state) do
     content = Event.to_proto(msg)
-
     encoded_msg = %ServerMessage{content: content} |> ServerMessage.encode()
-
     {:push, {:binary, encoded_msg}, state}
   end
 
@@ -205,7 +205,7 @@ defmodule JellyfishWeb.ServerSocket do
       |> Enum.map(
         &%RoomState.Component{
           id: &1.id,
-          type: to_proto_type(&1.type)
+          component: to_proto_component(&1)
         }
       )
 
@@ -228,8 +228,6 @@ defmodule JellyfishWeb.ServerSocket do
     %RoomState{id: room.id, config: config, peers: peers, components: components}
   end
 
-  defp to_proto_type(Jellyfish.Component.HLS), do: :TYPE_HLS
-  defp to_proto_type(Jellyfish.Component.RTSP), do: :TYPE_RTSP
   defp to_proto_type(Jellyfish.Peer.WebRTC), do: :TYPE_WEBRTC
 
   defp to_proto_codec(:h264), do: :CODEC_H264
@@ -241,4 +239,10 @@ defmodule JellyfishWeb.ServerSocket do
 
   defp from_proto_event_type(:EVENT_TYPE_SERVER_NOTIFICATION), do: :server_notification
   defp from_proto_event_type(:EVENT_TYPE_METRICS), do: :metrics
+
+  defp to_proto_component(%{type: Jellyfish.Component.HLS, metadata: %{playable: playable}}),
+    do: {:hls, %RoomState.Component.Hls{playable: playable}}
+
+  defp to_proto_component(%{type: Jellyfish.Component.RTSP}),
+    do: {:rtsp, %RoomState.Component.Rtsp{}}
 end

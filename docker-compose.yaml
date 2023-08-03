@@ -1,0 +1,69 @@
+version: "3"
+
+x-jellyfish-template: &jellyfish-template
+  build: .
+  environment: &jellyfish-environment
+    ERLANG_COOKIE: "panuozzo-pollo-e-pancetta"
+    SERVER_API_TOKEN: "development"
+    SECRET_KEY_BASE: "super-secret-key"
+    VIRTUAL_HOST: "localhost"
+    NODES: "app@app1 app@app2"
+  networks:
+    - net1
+  restart: on-failure
+  healthcheck:
+    test:
+      [
+        "CMD",
+        "sh",
+        "-c",
+        "curl --fail -H \"authorization: Bearer $$SERVER_API_TOKEN\" http://localhost:$$PORT/room || exit 1"
+      ]
+    interval: 3s
+    retries: 2
+    timeout: 2s
+    start_period: 15s
+
+services:
+  test:
+    image: membraneframeworklabs/docker_membrane
+    command:
+      - sh
+      - -c
+      - |
+        cd app/ 
+        mix deps.get 
+        MIX_ENV=ci mix test --only cluster
+    volumes:
+      - .:/app
+      - /app/_build
+      - /app/deps
+    networks:
+      - net1
+    depends_on:
+      - app1
+      - app2
+
+  app1:
+    <<: *jellyfish-template
+    environment:
+      <<: *jellyfish-environment
+      RELEASE_NODE: app@app1
+      NODE_NAME: app@app1
+      PORT: 4001
+    ports:
+      - 4001:4001
+
+  app2:
+    <<: *jellyfish-template
+    environment:
+      <<: *jellyfish-environment
+      RELEASE_NODE: app@app2
+      NODE_NAME: app@app2
+      PORT: 4002
+    ports:
+      - 4002:4002
+
+networks:
+  net1:
+    driver: bridge

@@ -69,11 +69,11 @@ defmodule JellyfishWeb.RoomController do
   def create(conn, params) do
     with max_peers <- Map.get(params, "maxPeers"),
          video_codec <- Map.get(params, "videoCodec"),
-         {:ok, room} <- RoomService.create_room(max_peers, video_codec) do
+         {:ok, room, jellyfish_address} <- RoomService.create_room(max_peers, video_codec) do
       conn
       |> put_resp_content_type("application/json")
       |> put_status(:created)
-      |> render("show.json", room: room)
+      |> render("show.json", room: room, jellyfish_address: jellyfish_address)
     else
       {:error, :invalid_max_peers} ->
         {:error, :bad_request, "maxPeers must be a number"}

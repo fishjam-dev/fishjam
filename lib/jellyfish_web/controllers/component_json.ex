@@ -15,7 +15,8 @@ defmodule JellyfishWeb.ComponentJSON do
 
     %{
       id: component.id,
-      type: type
+      type: type,
+      metadata: component.metadata
     }
   end
 end
