@@ -87,13 +87,13 @@ defmodule JellyfishWeb.ServerSocket do
   end
 
   def handle_in({encoded_message, [opcode: :binary]}, state) do
-    with %ServerMessage{content: content} <- ServerMessage.decode(encoded_message),
-         {:ok, ret_val} <- handle_message(content, state) do
-      ret_val
+    with %ServerMessage{content: content} <- ServerMessage.decode(encoded_message) do
+      case handle_message(content, state) do
+        {:ok, state} -> {:ok, state}
+        {:reply, msg, state} -> {:reply, :ok, {:binary, ServerMessage.encode(msg)}, state}
+        {:error, request} -> unexpected_message_error(request, state)
+      end
     else
-      {:error, request} ->
-        unexpected_message_error(request, state)
-
       other ->
         unexpected_message_error(other, state)
     end
@@ -117,14 +117,12 @@ defmodule JellyfishWeb.ServerSocket do
   defp handle_message({:room_state_request, %RoomStateRequest{room_id: room_id}}, state) do
     case Room.request_state(room_id) do
       :ok ->
-        {:ok, {:ok, state}}
+        {:ok, state}
 
       {:error, :room_not_found} ->
-        msg =
-          %ServerMessage{content: {:room_not_found, %RoomNotFound{room_id: room_id}}}
-          |> ServerMessage.encode()
+        msg = %ServerMessage{content: {:room_not_found, %RoomNotFound{room_id: room_id}}}
 
-        {:ok, {:reply, :ok, {:binary, msg}, state}}
+        {:reply, msg, state}
     end
   end
 
@@ -135,18 +133,16 @@ defmodule JellyfishWeb.ServerSocket do
     event_type = from_proto_event_type(proto_event_type)
     state = ensure_subscribed(event_type, state)
 
-    reply =
-      %ServerMessage{
-        content: {:subscribe_response, %SubscribeResponse{event_type: proto_event_type}}
-      }
-      |> ServerMessage.encode()
+    msg = %ServerMessage{
+      content: {:subscribe_response, %SubscribeResponse{event_type: proto_event_type}}
+    }
 
-    {:ok, {:reply, :ok, {:binary, reply}, state}}
+    {:reply, msg, state}
   end
 
   defp handle_message({:get_room_ids, %GetRoomIds{}}, state) do
     RoomService.request_all_room_ids()
-    {:ok, {:ok, state}}
+    {:ok, state}
   end
 
   defp handle_message(message, _state) do
@@ -158,16 +154,15 @@ defmodule JellyfishWeb.ServerSocket do
     room_state = to_room_state_message(room_state)
     msg = %ServerMessage{content: {:room_state, room_state}} |> ServerMessage.encode()
 
-    {:reply, :ok, {:binary, msg}, state}
+    {:push, {:binary, msg}, state}
   end
 
   @impl true
   def handle_info({:all_room_ids, all_room_ids}, state) do
     msg =
-      %ServerMessage{content: {:room_ids, %RoomIds{ids: all_room_ids}}}
-      |> ServerMessage.encode()
+      %ServerMessage{content: {:room_ids, %RoomIds{ids: all_room_ids}}} |> ServerMessage.encode()
 
-    {:reply, :ok, {:binary, msg}, state}
+    {:push, {:binary, msg}, state}
   end
 
   @impl true

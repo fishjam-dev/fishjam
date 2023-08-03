@@ -53,9 +53,6 @@ defmodule Jellyfish.Event do
   defp to_proto_server_notification({:component_crashed, room_id, component_id}),
     do: {:component_crashed, %ComponentCrashed{room_id: room_id, component_id: component_id}}
 
-  defp to_proto_server_notification({:metrics, report}),
-    do: {:metrics_report, %MetricsReport{metrics: report}}
-
   defp to_proto_server_notification({:hls_playable, room_id, component_id}),
     do: {:hls_playable, %HlsPlayable{room_id: room_id, component_id: component_id}}
 end

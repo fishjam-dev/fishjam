@@ -145,17 +145,17 @@ defmodule Jellyfish.RoomService do
   end
 
   @impl true
-  def handle_info({:resources, _node_name, _resources}, state) do
-    {:noreply, state}
-  end
-
-  @impl true
   def handle_cast({:request_all_room_ids, caller_pid}, state) do
     all_room_ids =
       Jellyfish.RoomRegistry
       |> Registry.select([{{:"$1", :_, :_}, [], [:"$1"]}])
 
     send(caller_pid, {:all_room_ids, all_room_ids})
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({:resources, _node_name, _resources}, state) do
     {:noreply, state}
   end
 

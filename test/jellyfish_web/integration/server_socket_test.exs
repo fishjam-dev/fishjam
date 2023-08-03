@@ -117,18 +117,6 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     assert_receive {:disconnected, {:remote, 1003, "operation not allowed"}}, 1000
   end
 
-  test "responds with all of the room states", %{conn: conn} do
-    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
-    ws = create_and_authenticate()
-
-    {room_id, _peer_id, _token, conn} = add_room_and_peer(conn, server_api_token)
-
-    subscribe(ws, :server_notification)
-
-    conn = delete(conn, ~p"/room/#{room_id}/")
-    assert response(conn, :no_content)
-  end
-
   test "responds with room state", %{conn: conn} do
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
     ws = create_and_authenticate()
