@@ -79,8 +79,21 @@ unless Enum.empty?(hosts) do
     ]
 end
 
-host = System.get_env("VIRTUAL_HOST") || "example.com"
-port = String.to_integer(System.get_env("PORT") || "4000")
+is_prod? = config_env() == :prod
+
+host =
+  case System.get_env("VIRTUAL_HOST") do
+    nil when is_prod? -> raise "Unset VIRTUAL_HOST environment variable"
+    nil -> "example.com"
+    other -> other
+  end
+
+port =
+  case System.get_env("PORT") do
+    nil when is_prod? -> raise "Unset PORT environment variable"
+    nil -> 4000
+    other -> String.to_integer(other)
+  end
 
 config :jellyfish,
   webrtc_used: String.downcase(System.get_env("WEBRTC_USED", "true")) not in ["false", "f", "0"],
@@ -101,7 +114,7 @@ config :jellyfish,
 
 config :opentelemetry, traces_exporter: :none
 
-if config_env() == :prod do
+if is_prod? do
   token =
     System.fetch_env!("SERVER_API_TOKEN") ||
       raise """

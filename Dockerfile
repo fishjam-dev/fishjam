@@ -105,6 +105,8 @@ RUN chmod +x docker-entrypoint.sh
 
 ENV HOME=/app
 
+HEALTHCHECK CMD curl --fail -H "authorization: Bearer ${SERVER_API_TOKEN}" http://localhost:${PORT}/room || exit 1
+
 ENTRYPOINT ["./docker-entrypoint.sh"]
 
 CMD ["bin/jellyfish", "start"]
