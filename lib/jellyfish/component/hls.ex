@@ -6,6 +6,7 @@ defmodule Jellyfish.Component.HLS do
   @behaviour Jellyfish.Endpoint.Config
   @behaviour Jellyfish.Component
 
+  alias Jellyfish.Component.HLS.Storage
   alias Membrane.RTC.Engine.Endpoint.HLS
   alias Membrane.RTC.Engine.Endpoint.HLS.{CompositorConfig, HLSConfig, MixerConfig}
   alias Membrane.Time
@@ -41,7 +42,10 @@ defmodule Jellyfish.Component.HLS do
          mode: :live,
          target_window_duration: :infinity,
          segment_duration: @segment_duration,
-         partial_segment_duration: @partial_segment_duration
+         partial_segment_duration: @partial_segment_duration,
+         storage: fn directory ->
+           Storage.init(%{directory: directory, room_id: options.room_id})
+         end
        }
      }}
   end
