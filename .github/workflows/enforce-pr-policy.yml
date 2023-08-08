@@ -18,8 +18,8 @@ jobs:
         uses: actions/checkout@v3
       - name: Check PR
         run: |
-          PR_BASE=$(gh pr view https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }} --json base -q ".base.ref")
-          PR_HEAD=$(gh pr.view https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }} --json head -q ".head.ref")
+          PR_BASE=$(gh pr view https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }} --json baseRefName -q ".base.ref")
+          PR_HEAD=$(gh pr view https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }} --json headRefName -q ".head.ref")
           if [[ "$PR_BASE" == "main" ]] && ! [[ "$PR_HEAD" =~ ^dev$|^fix/ ]]; then
             echo 'PRs to branch `main` can only come from branch `dev` or any branch prefixed with `fix/`'
             exit 1
