@@ -79,18 +79,18 @@ unless Enum.empty?(hosts) do
     ]
 end
 
-is_prod? = config_env() == :prod
+prod? = config_env() == :prod
 
 host =
   case System.get_env("VIRTUAL_HOST") do
-    nil when is_prod? -> raise "Unset VIRTUAL_HOST environment variable"
+    nil when prod? -> raise "Unset VIRTUAL_HOST environment variable"
     nil -> "example.com"
     other -> other
   end
 
 port =
   case System.get_env("PORT") do
-    nil when is_prod? -> raise "Unset PORT environment variable"
+    nil when prod? -> raise "Unset PORT environment variable"
     nil -> 4000
     other -> String.to_integer(other)
   end
@@ -114,7 +114,7 @@ config :jellyfish,
 
 config :opentelemetry, traces_exporter: :none
 
-if is_prod? do
+if prod? do
   token =
     System.fetch_env!("SERVER_API_TOKEN") ||
       raise """
