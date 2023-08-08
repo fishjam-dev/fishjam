@@ -1,10 +1,14 @@
-name: "Enforce PR policy"
+name: Enforce PR policy
+
 on:
   pull_request:
     types:
       - opened
       - edited
       - synchronize
+
+env:
+  GH_TOKEN: ${{ github.token }}
 
 jobs:
   check_pr:
