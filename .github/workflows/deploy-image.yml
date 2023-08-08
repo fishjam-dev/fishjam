@@ -19,7 +19,8 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
@@ -38,11 +39,11 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             # Will publish image tagged `vX.Y.Z` on each release tag
-            # `latest` by default refers to image built on latest release
             type=semver,pattern={{version}}
             # Will publish image tagged `edge` on each push to `dev`
             type=edge,branch=dev
             # Will publish image tagged `main` on each push to `main`
+            # (this will also generate tag `dev` on each push to `dev`)
             type=ref,event=branch
 
       - name: Build and push Docker image
