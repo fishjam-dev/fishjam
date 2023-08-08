@@ -9,15 +9,15 @@ defmodule Jellyfish.Component.HLS.Storage do
   defstruct @enforce_keys ++ [partial_sn: nil, segment_sn: 0, partials_in_ets: []]
 
   @type partial_ets_key :: String.t()
-  @type segment_sn :: non_neg_integer()
-  @type partial_sn :: non_neg_integer()
-  @type partial_in_ets :: {{segment_sn(), partial_sn()}, partial_ets_key()}
+  @type sequence_number :: non_neg_integer()
+  @type partial_in_ets ::
+          {{segment_sn :: sequence_number(), partial_sn :: sequence_number()}, partial_ets_key()}
 
   @type t :: %__MODULE__{
           directory: Path.t(),
           room_id: Room.id(),
-          partial_sn: partial_sn() | nil,
-          segment_sn: segment_sn(),
+          partial_sn: sequence_number() | nil,
+          segment_sn: sequence_number(),
           partials_in_ets: [partial_in_ets()]
         }
 
@@ -29,13 +29,13 @@ defmodule Jellyfish.Component.HLS.Storage do
   @impl true
   def init(%{directory: directory, room_id: room_id}) do
     # Initializes ets storage that will serve partial segments and manifests
-    :ets.new(room_id, [:public, :set, :named_table])
+    :ets.new({__MODULE__, room_id}, [:public, :set, :named_table])
 
     %__MODULE__{room_id: room_id, directory: directory}
   end
 
   @impl true
-  def store(_perent_id, name, content, metadata, context, state) do
+  def store(_parent_id, name, content, metadata, context, state) do
     case context do
       %{mode: :binary, type: :segment} ->
         store_segment(name, content, state)
@@ -66,11 +66,7 @@ defmodule Jellyfish.Component.HLS.Storage do
          content,
          %{directory: directory} = state
        ) do
-    result =
-      directory
-      |> Path.join(filename)
-      |> File.write(content, [:binary])
-
+    result = write_to_file(directory, filename, content, [:binary])
     {result, state}
   end
 
@@ -80,10 +76,7 @@ defmodule Jellyfish.Component.HLS.Storage do
          %{byte_offset: offset, sequence_number: sequence_number},
          %__MODULE__{directory: directory} = state
        ) do
-    result =
-      directory
-      |> Path.join(filename)
-      |> File.write(content, [:binary, :append])
+    result = write_to_file(directory, filename, content, [:binary, :append])
 
     state =
       state
@@ -98,11 +91,7 @@ defmodule Jellyfish.Component.HLS.Storage do
          content,
          %__MODULE__{directory: directory} = state
        ) do
-    result =
-      directory
-      |> Path.join(filename)
-      |> File.write(content, [:binary])
-
+    result = write_to_file(directory, filename, content, [:binary])
     {result, state}
   end
 
@@ -111,15 +100,18 @@ defmodule Jellyfish.Component.HLS.Storage do
          content,
          %__MODULE__{directory: directory} = state
        ) do
-    result =
-      directory
-      |> Path.join(filename)
-      |> File.write(content)
+    result = write_to_file(directory, filename, content)
 
     add_manifest_to_ets(content, state)
     send_update(state)
 
     {result, state}
+  end
+
+  defp write_to_file(directory, filename, content, write_options \\ []) do
+    directory
+    |> Path.join(filename)
+    |> File.write(content, write_options)
   end
 
   # first partial
@@ -149,7 +141,7 @@ defmodule Jellyfish.Component.HLS.Storage do
     partials_in_ets =
       Enum.filter(partials_in_ets, fn {{segment_sn, _partial_sn}, key} ->
         if segment_sn + @ets_duration_in_segments <= curr_segment_sn do
-          :ets.delete(room_id, key)
+          :ets.delete({__MODULE__, room_id}, key)
           false
         else
           true
@@ -173,7 +165,7 @@ defmodule Jellyfish.Component.HLS.Storage do
     key = "#{filename}_#{offset}"
     partial = {segment_sn, partial_sn}
 
-    :ets.insert(room_id, {key, content})
+    :ets.insert({__MODULE__, room_id}, {key, content})
 
     %{state | partials_in_ets: [{partial, key} | partials_in_ets]}
   end
@@ -186,8 +178,8 @@ defmodule Jellyfish.Component.HLS.Storage do
          partial_sn: partial_sn,
          room_id: room_id
        }) do
-    :ets.insert(room_id, {@manifest_key, manifest})
-    :ets.insert(room_id, {@last_partial_key, {segment_sn, partial_sn}})
+    :ets.insert({__MODULE__, room_id}, {@manifest_key, manifest})
+    :ets.insert({__MODULE__, room_id}, {@last_partial_key, {segment_sn, partial_sn}})
   end
 
   # In case of regular hls we don't want to send anything to ets
