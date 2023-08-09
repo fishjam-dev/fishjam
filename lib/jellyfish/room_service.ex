@@ -55,11 +55,6 @@ defmodule Jellyfish.RoomService do
     |> Enum.reject(&(&1 == nil))
   end
 
-  @spec request_all_room_ids() :: :ok
-  def request_all_room_ids() do
-    GenServer.cast(__MODULE__, {:request_all_room_ids, self()})
-  end
-
   @spec create_room(Room.max_peers(), String.t()) ::
           {:ok, Room.t(), String.t()} | {:error, :invalid_max_peers | :invalid_video_codec}
   def create_room(max_peers, video_codec) do
@@ -142,16 +137,6 @@ defmodule Jellyfish.RoomService do
       end
 
     {:reply, response, state}
-  end
-
-  @impl true
-  def handle_cast({:request_all_room_ids, caller_pid}, state) do
-    all_room_ids =
-      Jellyfish.RoomRegistry
-      |> Registry.select([{{:"$1", :_, :_}, [], [:"$1"]}])
-
-    send(caller_pid, {:all_room_ids, all_room_ids})
-    {:noreply, state}
   end
 
   @impl true

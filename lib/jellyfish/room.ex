@@ -73,14 +73,6 @@ defmodule Jellyfish.Room do
     end
   end
 
-  @spec request_state(id()) :: :ok | {:error, :room_not_found}
-  def request_state(room_id) do
-    case Registry.lookup(Jellyfish.RoomRegistry, room_id) do
-      [] -> {:error, :room_not_found}
-      _room -> GenServer.cast(registry_id(room_id), {:request_state, self()})
-    end
-  end
-
   @spec add_peer(id(), Peer.peer()) :: {:ok, Peer.t()} | {:error, :reached_peers_limit}
   def add_peer(room_id, peer_type) do
     GenServer.call(registry_id(room_id), {:add_peer, peer_type})
@@ -265,12 +257,6 @@ defmodule Jellyfish.Room do
   @impl true
   def handle_cast({:media_event, peer_id, event}, state) do
     Engine.message_endpoint(state.engine_pid, peer_id, {:media_event, event})
-    {:noreply, state}
-  end
-
-  @impl true
-  def handle_cast({:request_state, caller_pid}, state) do
-    send(caller_pid, {:room_state, state})
     {:noreply, state}
   end
 
