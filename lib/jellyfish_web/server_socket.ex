@@ -3,24 +3,16 @@ defmodule JellyfishWeb.ServerSocket do
   @behaviour Phoenix.Socket.Transport
   require Logger
 
-  alias Jellyfish.RoomService
-
   alias Jellyfish.ServerMessage
 
   alias Jellyfish.ServerMessage.{
     Authenticated,
     AuthRequest,
-    GetRoomIds,
-    RoomIds,
-    RoomNotFound,
-    RoomState,
-    RoomStateRequest,
     SubscribeRequest,
     SubscribeResponse
   }
 
   alias Jellyfish.Event
-  alias Jellyfish.Room
 
   @heartbeat_interval 30_000
 
@@ -87,13 +79,19 @@ defmodule JellyfishWeb.ServerSocket do
   end
 
   def handle_in({encoded_message, [opcode: :binary]}, state) do
-    with %ServerMessage{content: content} <- ServerMessage.decode(encoded_message) do
-      case handle_message(content, state) do
-        {:ok, state} -> {:ok, state}
-        {:reply, msg, state} -> {:reply, :ok, {:binary, ServerMessage.encode(msg)}, state}
-        {:error, request} -> unexpected_message_error(request, state)
-      end
-    else
+    case ServerMessage.decode(encoded_message) do
+      %ServerMessage{
+        content: {:subscribe_request, %SubscribeRequest{event_type: proto_event_type}}
+      } ->
+        event_type = from_proto_event_type(proto_event_type)
+        state = ensure_subscribed(event_type, state)
+
+        msg = %ServerMessage{
+          content: {:subscribe_response, %SubscribeResponse{event_type: proto_event_type}}
+        }
+
+        {:reply, :ok, {:binary, ServerMessage.encode(msg)}, state}
+
       other ->
         unexpected_message_error(other, state)
     end
@@ -112,57 +110,6 @@ defmodule JellyfishWeb.ServerSocket do
     """)
 
     {:stop, :closed, {1003, "operation not allowed"}, state}
-  end
-
-  defp handle_message({:room_state_request, %RoomStateRequest{room_id: room_id}}, state) do
-    case Room.request_state(room_id) do
-      :ok ->
-        {:ok, state}
-
-      {:error, :room_not_found} ->
-        msg = %ServerMessage{content: {:room_not_found, %RoomNotFound{room_id: room_id}}}
-
-        {:reply, msg, state}
-    end
-  end
-
-  defp handle_message(
-         {:subscribe_request, %SubscribeRequest{event_type: proto_event_type}},
-         state
-       ) do
-    event_type = from_proto_event_type(proto_event_type)
-    state = ensure_subscribed(event_type, state)
-
-    msg = %ServerMessage{
-      content: {:subscribe_response, %SubscribeResponse{event_type: proto_event_type}}
-    }
-
-    {:reply, msg, state}
-  end
-
-  defp handle_message({:get_room_ids, %GetRoomIds{}}, state) do
-    RoomService.request_all_room_ids()
-    {:ok, state}
-  end
-
-  defp handle_message(message, _state) do
-    {:error, message}
-  end
-
-  @impl true
-  def handle_info({:room_state, room_state}, state) do
-    room_state = to_room_state_message(room_state)
-    msg = %ServerMessage{content: {:room_state, room_state}} |> ServerMessage.encode()
-
-    {:push, {:binary, msg}, state}
-  end
-
-  @impl true
-  def handle_info({:all_room_ids, all_room_ids}, state) do
-    msg =
-      %ServerMessage{content: {:room_ids, %RoomIds{ids: all_room_ids}}} |> ServerMessage.encode()
-
-    {:push, {:binary, msg}, state}
   end
 
   @impl true
@@ -193,51 +140,6 @@ defmodule JellyfishWeb.ServerSocket do
     end
   end
 
-  defp to_room_state_message(room) do
-    components =
-      room.components
-      |> Map.values()
-      |> Enum.map(
-        &%RoomState.Component{
-          id: &1.id,
-          component: to_proto_component(&1)
-        }
-      )
-
-    peers =
-      room.peers
-      |> Map.values()
-      |> Enum.map(
-        &%RoomState.Peer{
-          id: &1.id,
-          type: to_proto_type(&1.type),
-          status: to_proto_status(&1.status)
-        }
-      )
-
-    config =
-      room.config
-      |> Map.update!(:video_codec, &to_proto_codec/1)
-      |> then(&struct!(RoomState.Config, &1))
-
-    %RoomState{id: room.id, config: config, peers: peers, components: components}
-  end
-
-  defp to_proto_type(Jellyfish.Peer.WebRTC), do: :TYPE_WEBRTC
-
-  defp to_proto_codec(:h264), do: :CODEC_H264
-  defp to_proto_codec(:vp8), do: :CODEC_VP8
-  defp to_proto_codec(nil), do: :CODEC_UNSPECIFIED
-
-  defp to_proto_status(:disconnected), do: :STATUS_DISCONNECTED
-  defp to_proto_status(:connected), do: :STATUS_CONNECTED
-
   defp from_proto_event_type(:EVENT_TYPE_SERVER_NOTIFICATION), do: :server_notification
   defp from_proto_event_type(:EVENT_TYPE_METRICS), do: :metrics
-
-  defp to_proto_component(%{type: Jellyfish.Component.HLS, metadata: %{playable: playable}}),
-    do: {:hls, %RoomState.Component.Hls{playable: playable}}
-
-  defp to_proto_component(%{type: Jellyfish.Component.RTSP}),
-    do: {:rtsp, %RoomState.Component.Rtsp{}}
 end

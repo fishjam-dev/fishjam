@@ -10,7 +10,6 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
   alias Jellyfish.ServerMessage.{
     Authenticated,
     AuthRequest,
-    GetRoomIds,
     HlsPlayable,
     MetricsReport,
     PeerConnected,
@@ -18,16 +17,9 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     RoomCrashed,
     RoomCreated,
     RoomDeleted,
-    RoomIds,
-    RoomNotFound,
-    RoomState,
-    RoomStateRequest,
     SubscribeRequest,
     SubscribeResponse
   }
-
-  alias Jellyfish.ServerMessage.RoomState.Component
-  alias Jellyfish.ServerMessage.RoomState.Component.{Hls, Rtsp}
 
   alias JellyfishWeb.{PeerSocket, ServerSocket, WS}
 
@@ -117,74 +109,19 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     assert_receive {:disconnected, {:remote, 1003, "operation not allowed"}}, 1000
   end
 
-  test "responds with room state", %{conn: conn} do
+  test "sends HlsPlayable notification", %{conn: conn} do
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
     ws = create_and_authenticate()
     subscribe(ws, :server_notification)
-    {room_id, peer_id, _token, conn} = add_room_and_peer(conn, server_api_token)
+    {room_id, _peer_id, _token, conn} = add_room_and_peer(conn, server_api_token)
 
     {conn, hls_id} = add_hls_component(conn, room_id)
     {conn, _rtsp_id} = add_rtsp_component(conn, room_id)
-
-    msg = %ServerMessage{
-      content: {:room_state_request, %RoomStateRequest{room_id: room_id}}
-    }
-
-    :ok = WS.send_binary_frame(ws, ServerMessage.encode(msg))
-
-    assert_receive %RoomState{
-      id: ^room_id,
-      peers: [
-        %RoomState.Peer{
-          id: ^peer_id,
-          type: :TYPE_WEBRTC,
-          status: :STATUS_DISCONNECTED
-        }
-      ],
-      components: components
-    }
-
-    assert components
-           |> Enum.map(fn %Component{component: component} -> component end)
-           |> Enum.all?(fn
-             {:hls, %Hls{playable: false}} -> true
-             {:rtsp, %Rtsp{}} -> true
-             _other -> false
-           end)
 
     {:ok, room_pid} = RoomService.find_room(room_id)
 
     send(room_pid, {:playlist_playable, :video, "hls_output/#{room_id}"})
     assert_receive %HlsPlayable{room_id: room_id, component_id: ^hls_id}
-
-    conn = delete(conn, ~p"/room/#{room_id}/")
-    assert response(conn, :no_content)
-  end
-
-  test "responds with room_not_found" do
-    ws = create_and_authenticate()
-
-    fake_room_id = "fake_room_id"
-
-    msg = %ServerMessage{
-      content: {:room_state_request, %RoomStateRequest{room_id: fake_room_id}}
-    }
-
-    :ok = WS.send_binary_frame(ws, ServerMessage.encode(msg))
-
-    assert_receive %RoomNotFound{room_id: ^fake_room_id}
-  end
-
-  test "responds with all room ids", %{conn: conn} do
-    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
-    ws = create_and_authenticate()
-    {room_id, _peer_id, _token, conn} = add_room_and_peer(conn, server_api_token)
-
-    msg = %ServerMessage{content: {:get_room_ids, %GetRoomIds{}}}
-
-    :ok = WS.send_binary_frame(ws, ServerMessage.encode(msg))
-
-    assert_receive %RoomIds{ids: [^room_id]}
 
     conn = delete(conn, ~p"/room/#{room_id}/")
     assert response(conn, :no_content)
