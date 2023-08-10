@@ -1,39 +1,11 @@
-defmodule Jellyfish.ServerMessage.SubscribeRequest.ServerNotification.Option do
+defmodule Jellyfish.ServerMessage.EventType do
   @moduledoc false
 
   use Protobuf, enum: true, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
 
-  field :OPTION_UNSPECIFIED, 0
-  field :OPTION_ALL, 1
-end
-
-defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomState.Config.Codec do
-  @moduledoc false
-
-  use Protobuf, enum: true, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
-
-  field :CODEC_UNSPECIFIED, 0
-  field :CODEC_H264, 1
-  field :CODEC_VP8, 2
-end
-
-defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomState.Peer.Type do
-  @moduledoc false
-
-  use Protobuf, enum: true, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
-
-  field :TYPE_UNSPECIFIED, 0
-  field :TYPE_WEBRTC, 1
-end
-
-defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomState.Peer.Status do
-  @moduledoc false
-
-  use Protobuf, enum: true, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
-
-  field :STATUS_UNSPECIFIED, 0
-  field :STATUS_CONNECTED, 1
-  field :STATUS_DISCONNECTED, 2
+  field :EVENT_TYPE_UNSPECIFIED, 0
+  field :EVENT_TYPE_SERVER_NOTIFICATION, 1
+  field :EVENT_TYPE_METRICS, 2
 end
 
 defmodule Jellyfish.ServerMessage.RoomCrashed do
@@ -94,127 +66,15 @@ defmodule Jellyfish.ServerMessage.AuthRequest do
   field :token, 1, type: :string
 end
 
-defmodule Jellyfish.ServerMessage.SubscribeRequest.ServerNotification do
-  @moduledoc false
-
-  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
-
-  oneof :room_id, 0
-
-  field :id, 1, type: :string, oneof: 0
-
-  field :option, 2,
-    type: Jellyfish.ServerMessage.SubscribeRequest.ServerNotification.Option,
-    enum: true,
-    oneof: 0
-end
-
-defmodule Jellyfish.ServerMessage.SubscribeRequest.Metrics do
-  @moduledoc false
-
-  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
-end
-
 defmodule Jellyfish.ServerMessage.SubscribeRequest do
   @moduledoc false
 
   use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
 
-  oneof :event_type, 0
-
-  field :id, 1, type: :string
-
-  field :server_notification, 2,
-    type: Jellyfish.ServerMessage.SubscribeRequest.ServerNotification,
-    json_name: "serverNotification",
-    oneof: 0
-
-  field :metrics, 3, type: Jellyfish.ServerMessage.SubscribeRequest.Metrics, oneof: 0
-end
-
-defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomState.Config do
-  @moduledoc false
-
-  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
-
-  field :max_peers, 1, type: :uint32, json_name: "maxPeers"
-
-  field :video_codec, 2,
-    type: Jellyfish.ServerMessage.SubscribeResponse.RoomState.Config.Codec,
-    json_name: "videoCodec",
+  field :event_type, 1,
+    type: Jellyfish.ServerMessage.EventType,
+    json_name: "eventType",
     enum: true
-end
-
-defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomState.Peer do
-  @moduledoc false
-
-  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
-
-  field :id, 1, type: :string
-  field :type, 2, type: Jellyfish.ServerMessage.SubscribeResponse.RoomState.Peer.Type, enum: true
-
-  field :status, 3,
-    type: Jellyfish.ServerMessage.SubscribeResponse.RoomState.Peer.Status,
-    enum: true
-end
-
-defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomState.Component.Hls do
-  @moduledoc false
-
-  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
-
-  field :playable, 1, type: :bool
-end
-
-defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomState.Component.Rtsp do
-  @moduledoc false
-
-  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
-end
-
-defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomState.Component do
-  @moduledoc false
-
-  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
-
-  oneof :component, 0
-
-  field :id, 1, type: :string
-  field :hls, 2, type: Jellyfish.ServerMessage.SubscribeResponse.RoomState.Component.Hls, oneof: 0
-
-  field :rtsp, 3,
-    type: Jellyfish.ServerMessage.SubscribeResponse.RoomState.Component.Rtsp,
-    oneof: 0
-end
-
-defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomState do
-  @moduledoc false
-
-  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
-
-  field :id, 1, type: :string
-  field :config, 2, type: Jellyfish.ServerMessage.SubscribeResponse.RoomState.Config
-  field :peers, 3, repeated: true, type: Jellyfish.ServerMessage.SubscribeResponse.RoomState.Peer
-
-  field :components, 4,
-    repeated: true,
-    type: Jellyfish.ServerMessage.SubscribeResponse.RoomState.Component
-end
-
-defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomsState do
-  @moduledoc false
-
-  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
-
-  field :rooms, 1, repeated: true, type: Jellyfish.ServerMessage.SubscribeResponse.RoomState
-end
-
-defmodule Jellyfish.ServerMessage.SubscribeResponse.RoomNotFound do
-  @moduledoc false
-
-  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
-
-  field :id, 1, type: :string
 end
 
 defmodule Jellyfish.ServerMessage.SubscribeResponse do
@@ -222,24 +82,10 @@ defmodule Jellyfish.ServerMessage.SubscribeResponse do
 
   use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
 
-  oneof :content, 0
-
-  field :id, 1, type: :string
-
-  field :room_state, 2,
-    type: Jellyfish.ServerMessage.SubscribeResponse.RoomState,
-    json_name: "roomState",
-    oneof: 0
-
-  field :rooms_state, 3,
-    type: Jellyfish.ServerMessage.SubscribeResponse.RoomsState,
-    json_name: "roomsState",
-    oneof: 0
-
-  field :room_not_found, 4,
-    type: Jellyfish.ServerMessage.SubscribeResponse.RoomNotFound,
-    json_name: "roomNotFound",
-    oneof: 0
+  field :event_type, 1,
+    type: Jellyfish.ServerMessage.EventType,
+    json_name: "eventType",
+    enum: true
 end
 
 defmodule Jellyfish.ServerMessage.RoomCreated do
@@ -264,6 +110,28 @@ defmodule Jellyfish.ServerMessage.MetricsReport do
   use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
 
   field :metrics, 1, type: :string
+end
+
+defmodule Jellyfish.ServerMessage.RoomNotFound do
+  @moduledoc false
+
+  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+
+  field :room_id, 1, type: :string, json_name: "roomId"
+end
+
+defmodule Jellyfish.ServerMessage.GetRoomIds do
+  @moduledoc false
+
+  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+end
+
+defmodule Jellyfish.ServerMessage.RoomIds do
+  @moduledoc false
+
+  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+
+  field :ids, 1, repeated: true, type: :string
 end
 
 defmodule Jellyfish.ServerMessage.HlsPlayable do

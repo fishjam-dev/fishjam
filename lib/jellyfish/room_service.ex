@@ -7,6 +7,7 @@ defmodule Jellyfish.RoomService do
 
   require Logger
 
+  alias Jellyfish.Event
   alias Jellyfish.Room
 
   def start_link(args) do
@@ -111,11 +112,7 @@ defmodule Jellyfish.RoomService do
 
       Logger.info("Created room #{inspect(room.id)}")
 
-      Phoenix.PubSub.broadcast(
-        Jellyfish.PubSub,
-        "server_notification",
-        {:room_created, room_id}
-      )
+      Event.broadcast(:server_notification, {:room_created, room_id})
 
       {:reply, {:ok, room, Application.fetch_env!(:jellyfish, :address)}, state}
     else
@@ -165,7 +162,7 @@ defmodule Jellyfish.RoomService do
     Logger.warn("Process #{room_id} is down with reason: #{reason}")
 
     Phoenix.PubSub.broadcast(Jellyfish.PubSub, room_id, :room_crashed)
-    Phoenix.PubSub.broadcast(Jellyfish.PubSub, "server_notification", {:room_crashed, room_id})
+    Event.broadcast(:server_notification, {:room_crashed, room_id})
 
     {:noreply, state}
   end
@@ -177,7 +174,7 @@ defmodule Jellyfish.RoomService do
       :ok = GenServer.stop(room, :normal)
       Logger.info("Deleted room #{inspect(room_id)}")
 
-      Phoenix.PubSub.broadcast(Jellyfish.PubSub, "server_notification", {:room_deleted, room_id})
+      Event.broadcast(:server_notification, {:room_deleted, room_id})
     catch
       :exit, {:noproc, {GenServer, :stop, [^room, :normal, :infinity]}} ->
         Logger.warn("Room process with id #{inspect(room_id)} doesn't exist")

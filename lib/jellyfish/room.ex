@@ -9,6 +9,7 @@ defmodule Jellyfish.Room do
   require Logger
 
   alias Jellyfish.Component
+  alias Jellyfish.Event
   alias Jellyfish.Peer
   alias Membrane.ICE.TURNManager
   alias Membrane.RTC.Engine
@@ -61,9 +62,9 @@ defmodule Jellyfish.Room do
     registry_room_id = registry_id(room_id)
 
     try do
-      GenServer.call(registry_room_id, :state)
+      GenServer.call(registry_room_id, :get_state)
     catch
-      :exit, {:noproc, {GenServer, :call, [^registry_room_id, :state, _timeout]}} ->
+      :exit, {:noproc, {GenServer, :call, [^registry_room_id, :get_state, _timeout]}} ->
         Logger.warn(
           "Cannot get state of #{inspect(room_id)}, the room's process doesn't exist anymore"
         )
@@ -120,7 +121,7 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def handle_call(:state, _from, state) do
+  def handle_call(:get_state, _from, state) do
     {:reply, state, state}
   end
 
@@ -284,11 +285,7 @@ defmodule Jellyfish.Room do
     Logger.error("RTC Engine endpoint #{inspect(endpoint_id)} crashed")
 
     if Map.has_key?(state.peers, endpoint_id) do
-      Phoenix.PubSub.broadcast(
-        Jellyfish.PubSub,
-        "server_notification",
-        {:peer_crashed, state.id, endpoint_id}
-      )
+      Event.broadcast(:server_notification, {:peer_crashed, state.id, endpoint_id})
 
       peer = Map.fetch!(state.peers, endpoint_id)
 
@@ -296,11 +293,7 @@ defmodule Jellyfish.Room do
         send(peer.socket_pid, {:stop_connection, :endpoint_crashed})
       end
     else
-      Phoenix.PubSub.broadcast(
-        Jellyfish.PubSub,
-        "server_notification",
-        {:component_crashed, state.id, endpoint_id}
-      )
+      Event.broadcast(:server_notification, {:component_crashed, state.id, endpoint_id})
     end
 
     {:noreply, state}
@@ -332,11 +325,7 @@ defmodule Jellyfish.Room do
         if type == Component.HLS, do: id
       end)
 
-    Phoenix.PubSub.broadcast(
-      Jellyfish.PubSub,
-      "server_notification",
-      {:hls_playable, state.id, endpoint_id}
-    )
+    Event.broadcast(:server_notification, {:hls_playable, state.id, endpoint_id})
 
     state = update_in(state, [:components, endpoint_id], &Map.put(&1, :playable, true))
     {:noreply, state}

@@ -3,8 +3,8 @@ defmodule Jellyfish.MetricsScraper do
 
   use GenServer, restart: :temporary
 
+  alias Jellyfish.Event
   alias Membrane.TelemetryMetrics.Reporter
-  alias Phoenix.PubSub
 
   @metrics_to_derive [
     :"inbound-rtp.packets",
@@ -45,7 +45,7 @@ defmodule Jellyfish.MetricsScraper do
 
     report
     |> prepare_report(state)
-    |> then(&PubSub.broadcast!(Jellyfish.PubSub, "metrics", {:metrics, &1}))
+    |> then(&Event.broadcast(:metrics, &1))
 
     Process.send_after(self(), :scrape, state.scrape_interval)
 
