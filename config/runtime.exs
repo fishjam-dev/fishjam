@@ -137,8 +137,11 @@ if prod? do
       You can generate one by calling: mix phx.gen.secret
       """
 
+  check_origin? = System.get_env("CHECK_ORIGIN", "true") == "true"
+
   config :jellyfish, JellyfishWeb.Endpoint,
-    # url: [host: host, port: 443, scheme: "https"],
+    url: [host: host, port: 443, scheme: "https"],
+    check_origin: check_origin?,
     http: [
       # Enable IPv6 and bind on all interfaces.
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
@@ -147,8 +150,7 @@ if prod? do
       ip: {0, 0, 0, 0, 0, 0, 0, 0},
       port: port
     ],
-    secret_key_base: secret_key_base,
-    check_origin: :conn
+    secret_key_base: secret_key_base
 
   # ## SSL Support
   #

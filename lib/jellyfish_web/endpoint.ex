@@ -2,11 +2,11 @@ defmodule JellyfishWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :jellyfish
 
   socket "/socket/peer", JellyfishWeb.PeerSocket,
-    websocket: [check_origin: :conn],
+    websocket: true,
     longpoll: false
 
   socket "/socket/server", JellyfishWeb.ServerSocket,
-    websocket: [check_origin: :conn],
+    websocket: true,
     longpoll: false
 
   # The session will be stored in the cookie and signed,
