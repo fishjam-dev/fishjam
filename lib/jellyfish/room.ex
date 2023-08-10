@@ -73,9 +73,10 @@ defmodule Jellyfish.Room do
     end
   end
 
-  @spec add_peer(id(), Peer.peer()) :: {:ok, Peer.t()} | {:error, :reached_peers_limit}
-  def add_peer(room_id, peer_type) do
-    GenServer.call(registry_id(room_id), {:add_peer, peer_type})
+  @spec add_peer(id(), Peer.peer(), map() | nil) ::
+          {:ok, Peer.t()} | :error | {:error, :reached_peers_limit}
+  def add_peer(room_id, peer_type, options) do
+    GenServer.call(registry_id(room_id), {:add_peer, peer_type, options})
   end
 
   @spec set_peer_connected(id(), Peer.id()) ::
@@ -126,23 +127,32 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def handle_call({:add_peer, peer_type}, _from, state) do
+  def handle_call({:add_peer, peer_type, options}, _from, state) do
     {reply, state} =
       if Enum.count(state.peers) == state.config.max_peers do
         {{:error, :reached_peers_limit}, state}
       else
-        options = %{
-          engine_pid: state.engine_pid,
-          network_options: state.network_options,
-          video_codec: state.config.video_codec
-        }
+        options =
+          Map.merge(
+            %{
+              engine_pid: state.engine_pid,
+              network_options: state.network_options,
+              video_codec: state.config.video_codec
+            },
+            if(is_nil(options), do: %{}, else: options)
+          )
 
-        peer = Peer.new(peer_type, options)
-        state = put_in(state, [:peers, peer.id], peer)
+        with {:ok, peer} <- Peer.new(peer_type, options) do
+          state = put_in(state, [:peers, peer.id], peer)
 
-        Logger.info("Added peer #{inspect(peer.id)}")
+          Logger.info("Added peer #{inspect(peer.id)}")
 
-        {{:ok, peer}, state}
+          {{:ok, peer}, state}
+        else
+          {:error, reason} ->
+            Logger.warn("Unable to add peer: #{inspect(reason)}")
+            {:error, state}
+        end
       end
 
     {:reply, reply, state}

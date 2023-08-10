@@ -18,44 +18,49 @@ defmodule Jellyfish.Peer.WebRTC do
           "WebRTC peers can be used only if WEBRTC_USED environmental variable is not set to \"false\""
         )
 
-    handshake_options = [
-      client_mode: false,
-      dtls_srtp: true
-    ]
+    with {:ok, valid_opts} <-
+           OpenApiSpex.cast_value(options, JellyfishWeb.ApiSpec.Peer.WebRTC.schema()) do
+      handshake_options = [
+        client_mode: false,
+        dtls_srtp: true
+      ]
 
-    simulcast? = true
-    webrtc_extensions = [Mid, Rid, RepairedRid, TWCC]
-    network_options = options.network_options
+      simulcast? = valid_opts.enableSimulcast
+      webrtc_extensions = [Mid, Rid, RepairedRid, TWCC]
+      network_options = options.network_options
 
-    filter_codecs =
-      case options.video_codec do
-        :h264 ->
-          &filter_codecs_h264/1
+      filter_codecs =
+        case options.video_codec do
+          :h264 ->
+            &filter_codecs_h264/1
 
-        :vp8 ->
-          &filter_codecs_vp8/1
+          :vp8 ->
+            &filter_codecs_vp8/1
 
-        nil ->
-          &any_codecs/1
-      end
+          nil ->
+            &any_codecs/1
+        end
 
-    {:ok,
-     %WebRTC{
-       rtc_engine: options.engine_pid,
-       ice_name: options.peer_id,
-       owner: self(),
-       integrated_turn_options: network_options[:integrated_turn_options],
-       integrated_turn_domain: network_options[:integrated_turn_domain],
-       handshake_opts: handshake_options,
-       filter_codecs: filter_codecs,
-       log_metadata: [peer_id: options.peer_id],
-       trace_context: nil,
-       webrtc_extensions: webrtc_extensions,
-       simulcast_config: %SimulcastConfig{
-         enabled: simulcast?,
-         initial_target_variant: fn _track -> :medium end
-       }
-     }}
+      {:ok,
+       %WebRTC{
+         rtc_engine: options.engine_pid,
+         ice_name: options.peer_id,
+         owner: self(),
+         integrated_turn_options: network_options[:integrated_turn_options],
+         integrated_turn_domain: network_options[:integrated_turn_domain],
+         handshake_opts: handshake_options,
+         filter_codecs: filter_codecs,
+         log_metadata: [peer_id: options.peer_id],
+         trace_context: nil,
+         webrtc_extensions: webrtc_extensions,
+         simulcast_config: %SimulcastConfig{
+           enabled: simulcast?,
+           initial_target_variant: fn _track -> :medium end
+         }
+       }}
+    else
+      {:error, _reason} = error -> error
+    end
   end
 
   defp filter_codecs_h264(%Encoding{name: "H264", format_params: fmtp}) do

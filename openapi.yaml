@@ -144,6 +144,23 @@ components:
       title: PeerDetailsResponse
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.PeerDetailsResponse
+    PeerOptions:
+      description: Peer-specific options
+      oneOf:
+        - $ref: '#/components/schemas/PeerOptionsWebRTC'
+      title: PeerOptions
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.Options
+    PeerOptionsWebRTC:
+      description: Options specific to the WebRTC peer
+      properties:
+        enableSimulcast:
+          default: true
+          description: Enables the peer to use simulcast
+          type: boolean
+      title: PeerOptionsWebRTC
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.WebRTC
     PeerStatus:
       description: Informs about the peer status
       enum:
@@ -203,22 +220,6 @@ components:
       title: RoomConfig
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Room.Config
-    RoomCreateDetailsResponse:
-      description: Response containing room details
-      properties:
-        data:
-          properties:
-            room: 
-              $ref: '#/components/schemas/Room'
-            jellyfish_address:
-              description: Jellyfish instance address where the room was created. This might be different than the address of Jellyfish where the request was sent only when running a cluster of Jellyfishes. 
-              example: "jellyfish1:5003"
-              type: string
-      required:
-        - data
-      title: RoomDetailsResponse
-      type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.RoomDetailsResponse
     RoomDetailsResponse:
       description: Response containing room details
       properties:
@@ -287,7 +288,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RoomCreateDetailsResponse'
+                $ref: '#/components/schemas/RoomDetailsResponse'
           description: Room successfully created
         '400':
           content:
@@ -470,10 +471,13 @@ paths:
           application/json:
             schema:
               properties:
+                options:
+                  $ref: '#/components/schemas/PeerOptions'
                 type:
                   $ref: '#/components/schemas/PeerType'
               required:
                 - type
+                - options
               type: object
         description: Peer specification
         required: false

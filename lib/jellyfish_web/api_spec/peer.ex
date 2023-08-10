@@ -2,8 +2,9 @@ defmodule JellyfishWeb.ApiSpec.Peer do
   @moduledoc false
 
   require OpenApiSpex
-
   alias OpenApiSpex.Schema
+
+  alias JellyfishWeb.ApiSpec.Peer.WebRTC
 
   defmodule Type do
     @moduledoc false
@@ -15,6 +16,21 @@ defmodule JellyfishWeb.ApiSpec.Peer do
       description: "Peer type",
       type: :string,
       example: "webrtc"
+    })
+  end
+
+  defmodule Options do
+    @moduledoc false
+
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "PeerOptions",
+      description: "Peer-specific options",
+      type: :object,
+      oneOf: [
+        WebRTC
+      ]
     })
   end
 

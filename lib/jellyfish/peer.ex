@@ -39,17 +39,20 @@ defmodule Jellyfish.Peer do
     end
   end
 
-  @spec new(peer(), map()) :: t()
+  @spec new(peer(), map()) :: {:ok, t()} | {:error, term()}
   def new(type, options) do
     id = UUID.uuid4()
     options = Map.put(options, :peer_id, id)
 
-    {:ok, endpoint} = type.config(options)
-
-    %__MODULE__{
-      id: id,
-      type: type,
-      engine_endpoint: endpoint
-    }
+    with {:ok, endpoint} <- type.config(options) do
+      {:ok,
+       %__MODULE__{
+         id: id,
+         type: type,
+         engine_endpoint: endpoint
+       }}
+    else
+      {:error, _reason} = error -> error
+    end
   end
 end
