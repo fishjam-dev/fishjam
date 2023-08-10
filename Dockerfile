@@ -105,9 +105,7 @@ RUN chmod +x docker-entrypoint.sh
 
 ENV HOME=/app
 
-EXPOSE 4000
-
-HEALTHCHECK CMD curl --fail http://localhost:4000 || exit 1
+HEALTHCHECK CMD curl --fail -H "authorization: Bearer ${SERVER_API_TOKEN}" http://localhost:${PORT}/room || exit 1
 
 ENTRYPOINT ["./docker-entrypoint.sh"]
 
