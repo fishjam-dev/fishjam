@@ -11,18 +11,6 @@ x-jellyfish-template: &jellyfish-template
   networks:
     - net1
   restart: on-failure
-  healthcheck:
-    test:
-      [
-        "CMD",
-        "sh",
-        "-c",
-        "curl --fail -H \"authorization: Bearer $$SERVER_API_TOKEN\" http://localhost:$$PORT/room || exit 1"
-      ]
-    interval: 3s
-    retries: 2
-    timeout: 2s
-    start_period: 15s
 
 services:
   test:
