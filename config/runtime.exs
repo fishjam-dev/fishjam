@@ -138,7 +138,7 @@ if prod? do
       """
 
   config :jellyfish, JellyfishWeb.Endpoint,
-    url: [host: host, port: 443, scheme: "https"],
+    # url: [host: host, port: 443, scheme: "https"],
     http: [
       # Enable IPv6 and bind on all interfaces.
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
