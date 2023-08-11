@@ -27,9 +27,10 @@ defmodule JellyfishWeb.PeerController do
        %Schema{
          type: :object,
          properties: %{
+           options: ApiSpec.Peer.Options,
            type: ApiSpec.Peer.Type
          },
-         required: [:type]
+         required: [:type, :options]
        }},
     responses: [
       created: ApiSpec.data("Peer successfully created", ApiSpec.PeerDetailsResponse),
@@ -64,10 +65,11 @@ defmodule JellyfishWeb.PeerController do
     # pid and adding a new peer to it
     # in such a case, the controller will fail
     # and Phoenix will return 500
-    with {:ok, peer_type_string} <- Map.fetch(params, "type"),
+    with peer_options <- Map.get(params, "options", %{}),
+         {:ok, peer_type_string} <- Map.fetch(params, "type"),
          {:ok, peer_type} <- Peer.parse_type(peer_type_string),
          {:ok, _room_pid} <- RoomService.find_room(room_id),
-         {:ok, peer} <- Room.add_peer(room_id, peer_type) do
+         {:ok, peer} <- Room.add_peer(room_id, peer_type, peer_options) do
       assigns = [peer: peer, token: PeerToken.generate(%{peer_id: peer.id, room_id: room_id})]
 
       conn
