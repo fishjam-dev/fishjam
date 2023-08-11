@@ -73,9 +73,9 @@ defmodule Jellyfish.Room do
     end
   end
 
-  @spec add_peer(id(), Peer.peer(), map() | nil) ::
+  @spec add_peer(id(), Peer.peer(), map()) ::
           {:ok, Peer.t()} | :error | {:error, :reached_peers_limit}
-  def add_peer(room_id, peer_type, options) do
+  def add_peer(room_id, peer_type, options \\ %{}) do
     GenServer.call(registry_id(room_id), {:add_peer, peer_type, options})
   end
 
@@ -96,9 +96,9 @@ defmodule Jellyfish.Room do
     GenServer.call(registry_id(room_id), {:remove_peer, peer_id})
   end
 
-  @spec add_component(id(), Component.component(), map() | nil) ::
+  @spec add_component(id(), Component.component(), map()) ::
           {:ok, Component.t()} | :error | {:error, :incompatible_codec}
-  def add_component(room_id, component_type, options) do
+  def add_component(room_id, component_type, options \\ %{}) do
     GenServer.call(registry_id(room_id), {:add_component, component_type, options})
   end
 
@@ -139,7 +139,7 @@ defmodule Jellyfish.Room do
               network_options: state.network_options,
               video_codec: state.config.video_codec
             },
-            if(is_nil(options), do: %{}, else: options)
+            options
           )
 
         with {:ok, peer} <- Peer.new(peer_type, options) do
@@ -224,7 +224,7 @@ defmodule Jellyfish.Room do
     options =
       Map.merge(
         %{engine_pid: state.engine_pid, room_id: state.id},
-        if(is_nil(options), do: %{}, else: options)
+        options
       )
 
     with :ok <- check_video_codec(video_codec, component_type),
