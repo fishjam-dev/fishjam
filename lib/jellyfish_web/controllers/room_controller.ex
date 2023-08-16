@@ -21,7 +21,7 @@ defmodule JellyfishWeb.RoomController do
     summary: "Creates a room",
     request_body: {"Room configuration", "application/json", ApiSpec.Room.Config},
     responses: [
-      created: ApiSpec.data("Room successfully created", ApiSpec.RoomDetailsResponse),
+      created: ApiSpec.data("Room successfully created", ApiSpec.RoomCreateDetailsResponse),
       bad_request: ApiSpec.error("Invalid request structure"),
       unauthorized: ApiSpec.error("Unauthorized")
     ]
