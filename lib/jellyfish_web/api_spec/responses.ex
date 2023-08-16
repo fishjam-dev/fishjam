@@ -6,6 +6,20 @@
      required: [:peer, :token]
    }},
   {RoomDetailsResponse, "Response containing room details", JellyfishWeb.ApiSpec.Room},
+  {RoomCreateDetailsResponse, "Response containing room details",
+   %OpenApiSpex.Schema{
+     type: :object,
+     properties: %{
+       room: JellyfishWeb.ApiSpec.Room,
+       jellyfish_address: %OpenApiSpex.Schema{
+         description:
+           "Jellyfish instance address where the room was created. This might be different than the address of Jellyfish where the request was sent only when running a cluster of Jellyfishes.",
+         type: :string,
+         example: "jellyfish1:5003"
+       }
+     },
+     required: [:room, :jellyfish_address]
+   }},
   {ComponentDetailsResponse, "Response containing component details",
    JellyfishWeb.ApiSpec.Component},
   {RoomsListingResponse, "Response containing list of all rooms",
