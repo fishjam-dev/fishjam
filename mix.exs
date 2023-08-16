@@ -123,17 +123,10 @@ defmodule Jellyfish.MixProject do
   end
 
   defp generate_api_spec(_args) do
-    openapi_filename = "openapi.yaml"
-
-    Mix.shell().info("Generating #{openapi_filename}...")
-
-    File.write!(openapi_filename, """
-    # This file has been generated using OpenApiSpex. Do not edit manually!
-    # Run `mix api.spec` to regenerate
-
-    """)
-
+    output_filename = "openapi.yaml"
     generated_filename = "openapi-gen.yaml"
+
+    Mix.shell().info("Generating #{output_filename}...")
 
     {_io_stream, exit_status} =
       System.cmd(
@@ -144,11 +137,17 @@ defmodule Jellyfish.MixProject do
 
     if exit_status != 0, do: raise("Failed to generate OpenAPI spec")
 
+    File.write!(output_filename, """
+    # This file has been generated using OpenApiSpex. Do not edit manually!
+    # Run `mix api.spec` to regenerate
+
+    """)
+
     File.read!(generated_filename)
-    |> then(&File.write!(openapi_filename, &1, [:append]))
+    |> then(&File.write!(output_filename, &1, [:append]))
 
     File.rm!(generated_filename)
 
-    Mix.shell().info("Successfully generated #{openapi_filename}")
+    Mix.shell().info("Successfully generated #{output_filename}")
   end
 end
