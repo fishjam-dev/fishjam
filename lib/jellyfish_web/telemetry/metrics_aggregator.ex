@@ -42,31 +42,39 @@ defmodule JellyfishWeb.Telemetry.MetricsAggregator do
       # which means they don't count the traffic from/to RTSP and HLS components
       sum("jellyfish.traffic.ingress.total.bytes",
         event_name: [:jellyfish],
-        measurement: :traffic_ingress_total
+        measurement: :traffic_ingress_total,
+        description: "Total traffic received (bytes)"
       ),
       last_value("jellyfish.traffic.ingress.throughput.bytes_per_second",
         event_name: [:jellyfish],
-        measurement: :traffic_ingress_throughput
+        measurement: :traffic_ingress_throughput,
+        description: "Current throughput for received traffic (bytes/second)"
       ),
       sum("jellyfish.traffic.egress.total.bytes",
         event_name: [:jellyfish],
-        measurement: :traffic_egress_total
+        measurement: :traffic_egress_total,
+        description: "Total traffic sent (bytes)"
       ),
       last_value("jellyfish.traffic.egress.throughput.bytes_per_second",
         event_name: [:jellyfish],
-        measurement: :traffic_egress_throughput
+        measurement: :traffic_egress_throughput,
+        description: "Current throughput for sent traffic (bytes/second)"
       ),
-      last_value("jellyfish.rooms"),
+      last_value("jellyfish.rooms",
+        description: "Amount of rooms currently present in Jellyfish"
+      ),
 
       # FIXME: Prometheus warns about using labels to store dimensions with high cardinality,
       # such as UUIDs. For more information refer here: https://prometheus.io/docs/practices/naming/#labels
       last_value("jellyfish.room.peers",
-        tags: [:room_id]
+        tags: [:room_id],
+        description: "Amount of peers currently present in a given room"
       ),
       sum("jellyfish.room.peer_time.total.seconds",
         event_name: [:jellyfish, :room],
         measurement: :peer_time_total,
-        tags: [:room_id]
+        tags: [:room_id],
+        description: "Total peer time accumulated for a given room (seconds)"
       )
     ]
   end
