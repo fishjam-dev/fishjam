@@ -1,3 +1,6 @@
+# This file has been generated using OpenApiSpex. Do not edit manually!
+# Run `mix api.spec` to regenerate
+
 ---
 components:
   responses: {}

@@ -91,7 +91,7 @@ defmodule Jellyfish.MixProject do
   defp aliases do
     [
       setup: ["deps.get"],
-      "api.spec": ["openapi.spec.yaml --spec JellyfishWeb.ApiSpec"],
+      "api.spec": &generate_api_spec/1,
       test: ["test --exclude cluster"],
       "test.cluster": ["test --only cluster"],
       "test.cluster.ci": ["cmd docker compose run test; docker compose stop"]
@@ -120,5 +120,34 @@ defmodule Jellyfish.MixProject do
         "Membrane Framework Homepage" => "https://membrane.stream"
       }
     ]
+  end
+
+  defp generate_api_spec(_args) do
+    output_filename = "openapi.yaml"
+    generated_filename = "openapi-gen.yaml"
+
+    Mix.shell().info("Generating #{output_filename}...")
+
+    {_io_stream, exit_status} =
+      System.cmd(
+        "mix",
+        ["openapi.spec.yaml", "--spec", "JellyfishWeb.ApiSpec", generated_filename],
+        into: IO.stream()
+      )
+
+    if exit_status != 0, do: raise("Failed to generate OpenAPI spec")
+
+    File.write!(output_filename, """
+    # This file has been generated using OpenApiSpex. Do not edit manually!
+    # Run `mix api.spec` to regenerate
+
+    """)
+
+    File.read!(generated_filename)
+    |> then(&File.write!(output_filename, &1, [:append]))
+
+    File.rm!(generated_filename)
+
+    Mix.shell().info("Successfully generated #{output_filename}")
   end
 end
