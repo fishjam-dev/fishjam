@@ -20,9 +20,13 @@ defmodule Jellyfish.Application do
       # Start the RoomService
       Jellyfish.RoomService,
       {Registry, keys: :unique, name: Jellyfish.RoomRegistry},
+      {Registry, keys: :unique, name: Jellyfish.RequestHandlerRegistry},
       # Start the Telemetry supervisor (must be started after Jellyfish.RoomRegistry)
       JellyfishWeb.Telemetry
     ]
+
+    :ets.new(:rooms_to_tables, [:public, :set, :named_table])
+    :ets.insert(:rooms_to_tables, {:free_tables, []})
 
     children =
       if topologies == [] do

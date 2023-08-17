@@ -6,7 +6,7 @@ defmodule Jellyfish.Component.HLS do
   @behaviour Jellyfish.Endpoint.Config
   @behaviour Jellyfish.Component
 
-  alias Jellyfish.Component.HLS.Storage
+  alias Jellyfish.Component.HLS.{LLStorage, RequestHandler}
   alias Membrane.RTC.Engine.Endpoint.HLS
   alias Membrane.RTC.Engine.Endpoint.HLS.{CompositorConfig, HLSConfig, MixerConfig}
   alias Membrane.Time
@@ -20,6 +20,9 @@ defmodule Jellyfish.Component.HLS do
   def config(options) do
     base_path = Application.fetch_env!(:jellyfish, :output_base_path)
     output_dir = Path.join([base_path, "hls_output", "#{options.room_id}"])
+
+    storage = fn directory -> %LLStorage{directory: directory, room_id: options.room_id} end
+    RequestHandler.start(%{room_id: options.room_id})
 
     {:ok,
      %HLS{
@@ -43,9 +46,7 @@ defmodule Jellyfish.Component.HLS do
          target_window_duration: :infinity,
          segment_duration: @segment_duration,
          partial_segment_duration: @partial_segment_duration,
-         storage: fn directory ->
-           Storage.init(%{directory: directory, room_id: options.room_id})
-         end
+         storage: storage
        }
      }}
   end
