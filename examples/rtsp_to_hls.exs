@@ -1,5 +1,7 @@
 Mix.install([
-  {:jellyfish_server_sdk, "~> 0.1.1"}
+  # Keep in mind that you should lock onto a specific version of Jellyfish
+  # and the Jellyfish Server SDK in production code
+  {:jellyfish_server_sdk, github: "jellyfish-dev/elixir_server_sdk"}
 ])
 
 defmodule Example do
@@ -11,13 +13,18 @@ defmodule Example do
 
   def run(stream_uri) do
     client =
-      Jellyfish.Client.new("http://#{@jellyfish_hostname}:#{@jellyfish_port}", @jellyfish_token)
+      Jellyfish.Client.new(
+        server_address: "#{@jellyfish_hostname}:#{@jellyfish_port}",
+        server_api_token: @jellyfish_token
+      )
 
-    with {:ok, %Jellyfish.Room{id: room_id}} <- Jellyfish.Room.create(client),
+    with {:ok, %Jellyfish.Room{id: room_id}} <- Jellyfish.Room.create(client, video_codec: :h264),
          {:ok, %Jellyfish.Component{id: _hls_component_id}} <-
-           Jellyfish.Room.add_component(client, room_id, "hls"),
+           Jellyfish.Room.add_component(client, room_id, Jellyfish.Component.HLS),
          {:ok, %Jellyfish.Component{id: _rtsp_component_id}} <-
-           Jellyfish.Room.add_component(client, room_id, "rtsp", sourceUri: stream_uri) do
+           Jellyfish.Room.add_component(client, room_id, %Jellyfish.Component.RTSP{
+             source_uri: stream_uri
+           }) do
       Logger.info("Components added successfully")
     else
       {:error, reason} ->
