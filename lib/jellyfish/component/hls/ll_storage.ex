@@ -105,9 +105,9 @@ defmodule Jellyfish.Component.HLS.LLStorage do
 
   defp add_manifest_to_ets(filename, manifest, %{room_id: room_id}) do
     if String.contains?(filename, "_delta.m3u8") do
-      EtsHelper.add_manifest(room_id, manifest)
+      EtsHelper.update_delta_manifest(room_id, manifest)
     else
-      EtsHelper.add_delta_manifest(room_id, manifest)
+      EtsHelper.update_manifest(room_id, manifest)
     end
   end
 
@@ -136,7 +136,7 @@ defmodule Jellyfish.Component.HLS.LLStorage do
     partials_in_ets =
       Enum.filter(partials_in_ets, fn {{segment_sn, _partial_sn}, {filename, offset}} ->
         if segment_sn + @ets_duration_in_segments <= curr_segment_sn do
-          EtsHelper.remove_partial(room_id, filename, offset)
+          EtsHelper.delete_partial(room_id, filename, offset)
           false
         else
           true
@@ -152,11 +152,11 @@ defmodule Jellyfish.Component.HLS.LLStorage do
          partial_sn: partial_sn
        }) do
     if String.contains?(filename, "_delta.m3u8") do
-      EtsHelper.add_delta_last_partial(room_id, {segment_sn, partial_sn})
-      RequestHandler.update_last_partial(room_id, {segment_sn, partial_sn}, :delta)
+      EtsHelper.update_delta_recent_partial(room_id, {segment_sn, partial_sn})
+      RequestHandler.update_delta_recent_partial(room_id, {segment_sn, partial_sn})
     else
-      EtsHelper.add_last_partial(room_id, {segment_sn, partial_sn})
-      RequestHandler.update_last_partial(room_id, {segment_sn, partial_sn}, :regular)
+      EtsHelper.update_recent_partial(room_id, {segment_sn, partial_sn})
+      RequestHandler.update_recent_partial(room_id, {segment_sn, partial_sn})
     end
   end
 

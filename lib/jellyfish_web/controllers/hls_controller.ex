@@ -1,6 +1,7 @@
 defmodule JellyfishWeb.HLSController do
   use JellyfishWeb, :controller
 
+  require Logger
   alias Jellyfish.Component.HLS.RequestHandler
   alias Plug.Conn
 
@@ -28,8 +29,22 @@ defmodule JellyfishWeb.HLSController do
         }
       ) do
     partial = {String.to_integer(segment), String.to_integer(part)}
-    manifest = RequestHandler.handle_manifest_request(room_id, filename, partial)
-    Conn.send_resp(conn, 200, manifest)
+
+    result =
+      if String.contains?(filename, "_delta.m3u8") do
+        RequestHandler.handle_delta_manifest_request(room_id, partial)
+      else
+        RequestHandler.handle_manifest_request(room_id, partial)
+      end
+
+    case result do
+      {:ok, manifest} ->
+        Conn.send_resp(conn, 200, manifest)
+
+      {:error, reason} ->
+        Logger.error("Error handling manifest request, reason: #{reason}")
+        Conn.send_resp(conn, 400, "Not found")
+    end
   end
 
   def index(conn, %{"room_id" => room_id, "filename" => filename}) do
