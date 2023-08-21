@@ -8,7 +8,7 @@ defmodule Jellyfish.Component.HLS.LLStorage do
 
   @enforce_keys [:directory, :room_id]
   defstruct @enforce_keys ++
-              [partial_sn: 0, segment_sn: 0, partials_in_ets: []]
+              [partial_sn: 0, segment_sn: 0, partials_in_ets: [], table: nil]
 
   @type partial_ets_key :: String.t()
   @type sequence_number :: non_neg_integer()
@@ -18,6 +18,7 @@ defmodule Jellyfish.Component.HLS.LLStorage do
   @type t :: %__MODULE__{
           directory: Path.t(),
           room_id: Room.id(),
+          table: :ets.table() | nil,
           partial_sn: sequence_number(),
           segment_sn: sequence_number(),
           partials_in_ets: [partial_in_ets()]
@@ -27,10 +28,10 @@ defmodule Jellyfish.Component.HLS.LLStorage do
 
   @impl true
   def init(%__MODULE__{directory: directory, room_id: room_id}) do
-    with :ok <- EtsHelper.add_room(room_id) do
-      %__MODULE__{room_id: room_id, directory: directory}
+    with {:ok, table} <- EtsHelper.add_room(room_id) do
+      %__MODULE__{room_id: room_id, table: table, directory: directory}
     else
-      {:error, :already_exists} -> {:error, :cannot_create_ets_table}
+      {:error, :already_exists} -> raise("Can't create ets table")
     end
   end
 
@@ -103,17 +104,17 @@ defmodule Jellyfish.Component.HLS.LLStorage do
     {result, state}
   end
 
-  defp add_manifest_to_ets(filename, manifest, %{room_id: room_id}) do
+  defp add_manifest_to_ets(filename, manifest, %{table: table}) do
     if String.contains?(filename, "_delta.m3u8") do
-      EtsHelper.update_delta_manifest(room_id, manifest)
+      EtsHelper.update_delta_manifest(table, manifest)
     else
-      EtsHelper.update_manifest(room_id, manifest)
+      EtsHelper.update_manifest(table, manifest)
     end
   end
 
   defp add_partial_to_ets(
          %{
-           room_id: room_id,
+           table: table,
            partials_in_ets: partials_in_ets,
            segment_sn: segment_sn,
            partial_sn: partial_sn
@@ -122,21 +123,20 @@ defmodule Jellyfish.Component.HLS.LLStorage do
          offset,
          content
        ) do
-    EtsHelper.add_partial(room_id, content, filename, offset)
+    EtsHelper.add_partial(table, content, filename, offset)
 
     partial = {segment_sn, partial_sn}
     %{state | partials_in_ets: [{partial, {filename, offset}} | partials_in_ets]}
   end
 
   defp remove_partials_from_ets(
-         %{partials_in_ets: partials_in_ets, segment_sn: curr_segment_sn, room_id: room_id} =
-           state
+         %{partials_in_ets: partials_in_ets, segment_sn: curr_segment_sn, table: table} = state
        ) do
     # Remove all partials that are at least @ets_duration_in_segments behind
     partials_in_ets =
       Enum.filter(partials_in_ets, fn {{segment_sn, _partial_sn}, {filename, offset}} ->
         if segment_sn + @ets_duration_in_segments <= curr_segment_sn do
-          EtsHelper.delete_partial(room_id, filename, offset)
+          EtsHelper.delete_partial(table, filename, offset)
           false
         else
           true
@@ -148,14 +148,15 @@ defmodule Jellyfish.Component.HLS.LLStorage do
 
   defp send_update(filename, %{
          room_id: room_id,
+         table: table,
          segment_sn: segment_sn,
          partial_sn: partial_sn
        }) do
     if String.contains?(filename, "_delta.m3u8") do
-      EtsHelper.update_delta_recent_partial(room_id, {segment_sn, partial_sn})
+      EtsHelper.update_delta_recent_partial(table, {segment_sn, partial_sn})
       RequestHandler.update_delta_recent_partial(room_id, {segment_sn, partial_sn})
     else
-      EtsHelper.update_recent_partial(room_id, {segment_sn, partial_sn})
+      EtsHelper.update_recent_partial(table, {segment_sn, partial_sn})
       RequestHandler.update_recent_partial(room_id, {segment_sn, partial_sn})
     end
   end

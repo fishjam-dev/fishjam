@@ -63,6 +63,10 @@ defmodule JellyfishWeb.HLSController do
     end
   end
 
+  @doc """
+  Every partial request comes with a byte range which represents where specifically in the file partial is located.
+  Example: "bytes=100-10" 100, represents where the partial starts in the file, 10 represents length of partial.
+  """
   def parse_bytes_range(raw_range) do
     case raw_range do
       [] ->

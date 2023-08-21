@@ -57,8 +57,8 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   def handle_manifest_request(room_id, partial) do
     {:ok, last_partial} = EtsHelper.get_recent_partial(room_id)
 
-    unless is_partial_ready?(partial, last_partial) do
-      wait_for_manifest_ready(room_id, partial)
+    unless is_partial_ready(partial, last_partial) do
+      wait_for_manifest_ready(room_id, partial, :manifest)
     end
 
     EtsHelper.get_manifest(room_id)
@@ -71,8 +71,8 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   def handle_delta_manifest_request(room_id, partial) do
     {:ok, last_partial} = EtsHelper.get_delta_recent_partial(room_id)
 
-    unless is_partial_ready?(partial, last_partial) do
-      wait_for_delta_manifest_ready(room_id, partial)
+    unless is_partial_ready(partial, last_partial) do
+      wait_for_manifest_ready(room_id, partial, :delta_manifest)
     end
 
     EtsHelper.get_delta_manifest(room_id)
@@ -84,12 +84,12 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
 
   @spec update_recent_partial(Room.id(), partial()) :: :ok
   def update_recent_partial(room_id, partial) do
-    GenServer.cast(registry_id(room_id), {:update_recent_partial, partial})
+    GenServer.cast(registry_id(room_id), {:update_recent_partial, partial, :manifest})
   end
 
   @spec update_delta_recent_partial(Room.id(), partial()) :: :ok
   def update_delta_recent_partial(room_id, partial) do
-    GenServer.cast(registry_id(room_id), {:update_delta_recent_partial, partial})
+    GenServer.cast(registry_id(room_id), {:update_recent_partial, partial, :delta_manifest})
   end
 
   ###
@@ -111,28 +111,20 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   end
 
   @impl true
-  def handle_cast({:update_recent_partial, last_partial}, %{manifest: status} = state) do
+  def handle_cast({:update_recent_partial, last_partial, manifest}, state) do
+    status = Map.fetch!(state, manifest)
     state = Map.put(state, :manifest, update_status(status, last_partial))
     {:noreply, state}
   end
 
   @impl true
-  def handle_cast({:update_delta_recent_partial, last_partial}, %{delta_manifest: status} = state) do
-    state = Map.put(state, :delta_manifest, update_status(status, last_partial))
-    {:noreply, state}
-  end
+  def handle_cast({:is_partial_ready, partial, from, manifest}, state) do
+    state =
+      state
+      |> Map.fetch!(manifest)
+      |> handle_is_partial_ready(partial, from)
+      |> then(&Map.put(state, manifest, &1))
 
-  @impl true
-  def handle_cast({:is_partial_ready, partial, from}, %{manifest: status} = state) do
-    status = handle_is_partial_ready(status, partial, from)
-    state = Map.put(state, :manifest, status)
-    {:noreply, state}
-  end
-
-  @impl true
-  def handle_cast({:is_delta_partial_ready, partial, from}, %{delta_manifest: status} = state) do
-    status = handle_is_partial_ready(status, partial, from)
-    state = Map.put(state, :delta_manifest, status)
     {:noreply, state}
   end
 
@@ -155,17 +147,8 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   ### PRIVATE FUNCTIONS
   ###
 
-  defp wait_for_manifest_ready(room_id, partial) do
-    GenServer.cast(registry_id(room_id), {:is_partial_ready, partial, self()})
-
-    receive do
-      :manifest_ready ->
-        :ok
-    end
-  end
-
-  defp wait_for_delta_manifest_ready(room_id, partial) do
-    GenServer.cast(registry_id(room_id), {:is_delta_partial_ready, partial, self()})
+  defp wait_for_manifest_ready(room_id, partial, manifest) do
+    GenServer.cast(registry_id(room_id), {:is_partial_ready, partial, self(), manifest})
 
     receive do
       :manifest_ready ->
@@ -184,7 +167,7 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   end
 
   defp handle_is_partial_ready(status, partial, from) do
-    if is_partial_ready?(partial, status.last_partial) do
+    if is_partial_ready(partial, status.last_partial) do
       send(from, :manifest_ready)
       status
     else
@@ -205,12 +188,21 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
     Enum.each(waiting_pids, fn pid -> send(pid, :manifest_ready) end)
   end
 
-  defp is_partial_ready?(_partial, nil) do
+  defp is_partial_ready(_partial, nil) do
     false
   end
 
-  defp is_partial_ready?(partial, last_partial),
-    do: partial_to_integer(last_partial) >= partial_to_integer(partial)
+  defp is_partial_ready(partial, last_partial),
+    do:
+      is_last_segment_sn_greater(partial, last_partial) or
+        is_same_segment_greater_or_equal_partial_sn(partial, last_partial)
 
-  defp partial_to_integer({segment_sn, partial_sn}), do: segment_sn * 100 + partial_sn
+  defp is_last_segment_sn_greater({segment_sn, _partial_sn}, {last_segment_sn, _last_partial_sn}),
+    do: last_segment_sn > segment_sn
+
+  defp is_same_segment_greater_or_equal_partial_sn(
+         {segment_sn, partial_sn},
+         {last_segment_sn, last_partial_sn}
+       ),
+       do: last_segment_sn == segment_sn and last_partial_sn >= partial_sn
 end
