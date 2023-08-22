@@ -7,6 +7,8 @@ defmodule Jellyfish.Component.HLS do
   @behaviour Jellyfish.Component
 
   alias Jellyfish.Component.HLS.{LLStorage, RequestHandler}
+  alias Jellyfish.Room
+
   alias Membrane.RTC.Engine.Endpoint.HLS
   alias Membrane.RTC.Engine.Endpoint.HLS.{CompositorConfig, HLSConfig, MixerConfig}
   alias Membrane.Time
@@ -18,9 +20,6 @@ defmodule Jellyfish.Component.HLS do
 
   @impl true
   def config(options) do
-    base_path = Application.fetch_env!(:jellyfish, :output_base_path)
-    output_dir = Path.join([base_path, "hls_output", "#{options.room_id}"])
-
     storage = fn directory -> %LLStorage{directory: directory, room_id: options.room_id} end
     RequestHandler.start(%{room_id: options.room_id})
 
@@ -28,7 +27,7 @@ defmodule Jellyfish.Component.HLS do
      %HLS{
        rtc_engine: options.engine_pid,
        owner: self(),
-       output_directory: output_dir,
+       output_directory: output_dir(options.room_id),
        mixer_config: %MixerConfig{
          video: %CompositorConfig{
            stream_format: %Membrane.RawVideo{
@@ -53,4 +52,10 @@ defmodule Jellyfish.Component.HLS do
 
   @impl true
   def metadata(), do: %{playable: false}
+
+  @spec output_dir(Room.id()) :: String.t()
+  def output_dir(room_id) do
+    base_path = Application.fetch_env!(:jellyfish, :output_base_path)
+    Path.join([base_path, "hls_output", "#{room_id}"])
+  end
 end

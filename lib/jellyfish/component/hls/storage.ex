@@ -9,8 +9,8 @@ defmodule Jellyfish.Component.HLS.Storage do
   @type t :: %__MODULE__{directory: Path.t()}
 
   @impl true
-  def init(%__MODULE__{directory: directory}),
-    do: %__MODULE__{directory: directory}
+  def init(%__MODULE__{} = state),
+    do: state
 
   @impl true
   def store(
@@ -27,7 +27,7 @@ defmodule Jellyfish.Component.HLS.Storage do
           write_to_file(directory, name, content, [:binary])
 
         %{mode: :binary, type: :partial_segment} ->
-          raise "This storage doesn't support ll-hls"
+          raise "This storage doesn't support ll-hls. Use `Jellyfish.Component.HLS.LLStorage` instead"
 
         %{mode: :binary, type: :header} ->
           write_to_file(directory, name, content, [:binary])

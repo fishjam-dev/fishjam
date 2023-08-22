@@ -2,10 +2,9 @@ defmodule JellyfishWeb.HLSController do
   use JellyfishWeb, :controller
 
   require Logger
+  alias Jellyfish.Component.HLS
   alias Jellyfish.Component.HLS.RequestHandler
   alias Plug.Conn
-
-  @hls_directory "jellyfish_output/hls_output"
 
   def index(
         conn,
@@ -14,7 +13,7 @@ defmodule JellyfishWeb.HLSController do
         } = params
       ) do
     params
-    |> Map.update!("filename", &String.replace(&1, ".m3u8", "_delta.m3u8"))
+    |> Map.update!("filename", &String.replace_suffix(&1, ".m3u8", "_delta.m3u8"))
     |> Map.delete("_HLS_skip")
     |> then(&index(conn, &1))
   end
@@ -31,7 +30,7 @@ defmodule JellyfishWeb.HLSController do
     partial = {String.to_integer(segment), String.to_integer(part)}
 
     result =
-      if String.contains?(filename, "_delta.m3u8") do
+      if String.ends_with?(filename, "_delta.m3u8") do
         RequestHandler.handle_delta_manifest_request(room_id, partial)
       else
         RequestHandler.handle_manifest_request(room_id, partial)
@@ -42,8 +41,8 @@ defmodule JellyfishWeb.HLSController do
         Conn.send_resp(conn, 200, manifest)
 
       {:error, reason} ->
-        Logger.error("Error handling manifest request, reason: #{reason}")
-        Conn.send_resp(conn, 400, "Not found")
+        Logger.error("Error handling manifest request, reason: #{inspect(reason)}")
+        Conn.send_resp(conn, 404, "Not found")
     end
   end
 
@@ -53,19 +52,20 @@ defmodule JellyfishWeb.HLSController do
       |> get_req_header("range")
       |> parse_bytes_range()
 
-    if String.match?(filename, ~r/\.m4s$/) and range != :not_partial do
-      {offset, _lenght} = range
+    if String.ends_with?(filename, ".m4s") and range != :not_partial do
+      {offset, _length} = range
       {:ok, partial_segment} = RequestHandler.handle_partial_request(room_id, filename, offset)
       Conn.send_resp(conn, 200, partial_segment)
     else
-      file_path = Path.join([@hls_directory, room_id, filename])
+      hls_directory = HLS.output_dir(room_id)
+      file_path = Path.join(hls_directory, filename)
       Conn.send_file(conn, 200, file_path)
     end
   end
 
   @doc """
   Every partial request comes with a byte range which represents where specifically in the file partial is located.
-  Example: "bytes=100-10" 100, represents where the partial starts in the file, 10 represents length of partial.
+  Example: "bytes=100-200" 100-200, represents the scope in which partial is located in the file.
   """
   def parse_bytes_range(raw_range) do
     case raw_range do

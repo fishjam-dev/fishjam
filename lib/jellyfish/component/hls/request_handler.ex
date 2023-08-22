@@ -4,6 +4,7 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   use GenServer
   use Bunch.Access
 
+  alias Jellyfish.Component.HLS
   alias Jellyfish.Component.HLS.EtsHelper
   alias Jellyfish.Room
 
@@ -26,8 +27,6 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
           delta_manifest: status()
         }
 
-  @hls_directory "jellyfish_output/hls_output"
-
   ###
   ### HLS Controller API
   ###
@@ -37,7 +36,8 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   """
   @spec handle_file_request(Room.id(), String.t()) :: {:ok, binary()} | {:error | String.t()}
   def handle_file_request(room_id, filename) do
-    path = Path.join([@hls_directory, room_id, filename])
+    hls_directory = HLS.output_dir(room_id)
+    path = Path.join(hls_directory, filename)
     File.read(path)
   end
 
@@ -45,7 +45,7 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   Handles ll-hls partial requests
   """
   @spec handle_partial_request(Room.id(), String.t(), non_neg_integer()) ::
-          {:ok, binary()} | {:error | atom()}
+          {:ok, binary()} | {:error, atom()}
   def handle_partial_request(room_id, filename, offset) do
     EtsHelper.get_partial(room_id, filename, offset)
   end
@@ -53,29 +53,31 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   @doc """
   Handles manifest requests with specific partial requested (ll-hls)
   """
-  @spec handle_manifest_request(Room.id(), partial()) :: {:ok, binary()} | {:error, any()}
+  @spec handle_manifest_request(Room.id(), partial()) ::
+          {:ok, String.t()} | {:error, atom()}
   def handle_manifest_request(room_id, partial) do
-    {:ok, last_partial} = EtsHelper.get_recent_partial(room_id)
+    with {:ok, last_partial} <- EtsHelper.get_recent_partial(room_id) do
+      unless is_partial_ready(partial, last_partial) do
+        wait_for_manifest_ready(room_id, partial, :manifest)
+      end
 
-    unless is_partial_ready(partial, last_partial) do
-      wait_for_manifest_ready(room_id, partial, :manifest)
+      EtsHelper.get_manifest(room_id)
     end
-
-    EtsHelper.get_manifest(room_id)
   end
 
   @doc """
-  Handles manifest requests with specific partial requested (ll-hls)
+  Handles delta manifest requests with specific partial requested (ll-hls)
   """
-  @spec handle_delta_manifest_request(Room.id(), partial()) :: {:ok, String.t()} | {:error, any()}
+  @spec handle_delta_manifest_request(Room.id(), partial()) ::
+          {:ok, String.t()} | {:error, atom()}
   def handle_delta_manifest_request(room_id, partial) do
-    {:ok, last_partial} = EtsHelper.get_delta_recent_partial(room_id)
+    with {:ok, last_partial} <- EtsHelper.get_delta_recent_partial(room_id) do
+      unless is_partial_ready(partial, last_partial) do
+        wait_for_manifest_ready(room_id, partial, :delta_manifest)
+      end
 
-    unless is_partial_ready(partial, last_partial) do
-      wait_for_manifest_ready(room_id, partial, :delta_manifest)
+      EtsHelper.get_delta_manifest(room_id)
     end
-
-    EtsHelper.get_delta_manifest(room_id)
   end
 
   ###
@@ -97,6 +99,9 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   ###
 
   def start(%{room_id: room_id}) do
+    # Request handler monitors the room process.
+    # This ensures that it will be killed if room crashes.
+    # In case of different use of this module it has to be refactored
     GenServer.start(__MODULE__, %{room_id: room_id, room_pid: self()}, name: registry_id(room_id))
   end
 
@@ -113,7 +118,7 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   @impl true
   def handle_cast({:update_recent_partial, last_partial, manifest}, state) do
     status = Map.fetch!(state, manifest)
-    state = Map.put(state, :manifest, update_status(status, last_partial))
+    state = Map.put(state, manifest, update_status(status, last_partial))
     {:noreply, state}
   end
 

@@ -26,7 +26,6 @@ defmodule Jellyfish.Application do
     ]
 
     :ets.new(:rooms_to_tables, [:public, :set, :named_table])
-    :ets.insert(:rooms_to_tables, {:free_tables, []})
 
     children =
       if topologies == [] do

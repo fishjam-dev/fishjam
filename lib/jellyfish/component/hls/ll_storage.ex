@@ -24,14 +24,15 @@ defmodule Jellyfish.Component.HLS.LLStorage do
           partials_in_ets: [partial_in_ets()]
         }
 
-  @ets_duration_in_segments 4
+  @ets_cached_duration_in_segments 4
 
   @impl true
   def init(%__MODULE__{directory: directory, room_id: room_id}) do
     with {:ok, table} <- EtsHelper.add_room(room_id) do
       %__MODULE__{room_id: room_id, table: table, directory: directory}
     else
-      {:error, :already_exists} -> raise("Can't create ets table")
+      {:error, :already_exists} ->
+        raise("Can't create ets table - another table already exists for room #{room_id}")
     end
   end
 
@@ -90,9 +91,7 @@ defmodule Jellyfish.Component.HLS.LLStorage do
   defp store_manifest(
          filename,
          content,
-         %__MODULE__{
-           directory: directory
-         } = state
+         %__MODULE__{directory: directory} = state
        ) do
     result = write_to_file(directory, filename, content)
 
@@ -105,7 +104,7 @@ defmodule Jellyfish.Component.HLS.LLStorage do
   end
 
   defp add_manifest_to_ets(filename, manifest, %{table: table}) do
-    if String.contains?(filename, "_delta.m3u8") do
+    if String.ends_with?(filename, "_delta.m3u8") do
       EtsHelper.update_delta_manifest(table, manifest)
     else
       EtsHelper.update_manifest(table, manifest)
@@ -132,10 +131,10 @@ defmodule Jellyfish.Component.HLS.LLStorage do
   defp remove_partials_from_ets(
          %{partials_in_ets: partials_in_ets, segment_sn: curr_segment_sn, table: table} = state
        ) do
-    # Remove all partials that are at least @ets_duration_in_segments behind
+    # Remove all partials that are at least @ets_cached_duration_in_segments behind
     partials_in_ets =
       Enum.filter(partials_in_ets, fn {{segment_sn, _partial_sn}, {filename, offset}} ->
-        if segment_sn + @ets_duration_in_segments <= curr_segment_sn do
+        if segment_sn + @ets_cached_duration_in_segments <= curr_segment_sn do
           EtsHelper.delete_partial(table, filename, offset)
           false
         else
@@ -152,7 +151,7 @@ defmodule Jellyfish.Component.HLS.LLStorage do
          segment_sn: segment_sn,
          partial_sn: partial_sn
        }) do
-    if String.contains?(filename, "_delta.m3u8") do
+    if String.ends_with?(filename, "_delta.m3u8") do
       EtsHelper.update_delta_recent_partial(table, {segment_sn, partial_sn})
       RequestHandler.update_delta_recent_partial(room_id, {segment_sn, partial_sn})
     else
@@ -169,7 +168,7 @@ defmodule Jellyfish.Component.HLS.LLStorage do
 
     if new_segment? do
       state = %{state | segment_sn: segment_sn + 1, partial_sn: new_partial_sn}
-      # If there is a new segment we want to remove partials that are to old from ets
+      # If there is a new segment we want to remove partials that are too old from ets
       remove_partials_from_ets(state)
     else
       %{state | partial_sn: new_partial_sn}

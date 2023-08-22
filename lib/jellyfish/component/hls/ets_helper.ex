@@ -3,7 +3,7 @@ defmodule Jellyfish.Component.HLS.EtsHelper do
 
   alias Jellyfish.Room
 
-  @rooms_to_tabels :rooms_to_tables
+  @rooms_to_tables :rooms_to_tables
 
   @recent_partial_key :recent_partial
   @manifest_key :manifest
@@ -25,17 +25,17 @@ defmodule Jellyfish.Component.HLS.EtsHelper do
       # Ets is public because ll-storage can't delete table.
       # If we change that storage can be protected
       table = :ets.new(:hls_storage, [:public])
-      :ets.insert(@rooms_to_tabels, {room_id, table})
+      :ets.insert(@rooms_to_tables, {room_id, table})
       {:ok, table}
     end
   end
 
   @spec remove_room(Room.id()) :: :ok | {:error, String.t()}
   def remove_room(room_id) do
-    case :ets.lookup(@rooms_to_tabels, room_id) do
+    case :ets.lookup(@rooms_to_tables, room_id) do
       [{^room_id, table}] ->
         :ets.delete(table)
-        :ets.delete(@rooms_to_tabels, room_id)
+        :ets.delete(@rooms_to_tables, room_id)
         :ok
 
       _empty ->
@@ -84,30 +84,30 @@ defmodule Jellyfish.Component.HLS.EtsHelper do
   ###
 
   @spec get_partial(Room.id(), String.t(), non_neg_integer()) ::
-          {:ok, binary()} | {:error, :not_found}
+          {:ok, binary()} | {:error, atom()}
   def get_partial(room_id, filename, offset) do
     key = generate_partial_key(filename, offset)
     get_from_ets(room_id, key)
   end
 
   @spec get_recent_partial(Room.id()) ::
-          {:ok, {non_neg_integer(), non_neg_integer()}} | {:error, :not_found}
+          {:ok, {non_neg_integer(), non_neg_integer()}} | {:error, atom()}
   def get_recent_partial(room_id) do
     get_from_ets(room_id, @recent_partial_key)
   end
 
   @spec get_delta_recent_partial(Room.id()) ::
-          {:ok, {non_neg_integer(), non_neg_integer()}} | {:error, :not_found}
+          {:ok, {non_neg_integer(), non_neg_integer()}} | {:error, atom()}
   def get_delta_recent_partial(room_id) do
     get_from_ets(room_id, @delta_recent_partial_key)
   end
 
-  @spec get_manifest(Room.id()) :: {:ok, String.t()} | {:error, :not_found}
+  @spec get_manifest(Room.id()) :: {:ok, String.t()} | {:error, atom()}
   def get_manifest(room_id) do
     get_from_ets(room_id, @manifest_key)
   end
 
-  @spec get_delta_manifest(Room.id()) :: {:ok, String.t()} | {:error, :not_found}
+  @spec get_delta_manifest(Room.id()) :: {:ok, String.t()} | {:error, atom()}
   def get_delta_manifest(room_id) do
     get_from_ets(room_id, @delta_manifest_key)
   end
@@ -117,23 +117,27 @@ defmodule Jellyfish.Component.HLS.EtsHelper do
   ###
 
   def get_from_ets(room_id, key) do
-    table = get_table(room_id)
+    with {:ok, table} <- get_table(room_id) do
+      lookup_ets(table, key)
+    end
+  end
 
+  defp lookup_ets(table, key) do
     case :ets.lookup(table, key) do
-      [{^key, manifest}] -> {:ok, manifest}
-      [] -> {:error, :not_found}
+      [{^key, val}] -> {:ok, val}
+      [] -> {:error, :file_not_found}
     end
   end
 
   defp get_table(room_id) do
-    case :ets.lookup(@rooms_to_tabels, room_id) do
-      [{^room_id, table}] -> table
-      _empty -> {:error, :not_exists}
+    case :ets.lookup(@rooms_to_tables, room_id) do
+      [{^room_id, table}] -> {:ok, table}
+      _empty -> {:error, :room_not_found}
     end
   end
 
   defp room_exists?(room_id) do
-    :ets.lookup(@rooms_to_tabels, room_id) != []
+    :ets.lookup(@rooms_to_tables, room_id) != []
   end
 
   defp generate_partial_key(filename, offset), do: "#{filename}_#{offset}"
