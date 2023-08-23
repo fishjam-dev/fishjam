@@ -80,6 +80,9 @@ defmodule JellyfishWeb.ComponentController do
 
       {:error, :incompatible_codec} ->
         {:error, :bad_request, "HLS component needs room with video codec 'h264' enforced"}
+
+      {:error, :reached_components_limit} ->
+        {:error, :bad_request, "Max 1 HLS component allowed per room"}
     end
   end
 
