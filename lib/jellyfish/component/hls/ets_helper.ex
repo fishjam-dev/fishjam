@@ -34,7 +34,7 @@ defmodule Jellyfish.Component.HLS.EtsHelper do
   def remove_room(room_id) do
     case :ets.lookup(@rooms_to_tables, room_id) do
       [{^room_id, table}] ->
-        :ets.delete(table)
+        if table_exists?(table), do: :ets.delete(table)
         :ets.delete(@rooms_to_tables, room_id)
         :ok
 
@@ -138,6 +138,10 @@ defmodule Jellyfish.Component.HLS.EtsHelper do
 
   defp room_exists?(room_id) do
     :ets.lookup(@rooms_to_tables, room_id) != []
+  end
+
+  defp table_exists?(table) do
+    :ets.info(table) != :undefined
   end
 
   defp generate_partial_key(filename, offset), do: "#{filename}_#{offset}"

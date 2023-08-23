@@ -98,7 +98,7 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   ### MANAGMENT API
   ###
 
-  def start(%{room_id: room_id}) do
+  def start(room_id) do
     # Request handler monitors the room process.
     # This ensures that it will be killed if room crashes.
     # In case of different use of this module it has to be refactored

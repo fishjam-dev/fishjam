@@ -21,7 +21,7 @@ defmodule Jellyfish.Component.HLS do
   @impl true
   def config(options) do
     storage = fn directory -> %LLStorage{directory: directory, room_id: options.room_id} end
-    RequestHandler.start(%{room_id: options.room_id})
+    RequestHandler.start(options.room_id)
 
     {:ok,
      %HLS{

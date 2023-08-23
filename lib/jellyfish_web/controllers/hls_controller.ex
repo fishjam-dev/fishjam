@@ -2,7 +2,7 @@ defmodule JellyfishWeb.HLSController do
   use JellyfishWeb, :controller
 
   require Logger
-  alias Jellyfish.Component.HLS
+
   alias Jellyfish.Component.HLS.RequestHandler
   alias Plug.Conn
 
@@ -52,14 +52,20 @@ defmodule JellyfishWeb.HLSController do
       |> get_req_header("range")
       |> parse_bytes_range()
 
-    if String.ends_with?(filename, ".m4s") and range != :not_partial do
-      {offset, _length} = range
-      {:ok, partial_segment} = RequestHandler.handle_partial_request(room_id, filename, offset)
-      Conn.send_resp(conn, 200, partial_segment)
-    else
-      hls_directory = HLS.output_dir(room_id)
-      file_path = Path.join(hls_directory, filename)
-      Conn.send_file(conn, 200, file_path)
+    result =
+      if String.ends_with?(filename, ".m4s") and range != :not_partial do
+        {offset, _length} = range
+        RequestHandler.handle_partial_request(room_id, filename, offset)
+      else
+        RequestHandler.handle_file_request(room_id, filename)
+      end
+
+    case result do
+      {:ok, file} ->
+        Conn.send_resp(conn, 200, file)
+
+      {:error, _reason} ->
+        Conn.send_resp(conn, 404, "Not found")
     end
   end
 
