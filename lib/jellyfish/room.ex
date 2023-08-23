@@ -399,7 +399,7 @@ defmodule Jellyfish.Room do
       video_codec != :h264 ->
         {:error, :incompatible_codec}
 
-      Map.values(components) |> Enum.any?(&(&1.type == Component.HLS)) ->
+      hls_component_already_present?(components) ->
         {:error, :reached_components_limit}
 
       true ->
@@ -408,4 +408,7 @@ defmodule Jellyfish.Room do
   end
 
   defp check_component_allowed(_component_type, _state), do: :ok
+
+  defp hls_component_already_present?(components),
+    do: components |> Map.values() |> Enum.any?(&(&1.type == Component.HLS))
 end
