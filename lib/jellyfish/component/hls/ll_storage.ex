@@ -131,16 +131,14 @@ defmodule Jellyfish.Component.HLS.LLStorage do
   defp remove_partials_from_ets(
          %{partials_in_ets: partials_in_ets, segment_sn: curr_segment_sn, table: table} = state
        ) do
-    # Remove all partials that are at least @ets_cached_duration_in_segments behind
-    partials_in_ets =
-      Enum.filter(partials_in_ets, fn {{segment_sn, _partial_sn}, {filename, offset}} ->
-        if segment_sn + @ets_cached_duration_in_segments <= curr_segment_sn do
-          EtsHelper.delete_partial(table, filename, offset)
-          false
-        else
-          true
-        end
+    {partials_in_ets, partial_to_be_removed} =
+      Enum.split_with(partials_in_ets, fn {{segment_sn, _partial_sn}, _partial} ->
+        segment_sn + @ets_cached_duration_in_segments > curr_segment_sn
       end)
+
+    Enum.each(partial_to_be_removed, fn {_sn, {filename, offset}} ->
+      EtsHelper.delete_partial(table, filename, offset)
+    end)
 
     %{state | partials_in_ets: partials_in_ets}
   end
