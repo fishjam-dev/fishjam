@@ -97,7 +97,9 @@ defmodule Jellyfish.Room do
   end
 
   @spec add_component(id(), Component.component(), map()) ::
-          {:ok, Component.t()} | :error | {:error, :incompatible_codec}
+          {:ok, Component.t()}
+          | :error
+          | {:error, :incompatible_codec | :reached_components_limit}
   def add_component(room_id, component_type, options \\ %{}) do
     GenServer.call(registry_id(room_id), {:add_component, component_type, options})
   end
@@ -216,18 +218,14 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def handle_call(
-        {:add_component, component_type, options},
-        _from,
-        %{config: %{video_codec: video_codec}} = state
-      ) do
+  def handle_call({:add_component, component_type, options}, _from, state) do
     options =
       Map.merge(
         %{engine_pid: state.engine_pid, room_id: state.id},
         options
       )
 
-    with :ok <- check_video_codec(video_codec, component_type),
+    with :ok <- check_component_allowed(component_type, state),
          {:ok, component} <- Component.new(component_type, options) do
       state = put_in(state, [:components, component.id], component)
 
@@ -240,6 +238,13 @@ defmodule Jellyfish.Room do
       {:error, :incompatible_codec} ->
         Logger.warn("Unable to add component: incompatible codec, HLS needs 'h264' video codec.")
         {:reply, {:error, :incompatible_codec}, state}
+
+      {:error, :reached_components_limit} ->
+        Logger.warn(
+          "Unable to add component: reached components limit, max 1 HLS component allowed per room."
+        )
+
+        {:reply, {:error, :reached_components_limit}, state}
 
       {:error, reason} ->
         Logger.warn("Unable to add component: #{inspect(reason)}")
@@ -386,7 +391,24 @@ defmodule Jellyfish.Room do
 
   defp registry_id(room_id), do: {:via, Registry, {Jellyfish.RoomRegistry, room_id}}
 
-  defp check_video_codec(:h264, Jellyfish.Component.HLS), do: :ok
-  defp check_video_codec(_codec, Jellyfish.Component.HLS), do: {:error, :incompatible_codec}
-  defp check_video_codec(_codec, _component), do: :ok
+  defp check_component_allowed(Component.HLS, %{
+         config: %{video_codec: video_codec},
+         components: components
+       }) do
+    cond do
+      video_codec != :h264 ->
+        {:error, :incompatible_codec}
+
+      hls_component_already_present?(components) ->
+        {:error, :reached_components_limit}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp check_component_allowed(_component_type, _state), do: :ok
+
+  defp hls_component_already_present?(components),
+    do: components |> Map.values() |> Enum.any?(&(&1.type == Component.HLS))
 end

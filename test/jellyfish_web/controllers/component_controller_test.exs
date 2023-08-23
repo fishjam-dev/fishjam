@@ -36,7 +36,7 @@ defmodule JellyfishWeb.ComponentControllerTest do
   end
 
   describe "create hls component" do
-    test "renders component when data is valid", %{conn: conn} do
+    test "renders component when data is valid, allows max 1 hls per room", %{conn: conn} do
       room_conn = post(conn, ~p"/room", videoCodec: "h264")
       assert %{"id" => room_id} = json_response(room_conn, :created)["data"]
 
@@ -56,6 +56,12 @@ defmodule JellyfishWeb.ComponentControllerTest do
                  %{"id" => ^id, "type" => "hls"}
                ]
              } = json_response(conn, :ok)["data"]
+
+      # Try to add another hls component
+      conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
+
+      assert json_response(conn, :bad_request)["errors"] ==
+               "Max 1 HLS component allowed per room"
 
       room_conn = delete(conn, ~p"/room/#{room_id}")
       assert response(room_conn, :no_content)
