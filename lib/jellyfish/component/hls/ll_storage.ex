@@ -25,6 +25,7 @@ defmodule Jellyfish.Component.HLS.LLStorage do
         }
 
   @ets_cached_duration_in_segments 4
+  @delta_manifest_suffix "_delta.m3u8"
 
   @impl true
   def init(%__MODULE__{directory: directory, room_id: room_id}) do
@@ -104,7 +105,7 @@ defmodule Jellyfish.Component.HLS.LLStorage do
   end
 
   defp add_manifest_to_ets(filename, manifest, %{table: table}) do
-    if String.ends_with?(filename, "_delta.m3u8") do
+    if String.ends_with?(filename, @delta_manifest_suffix) do
       EtsHelper.update_delta_manifest(table, manifest)
     else
       EtsHelper.update_manifest(table, manifest)
@@ -149,7 +150,7 @@ defmodule Jellyfish.Component.HLS.LLStorage do
          segment_sn: segment_sn,
          partial_sn: partial_sn
        }) do
-    if String.ends_with?(filename, "_delta.m3u8") do
+    if String.ends_with?(filename, @delta_manifest_suffix) do
       EtsHelper.update_delta_recent_partial(table, {segment_sn, partial_sn})
       RequestHandler.update_delta_recent_partial(room_id, {segment_sn, partial_sn})
     else

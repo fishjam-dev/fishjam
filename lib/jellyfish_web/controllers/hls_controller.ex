@@ -6,6 +6,8 @@ defmodule JellyfishWeb.HLSController do
   alias Jellyfish.Component.HLS.RequestHandler
   alias Plug.Conn
 
+  @playlist_content_type "application/vnd.apple.mpegurl"
+
   def index(
         conn,
         %{
@@ -38,7 +40,9 @@ defmodule JellyfishWeb.HLSController do
 
     case result do
       {:ok, manifest} ->
-        Conn.send_resp(conn, 200, manifest)
+        conn
+        |> put_resp_content_type(@playlist_content_type, nil)
+        |> Conn.send_resp(200, manifest)
 
       {:error, reason} ->
         Logger.error("Error handling manifest request, reason: #{inspect(reason)}")
@@ -47,14 +51,13 @@ defmodule JellyfishWeb.HLSController do
   end
 
   def index(conn, %{"room_id" => room_id, "filename" => filename}) do
-    range =
+    offset =
       conn
       |> get_req_header("range")
-      |> parse_bytes_range()
+      |> get_offset()
 
     result =
-      if String.ends_with?(filename, ".m4s") and range != :not_partial do
-        {offset, _length} = range
+      if String.ends_with?(filename, ".m4s") and offset != :undefined do
         RequestHandler.handle_partial_request(room_id, filename, offset)
       else
         RequestHandler.handle_file_request(room_id, filename)
@@ -62,6 +65,11 @@ defmodule JellyfishWeb.HLSController do
 
     case result do
       {:ok, file} ->
+        conn =
+          if String.ends_with?(filename, ".m3u8"),
+            do: put_resp_content_type(conn, @playlist_content_type, nil),
+            else: conn
+
         Conn.send_resp(conn, 200, file)
 
       {:error, _reason} ->
@@ -69,19 +77,20 @@ defmodule JellyfishWeb.HLSController do
     end
   end
 
-  @doc """
-  Every partial request comes with a byte range which represents where specifically in the file partial is located.
-  Example: "bytes=100-200" 100-200, represents the scope in which partial is located in the file.
-  """
-  def parse_bytes_range(raw_range) do
+  # Every partial request comes with a byte range which represents where specifically in the file partial is located.
+  # Example: "bytes=100-200" 100-200, represents the scope in which partial is located in the file.
+  defp get_offset(raw_range) do
     case raw_range do
       [] ->
-        :not_partial
+        :undefined
 
       [raw_range] ->
         "bytes=" <> range = raw_range
-        [first, last] = range |> String.split("-") |> Enum.map(&String.to_integer(&1))
-        {first, last - first + 1}
+
+        range
+        |> String.split("-")
+        |> Enum.map(&String.to_integer(&1))
+        |> List.first()
     end
   end
 end

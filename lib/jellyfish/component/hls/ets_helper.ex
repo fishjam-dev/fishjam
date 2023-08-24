@@ -33,8 +33,8 @@ defmodule Jellyfish.Component.HLS.EtsHelper do
   @spec remove_room(Room.id()) :: :ok | {:error, String.t()}
   def remove_room(room_id) do
     case :ets.lookup(@rooms_to_tables, room_id) do
-      [{^room_id, table}] ->
-        if table_exists?(table), do: :ets.delete(table)
+      [{^room_id, _table}] ->
+        # The table will be automatically removed when the HLS component process dies.
         :ets.delete(@rooms_to_tables, room_id)
         :ok
 
@@ -116,32 +116,29 @@ defmodule Jellyfish.Component.HLS.EtsHelper do
   ### PRIVATE FUNCTIONS
   ###
 
-  def get_from_ets(room_id, key) do
+  defp get_from_ets(room_id, key) do
     with {:ok, table} <- get_table(room_id) do
       lookup_ets(table, key)
     end
   end
 
   defp lookup_ets(table, key) do
-    case :ets.lookup(table, key) do
-      [{^key, val}] -> {:ok, val}
-      [] -> {:error, :file_not_found}
-    end
+    lookup_helper(table, key, :file_not_found)
   end
 
   defp get_table(room_id) do
-    case :ets.lookup(@rooms_to_tables, room_id) do
-      [{^room_id, table}] -> {:ok, table}
-      _empty -> {:error, :room_not_found}
+    lookup_helper(@rooms_to_tables, room_id, :room_not_found)
+  end
+
+  defp lookup_helper(table, key, error) do
+    case :ets.lookup(table, key) do
+      [{^key, val}] -> {:ok, val}
+      [] -> {:error, error}
     end
   end
 
   defp room_exists?(room_id) do
     :ets.lookup(@rooms_to_tables, room_id) != []
-  end
-
-  defp table_exists?(table) do
-    :ets.info(table) != :undefined
   end
 
   defp generate_partial_key(filename, offset), do: "#{filename}_#{offset}"

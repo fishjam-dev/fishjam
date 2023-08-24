@@ -26,6 +26,8 @@ defmodule JellyfishWeb.HLSControllerTest do
   @offset 0
   @wrong_offset 50
 
+  @error_response "Not found"
+
   setup_all do
     output_path = HLS.output_dir(@room_id)
     File.mkdir_p!(output_path)
@@ -42,10 +44,10 @@ defmodule JellyfishWeb.HLSControllerTest do
     assert @master_manifest_content == response(conn1, 200)
 
     conn2 = get(conn, ~p"/hls/#{@wrong_room_id}/#{@master_manifest_name}")
-    response(conn2, 404)
+    assert @error_response == response(conn2, 404)
 
     conn3 = get(conn, ~p"/hls/#{@room_id}/wrong_name.m3u8")
-    response(conn3, 404)
+    assert @error_response == response(conn3, 404)
   end
 
   test "request header", %{conn: conn} do
@@ -53,10 +55,10 @@ defmodule JellyfishWeb.HLSControllerTest do
     assert @header_content == response(conn1, 200)
 
     conn2 = get(conn, ~p"/hls/#{@wrong_room_id}/#{@header_name}")
-    assert response(conn2, 404)
+    assert @error_response == response(conn2, 404)
 
     conn3 = get(conn, ~p"/hls/#{@room_id}/wrong_name.mp4")
-    assert response(conn3, 404)
+    assert @error_response == response(conn3, 404)
   end
 
   test "request segment", %{conn: conn} do
@@ -64,10 +66,10 @@ defmodule JellyfishWeb.HLSControllerTest do
     assert @segment_content == response(conn1, 200)
 
     conn2 = get(conn, ~p"/hls/#{@wrong_room_id}/#{@segment_name}")
-    assert response(conn2, 404)
+    assert @error_response == response(conn2, 404)
 
     conn3 = get(conn, ~p"/hls/#{@room_id}/wrong_name.m4s")
-    assert response(conn3, 404)
+    assert @error_response == response(conn3, 404)
   end
 
   test "request partial", %{conn: conn} do
@@ -83,19 +85,19 @@ defmodule JellyfishWeb.HLSControllerTest do
       |> put_req_header("range", "bytes=#{@wrong_offset}-100")
       |> get(~p"/hls/#{@room_id}/#{@partial_name}")
 
-    assert response(conn2, 404)
+    assert @error_response == response(conn2, 404)
 
     conn3 =
       conn
       |> get(~p"/hls/#{@wrong_room_id}/#{@partial_name}")
 
-    assert response(conn3, 404)
+    assert @error_response == response(conn3, 404)
 
     conn4 =
       conn
       |> get(~p"/hls/#{@room_id}/wrong_name.m4s")
 
-    assert response(conn4, 404)
+    assert @error_response == response(conn4, 404)
   end
 
   test "request manifest", %{conn: conn} do
@@ -103,10 +105,10 @@ defmodule JellyfishWeb.HLSControllerTest do
     assert @manifest_content == response(conn1, 200)
 
     conn2 = get(conn, ~p"/hls/#{@wrong_room_id}/#{@manifest_name}")
-    response(conn2, 404)
+    assert @error_response == response(conn2, 404)
 
     conn3 = get(conn, ~p"/hls/#{@room_id}/wrong_name.m3u8")
-    response(conn3, 404)
+    assert @error_response == response(conn3, 404)
   end
 
   test "request ll-manifest", %{conn: conn} do

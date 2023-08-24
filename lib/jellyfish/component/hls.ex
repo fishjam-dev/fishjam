@@ -13,8 +13,8 @@ defmodule Jellyfish.Component.HLS do
   alias Membrane.RTC.Engine.Endpoint.HLS.{CompositorConfig, HLSConfig, MixerConfig}
   alias Membrane.Time
 
-  @segment_duration Time.seconds(4)
-  @partial_segment_duration Time.milliseconds(400)
+  @segment_duration Time.seconds(6)
+  @partial_segment_duration Time.milliseconds(1_100)
 
   @type metadata :: %{playable: boolean()}
 

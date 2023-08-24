@@ -36,9 +36,10 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   """
   @spec handle_file_request(Room.id(), String.t()) :: {:ok, binary()} | {:error | String.t()}
   def handle_file_request(room_id, filename) do
-    hls_directory = HLS.output_dir(room_id)
-    path = Path.join(hls_directory, filename)
-    File.read(path)
+    room_id
+    |> HLS.output_dir()
+    |> Path.join(filename)
+    |> File.read()
   end
 
   @doc """
@@ -197,17 +198,11 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
     false
   end
 
-  defp is_partial_ready(partial, last_partial),
-    do:
-      is_last_segment_sn_greater(partial, last_partial) or
-        is_same_segment_greater_or_equal_partial_sn(partial, last_partial)
-
-  defp is_last_segment_sn_greater({segment_sn, _partial_sn}, {last_segment_sn, _last_partial_sn}),
-    do: last_segment_sn > segment_sn
-
-  defp is_same_segment_greater_or_equal_partial_sn(
-         {segment_sn, partial_sn},
-         {last_segment_sn, last_partial_sn}
-       ),
-       do: last_segment_sn == segment_sn and last_partial_sn >= partial_sn
+  defp is_partial_ready({segment_sn, partial_sn}, {last_segment_sn, last_partial_sn}) do
+    cond do
+      last_segment_sn > segment_sn -> true
+      last_segment_sn < segment_sn -> false
+      true -> last_partial_sn >= partial_sn
+    end
+  end
 end
