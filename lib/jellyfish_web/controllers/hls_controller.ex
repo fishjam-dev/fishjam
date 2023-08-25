@@ -1,10 +1,30 @@
 defmodule JellyfishWeb.HLSController do
   use JellyfishWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   require Logger
 
   alias Jellyfish.Component.HLS.RequestHandler
+  alias JellyfishWeb.ApiSpec
+  alias JellyfishWeb.ApiSpec.HLS.{Params, Response}
+
   alias Plug.Conn
+
+  action_fallback JellyfishWeb.FallbackController
+
+  operation :index,
+    summary: "Send file",
+    parameters: [
+      room_id: [in: :path, description: "Room id", type: :string],
+      filename: [in: :path, description: "Name of the file", type: :string],
+      range: [in: :header, description: "Byte range of partial segment", type: :string]
+    ],
+    required: [:room_id, :filename],
+    request_body: {"HLSparams", "application/json", Params},
+    responses: [
+      ok: ApiSpec.data("File was found", Response),
+      not_found: ApiSpec.error("File not found")
+    ]
 
   @playlist_content_type "application/vnd.apple.mpegurl"
 
@@ -46,7 +66,7 @@ defmodule JellyfishWeb.HLSController do
 
       {:error, reason} ->
         Logger.error("Error handling manifest request, reason: #{inspect(reason)}")
-        Conn.send_resp(conn, 404, "Not found")
+        {:error, :not_found, "File not found"}
     end
   end
 
@@ -73,7 +93,7 @@ defmodule JellyfishWeb.HLSController do
         Conn.send_resp(conn, 200, file)
 
       {:error, _reason} ->
-        Conn.send_resp(conn, 404, "Not found")
+        {:error, :not_found, "File not found"}
     end
   end
 

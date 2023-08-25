@@ -1,6 +1,8 @@
 defmodule JellyfishWeb.HLSControllerTest do
   use JellyfishWeb.ConnCase, async: true
 
+  import OpenApiSpex.TestAssertions
+
   alias Jellyfish.Component.HLS
   alias Jellyfish.Component.HLS.{EtsHelper, RequestHandler}
 
@@ -26,7 +28,7 @@ defmodule JellyfishWeb.HLSControllerTest do
   @offset 0
   @wrong_offset 50
 
-  @error_response "Not found"
+  @schema JellyfishWeb.ApiSpec.spec()
 
   setup_all do
     output_path = HLS.output_dir(@room_id)
@@ -39,37 +41,47 @@ defmodule JellyfishWeb.HLSControllerTest do
     on_exit(fn -> :file.del_dir_r(output_path) end)
   end
 
+  defp custom_assert_error(conn) do
+    conn
+    |> json_response(:not_found)
+    |> assert_response_schema("Error", @schema)
+  end
+
   test "request master manifest", %{conn: conn} do
-    conn1 = get(conn, ~p"/hls/#{@room_id}/#{@master_manifest_name}")
-    assert @master_manifest_content == response(conn1, 200)
+    conn = get(conn, ~p"/hls/#{@room_id}/#{@master_manifest_name}")
+    assert @master_manifest_content == response(conn, 200)
 
-    conn2 = get(conn, ~p"/hls/#{@wrong_room_id}/#{@master_manifest_name}")
-    assert @error_response == response(conn2, 404)
+    conn
+    |> get(~p"/hls/#{@wrong_room_id}/#{@master_manifest_name}")
+    |> custom_assert_error()
 
-    conn3 = get(conn, ~p"/hls/#{@room_id}/wrong_name.m3u8")
-    assert @error_response == response(conn3, 404)
+    conn
+    |> get(~p"/hls/#{@room_id}/wrong_name.m3u8")
+    |> custom_assert_error()
   end
 
   test "request header", %{conn: conn} do
-    conn1 = get(conn, ~p"/hls/#{@room_id}/#{@header_name}")
-    assert @header_content == response(conn1, 200)
+    conn = get(conn, ~p"/hls/#{@room_id}/#{@header_name}")
+    assert @header_content == response(conn, 200)
 
-    conn2 = get(conn, ~p"/hls/#{@wrong_room_id}/#{@header_name}")
-    assert @error_response == response(conn2, 404)
+    conn
+    |> get(~p"/hls/#{@wrong_room_id}/#{@header_name}")
+    |> custom_assert_error()
 
-    conn3 = get(conn, ~p"/hls/#{@room_id}/wrong_name.mp4")
-    assert @error_response == response(conn3, 404)
+    conn
+    |> get(~p"/hls/#{@room_id}/wrong_name.mp4")
+    |> custom_assert_error()
   end
 
   test "request segment", %{conn: conn} do
-    conn1 = get(conn, ~p"/hls/#{@room_id}/#{@segment_name}")
-    assert @segment_content == response(conn1, 200)
+    conn = get(conn, ~p"/hls/#{@room_id}/#{@segment_name}")
+    assert @segment_content == response(conn, 200)
 
-    conn2 = get(conn, ~p"/hls/#{@wrong_room_id}/#{@segment_name}")
-    assert @error_response == response(conn2, 404)
+    conn = get(conn, ~p"/hls/#{@wrong_room_id}/#{@segment_name}")
+    response = json_response(conn, :not_found)
+    assert_response_schema(response, "Error", @schema)
 
-    conn3 = get(conn, ~p"/hls/#{@room_id}/wrong_name.m4s")
-    assert @error_response == response(conn3, 404)
+    get(conn, ~p"/hls/#{@room_id}/wrong_name.m4s")
   end
 
   test "request partial", %{conn: conn} do
@@ -80,46 +92,42 @@ defmodule JellyfishWeb.HLSControllerTest do
 
     assert @partial_content == response(conn1, 200)
 
-    conn2 =
-      conn
-      |> put_req_header("range", "bytes=#{@wrong_offset}-100")
-      |> get(~p"/hls/#{@room_id}/#{@partial_name}")
+    conn
+    |> put_req_header("range", "bytes=#{@wrong_offset}-100")
+    |> get(~p"/hls/#{@room_id}/#{@partial_name}")
+    |> custom_assert_error()
 
-    assert @error_response == response(conn2, 404)
+    conn
+    |> get(~p"/hls/#{@wrong_room_id}/#{@partial_name}")
+    |> custom_assert_error()
 
-    conn3 =
-      conn
-      |> get(~p"/hls/#{@wrong_room_id}/#{@partial_name}")
-
-    assert @error_response == response(conn3, 404)
-
-    conn4 =
-      conn
-      |> get(~p"/hls/#{@room_id}/wrong_name.m4s")
-
-    assert @error_response == response(conn4, 404)
+    conn
+    |> get(~p"/hls/#{@room_id}/wrong_name.m4s")
+    |> custom_assert_error()
   end
 
   test "request manifest", %{conn: conn} do
-    conn1 = get(conn, ~p"/hls/#{@room_id}/#{@manifest_name}")
-    assert @manifest_content == response(conn1, 200)
+    conn = get(conn, ~p"/hls/#{@room_id}/#{@manifest_name}")
+    assert @manifest_content == response(conn, 200)
 
-    conn2 = get(conn, ~p"/hls/#{@wrong_room_id}/#{@manifest_name}")
-    assert @error_response == response(conn2, 404)
+    conn
+    |> get(~p"/hls/#{@wrong_room_id}/#{@manifest_name}")
+    |> custom_assert_error()
 
-    conn3 = get(conn, ~p"/hls/#{@room_id}/wrong_name.m3u8")
-    assert @error_response == response(conn3, 404)
+    conn
+    |> get(~p"/hls/#{@room_id}/wrong_name.m3u8")
+    |> custom_assert_error()
   end
 
   test "request ll-manifest", %{conn: conn} do
-    conn1 =
+    conn =
       get(conn, ~p"/hls/#{@room_id}/#{@manifest_name}", %{
         "room_id" => @room_id,
         "_HLS_msn" => 0,
         "_HLS_part" => 0
       })
 
-    assert @manifest_content == response(conn1, 200)
+    assert @manifest_content == response(conn, 200)
   end
 
   test "request ll-delta-manifest", %{conn: conn} do
