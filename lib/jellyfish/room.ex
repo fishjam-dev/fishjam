@@ -254,10 +254,12 @@ defmodule Jellyfish.Room do
   def handle_call({:remove_component, component_id}, _from, state) do
     {reply, state} =
       if Map.has_key?(state.components, component_id) do
-        {_elem, state} = pop_in(state, [:components, component_id])
+        {component, state} = pop_in(state, [:components, component_id])
         :ok = Engine.remove_endpoint(state.engine_pid, component_id)
 
         Logger.info("Removed component #{inspect(component_id)}")
+
+        if component.type == Component.HLS, do: remove_hls_processes(state.id)
 
         {:ok, state}
       else
@@ -307,6 +309,9 @@ defmodule Jellyfish.Room do
       end
     else
       Event.broadcast(:server_notification, {:component_crashed, state.id, endpoint_id})
+
+      %{type: type} = Map.get(state.components, endpoint_id)
+      if type == Component.HLS, do: remove_hls_processes(state.id)
     end
 
     {:noreply, state}
@@ -386,6 +391,8 @@ defmodule Jellyfish.Room do
       network_options: [integrated_turn_options: integrated_turn_options]
     }
   end
+
+  defp remove_hls_processes(room_id), do: Component.HLS.RequestHandler.stop(room_id)
 
   defp registry_id(room_id), do: {:via, Registry, {Jellyfish.RoomRegistry, room_id}}
 

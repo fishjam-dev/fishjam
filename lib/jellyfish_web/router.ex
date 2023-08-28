@@ -18,6 +18,10 @@ defmodule JellyfishWeb.Router do
     resources("/:room_id/component", ComponentController, only: [:create, :delete])
   end
 
+  scope "/hls", JellyfishWeb do
+    get "/:room_id/:filename", HLSController, :index
+  end
+
   # Enable LiveDashboard in development
   if Application.compile_env(:jellyfish, :dev_routes) do
     # If you want to use the LiveDashboard in production, you should put
