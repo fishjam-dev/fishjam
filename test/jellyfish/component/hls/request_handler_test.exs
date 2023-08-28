@@ -68,18 +68,16 @@ defmodule Jellyfish.Component.HLS.RequestHandlerTest do
 
     assert {:ok, @manifest_content} == RequestHandler.handle_manifest_request(room_id, @partial)
 
-    pid = self()
+    task =
+      Task.async(fn ->
+        RequestHandler.handle_manifest_request(room_id, @next_partial)
+      end)
 
-    spawn(fn ->
-      {:ok, @manifest_content} = RequestHandler.handle_manifest_request(room_id, @next_partial)
-      send(pid, :manifest)
-    end)
-
-    refute_receive(:manifest, 500)
+    assert nil == Task.yield(task)
 
     RequestHandler.update_recent_partial(room_id, @next_partial)
 
-    assert_receive(:manifest, 1000)
+    assert {:ok, @manifest_content} == Task.await(task)
   end
 
   test "delta manifest request", %{room_id: room_id} do
@@ -98,20 +96,16 @@ defmodule Jellyfish.Component.HLS.RequestHandlerTest do
     assert {:ok, @manifest_content} ==
              RequestHandler.handle_delta_manifest_request(room_id, @partial)
 
-    pid = self()
-
-    spawn(fn ->
-      {:ok, @manifest_content} =
+    task =
+      Task.async(fn ->
         RequestHandler.handle_delta_manifest_request(room_id, @next_partial)
+      end)
 
-      send(pid, :manifest)
-    end)
-
-    refute_receive(:manifest)
+    assert nil == Task.yield(task)
 
     RequestHandler.update_delta_recent_partial(room_id, @next_partial)
 
-    assert_receive(:manifest)
+    assert {:ok, @manifest_content} == Task.await(task)
   end
 
   test "partial request", %{room_id: room_id} do
