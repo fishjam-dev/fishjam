@@ -139,7 +139,8 @@ defmodule Jellyfish.Room do
             %{
               engine_pid: state.engine_pid,
               network_options: state.network_options,
-              video_codec: state.config.video_codec
+              video_codec: state.config.video_codec,
+              room_id: state.id
             },
             options
           )
@@ -236,14 +237,11 @@ defmodule Jellyfish.Room do
       {:reply, {:ok, component}, state}
     else
       {:error, :incompatible_codec} ->
-        Logger.warn("Unable to add component: incompatible codec, HLS needs 'h264' video codec.")
+        Logger.warn("Unable to add component: incompatible codec")
         {:reply, {:error, :incompatible_codec}, state}
 
       {:error, :reached_components_limit} ->
-        Logger.warn(
-          "Unable to add component: reached components limit, max 1 HLS component allowed per room."
-        )
-
+        Logger.warn("Unable to add component: reached components limit")
         {:reply, {:error, :reached_components_limit}, state}
 
       {:error, reason} ->
@@ -336,10 +334,10 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def handle_info({:playlist_playable, :audio, _playlist_idl}, state), do: {:noreply, state}
+  def handle_info({:playlist_playable, :audio, _playlist_id}, state), do: {:noreply, state}
 
   @impl true
-  def handle_info({:playlist_playable, :video, _playlist_idl}, state) do
+  def handle_info({:playlist_playable, :video, _playlist_id}, state) do
     endpoint_id =
       Enum.find_value(state.components, fn {id, %{type: type}} ->
         if type == Component.HLS, do: id
@@ -412,6 +410,14 @@ defmodule Jellyfish.Room do
       true ->
         :ok
     end
+  end
+
+  defp check_component_allowed(Component.RTSP, %{config: %{video_codec: video_codec}}) do
+    # Right now, RTSP component can only publish H264, so there's no point adding it
+    # to a room which enforces another video codec, e.g. VP8
+    if video_codec in [:h264, nil],
+      do: :ok,
+      else: {:error, :incompatible_codec}
   end
 
   defp check_component_allowed(_component_type, _state), do: :ok

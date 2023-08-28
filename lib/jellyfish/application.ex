@@ -14,7 +14,10 @@ defmodule Jellyfish.Application do
     children = [
       {Phoenix.PubSub, name: Jellyfish.PubSub},
       {Membrane.TelemetryMetrics.Reporter,
-       [metrics: Membrane.RTC.Engine.Metrics.metrics(), name: JellyfishMetricsReporter]},
+       [
+         metrics: Membrane.RTC.Engine.Endpoint.WebRTC.Metrics.metrics(),
+         name: JellyfishMetricsReporter
+       ]},
       {Jellyfish.MetricsScraper, scrape_interval},
       JellyfishWeb.Endpoint,
       # Start the RoomService

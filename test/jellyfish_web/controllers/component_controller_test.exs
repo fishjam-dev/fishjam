@@ -61,7 +61,7 @@ defmodule JellyfishWeb.ComponentControllerTest do
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
 
       assert json_response(conn, :bad_request)["errors"] ==
-               "Max 1 HLS component allowed per room"
+               "Reached components limit in room #{room_id}"
 
       room_conn = delete(conn, ~p"/room/#{room_id}")
       assert response(room_conn, :no_content)
@@ -77,7 +77,7 @@ defmodule JellyfishWeb.ComponentControllerTest do
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
 
       assert json_response(conn, :bad_request)["errors"] ==
-               "HLS component needs room with video codec 'h264' enforced"
+               "Incompatible video codec enforced in room #{room_id}"
     end
   end
 
