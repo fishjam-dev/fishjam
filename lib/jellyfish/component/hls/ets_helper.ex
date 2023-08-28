@@ -24,7 +24,12 @@ defmodule Jellyfish.Component.HLS.EtsHelper do
     else
       # Ets is public because ll-storage can't delete table.
       # If we change that storage can be protected
-      table = :ets.new(:hls_storage, [:public])
+      #
+      # Read concurrency can cause performance degradation when the common access pattern
+      # is a few read operations interleaved with a few write operations repeatedly.
+      # When used on a larger scale it should be carefully tested
+
+      table = :ets.new(:hls_storage, [:public, read_concurrency: true])
       :ets.insert(@rooms_to_tables, {room_id, table})
       {:ok, table}
     end
