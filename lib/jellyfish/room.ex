@@ -99,7 +99,7 @@ defmodule Jellyfish.Room do
   @spec add_component(id(), Component.component(), map()) ::
           {:ok, Component.t()}
           | :error
-          | {:error, :incompatible_codec | :reached_components_limit}
+          | {:error, {:incompatible_codec, String.t()} | {:reached_components_limit, String.t()}}
   def add_component(room_id, component_type, options \\ %{}) do
     GenServer.call(registry_id(room_id), {:add_component, component_type, options})
   end
@@ -139,7 +139,8 @@ defmodule Jellyfish.Room do
             %{
               engine_pid: state.engine_pid,
               network_options: state.network_options,
-              video_codec: state.config.video_codec
+              video_codec: state.config.video_codec,
+              room_id: state.id
             },
             options
           )
@@ -235,16 +236,13 @@ defmodule Jellyfish.Room do
 
       {:reply, {:ok, component}, state}
     else
-      {:error, :incompatible_codec} ->
-        Logger.warn("Unable to add component: incompatible codec, HLS needs 'h264' video codec.")
-        {:reply, {:error, :incompatible_codec}, state}
+      {:error, {:incompatible_codec, msg}} = error ->
+        Logger.warn("Unable to add component: incompatible codec, #{msg}")
+        {:reply, error, state}
 
-      {:error, :reached_components_limit} ->
-        Logger.warn(
-          "Unable to add component: reached components limit, max 1 HLS component allowed per room."
-        )
-
-        {:reply, {:error, :reached_components_limit}, state}
+      {:error, {:reached_components_limit, msg}} = error ->
+        Logger.warn("Unable to add component: reached components limit, #{msg}")
+        {:reply, error, state}
 
       {:error, reason} ->
         Logger.warn("Unable to add component: #{inspect(reason)}")
@@ -331,10 +329,10 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def handle_info({:playlist_playable, :audio, _playlist_idl}, state), do: {:noreply, state}
+  def handle_info({:playlist_playable, :audio, _playlist_id}, state), do: {:noreply, state}
 
   @impl true
-  def handle_info({:playlist_playable, :video, _playlist_idl}, state) do
+  def handle_info({:playlist_playable, :video, _playlist_id}, state) do
     endpoint_id =
       Enum.find_value(state.components, fn {id, %{type: type}} ->
         if type == Component.HLS, do: id
@@ -397,14 +395,25 @@ defmodule Jellyfish.Room do
        }) do
     cond do
       video_codec != :h264 ->
-        {:error, :incompatible_codec}
+        {:error, {:incompatible_codec, "HLS component needs 'h264' video codec enforced in room"}}
 
       hls_component_already_present?(components) ->
-        {:error, :reached_components_limit}
+        {:error, {:reached_components_limit, "Max 1 HLS component allowed per room"}}
 
       true ->
         :ok
     end
+  end
+
+  defp check_component_allowed(Component.RTSP, %{config: %{video_codec: video_codec}}) do
+    # Right now, RTSP component can only publish H264, so there's no point adding it
+    # to a room which enforces another video codec, e.g. VP8
+    if video_codec in [:h264, nil],
+      do: :ok,
+      else:
+        {:error,
+         {:incompatible_codec,
+          "RTSP component needs 'h264' video codec enforced (or no codec enforced) in room"}}
   end
 
   defp check_component_allowed(_component_type, _state), do: :ok

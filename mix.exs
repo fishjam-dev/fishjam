@@ -62,10 +62,15 @@ defmodule Jellyfish.MixProject do
       {:protobuf, "~> 0.12.0"},
 
       # Membrane deps
-      {:membrane_rtc_engine, "~> 0.16.0"},
-      {:membrane_rtc_engine_webrtc, "~> 0.1.0"},
-      {:membrane_rtc_engine_hls, "~> 0.1.0"},
-      {:membrane_rtc_engine_rtsp, "~> 0.1.0"},
+      {:membrane_rtc_engine, "~> 0.17.0"},
+      # {:membrane_rtc_engine_webrtc, "~> 0.2.1"},
+      {:membrane_rtc_engine_webrtc,
+       github: "jellyfish-dev/membrane_rtc_engine",
+       sparse: "webrtc",
+       branch: "fix/webrtc-telemetry-label",
+       override: true},
+      {:membrane_rtc_engine_hls, "~> 0.2.0"},
+      {:membrane_rtc_engine_rtsp, "~> 0.2.0"},
       {:membrane_ice_plugin, "~> 0.16.0"},
       {:membrane_telemetry_metrics, "~> 0.1.0"},
 

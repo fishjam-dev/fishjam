@@ -56,7 +56,8 @@ defmodule Jellyfish.Peer.WebRTC do
          simulcast_config: %SimulcastConfig{
            enabled: simulcast?,
            initial_target_variant: fn _track -> :medium end
-         }
+         },
+         telemetry_label: [room_id: options.room_id]
        }}
     else
       {:error, _reason} = error -> error

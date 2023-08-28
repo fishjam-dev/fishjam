@@ -77,7 +77,7 @@ defmodule JellyfishWeb.ComponentControllerTest do
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
 
       assert json_response(conn, :bad_request)["errors"] ==
-               "HLS component needs room with video codec 'h264' enforced"
+               "HLS component needs 'h264' video codec enforced in room"
     end
   end
 
