@@ -112,28 +112,6 @@ defmodule Jellyfish.ServerMessage.MetricsReport do
   field :metrics, 1, type: :string
 end
 
-defmodule Jellyfish.ServerMessage.RoomNotFound do
-  @moduledoc false
-
-  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
-
-  field :room_id, 1, type: :string, json_name: "roomId"
-end
-
-defmodule Jellyfish.ServerMessage.GetRoomIds do
-  @moduledoc false
-
-  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
-end
-
-defmodule Jellyfish.ServerMessage.RoomIds do
-  @moduledoc false
-
-  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
-
-  field :ids, 1, repeated: true, type: :string
-end
-
 defmodule Jellyfish.ServerMessage.HlsPlayable do
   @moduledoc false
 

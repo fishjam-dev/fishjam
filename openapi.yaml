@@ -111,6 +111,36 @@ components:
       title: Error
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Error
+    HlsParams:
+      description: Hls request params
+      properties:
+        _HLS_msn:
+          description: Segment sequence number
+          example: 10
+          minimum: 0
+          nullable: true
+          type: integer
+        _HLS_part:
+          description: Partial segment sequence number
+          example: 10
+          minimum: 0
+          nullable: true
+          type: integer
+        _HLS_skip:
+          description: Is delta manifest requested
+          enum:
+            - YES
+          example: YES
+          nullable: true
+          type: string
+      title: HlsParams
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Params
+    HlsResponse:
+      description: Requested file
+      title: HlsResponse
+      type: string
+      x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Response
     Peer:
       description: Describes peer status
       properties:
@@ -274,6 +304,51 @@ info:
   version: 0.2.0
 openapi: 3.0.0
 paths:
+  /hls/{room_id}/{filename}:
+    get:
+      callbacks: {}
+      operationId: JellyfishWeb.HLSController.index
+      parameters:
+        - description: Room id
+          in: path
+          name: room_id
+          required: true
+          schema:
+            type: string
+        - description: Name of the file
+          in: path
+          name: filename
+          required: true
+          schema:
+            type: string
+        - description: Byte range of partial segment
+          in: header
+          name: range
+          required: false
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HlsParams'
+        description: HLSparams
+        required: false
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HlsResponse'
+          description: File was found
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: File not found
+      summary: Send file
+      tags: []
   /room:
     get:
       callbacks: {}
