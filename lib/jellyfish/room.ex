@@ -99,7 +99,7 @@ defmodule Jellyfish.Room do
   @spec add_component(id(), Component.component(), map()) ::
           {:ok, Component.t()}
           | :error
-          | {:error, {:incompatible_codec, String.t()} | {:reached_components_limit, String.t()}}
+          | {:error, :incompatible_codec | :reached_components_limit}
   def add_component(room_id, component_type, options \\ %{}) do
     GenServer.call(registry_id(room_id), {:add_component, component_type, options})
   end
@@ -236,13 +236,13 @@ defmodule Jellyfish.Room do
 
       {:reply, {:ok, component}, state}
     else
-      {:error, {:incompatible_codec, msg}} = error ->
-        Logger.warn("Unable to add component: incompatible codec, #{msg}")
-        {:reply, error, state}
+      {:error, :incompatible_codec} ->
+        Logger.warn("Unable to add component: incompatible codec")
+        {:reply, {:error, :incompatible_codec}, state}
 
-      {:error, {:reached_components_limit, msg}} = error ->
-        Logger.warn("Unable to add component: reached components limit, #{msg}")
-        {:reply, error, state}
+      {:error, :reached_components_limit} ->
+        Logger.warn("Unable to add component: reached components limit")
+        {:reply, {:error, :reached_components_limit}, state}
 
       {:error, reason} ->
         Logger.warn("Unable to add component: #{inspect(reason)}")
@@ -395,10 +395,10 @@ defmodule Jellyfish.Room do
        }) do
     cond do
       video_codec != :h264 ->
-        {:error, {:incompatible_codec, "HLS component needs 'h264' video codec enforced in room"}}
+        {:error, :incompatible_codec}
 
       hls_component_already_present?(components) ->
-        {:error, {:reached_components_limit, "Max 1 HLS component allowed per room"}}
+        {:error, :reached_components_limit}
 
       true ->
         :ok
@@ -410,10 +410,7 @@ defmodule Jellyfish.Room do
     # to a room which enforces another video codec, e.g. VP8
     if video_codec in [:h264, nil],
       do: :ok,
-      else:
-        {:error,
-         {:incompatible_codec,
-          "RTSP component needs 'h264' video codec enforced (or no codec enforced) in room"}}
+      else: {:error, :incompatible_codec}
   end
 
   defp check_component_allowed(_component_type, _state), do: :ok

@@ -78,11 +78,11 @@ defmodule JellyfishWeb.ComponentController do
       {:error, :room_not_found} ->
         {:error, :not_found, "Room #{room_id} does not exist"}
 
-      {:error, {:incompatible_codec, error_msg}} ->
-        {:error, :bad_request, error_msg}
+      {:error, :incompatible_codec} ->
+        {:error, :bad_request, "Incompatible video codec enforced in room #{room_id}"}
 
-      {:error, {:reached_components_limit, error_msg}} ->
-        {:error, :bad_request, error_msg}
+      {:error, :reached_components_limit} ->
+        {:error, :bad_request, "Reached components limit in room #{room_id}"}
     end
   end
 
