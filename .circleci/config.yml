@@ -30,6 +30,24 @@ jobs:
       - run: mix coveralls.json --warnings-as-errors
       - codecov/upload
 
+  check_api_update:
+    docker:
+      - image: membraneframeworklabs/docker_membrane:latest
+        environment:
+          MIX_ENV: test
+
+    steps:
+      # TODO: remove the first three steps once https://github.com/membraneframework-labs/docker_membrane/pull/31 gets merged
+      - run: apt update && apt install -y protobuf-compiler
+      - run: mix escript.install --force hex protobuf
+      - run: asdf reshim
+      - checkout
+      - run: mix deps.get
+      - run: mix api.spec
+      - run: ./compile_proto.sh
+      - run: git add .
+      - run: git diff --exit-code HEAD
+
 workflows:
   version: 2
   build:
@@ -41,3 +59,4 @@ workflows:
       - elixir/lint:
           cache-version: 3
           docs: false
+      - check_api_update
