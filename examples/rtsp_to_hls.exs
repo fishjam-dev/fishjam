@@ -1,7 +1,7 @@
 Mix.install([
   # Keep in mind that you should lock onto a specific version of Jellyfish
   # and the Jellyfish Server SDK in production code
-  {:jellyfish_server_sdk, github: "jellyfish-dev/elixir_server_sdk", branch: "extend_create_room"}
+  {:jellyfish_server_sdk, github: "jellyfish-dev/elixir_server_sdk"}
 ])
 
 defmodule Example do
