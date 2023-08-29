@@ -97,6 +97,8 @@ port =
 
 jellyfish_address = System.get_env("JELLYFISH_ADDRESS") || "#{host}:#{port}"
 
+config :ex_dtls, impl: :nif
+
 config :jellyfish,
   webrtc_used: String.downcase(System.get_env("WEBRTC_USED", "true")) not in ["false", "f", "0"],
   integrated_turn_ip:
