@@ -84,16 +84,18 @@ prod? = config_env() == :prod
 host =
   case System.get_env("VIRTUAL_HOST") do
     nil when prod? -> raise "Unset VIRTUAL_HOST environment variable"
-    nil -> "example.com"
+    nil -> "localhost"
     other -> other
   end
 
 port =
   case System.get_env("PORT") do
     nil when prod? -> raise "Unset PORT environment variable"
-    nil -> 4000
+    nil -> 5002
     other -> String.to_integer(other)
   end
+
+jellyfish_address = System.get_env("JELLYFISH_ADDRESS") || "#{host}:#{port}"
 
 config :jellyfish,
   webrtc_used: String.downcase(System.get_env("WEBRTC_USED", "true")) not in ["false", "f", "0"],
@@ -110,7 +112,7 @@ config :jellyfish,
     |> ConfigParser.parse_port_number("INTEGRATED_TURN_TCP_PORT"),
   jwt_max_age: 24 * 3600,
   output_base_path: System.get_env("OUTPUT_BASE_PATH", "jellyfish_output") |> Path.expand(),
-  address: "#{host}:#{port}"
+  address: jellyfish_address
 
 config :opentelemetry, traces_exporter: :none
 
