@@ -65,17 +65,17 @@ defmodule Jellyfish.Component.HLS.LLStorage do
   end
 
   defp store_partial_segment(
-         filename,
+         segment_name,
          content,
-         %{byte_offset: offset, sequence_number: sequence_number},
+         %{sequence_number: sequence_number, partial_name: partial_name},
          %__MODULE__{directory: directory} = state
        ) do
-    result = write_to_file(directory, filename, content, [:binary, :append])
+    result = write_to_file(directory, segment_name, content, [:binary, :append])
 
     state =
       state
       |> update_sequence_numbers(sequence_number)
-      |> add_partial_to_ets(filename, offset, content)
+      |> add_partial_to_ets(partial_name, content)
 
     {result, state}
   end
@@ -119,26 +119,25 @@ defmodule Jellyfish.Component.HLS.LLStorage do
            segment_sn: segment_sn,
            partial_sn: partial_sn
          } = state,
-         filename,
-         offset,
+         partial_name,
          content
        ) do
-    EtsHelper.add_partial(table, content, filename, offset)
+    EtsHelper.add_partial(table, content, partial_name)
 
     partial = {segment_sn, partial_sn}
-    %{state | partials_in_ets: [{partial, {filename, offset}} | partials_in_ets]}
+    %{state | partials_in_ets: [{partial, partial_name} | partials_in_ets]}
   end
 
   defp remove_partials_from_ets(
          %{partials_in_ets: partials_in_ets, segment_sn: curr_segment_sn, table: table} = state
        ) do
     {partials_in_ets, partial_to_be_removed} =
-      Enum.split_with(partials_in_ets, fn {{segment_sn, _partial_sn}, _partial} ->
+      Enum.split_with(partials_in_ets, fn {{segment_sn, _partial_sn}, _partial_name} ->
         segment_sn + @ets_cached_duration_in_segments > curr_segment_sn
       end)
 
-    Enum.each(partial_to_be_removed, fn {_sn, {filename, offset}} ->
-      EtsHelper.delete_partial(table, filename, offset)
+    Enum.each(partial_to_be_removed, fn {_sn, partial_name} ->
+      EtsHelper.delete_partial(table, partial_name)
     end)
 
     %{state | partials_in_ets: partials_in_ets}
