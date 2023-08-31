@@ -111,36 +111,36 @@ components:
       title: Error
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Error
-    HlsParams:
-      description: Hls request params
-      properties:
-        _HLS_msn:
-          description: Segment sequence number
-          example: 10
-          minimum: 0
-          nullable: true
-          type: integer
-        _HLS_part:
-          description: Partial segment sequence number
-          example: 10
-          minimum: 0
-          nullable: true
-          type: integer
-        _HLS_skip:
-          description: Is delta manifest requested
-          enum:
-            - YES
-          example: YES
-          nullable: true
-          type: string
-      title: HlsParams
-      type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Params
+    HlsMsn:
+      description: Segment sequence number
+      example: 10
+      minimum: 0
+      nullable: true
+      title: HlsMsn
+      type: integer
+      x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Params.HlsMsn
+    HlsPart:
+      description: Partial segment sequence number
+      example: 10
+      minimum: 0
+      nullable: true
+      title: HlsPart
+      type: integer
+      x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Params.HlsPart
     HlsResponse:
       description: Requested file
       title: HlsResponse
       type: string
       x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Response
+    HlsSkip:
+      description: Is delta manifest requested
+      enum:
+        - YES
+      example: YES
+      nullable: true
+      title: HlsSkip
+      type: string
+      x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Params.HlsSkip
     Peer:
       description: Describes peer status
       properties:
@@ -300,6 +300,9 @@ components:
       scheme: bearer
       type: http
 info:
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
   title: Jellyfish Media Server
   version: 0.2.0
 openapi: 3.0.0
@@ -327,13 +330,24 @@ paths:
           required: false
           schema:
             type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/HlsParams'
-        description: HLSparams
-        required: false
+        - description: Segment sequence number
+          in: query
+          name: _HLS_msn
+          required: false
+          schema:
+            $ref: '#/components/schemas/HlsMsn'
+        - description: Partial segment sequence number
+          in: query
+          name: _HLS_part
+          required: false
+          schema:
+            $ref: '#/components/schemas/HlsPart'
+        - description: Is delta manifest requested
+          in: query
+          name: _HLS_skip
+          required: false
+          schema:
+            $ref: '#/components/schemas/HlsSkip'
       responses:
         '200':
           content:

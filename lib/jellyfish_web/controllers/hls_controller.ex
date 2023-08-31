@@ -17,10 +17,17 @@ defmodule JellyfishWeb.HLSController do
     parameters: [
       room_id: [in: :path, description: "Room id", type: :string],
       filename: [in: :path, description: "Name of the file", type: :string],
-      range: [in: :header, description: "Byte range of partial segment", type: :string]
+      range: [in: :header, description: "Byte range of partial segment", type: :string],
+      _HLS_msn: [in: :query, description: "Segment sequence number", type: Params.HlsMsn],
+      _HLS_part: [
+        in: :query,
+        description: "Partial segment sequence number",
+        type: Params.HlsPart
+      ],
+      _HLS_skip: [in: :query, description: "Is delta manifest requested", type: Params.HlsSkip]
     ],
     required: [:room_id, :filename],
-    request_body: {"HLSparams", "application/json", Params},
+    # request_body: {"HLSparams", "application/json", Params},
     responses: [
       ok: ApiSpec.data("File was found", Response),
       not_found: ApiSpec.error("File not found")
