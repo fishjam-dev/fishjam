@@ -1,8 +1,6 @@
 defmodule JellyfishWeb.ApiSpec.HLS do
   require OpenApiSpex
 
-  # alias OpenApiSpex.Schema
-
   defmodule Params do
     @moduledoc false
 

@@ -27,7 +27,6 @@ defmodule JellyfishWeb.HLSController do
       _HLS_skip: [in: :query, description: "Is delta manifest requested", type: Params.HlsSkip]
     ],
     required: [:room_id, :filename],
-    # request_body: {"HLSparams", "application/json", Params},
     responses: [
       ok: ApiSpec.data("File was found", Response),
       not_found: ApiSpec.error("File not found")
