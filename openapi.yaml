@@ -132,6 +132,11 @@ components:
       title: HlsResponse
       type: string
       x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Response
+    HlsResponsesdf:
+      description: Requested file
+      title: HlsResponse
+      type: string
+      x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Response
     HlsSkip:
       description: Is delta manifest requested
       enum:
