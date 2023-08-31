@@ -62,7 +62,7 @@ defmodule Jellyfish.RoomService do
       :rpc.multicall(Jellyfish.RoomService, :get_resource_usage, [])
 
     if Enum.count(failed_nodes) > 0 do
-      Logger.warn(
+      Logger.warning(
         "Couldn't get resource usage of the following nodes. Reason: nodes don't exist. Nodes: #{inspect(failed_nodes)}"
       )
     end
@@ -159,7 +159,7 @@ defmodule Jellyfish.RoomService do
   def handle_info({:DOWN, _ref, :process, pid, reason}, state) do
     {room_id, state} = pop_in(state, [:rooms, pid])
 
-    Logger.warn("Process #{room_id} is down with reason: #{reason}")
+    Logger.warning("Process #{room_id} is down with reason: #{reason}")
 
     Phoenix.PubSub.broadcast(Jellyfish.PubSub, room_id, :room_crashed)
     Event.broadcast(:server_notification, {:room_crashed, room_id})
@@ -177,7 +177,7 @@ defmodule Jellyfish.RoomService do
       Event.broadcast(:server_notification, {:room_deleted, room_id})
     catch
       :exit, {:noproc, {GenServer, :stop, [^room, :normal, :infinity]}} ->
-        Logger.warn("Room process with id #{inspect(room_id)} doesn't exist")
+        Logger.warning("Room process with id #{inspect(room_id)} doesn't exist")
     end
   end
 

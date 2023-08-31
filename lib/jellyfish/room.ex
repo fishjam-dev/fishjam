@@ -65,7 +65,7 @@ defmodule Jellyfish.Room do
       GenServer.call(registry_room_id, :get_state)
     catch
       :exit, {:noproc, {GenServer, :call, [^registry_room_id, :get_state, _timeout]}} ->
-        Logger.warn(
+        Logger.warning(
           "Cannot get state of #{inspect(room_id)}, the room's process doesn't exist anymore"
         )
 
@@ -153,7 +153,7 @@ defmodule Jellyfish.Room do
           {{:ok, peer}, state}
         else
           {:error, reason} ->
-            Logger.warn("Unable to add peer: #{inspect(reason)}")
+            Logger.warning("Unable to add peer: #{inspect(reason)}")
             {:error, state}
         end
       end
@@ -237,15 +237,15 @@ defmodule Jellyfish.Room do
       {:reply, {:ok, component}, state}
     else
       {:error, :incompatible_codec} ->
-        Logger.warn("Unable to add component: incompatible codec")
+        Logger.warning("Unable to add component: incompatible codec")
         {:reply, {:error, :incompatible_codec}, state}
 
       {:error, :reached_components_limit} ->
-        Logger.warn("Unable to add component: reached components limit")
+        Logger.warning("Unable to add component: reached components limit")
         {:reply, {:error, :reached_components_limit}, state}
 
       {:error, reason} ->
-        Logger.warn("Unable to add component: #{inspect(reason)}")
+        Logger.warning("Unable to add component: #{inspect(reason)}")
         {:reply, :error, state}
     end
   end
@@ -282,12 +282,12 @@ defmodule Jellyfish.Room do
       send(socket_pid, {:media_event, data})
     else
       nil ->
-        Logger.warn(
+        Logger.warning(
           "Received Media Event from RTC Engine to peer #{inspect(to)} without established signaling connection"
         )
 
       :error ->
-        Logger.warn(
+        Logger.warning(
           "Received Media Event from RTC Engine to non existent peer (target id: #{inspect(to)})"
         )
     end
@@ -351,7 +351,7 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_info(info, state) do
-    Logger.warn("Received unexpected info: #{inspect(info)}")
+    Logger.warning("Received unexpected info: #{inspect(info)}")
     {:noreply, state}
   end
 

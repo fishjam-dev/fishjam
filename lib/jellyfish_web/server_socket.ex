@@ -54,7 +54,7 @@ defmodule JellyfishWeb.ServerSocket do
 
           {:reply, :ok, {:binary, encoded_message}, state}
         else
-          Logger.warn("""
+          Logger.warning("""
           Authentication failed, reason: invalid token.
           Closing the connection.
           """)
@@ -67,7 +67,7 @@ defmodule JellyfishWeb.ServerSocket do
         end
 
       _other ->
-        Logger.warn("""
+        Logger.warning("""
         Received message on server WS that is not auth_request.
         Closing the connection.
 
@@ -102,7 +102,7 @@ defmodule JellyfishWeb.ServerSocket do
   end
 
   defp unexpected_message_error(msg, state) do
-    Logger.warn("""
+    Logger.warning("""
     Received unexpected message on server WS.
     Closing the connection.
 
