@@ -48,7 +48,7 @@ jobs:
       - run: ./compile_proto.sh
       - run: git add .
       - run: git diff --exit-code HEAD
-      - run: redocly lint --generate-ignore-file openapi.yaml
+      - run: redocly lint openapi.yaml
 
 workflows:
   version: 2
