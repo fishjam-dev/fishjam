@@ -41,12 +41,14 @@ jobs:
       - run: apt update && apt install -y protobuf-compiler
       - run: mix escript.install --force hex protobuf
       - run: asdf reshim
+      - run: npm i -g @redocly/cli@latest
       - checkout
       - run: mix deps.get
       - run: mix api.spec
       - run: ./compile_proto.sh
       - run: git add .
       - run: git diff --exit-code HEAD
+      - run: redocly lint openapi.yaml
 
 workflows:
   version: 2

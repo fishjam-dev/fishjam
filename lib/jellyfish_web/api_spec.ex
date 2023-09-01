@@ -2,7 +2,7 @@ defmodule JellyfishWeb.ApiSpec do
   @moduledoc false
   @behaviour OpenApiSpex.OpenApi
 
-  alias OpenApiSpex.{Components, Info, Paths, Schema, SecurityScheme}
+  alias OpenApiSpex.{Components, Info, License, Paths, Schema, SecurityScheme}
 
   # OpenAPISpex master specification
 
@@ -11,7 +11,11 @@ defmodule JellyfishWeb.ApiSpec do
     %OpenApiSpex.OpenApi{
       info: %Info{
         title: "Jellyfish Media Server",
-        version: "0.2.0"
+        version: "0.2.0",
+        license: %License{
+          name: "Apache 2.0",
+          url: "https://www.apache.org/licenses/LICENSE-2.0"
+        }
       },
       paths: Paths.from_router(JellyfishWeb.Router),
       components: %Components{
