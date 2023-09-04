@@ -52,9 +52,14 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   def handle_partial_request(room_id, filename) do
     case EtsHelper.get_partial(room_id, filename) do
       {:error, :file_not_found} ->
-        wait_for_partial_ready(room_id, filename)
-      result -> result
+        if is_preload_hint(room_id, filename) do
+          wait_for_partial_ready(room_id, filename)
+        else
+          {:error, :wrong_partial_name}
+        end
 
+      result ->
+        result
     end
   end
 
@@ -142,8 +147,14 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   end
 
   @impl true
-  def handle_cast({:preload_hint, _filename, from}, state) do
-    {:noreply, %{state | preload_hints: [from | state.preload_hints]}}
+  def handle_cast({:preload_hint, room_id, filename, from}, state) do
+    with {:ok, _partial} <- EtsHelper.get_partial(room_id, filename) do
+      send(from, :preload_hint_ready)
+      {:noreply, state}
+    else
+      {:error, _reason} ->
+        {:noreply, %{state | preload_hints: [from | state.preload_hints]}}
+    end
   end
 
   @impl true
@@ -175,7 +186,7 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   end
 
   defp wait_for_partial_ready(room_id, filename) do
-    GenServer.cast(registry_id(room_id), {:preload_hint, filename, self()})
+    GenServer.cast(registry_id(room_id), {:preload_hint, room_id, filename, self()})
 
     receive do
       :preload_hint_ready ->
@@ -207,6 +218,32 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
 
       %{status | waiting_pids: waiting_pids}
     end
+  end
+
+  defp is_preload_hint(room_id, filename) do
+    partial_sn = get_partial_sn(filename)
+    {:ok, recent_partial_sn} = EtsHelper.get_recent_partial(room_id)
+    check_if_preload_hint(partial_sn, recent_partial_sn)
+  end
+
+  defp check_if_preload_hint({segment_sn, partial_sn}, {recent_segment_sn, recent_partial_sn}) do
+    cond do
+      segment_sn - recent_segment_sn == 1 and partial_sn == 0 -> true
+      segment_sn == recent_segment_sn and partial_sn - recent_partial_sn == 1 -> true
+      segment_sn == recent_segment_sn and partial_sn == recent_partial_sn -> true
+      true -> false
+    end
+  end
+
+  defp check_if_preload_hint(_partial_sn, _recent_partial_sn), do: false
+
+  # Filename example: muxed_segment_32_g2QABXZpZGVv_5_part.m4s
+  defp get_partial_sn(filename) do
+    filename
+    |> String.split("_")
+    |> Enum.filter(fn s -> match?({_integer, ""}, Integer.parse(s)) end)
+    |> Enum.map(fn sn -> String.to_integer(sn) end)
+    |> List.to_tuple()
   end
 
   defp registry_id(room_id), do: {:via, Registry, {Jellyfish.RequestHandlerRegistry, room_id}}
