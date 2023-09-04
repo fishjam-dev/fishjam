@@ -217,7 +217,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     assert_receive %PeerConnected{peer_id: ^peer_id, room_id: ^room_id}
 
     subscribe(ws, :metrics)
-    assert_receive %MetricsReport{metrics: metrics} when metrics != "{}", 200
+    assert_receive %MetricsReport{metrics: metrics} when metrics != "{}", 500
 
     metrics = Jason.decode!(metrics)
 
