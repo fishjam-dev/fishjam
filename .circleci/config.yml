@@ -55,10 +55,10 @@ workflows:
   build:
     jobs:
       - elixir/build_test:
-          cache-version: 3
+          cache-version: 4
       - test
       - test_load_balancing
       - elixir/lint:
-          cache-version: 3
+          cache-version: 4
           docs: false
       - check_api_update
