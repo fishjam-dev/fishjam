@@ -100,6 +100,8 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
   test "closes on receiving an invalid message from a client" do
     ws = create_and_authenticate()
 
+    Process.flag(:trap_exit, true)
+
     :ok =
       WS.send_binary_frame(
         ws,
@@ -107,6 +109,9 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
       )
 
     assert_receive {:disconnected, {:remote, 1003, "operation not allowed"}}, 1000
+    assert_receive {:EXIT, ^ws, {:remote, 1003, "operation not allowed"}}
+
+    Process.flag(:trap_exit, false)
   end
 
   test "sends HlsPlayable notification", %{conn: conn} do
@@ -217,7 +222,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     assert_receive %PeerConnected{peer_id: ^peer_id, room_id: ^room_id}
 
     subscribe(ws, :metrics)
-    assert_receive %MetricsReport{metrics: metrics} when metrics != "{}", 200
+    assert_receive %MetricsReport{metrics: metrics} when metrics != "{}", 500
 
     metrics = Jason.decode!(metrics)
 

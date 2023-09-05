@@ -1,7 +1,7 @@
 defmodule Jellyfish.ServerMessage.EventType do
   @moduledoc false
 
-  use Protobuf, enum: true, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+  use Protobuf, enum: true, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
 
   field :EVENT_TYPE_UNSPECIFIED, 0
   field :EVENT_TYPE_SERVER_NOTIFICATION, 1
@@ -11,7 +11,7 @@ end
 defmodule Jellyfish.ServerMessage.RoomCrashed do
   @moduledoc false
 
-  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+  use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
 
   field :room_id, 1, type: :string, json_name: "roomId"
 end
@@ -19,7 +19,7 @@ end
 defmodule Jellyfish.ServerMessage.PeerConnected do
   @moduledoc false
 
-  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+  use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
 
   field :room_id, 1, type: :string, json_name: "roomId"
   field :peer_id, 2, type: :string, json_name: "peerId"
@@ -28,7 +28,7 @@ end
 defmodule Jellyfish.ServerMessage.PeerDisconnected do
   @moduledoc false
 
-  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+  use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
 
   field :room_id, 1, type: :string, json_name: "roomId"
   field :peer_id, 2, type: :string, json_name: "peerId"
@@ -37,7 +37,7 @@ end
 defmodule Jellyfish.ServerMessage.PeerCrashed do
   @moduledoc false
 
-  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+  use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
 
   field :room_id, 1, type: :string, json_name: "roomId"
   field :peer_id, 2, type: :string, json_name: "peerId"
@@ -46,7 +46,7 @@ end
 defmodule Jellyfish.ServerMessage.ComponentCrashed do
   @moduledoc false
 
-  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+  use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
 
   field :room_id, 1, type: :string, json_name: "roomId"
   field :component_id, 2, type: :string, json_name: "componentId"
@@ -55,13 +55,13 @@ end
 defmodule Jellyfish.ServerMessage.Authenticated do
   @moduledoc false
 
-  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+  use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
 end
 
 defmodule Jellyfish.ServerMessage.AuthRequest do
   @moduledoc false
 
-  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+  use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
 
   field :token, 1, type: :string
 end
@@ -69,7 +69,7 @@ end
 defmodule Jellyfish.ServerMessage.SubscribeRequest do
   @moduledoc false
 
-  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+  use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
 
   field :event_type, 1,
     type: Jellyfish.ServerMessage.EventType,
@@ -80,7 +80,7 @@ end
 defmodule Jellyfish.ServerMessage.SubscribeResponse do
   @moduledoc false
 
-  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+  use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
 
   field :event_type, 1,
     type: Jellyfish.ServerMessage.EventType,
@@ -91,7 +91,7 @@ end
 defmodule Jellyfish.ServerMessage.RoomCreated do
   @moduledoc false
 
-  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+  use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
 
   field :room_id, 1, type: :string, json_name: "roomId"
 end
@@ -99,7 +99,7 @@ end
 defmodule Jellyfish.ServerMessage.RoomDeleted do
   @moduledoc false
 
-  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+  use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
 
   field :room_id, 1, type: :string, json_name: "roomId"
 end
@@ -107,7 +107,7 @@ end
 defmodule Jellyfish.ServerMessage.MetricsReport do
   @moduledoc false
 
-  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+  use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
 
   field :metrics, 1, type: :string
 end
@@ -115,7 +115,7 @@ end
 defmodule Jellyfish.ServerMessage.HlsPlayable do
   @moduledoc false
 
-  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+  use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
 
   field :room_id, 1, type: :string, json_name: "roomId"
   field :component_id, 2, type: :string, json_name: "componentId"
@@ -124,7 +124,7 @@ end
 defmodule Jellyfish.ServerMessage do
   @moduledoc false
 
-  use Protobuf, protoc_gen_elixir_version: "0.12.0", syntax: :proto3
+  use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
 
   oneof :content, 0
 

@@ -55,7 +55,7 @@ defmodule JellyfishWeb.PeerSocket do
           {:error, reason} ->
             reason = reason_to_string(reason)
 
-            Logger.warn("""
+            Logger.warning("""
             Authentication failed, reason: #{reason}.
             Closing the connection.
             """)
@@ -64,7 +64,7 @@ defmodule JellyfishWeb.PeerSocket do
         end
 
       _other ->
-        Logger.warn("""
+        Logger.warning("""
         Received message from unauthenticated peer that is not authRequest.
         Closing the connection.
         """)
@@ -80,7 +80,7 @@ defmodule JellyfishWeb.PeerSocket do
         Room.receive_media_event(state.room_id, state.peer_id, data)
 
       other ->
-        Logger.warn("""
+        Logger.warning("""
         Received unexpected message #{inspect(other)} from #{inspect(state.peer_id)}, \
         room: #{inspect(state.room_id)}
         """)
@@ -90,7 +90,7 @@ defmodule JellyfishWeb.PeerSocket do
   end
 
   def handle_in({msg, [opcode: :text]}, state) do
-    Logger.warn("""
+    Logger.warning("""
     Received unexpected text message #{msg} from #{inspect(state.peer_id)}, \
     room: #{inspect(state.room_id)}
     """)
