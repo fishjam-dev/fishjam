@@ -18,7 +18,8 @@ defmodule Example do
         server_api_token: @jellyfish_token
       )
 
-    with {:ok, %Jellyfish.Room{id: room_id}} <- Jellyfish.Room.create(client, video_codec: :h264),
+    with {:ok, %Jellyfish.Room{id: room_id}, _jellyfish_address} <-
+           Jellyfish.Room.create(client, video_codec: :h264),
          {:ok, %Jellyfish.Component{id: _hls_component_id}} <-
            Jellyfish.Room.add_component(client, room_id, Jellyfish.Component.HLS),
          {:ok, %Jellyfish.Component{id: _rtsp_component_id}} <-
