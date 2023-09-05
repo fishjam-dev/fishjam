@@ -7,7 +7,7 @@ defmodule Jellyfish.Peer.WebRTC do
 
   alias Membrane.RTC.Engine.Endpoint.WebRTC
   alias Membrane.RTC.Engine.Endpoint.WebRTC.SimulcastConfig
-  alias Membrane.WebRTC.Extension.{Mid, RepairedRid, Rid, TWCC}
+  alias Membrane.WebRTC.Extension.{Mid, RepairedRid, Rid, TWCC, VAD}
   alias Membrane.WebRTC.Track.Encoding
 
   @impl true
@@ -26,7 +26,7 @@ defmodule Jellyfish.Peer.WebRTC do
       ]
 
       simulcast? = valid_opts.enableSimulcast
-      webrtc_extensions = [Mid, Rid, RepairedRid, TWCC]
+      webrtc_extensions = [Mid, Rid, RepairedRid, TWCC, VAD]
       network_options = options.network_options
 
       filter_codecs =
@@ -52,6 +52,7 @@ defmodule Jellyfish.Peer.WebRTC do
          filter_codecs: filter_codecs,
          log_metadata: [peer_id: options.peer_id],
          trace_context: nil,
+         extensions: %{opus: Membrane.RTP.VAD},
          webrtc_extensions: webrtc_extensions,
          simulcast_config: %SimulcastConfig{
            enabled: simulcast?,
