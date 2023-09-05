@@ -8,7 +8,7 @@ defmodule Jellyfish.Component.HLS.LLStorageTest do
   @segment_name "segment"
   @segment_content <<1, 2, 3>>
 
-  @partial_name "partial_segment"
+  @partial_name "segment_0_part"
   @partial_content <<1, 2, 3, 4>>
   @partial_sn {0, 0}
 
@@ -47,10 +47,10 @@ defmodule Jellyfish.Component.HLS.LLStorageTest do
   test "store partial", %{storage: storage, directory: directory, room_id: room_id} do
     {:ok, _storage} = store_partial(storage)
 
-    partial_path = Path.join(directory, @partial_name)
+    partial_path = Path.join(directory, @segment_name)
     assert {:ok, @partial_content} == File.read(partial_path)
 
-    assert {:ok, @partial_content} == EtsHelper.get_partial(room_id, @partial_name, 0)
+    assert {:ok, @partial_content} == EtsHelper.get_partial(room_id, @partial_name)
   end
 
   @tag :tmp_dir
@@ -112,9 +112,9 @@ defmodule Jellyfish.Component.HLS.LLStorageTest do
   defp store_partial(storage) do
     LLStorage.store(
       :parent_id,
-      @partial_name,
+      @segment_name,
       @partial_content,
-      %{byte_offset: 0, sequence_number: 0},
+      %{partial_name: @partial_name, sequence_number: 0},
       %{mode: :binary, type: :partial_segment},
       storage
     )

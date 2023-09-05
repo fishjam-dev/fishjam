@@ -17,9 +17,6 @@ defmodule Jellyfish.Component.HLS.RequestHandlerTest do
   @partial_name "partial"
   @partial_content <<1, 2, 3>>
 
-  @offset 0
-  @wrong_offset 1
-
   setup do
     room_id = UUID.uuid4()
 
@@ -110,20 +107,20 @@ defmodule Jellyfish.Component.HLS.RequestHandlerTest do
 
   test "partial request", %{room_id: room_id} do
     assert {:error, :room_not_found} ==
-             RequestHandler.handle_partial_request(room_id, @partial_name, @offset)
+             RequestHandler.handle_partial_request(room_id, @partial_name)
 
     {:ok, table} = EtsHelper.add_room(room_id)
 
     assert {:error, :file_not_found} ==
-             RequestHandler.handle_partial_request(room_id, @partial_name, @offset)
+             RequestHandler.handle_partial_request(room_id, @partial_name)
 
-    EtsHelper.add_partial(table, @partial_content, @partial_name, @offset)
+    EtsHelper.add_partial(table, @partial_content, @partial_name)
 
     assert {:ok, @partial_content} ==
-             RequestHandler.handle_partial_request(room_id, @partial_name, @offset)
+             RequestHandler.handle_partial_request(room_id, @partial_name)
 
     assert {:error, :file_not_found} ==
-             RequestHandler.handle_partial_request(room_id, @partial_name, @wrong_offset)
+             RequestHandler.handle_partial_request(room_id, "wrong_partial_name")
   end
 
   defp add_mock_manifest(room_id) do

@@ -22,11 +22,9 @@ defmodule JellyfishWeb.HLSControllerTest do
   @master_manifest_name "index.m3u8"
   @master_manifest_content <<5>>
 
-  @partial_name "partial_name.m4s"
+  @partial_name "partial_name_part.m4s"
   @partial_content <<6>>
   @partial_sn {0, 0}
-  @offset 0
-  @wrong_offset 50
 
   @schema JellyfishWeb.ApiSpec.spec()
 
@@ -85,17 +83,8 @@ defmodule JellyfishWeb.HLSControllerTest do
   end
 
   test "request partial", %{conn: conn} do
-    conn1 =
-      conn
-      |> put_req_header("range", "bytes=#{@offset}-100")
-      |> get(~p"/hls/#{@room_id}/#{@partial_name}")
-
+    conn1 = get(conn, ~p"/hls/#{@room_id}/#{@partial_name}")
     assert @partial_content == response(conn1, 200)
-
-    conn
-    |> put_req_header("range", "bytes=#{@wrong_offset}-100")
-    |> get(~p"/hls/#{@room_id}/#{@partial_name}")
-    |> custom_assert_error()
 
     conn
     |> get(~p"/hls/#{@wrong_room_id}/#{@partial_name}")
@@ -159,7 +148,7 @@ defmodule JellyfishWeb.HLSControllerTest do
   defp prepare_ets() do
     {:ok, table} = EtsHelper.add_room(@room_id)
 
-    EtsHelper.add_partial(table, @partial_content, @partial_name, @offset)
+    EtsHelper.add_partial(table, @partial_content, @partial_name)
     EtsHelper.update_recent_partial(table, @partial_sn)
     EtsHelper.update_delta_recent_partial(table, @partial_sn)
     EtsHelper.update_manifest(table, @manifest_content)

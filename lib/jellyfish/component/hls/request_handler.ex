@@ -50,16 +50,19 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   @spec handle_partial_request(Room.id(), String.t()) ::
           {:ok, binary()} | {:error, atom()}
   def handle_partial_request(room_id, filename) do
-    case EtsHelper.get_partial(room_id, filename) do
+    with {:ok, partial} <- EtsHelper.get_partial(room_id, filename) do
+      {:ok, partial}
+    else
       {:error, :file_not_found} ->
-        if is_preload_hint(room_id, filename) do
+        with {:ok, true} <- is_preload_hint(room_id, filename) do
           wait_for_partial_ready(room_id, filename)
         else
-          {:error, :wrong_partial_name}
+          _any ->
+            {:error, :file_not_found}
         end
 
-      result ->
-        result
+      error ->
+        error
     end
   end
 
@@ -222,8 +225,10 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
 
   defp is_preload_hint(room_id, filename) do
     partial_sn = get_partial_sn(filename)
-    {:ok, recent_partial_sn} = EtsHelper.get_recent_partial(room_id)
-    check_if_preload_hint(partial_sn, recent_partial_sn)
+
+    with {:ok, recent_partial_sn} <- EtsHelper.get_recent_partial(room_id) do
+      {:ok, check_if_preload_hint(partial_sn, recent_partial_sn)}
+    end
   end
 
   defp check_if_preload_hint({segment_sn, partial_sn}, {recent_segment_sn, recent_partial_sn}) do
