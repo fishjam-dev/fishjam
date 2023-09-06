@@ -13,9 +13,14 @@ defmodule Jellyfish.Component.HLS.RequestHandlerTest do
   @manifest_content "manifest"
 
   @partial {1, 1}
-  @next_partial {1, 2}
   @partial_name "partial"
   @partial_content <<1, 2, 3>>
+
+  @next_partial {1, 2}
+  @next_partial_name "muxed_segment_1_g2QABXZpZGVv_2_part.m4s"
+  @next_partial_content <<1, 2, 3, 4>>
+
+  @future_partial_name "muxed_segment_1_g2QABXZpZGVv_4_part.m4s"
 
   setup do
     room_id = UUID.uuid4()
@@ -70,7 +75,7 @@ defmodule Jellyfish.Component.HLS.RequestHandlerTest do
         RequestHandler.handle_manifest_request(room_id, @next_partial)
       end)
 
-    assert nil == Task.yield(task)
+    assert nil == Task.yield(task, 500)
 
     RequestHandler.update_recent_partial(room_id, @next_partial)
 
@@ -98,7 +103,7 @@ defmodule Jellyfish.Component.HLS.RequestHandlerTest do
         RequestHandler.handle_delta_manifest_request(room_id, @next_partial)
       end)
 
-    assert nil == Task.yield(task)
+    assert nil == Task.yield(task, 500)
 
     RequestHandler.update_delta_recent_partial(room_id, @next_partial)
 
@@ -121,6 +126,27 @@ defmodule Jellyfish.Component.HLS.RequestHandlerTest do
 
     assert {:error, :file_not_found} ==
              RequestHandler.handle_partial_request(room_id, "wrong_partial_name")
+  end
+
+  test "preload hint request", %{room_id: room_id} do
+    {:ok, table} = EtsHelper.add_room(room_id)
+
+    EtsHelper.add_partial(table, @partial_content, @partial_name)
+    EtsHelper.update_recent_partial(table, @partial)
+    RequestHandler.update_recent_partial(room_id, @partial)
+
+    task =
+      Task.async(fn -> RequestHandler.handle_partial_request(room_id, @next_partial_name) end)
+
+    assert nil == Task.yield(task, 500)
+
+    EtsHelper.add_partial(table, @next_partial_content, @next_partial_name)
+    RequestHandler.update_recent_partial(room_id, @next_partial)
+
+    assert {:ok, @next_partial_content} == Task.await(task)
+
+    assert {:error, :file_not_found} ==
+             RequestHandler.handle_partial_request(room_id, @future_partial_name)
   end
 
   defp add_mock_manifest(room_id) do
