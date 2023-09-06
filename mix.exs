@@ -65,7 +65,7 @@ defmodule Jellyfish.MixProject do
       {:membrane_rtc_engine, "~> 0.17.0", override: true},
       {:membrane_rtc_engine_webrtc, "~> 0.2.1", override: true},
       {:membrane_rtc_engine_hls,
-       mgithub: "jellyfish-dev/membrane_rtc_engine", sparse: "hls", override: true},
+       github: "jellyfish-dev/membrane_rtc_engine", sparse: "hls", override: true},
       {:membrane_http_adaptive_stream_plugin,
        github: "membraneframework/membrane_http_adaptive_stream_plugin",
        branch: "feature/partial-serialization",

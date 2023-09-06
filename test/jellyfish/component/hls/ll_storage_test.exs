@@ -47,6 +47,9 @@ defmodule Jellyfish.Component.HLS.LLStorageTest do
   test "store partial", %{storage: storage, directory: directory, room_id: room_id} do
     {:ok, _storage} = store_partial(storage)
 
+    # Partials are also saved in a file.
+    # They are saved under a segment name.
+    # Each one appends to the file, creating a whole segment in the result.
     partial_path = Path.join(directory, @segment_name)
     assert {:ok, @partial_content} == File.read(partial_path)
 

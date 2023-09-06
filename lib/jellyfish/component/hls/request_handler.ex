@@ -54,10 +54,11 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
       {:ok, partial}
     else
       {:error, :file_not_found} ->
-        with {:ok, true} <- is_preload_hint(room_id, filename) do
-          wait_for_partial_ready(room_id, filename)
-        else
-          _any ->
+        case is_preload_hint(room_id, filename) do
+          {:ok, true} ->
+            wait_for_partial_ready(room_id, filename)
+
+          _other ->
             {:error, :file_not_found}
         end
 
@@ -132,9 +133,17 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   end
 
   @impl true
-  def handle_cast({:update_recent_partial, last_partial, manifest}, state) do
+  def handle_cast(
+        {:update_recent_partial, last_partial, manifest},
+        %{preload_hints: preload_hints} = state
+      ) do
     status = Map.fetch!(state, manifest)
-    state = Map.put(state, manifest, update_status(status, last_partial, state.preload_hints))
+
+    state =
+      state
+      |> Map.put(manifest, update_and_notify_manifest_ready(status, last_partial))
+      |> Map.put(:preload_hints, update_and_notify_preload_hint_ready(preload_hints))
+
     {:noreply, state}
   end
 
@@ -197,14 +206,18 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
     end
   end
 
-  defp update_status(status, last_partial, preload_hints) do
+  defp update_and_notify_preload_hint_ready(preload_hints) do
+    send_preload_hint_ready(preload_hints)
+    []
+  end
+
+  defp update_and_notify_manifest_ready(status, last_partial) do
     {waiting_pids, status} =
       status
       |> Map.put(:last_partial, last_partial)
       |> pop_in([:waiting_pids, last_partial])
 
     send_partial_ready(waiting_pids)
-    send_preload_hint_ready(preload_hints)
 
     status
   end
@@ -234,13 +247,17 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   defp check_if_preload_hint({segment_sn, partial_sn}, {recent_segment_sn, recent_partial_sn}) do
     cond do
       segment_sn - recent_segment_sn == 1 and partial_sn == 0 -> true
-      segment_sn == recent_segment_sn and partial_sn - recent_partial_sn == 1 -> true
-      segment_sn == recent_segment_sn and partial_sn == recent_partial_sn -> true
+      segment_sn == recent_segment_sn and (partial_sn - recent_partial_sn) in [0, 1] -> true
       true -> false
     end
   end
 
-  defp check_if_preload_hint(_partial_sn, _recent_partial_sn), do: false
+  defp check_if_preload_hint(_partial_sn, _recent_partial_sn) do
+    require Logger
+
+    Logger.warning("Unable to parse partial segment filename")
+    false
+  end
 
   # Filename example: muxed_segment_32_g2QABXZpZGVv_5_part.m4s
   defp get_partial_sn(filename) do
