@@ -61,10 +61,13 @@ defmodule JellyfishWeb.ComponentController do
     ]
 
   def create(conn, %{"room_id" => room_id} = params) do
+    IO.inspect(params, label: :params)
+
     with component_options <- Map.get(params, "options", %{}),
          {:ok, component_type_string} <- Map.fetch(params, "type"),
          {:ok, component_type} <- Component.parse_type(component_type_string),
          {:ok, _room_pid} <- RoomService.find_room(room_id),
+         IO.inspect({room_id, component_type, component_options}, label: :create_component),
          {:ok, component} <- Room.add_component(room_id, component_type, component_options) do
       conn
       |> put_resp_content_type("application/json")

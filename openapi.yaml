@@ -57,7 +57,10 @@ components:
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Options
     ComponentOptionsHLS:
       description: Options specific to the HLS component
-      properties: {}
+      properties:
+        isHls:
+          type: boolean
+          nullable: true
       title: ComponentOptionsHLS
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS
