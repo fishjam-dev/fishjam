@@ -11,6 +11,7 @@ defmodule JellyfishWeb.RoomController do
   tags [:room]
 
   operation :index,
+    operation_id: "get_all",
     summary: "Show information about all rooms",
     responses: [
       ok: ApiSpec.data("Success", ApiSpec.RoomsListingResponse),
@@ -18,6 +19,7 @@ defmodule JellyfishWeb.RoomController do
     ]
 
   operation :create,
+    operation_id: "create",
     summary: "Creates a room",
     request_body: {"Room configuration", "application/json", ApiSpec.Room.Config},
     responses: [
@@ -27,6 +29,7 @@ defmodule JellyfishWeb.RoomController do
     ]
 
   operation :show,
+    operation_id: "get",
     summary: "Shows information about the room",
     parameters: [
       room_id: [
@@ -42,6 +45,7 @@ defmodule JellyfishWeb.RoomController do
     ]
 
   operation :delete,
+    operation_id: "delete",
     summary: "Delete the room",
     parameters: [
       room_id: [

@@ -10,9 +10,10 @@ defmodule JellyfishWeb.ComponentController do
 
   action_fallback JellyfishWeb.FallbackController
 
-  tags [:component]
+  tags [:room]
 
   operation :create,
+    operation_id: "create_component",
     summary: "Creates the component and adds it to the room",
     parameters: [
       room_id: [
@@ -39,6 +40,7 @@ defmodule JellyfishWeb.ComponentController do
     ]
 
   operation :delete,
+    operation_id: "delete_component",
     summary: "Delete the component from the room",
     parameters: [
       room_id: [

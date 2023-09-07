@@ -366,7 +366,7 @@ paths:
   /room:
     get:
       callbacks: {}
-      operationId: JellyfishWeb.RoomController.index
+      operationId: get_all
       parameters: []
       responses:
         '200':
@@ -386,7 +386,7 @@ paths:
         - room
     post:
       callbacks: {}
-      operationId: JellyfishWeb.RoomController.create
+      operationId: create
       parameters: []
       requestBody:
         content:
@@ -420,7 +420,7 @@ paths:
   /room/{room_id}:
     delete:
       callbacks: {}
-      operationId: JellyfishWeb.RoomController.delete
+      operationId: delete
       parameters:
         - description: Room id
           in: path
@@ -448,7 +448,7 @@ paths:
         - room
     get:
       callbacks: {}
-      operationId: JellyfishWeb.RoomController.show
+      operationId: get
       parameters:
         - description: Room ID
           in: path
@@ -481,7 +481,7 @@ paths:
   /room/{room_id}/component:
     post:
       callbacks: {}
-      operationId: JellyfishWeb.ComponentController.create
+      operationId: create_component
       parameters:
         - description: Room ID
           in: path
@@ -531,11 +531,11 @@ paths:
           description: Room doesn't exist
       summary: Creates the component and adds it to the room
       tags:
-        - component
+        - room
   /room/{room_id}/component/{id}:
     delete:
       callbacks: {}
-      operationId: JellyfishWeb.ComponentController.delete
+      operationId: delete_component
       parameters:
         - description: Room ID
           in: path
@@ -566,11 +566,11 @@ paths:
           description: Either component or the room doesn't exist
       summary: Delete the component from the room
       tags:
-        - component
+        - room
   /room/{room_id}/peer:
     post:
       callbacks: {}
-      operationId: JellyfishWeb.PeerController.create
+      operationId: create_peer
       parameters:
         - description: Room id
           in: path
@@ -626,11 +626,11 @@ paths:
           description: Peer limit has been reached
       summary: Create peer
       tags:
-        - peer
+        - room
   /room/{room_id}/peer/{id}:
     delete:
       callbacks: {}
-      operationId: JellyfishWeb.PeerController.delete
+      operationId: delete_peer
       parameters:
         - description: Room ID
           in: path
@@ -661,7 +661,7 @@ paths:
           description: Room ID or Peer ID references a resource that doesn't exist
       summary: Delete peer
       tags:
-        - peer
+        - room
 security:
   - authorization: []
 servers: []
