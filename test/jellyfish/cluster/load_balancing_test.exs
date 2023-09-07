@@ -41,7 +41,7 @@ defmodule Jellyfish.Cluster.LoadBalancingTest do
     assert_rooms_number_on_jellyfish(node1, 1)
     assert_rooms_number_on_jellyfish(node2, 1)
 
-    room_id = response_body1 |> Jason.decode!() |> get_in(["data", "id"])
+    room_id = response_body1 |> Jason.decode!() |> get_in(["data", "room", "id"])
 
     delete_room(jellyfish_instance1, room_id)
 
@@ -83,7 +83,10 @@ defmodule Jellyfish.Cluster.LoadBalancingTest do
   end
 
   defp get_jellyfish_address(response_body) do
-    response_body |> Jason.decode!() |> Map.get("jellyfish_address") |> map_jellyfish_address()
+    response_body
+    |> Jason.decode!()
+    |> get_in(["data", "jellyfish_address"])
+    |> map_jellyfish_address()
   end
 
   defp assert_rooms_number_on_jellyfish(jellyfish_instance, rooms) do
