@@ -8,6 +8,8 @@ defmodule Jellyfish.Component do
       and publishes the appropriate track to other Components.
   """
 
+  use Bunch.Access
+
   alias Jellyfish.Component.{HLS, RTSP}
 
   @callback metadata() :: map()
