@@ -30,7 +30,7 @@ defmodule JellyfishWeb.ComponentController do
            options: ApiSpec.Component.Options,
            type: ApiSpec.Component.Type
          },
-         required: [:type, :options]
+         required: [:type]
        }},
     responses: [
       created: ApiSpec.data("Successfully added component", ApiSpec.ComponentDetailsResponse),
