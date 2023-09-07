@@ -14,7 +14,7 @@ defmodule JellyfishWeb.PeerController do
   tags [:room]
 
   operation :create,
-    operation_id: "create_peer",
+    operation_id: "add_peer",
     summary: "Create peer",
     parameters: [
       room_id: [

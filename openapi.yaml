@@ -366,7 +366,7 @@ paths:
   /room:
     get:
       callbacks: {}
-      operationId: get_all
+      operationId: get_all_rooms
       parameters: []
       responses:
         '200':
@@ -386,7 +386,7 @@ paths:
         - room
     post:
       callbacks: {}
-      operationId: create
+      operationId: create_room
       parameters: []
       requestBody:
         content:
@@ -420,7 +420,7 @@ paths:
   /room/{room_id}:
     delete:
       callbacks: {}
-      operationId: delete
+      operationId: delete_room
       parameters:
         - description: Room id
           in: path
@@ -448,7 +448,7 @@ paths:
         - room
     get:
       callbacks: {}
-      operationId: get
+      operationId: get_room
       parameters:
         - description: Room ID
           in: path
@@ -481,7 +481,7 @@ paths:
   /room/{room_id}/component:
     post:
       callbacks: {}
-      operationId: create_component
+      operationId: add_component
       parameters:
         - description: Room ID
           in: path
@@ -570,7 +570,7 @@ paths:
   /room/{room_id}/peer:
     post:
       callbacks: {}
-      operationId: create_peer
+      operationId: add_peer
       parameters:
         - description: Room id
           in: path

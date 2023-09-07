@@ -13,7 +13,7 @@ defmodule JellyfishWeb.ComponentController do
   tags [:room]
 
   operation :create,
-    operation_id: "create_component",
+    operation_id: "add_component",
     summary: "Creates the component and adds it to the room",
     parameters: [
       room_id: [
