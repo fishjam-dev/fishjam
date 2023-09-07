@@ -11,7 +11,7 @@ defmodule JellyfishWeb.PeerControllerTest do
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
     room_conn = post(conn, ~p"/room", maxPeers: 1)
-    assert %{"id" => id} = json_response(room_conn, :created)["data"]
+    assert %{"id" => id} = json_response(room_conn, :created)["data"]["room"]
 
     on_exit(fn ->
       room_conn = delete(conn, ~p"/room/#{id}")

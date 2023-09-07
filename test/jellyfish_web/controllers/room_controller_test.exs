@@ -65,7 +65,7 @@ defmodule JellyfishWeb.RoomControllerTest do
   describe "create room" do
     test "renders room when data is valid", %{conn: conn} do
       conn = post(conn, ~p"/room", maxPeers: 10)
-      assert %{"id" => id} = json_response(conn, :created)["data"]
+      assert %{"id" => id} = json_response(conn, :created)["data"]["room"]
 
       conn = get(conn, ~p"/room/#{id}")
       response = json_response(conn, :ok)
@@ -81,7 +81,7 @@ defmodule JellyfishWeb.RoomControllerTest do
 
     test "renders room when max_peers isn't present", %{conn: conn} do
       conn = post(conn, ~p"/room")
-      assert %{"id" => id} = json_response(conn, :created)["data"]
+      assert %{"id" => id} = json_response(conn, :created)["data"]["room"]
 
       conn = get(conn, ~p"/room/#{id}")
       response = json_response(conn, :ok)
@@ -148,7 +148,7 @@ defmodule JellyfishWeb.RoomControllerTest do
 
   defp create_room(state) do
     conn = post(state.conn, ~p"/room")
-    assert %{"id" => id} = json_response(conn, :created)["data"]
+    assert %{"id" => id} = json_response(conn, :created)["data"]["room"]
 
     %{room_id: id}
   end

@@ -11,7 +11,7 @@ defmodule JellyfishWeb.ComponentControllerTest do
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
     room_conn = post(conn, ~p"/room")
-    assert %{"id" => id} = json_response(room_conn, :created)["data"]
+    assert %{"id" => id} = json_response(room_conn, :created)["data"]["room"]
 
     on_exit(fn ->
       room_conn = delete(conn, ~p"/room/#{id}")
@@ -38,7 +38,7 @@ defmodule JellyfishWeb.ComponentControllerTest do
   describe "create hls component" do
     test "renders component when data is valid, allows max 1 hls per room", %{conn: conn} do
       room_conn = post(conn, ~p"/room", videoCodec: "h264")
-      assert %{"id" => room_id} = json_response(room_conn, :created)["data"]
+      assert %{"id" => room_id} = json_response(room_conn, :created)["data"]["room"]
 
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
 
