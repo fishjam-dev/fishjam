@@ -8,14 +8,20 @@ defmodule JellyfishWeb.RoomJSON do
   end
 
   def show(%{room: room, jellyfish_address: jellyfish_address}) do
-    %{data: data(room), jellyfish_address: jellyfish_address}
+    %{data: data(room, jellyfish_address)}
   end
 
   def show(%{room: room}) do
     %{data: data(room)}
   end
 
-  def data(room) do
+  def data(room), do: room_data(room)
+
+  def data(room, jellyfish_address) do
+    %{room: room_data(room), jellyfish_address: jellyfish_address}
+  end
+
+  defp room_data(room) do
     config =
       room.config
       |> Map.new(fn {key, value} -> {snake_case_to_camel_case(key), value} end)

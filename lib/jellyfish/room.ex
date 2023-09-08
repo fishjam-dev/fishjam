@@ -220,6 +220,8 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_call({:add_component, component_type, options}, _from, state) do
+    options = if is_nil(options), do: %{}, else: options
+
     options =
       Map.merge(
         %{engine_pid: state.engine_pid, room_id: state.id},

@@ -10,9 +10,10 @@ defmodule JellyfishWeb.ComponentController do
 
   action_fallback JellyfishWeb.FallbackController
 
-  tags [:component]
+  tags [:room]
 
   operation :create,
+    operation_id: "add_component",
     summary: "Creates the component and adds it to the room",
     parameters: [
       room_id: [
@@ -29,7 +30,7 @@ defmodule JellyfishWeb.ComponentController do
            options: ApiSpec.Component.Options,
            type: ApiSpec.Component.Type
          },
-         required: [:type, :options]
+         required: [:type]
        }},
     responses: [
       created: ApiSpec.data("Successfully added component", ApiSpec.ComponentDetailsResponse),
@@ -39,6 +40,7 @@ defmodule JellyfishWeb.ComponentController do
     ]
 
   operation :delete,
+    operation_id: "delete_component",
     summary: "Delete the component from the room",
     parameters: [
       room_id: [
@@ -59,7 +61,7 @@ defmodule JellyfishWeb.ComponentController do
     ]
 
   def create(conn, %{"room_id" => room_id} = params) do
-    with component_options <- Map.get(params, "options", %{}),
+    with component_options <- Map.get(params, "options", nil),
          {:ok, component_type_string} <- Map.fetch(params, "type"),
          {:ok, component_type} <- Component.parse_type(component_type_string),
          {:ok, _room_pid} <- RoomService.find_room(room_id),

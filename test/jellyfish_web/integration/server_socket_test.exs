@@ -149,7 +149,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
     conn = post(conn, ~p"/room", maxPeers: 1)
-    assert %{"id" => room_id} = json_response(conn, :created)["data"]
+    assert %{"id" => room_id} = json_response(conn, :created)["data"]["room"]
 
     assert_receive %RoomCreated{room_id: ^room_id}
 
@@ -168,7 +168,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
     conn = post(conn, ~p"/room", maxPeers: 1)
-    assert %{"id" => room_id} = json_response(conn, :created)["data"]
+    assert %{"id" => room_id} = json_response(conn, :created)["data"]["room"]
     {:ok, room_pid} = Jellyfish.RoomService.find_room(room_id)
 
     Process.exit(room_pid, :kill)
@@ -252,7 +252,7 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
     conn = post(conn, ~p"/room", maxPeers: @max_peers, videoCodec: "h264")
-    assert %{"id" => room_id} = json_response(conn, :created)["data"]
+    assert %{"id" => room_id} = json_response(conn, :created)["data"]["room"]
 
     conn = post(conn, ~p"/room/#{room_id}/peer", type: "webrtc")
 

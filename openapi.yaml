@@ -49,18 +49,12 @@ components:
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Metadata
     ComponentOptions:
       description: Component-specific options
+      nullable: true
       oneOf:
-        - $ref: '#/components/schemas/ComponentOptionsHLS'
         - $ref: '#/components/schemas/ComponentOptionsRTSP'
       title: ComponentOptions
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Options
-    ComponentOptionsHLS:
-      description: Options specific to the HLS component
-      properties: {}
-      title: ComponentOptionsHLS
-      type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS
     ComponentOptionsRTSP:
       description: Options specific to the RTSP component
       properties:
@@ -366,7 +360,7 @@ paths:
   /room:
     get:
       callbacks: {}
-      operationId: JellyfishWeb.RoomController.index
+      operationId: get_all_rooms
       parameters: []
       responses:
         '200':
@@ -386,7 +380,7 @@ paths:
         - room
     post:
       callbacks: {}
-      operationId: JellyfishWeb.RoomController.create
+      operationId: create_room
       parameters: []
       requestBody:
         content:
@@ -420,7 +414,7 @@ paths:
   /room/{room_id}:
     delete:
       callbacks: {}
-      operationId: JellyfishWeb.RoomController.delete
+      operationId: delete_room
       parameters:
         - description: Room id
           in: path
@@ -448,7 +442,7 @@ paths:
         - room
     get:
       callbacks: {}
-      operationId: JellyfishWeb.RoomController.show
+      operationId: get_room
       parameters:
         - description: Room ID
           in: path
@@ -481,7 +475,7 @@ paths:
   /room/{room_id}/component:
     post:
       callbacks: {}
-      operationId: JellyfishWeb.ComponentController.create
+      operationId: add_component
       parameters:
         - description: Room ID
           in: path
@@ -500,7 +494,6 @@ paths:
                   $ref: '#/components/schemas/ComponentType'
               required:
                 - type
-                - options
               type: object
         description: Component config
         required: false
@@ -531,11 +524,11 @@ paths:
           description: Room doesn't exist
       summary: Creates the component and adds it to the room
       tags:
-        - component
+        - room
   /room/{room_id}/component/{id}:
     delete:
       callbacks: {}
-      operationId: JellyfishWeb.ComponentController.delete
+      operationId: delete_component
       parameters:
         - description: Room ID
           in: path
@@ -566,11 +559,11 @@ paths:
           description: Either component or the room doesn't exist
       summary: Delete the component from the room
       tags:
-        - component
+        - room
   /room/{room_id}/peer:
     post:
       callbacks: {}
-      operationId: JellyfishWeb.PeerController.create
+      operationId: add_peer
       parameters:
         - description: Room id
           in: path
@@ -626,11 +619,11 @@ paths:
           description: Peer limit has been reached
       summary: Create peer
       tags:
-        - peer
+        - room
   /room/{room_id}/peer/{id}:
     delete:
       callbacks: {}
-      operationId: JellyfishWeb.PeerController.delete
+      operationId: delete_peer
       parameters:
         - description: Room ID
           in: path
@@ -661,7 +654,7 @@ paths:
           description: Room ID or Peer ID references a resource that doesn't exist
       summary: Delete peer
       tags:
-        - peer
+        - room
 security:
   - authorization: []
 servers: []

@@ -11,9 +11,10 @@ defmodule JellyfishWeb.PeerController do
 
   action_fallback JellyfishWeb.FallbackController
 
-  tags [:peer]
+  tags [:room]
 
   operation :create,
+    operation_id: "add_peer",
     summary: "Create peer",
     parameters: [
       room_id: [
@@ -41,6 +42,7 @@ defmodule JellyfishWeb.PeerController do
     ]
 
   operation :delete,
+    operation_id: "delete_peer",
     summary: "Delete peer",
     parameters: [
       room_id: [
