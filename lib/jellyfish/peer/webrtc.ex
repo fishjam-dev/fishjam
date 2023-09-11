@@ -10,6 +10,8 @@ defmodule Jellyfish.Peer.WebRTC do
   alias Membrane.WebRTC.Extension.{Mid, RepairedRid, Rid, TWCC, VAD}
   alias Membrane.WebRTC.Track.Encoding
 
+  alias JellyfishWeb.ApiSpec
+
   @impl true
   def config(options) do
     if not Application.get_env(:jellyfish, :webrtc_used),
@@ -18,8 +20,7 @@ defmodule Jellyfish.Peer.WebRTC do
           "WebRTC peers can be used only if WEBRTC_USED environmental variable is not set to \"false\""
         )
 
-    with {:ok, valid_opts} <-
-           OpenApiSpex.cast_value(options, JellyfishWeb.ApiSpec.Peer.WebRTC.schema()) do
+    with {:ok, valid_opts} <- OpenApiSpex.cast_value(options, ApiSpec.Peer.WebRTC.schema()) do
       handshake_options = [
         client_mode: false,
         dtls_srtp: true

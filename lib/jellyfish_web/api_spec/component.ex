@@ -4,7 +4,7 @@ defmodule JellyfishWeb.ApiSpec.Component do
   require OpenApiSpex
   alias OpenApiSpex.Schema
 
-  alias JellyfishWeb.ApiSpec.Component.RTSP
+  alias JellyfishWeb.ApiSpec.Component.{HLS, RTSP}
 
   defmodule Type do
     @moduledoc false
@@ -29,9 +29,9 @@ defmodule JellyfishWeb.ApiSpec.Component do
       description: "Component-specific options",
       type: :object,
       oneOf: [
+        HLS,
         RTSP
-      ],
-      nullable: true
+      ]
     })
   end
 

@@ -49,12 +49,22 @@ components:
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Metadata
     ComponentOptions:
       description: Component-specific options
-      nullable: true
       oneOf:
+        - $ref: '#/components/schemas/ComponentOptionsHLS'
         - $ref: '#/components/schemas/ComponentOptionsRTSP'
       title: ComponentOptions
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Options
+    ComponentOptionsHLS:
+      description: Options specific to the HLS component
+      properties:
+        lowLatency:
+          default: false
+          description: Whether the component should use LL-HLS
+          type: boolean
+      title: ComponentOptionsHLS
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS
     ComponentOptionsRTSP:
       description: Options specific to the RTSP component
       properties:
