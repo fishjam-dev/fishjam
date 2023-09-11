@@ -43,23 +43,25 @@ defmodule Jellyfish.Peer.WebRTC do
         end
 
       {:ok,
-       %WebRTC{
-         rtc_engine: options.engine_pid,
-         ice_name: options.peer_id,
-         owner: self(),
-         integrated_turn_options: network_options[:integrated_turn_options],
-         integrated_turn_domain: network_options[:integrated_turn_domain],
-         handshake_opts: handshake_options,
-         filter_codecs: filter_codecs,
-         log_metadata: [peer_id: options.peer_id],
-         trace_context: nil,
-         extensions: %{opus: Membrane.RTP.VAD},
-         webrtc_extensions: webrtc_extensions,
-         simulcast_config: %SimulcastConfig{
-           enabled: simulcast?,
-           initial_target_variant: fn _track -> :medium end
-         },
-         telemetry_label: [room_id: options.room_id]
+       %{
+         endpoint: %WebRTC{
+           rtc_engine: options.engine_pid,
+           ice_name: options.peer_id,
+           owner: self(),
+           integrated_turn_options: network_options[:integrated_turn_options],
+           integrated_turn_domain: network_options[:integrated_turn_domain],
+           handshake_opts: handshake_options,
+           filter_codecs: filter_codecs,
+           log_metadata: [peer_id: options.peer_id],
+           trace_context: nil,
+           extensions: %{opus: Membrane.RTP.VAD},
+           webrtc_extensions: webrtc_extensions,
+           simulcast_config: %SimulcastConfig{
+             enabled: simulcast?,
+             initial_target_variant: fn _track -> :medium end
+           },
+           telemetry_label: [room_id: options.room_id]
+         }
        }}
     else
       {:error, _reason} = error -> error

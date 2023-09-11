@@ -43,7 +43,13 @@ defmodule JellyfishWeb.ComponentControllerTest do
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
 
       assert response =
-               %{"data" => %{"id" => id, "type" => "hls", "metadata" => %{"playable" => false}}} =
+               %{
+                 "data" => %{
+                   "id" => id,
+                   "type" => "hls",
+                   "metadata" => %{"playable" => false, "lowLatency" => false}
+                 }
+               } =
                json_response(conn, :created)
 
       assert_response_schema(response, "ComponentDetailsResponse", @schema)
@@ -62,6 +68,37 @@ defmodule JellyfishWeb.ComponentControllerTest do
 
       assert json_response(conn, :bad_request)["errors"] ==
                "Reached components limit in room #{room_id}"
+
+      room_conn = delete(conn, ~p"/room/#{room_id}")
+      assert response(room_conn, :no_content)
+    end
+
+    test "renders component with ll-hls enabled", %{conn: conn} do
+      room_conn = post(conn, ~p"/room", videoCodec: "h264")
+      assert %{"id" => room_id} = json_response(room_conn, :created)["data"]["room"]
+
+      conn = post(conn, ~p"/room/#{room_id}/component", type: "hls", options: %{lowLatency: true})
+
+      assert response =
+               %{
+                 "data" => %{
+                   "id" => id,
+                   "type" => "hls",
+                   "metadata" => %{"playable" => false, "lowLatency" => true}
+                 }
+               } =
+               json_response(conn, :created)
+
+      assert_response_schema(response, "ComponentDetailsResponse", @schema)
+
+      conn = get(conn, ~p"/room/#{room_id}")
+
+      assert %{
+               "id" => ^room_id,
+               "components" => [
+                 %{"id" => ^id, "type" => "hls"}
+               ]
+             } = json_response(conn, :ok)["data"]
 
       room_conn = delete(conn, ~p"/room/#{room_id}")
       assert response(room_conn, :no_content)
@@ -90,7 +127,13 @@ defmodule JellyfishWeb.ComponentControllerTest do
         )
 
       assert response =
-               %{"data" => %{"id" => id, "type" => "rtsp", "metadata" => %{}}} =
+               %{
+                 "data" => %{
+                   "id" => id,
+                   "type" => "rtsp",
+                   "metadata" => %{"sourceUri" => @source_uri}
+                 }
+               } =
                json_response(conn, :created)
 
       assert_response_schema(response, "ComponentDetailsResponse", @schema)

@@ -4,6 +4,26 @@ defmodule JellyfishWeb.ApiSpec.Component.RTSP do
   require OpenApiSpex
   alias OpenApiSpex.Schema
 
+  defmodule Metadata do
+    @moduledoc false
+
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "ComponentMetadataRTSP",
+      description: "Metadata specific to the RTSP component",
+      type: :object,
+      properties: %{
+        sourceUri: %Schema{
+          type: :string,
+          description: "URI of RTSP source stream",
+          example: "rtsp://localhost:554/stream"
+        }
+      },
+      required: [:sourceUri]
+    })
+  end
+
   OpenApiSpex.schema(%{
     title: "ComponentOptionsRTSP",
     description: "Options specific to the RTSP component",

@@ -44,9 +44,10 @@ defmodule JellyfishWeb.ApiSpec.Component do
       title: "ComponentMetadata",
       description: "Component-specific metadata",
       type: :object,
-      properties: %{
-        playable: %Schema{type: :boolean}
-      }
+      oneOf: [
+        HLS.Metadata,
+        RTSP.Metadata
+      ]
     })
   end
 
