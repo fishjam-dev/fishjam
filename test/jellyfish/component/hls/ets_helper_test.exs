@@ -15,9 +15,6 @@ defmodule Jellyfish.Component.HLS.EtsHelperTest do
   @recent_partial {1, 1}
   @delta_recent_partial {2, 2}
 
-  @offset 0
-  @wrong_offset 1
-
   @rooms_to_tables :rooms_to_tables
 
   setup do
@@ -32,7 +29,7 @@ defmodule Jellyfish.Component.HLS.EtsHelperTest do
 
   test "rooms managment" do
     room_id = UUID.uuid4()
-    assert {:error, :room_not_found} == EtsHelper.get_partial(room_id, @partial_name, @offset)
+    assert {:error, :room_not_found} == EtsHelper.get_partial(room_id, @partial_name)
 
     {:ok, table} = EtsHelper.add_room(room_id)
     assert {:error, :already_exists} == EtsHelper.add_room(room_id)
@@ -46,21 +43,18 @@ defmodule Jellyfish.Component.HLS.EtsHelperTest do
   end
 
   test "partials managment", %{room_id: room_id, table: table} do
-    assert {:error, :file_not_found} == EtsHelper.get_partial(room_id, @partial_name, @offset)
+    assert {:error, :file_not_found} == EtsHelper.get_partial(room_id, @partial_name)
 
-    EtsHelper.add_partial(table, @partial, @partial_name, @offset)
+    EtsHelper.add_partial(table, @partial, @partial_name)
 
-    assert {:ok, @partial} == EtsHelper.get_partial(room_id, @partial_name, @offset)
-
-    assert {:error, :file_not_found} ==
-             EtsHelper.get_partial(room_id, @partial_name, @wrong_offset)
+    assert {:ok, @partial} == EtsHelper.get_partial(room_id, @partial_name)
 
     assert {:error, :file_not_found} ==
-             EtsHelper.get_partial(room_id, @wrong_partial_name, @offset)
+             EtsHelper.get_partial(room_id, @wrong_partial_name)
 
-    EtsHelper.delete_partial(table, @partial_name, @offset)
+    EtsHelper.delete_partial(table, @partial_name)
 
-    assert {:error, :file_not_found} == EtsHelper.get_partial(room_id, @partial_name, @offset)
+    assert {:error, :file_not_found} == EtsHelper.get_partial(room_id, @partial_name)
   end
 
   test "manifests managment", %{room_id: room_id, table: table} do

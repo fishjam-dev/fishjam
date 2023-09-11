@@ -11,6 +11,7 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   @enforce_keys [:room_id, :room_pid]
   defstruct @enforce_keys ++
               [
+                preload_hints: [],
                 manifest: %{waiting_pids: %{}, last_partial: nil},
                 delta_manifest: %{waiting_pids: %{}, last_partial: nil}
               ]
@@ -24,7 +25,8 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
           room_id: Room.id(),
           room_pid: pid(),
           manifest: status(),
-          delta_manifest: status()
+          delta_manifest: status(),
+          preload_hints: [pid()]
         }
 
   ###
@@ -45,10 +47,24 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   @doc """
   Handles ll-hls partial requests
   """
-  @spec handle_partial_request(Room.id(), String.t(), non_neg_integer()) ::
+  @spec handle_partial_request(Room.id(), String.t()) ::
           {:ok, binary()} | {:error, atom()}
-  def handle_partial_request(room_id, filename, offset) do
-    EtsHelper.get_partial(room_id, filename, offset)
+  def handle_partial_request(room_id, filename) do
+    with {:ok, partial} <- EtsHelper.get_partial(room_id, filename) do
+      {:ok, partial}
+    else
+      {:error, :file_not_found} ->
+        case is_preload_hint(room_id, filename) do
+          {:ok, true} ->
+            wait_for_partial_ready(room_id, filename)
+
+          _other ->
+            {:error, :file_not_found}
+        end
+
+      error ->
+        error
+    end
   end
 
   @doc """
@@ -117,9 +133,17 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   end
 
   @impl true
-  def handle_cast({:update_recent_partial, last_partial, manifest}, state) do
+  def handle_cast(
+        {:update_recent_partial, last_partial, manifest},
+        %{preload_hints: preload_hints} = state
+      ) do
     status = Map.fetch!(state, manifest)
-    state = Map.put(state, manifest, update_status(status, last_partial))
+
+    state =
+      state
+      |> Map.put(manifest, update_and_notify_manifest_ready(status, last_partial))
+      |> Map.put(:preload_hints, update_and_notify_preload_hint_ready(preload_hints))
+
     {:noreply, state}
   end
 
@@ -132,6 +156,17 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
       |> then(&Map.put(state, manifest, &1))
 
     {:noreply, state}
+  end
+
+  @impl true
+  def handle_cast({:preload_hint, room_id, filename, from}, state) do
+    with {:ok, _partial} <- EtsHelper.get_partial(room_id, filename) do
+      send(from, :preload_hint_ready)
+      {:noreply, state}
+    else
+      {:error, _reason} ->
+        {:noreply, %{state | preload_hints: [from | state.preload_hints]}}
+    end
   end
 
   @impl true
@@ -162,13 +197,28 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
     end
   end
 
-  defp update_status(status, last_partial) do
+  defp wait_for_partial_ready(room_id, filename) do
+    GenServer.cast(registry_id(room_id), {:preload_hint, room_id, filename, self()})
+
+    receive do
+      :preload_hint_ready ->
+        EtsHelper.get_partial(room_id, filename)
+    end
+  end
+
+  defp update_and_notify_preload_hint_ready(preload_hints) do
+    send_preload_hint_ready(preload_hints)
+    []
+  end
+
+  defp update_and_notify_manifest_ready(status, last_partial) do
     {waiting_pids, status} =
       status
       |> Map.put(:last_partial, last_partial)
       |> pop_in([:waiting_pids, last_partial])
 
     send_partial_ready(waiting_pids)
+
     status
   end
 
@@ -186,12 +236,48 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
     end
   end
 
+  defp is_preload_hint(room_id, filename) do
+    partial_sn = get_partial_sn(filename)
+
+    with {:ok, recent_partial_sn} <- EtsHelper.get_recent_partial(room_id) do
+      {:ok, check_if_preload_hint(partial_sn, recent_partial_sn)}
+    end
+  end
+
+  defp check_if_preload_hint({segment_sn, partial_sn}, {recent_segment_sn, recent_partial_sn}) do
+    cond do
+      segment_sn - recent_segment_sn == 1 and partial_sn == 0 -> true
+      segment_sn == recent_segment_sn and (partial_sn - recent_partial_sn) in [0, 1] -> true
+      true -> false
+    end
+  end
+
+  defp check_if_preload_hint(_partial_sn, _recent_partial_sn) do
+    require Logger
+
+    Logger.warning("Unable to parse partial segment filename")
+    false
+  end
+
+  # Filename example: muxed_segment_32_g2QABXZpZGVv_5_part.m4s
+  defp get_partial_sn(filename) do
+    filename
+    |> String.split("_")
+    |> Enum.filter(fn s -> match?({_integer, ""}, Integer.parse(s)) end)
+    |> Enum.map(fn sn -> String.to_integer(sn) end)
+    |> List.to_tuple()
+  end
+
   defp registry_id(room_id), do: {:via, Registry, {Jellyfish.RequestHandlerRegistry, room_id}}
 
   defp send_partial_ready(nil), do: nil
 
   defp send_partial_ready(waiting_pids) do
     Enum.each(waiting_pids, fn pid -> send(pid, :manifest_ready) end)
+  end
+
+  defp send_preload_hint_ready(waiting_pids) do
+    Enum.each(waiting_pids, fn pid -> send(pid, :preload_hint_ready) end)
   end
 
   defp is_partial_ready(_partial, nil) do

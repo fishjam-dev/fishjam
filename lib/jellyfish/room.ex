@@ -347,7 +347,7 @@ defmodule Jellyfish.Room do
 
     Event.broadcast(:server_notification, {:hls_playable, state.id, endpoint_id})
 
-    state = update_in(state, [:components, endpoint_id], &Map.put(&1, :playable, true))
+    state = update_in(state, [:components, endpoint_id, :metadata], &Map.put(&1, :playable, true))
     {:noreply, state}
   end
 

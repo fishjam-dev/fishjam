@@ -24,7 +24,12 @@ defmodule Jellyfish.Component.HLS.EtsHelper do
     else
       # Ets is public because ll-storage can't delete table.
       # If we change that storage can be protected
-      table = :ets.new(:hls_storage, [:public])
+      #
+      # Read concurrency can cause performance degradation when the common access pattern
+      # is a few read operations interleaved with a few write operations repeatedly.
+      # When used on a larger scale it should be carefully tested
+      table = :ets.new(:hls_storage, [:public, read_concurrency: true])
+
       :ets.insert(@rooms_to_tables, {room_id, table})
       {:ok, table}
     end
@@ -67,27 +72,24 @@ defmodule Jellyfish.Component.HLS.EtsHelper do
     :ets.insert(table, {@delta_recent_partial_key, partial})
   end
 
-  @spec add_partial(:ets.table(), binary(), String.t(), non_neg_integer()) :: true
-  def add_partial(table, partial, filename, offset) do
-    key = generate_partial_key(filename, offset)
-    :ets.insert(table, {key, partial})
+  @spec add_partial(:ets.table(), binary(), String.t()) :: true
+  def add_partial(table, partial, filename) do
+    :ets.insert(table, {filename, partial})
   end
 
-  @spec delete_partial(:ets.table(), String.t(), non_neg_integer()) :: true
-  def delete_partial(table, filename, offset) do
-    key = generate_partial_key(filename, offset)
-    :ets.delete(table, key)
+  @spec delete_partial(:ets.table(), String.t()) :: true
+  def delete_partial(table, filename) do
+    :ets.delete(table, filename)
   end
 
   ###
   ### ETS GETTERS
   ###
 
-  @spec get_partial(Room.id(), String.t(), non_neg_integer()) ::
+  @spec get_partial(Room.id(), String.t()) ::
           {:ok, binary()} | {:error, atom()}
-  def get_partial(room_id, filename, offset) do
-    key = generate_partial_key(filename, offset)
-    get_from_ets(room_id, key)
+  def get_partial(room_id, filename) do
+    get_from_ets(room_id, filename)
   end
 
   @spec get_recent_partial(Room.id()) ::
@@ -140,6 +142,4 @@ defmodule Jellyfish.Component.HLS.EtsHelper do
   defp room_exists?(room_id) do
     :ets.lookup(@rooms_to_tables, room_id) != []
   end
-
-  defp generate_partial_key(filename, offset), do: "#{filename}_#{offset}"
 end

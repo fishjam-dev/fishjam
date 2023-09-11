@@ -77,14 +77,9 @@ defmodule JellyfishWeb.HLSController do
   end
 
   def index(conn, %{"room_id" => room_id, "filename" => filename}) do
-    offset =
-      conn
-      |> get_req_header("range")
-      |> get_offset()
-
     result =
-      if String.ends_with?(filename, ".m4s") and offset != :undefined do
-        RequestHandler.handle_partial_request(room_id, filename, offset)
+      if String.ends_with?(filename, "_part.m4s") do
+        RequestHandler.handle_partial_request(room_id, filename)
       else
         RequestHandler.handle_file_request(room_id, filename)
       end
@@ -100,23 +95,6 @@ defmodule JellyfishWeb.HLSController do
 
       {:error, _reason} ->
         {:error, :not_found, "File not found"}
-    end
-  end
-
-  # Every partial request comes with a byte range which represents where specifically in the file partial is located.
-  # Example: "bytes=100-200" 100-200, represents the scope in which partial is located in the file.
-  defp get_offset(raw_range) do
-    case raw_range do
-      [] ->
-        :undefined
-
-      [raw_range] ->
-        "bytes=" <> range = raw_range
-
-        range
-        |> String.split("-")
-        |> Enum.map(&String.to_integer(&1))
-        |> List.first()
     end
   end
 end
