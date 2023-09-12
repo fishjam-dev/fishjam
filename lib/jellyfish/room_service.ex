@@ -73,7 +73,7 @@ defmodule Jellyfish.RoomService do
       end)
 
     unless Enum.empty?(failed_rpcs) do
-      Logger.warn("These RPC calls fail: #{inspect(failed_rpcs)}")
+      Logger.warning("These RPC calls fail: #{inspect(failed_rpcs)}")
     end
 
     %{node: min_node} =
