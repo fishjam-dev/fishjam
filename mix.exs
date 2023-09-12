@@ -71,6 +71,7 @@ defmodule Jellyfish.MixProject do
       {:membrane_rtc_engine_rtsp,
        github: "jellyfish-dev/membrane_rtc_engine", sparse: "rtsp", override: true},
       {:membrane_ice_plugin, "~> 0.16.0"},
+      {:membrane_rtp_plugin, github: "membraneframework/membrane_rtp_plugin", override: true},
       {:membrane_telemetry_metrics, "~> 0.1.0"},
 
       # HLS endpoints deps
