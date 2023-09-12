@@ -76,19 +76,7 @@ defmodule Jellyfish.RoomService do
       Logger.warning("These RPC calls fail: #{inspect(failed_rpcs)}")
     end
 
-    %{node: min_node} =
-      Enum.min(
-        node_resources,
-        fn
-          %{forwarded_tracks_number: forwarded_tracks, rooms_number: rooms_num1},
-          %{forwarded_tracks_number: forwarded_tracks, rooms_number: rooms_num2} ->
-            rooms_num1 < rooms_num2
-
-          %{forwarded_tracks_number: forwarded_tracks1},
-          %{forwarded_tracks_number: forwarded_tracks2} ->
-            forwarded_tracks1 < forwarded_tracks2
-        end
-      )
+    min_node = find_best_node(node_resources)
 
     if Enum.count(node_resources) > 1 do
       Logger.info("Node with least used resources is #{inspect(min_node)}")
@@ -194,6 +182,24 @@ defmodule Jellyfish.RoomService do
     Event.broadcast(:server_notification, {:room_crashed, room_id})
 
     {:noreply, state}
+  end
+
+  defp find_best_node(node_resources) do
+    %{node: min_node} =
+      Enum.min(
+        node_resources,
+        fn
+          %{forwarded_tracks_number: forwarded_tracks, rooms_number: rooms_num1},
+          %{forwarded_tracks_number: forwarded_tracks, rooms_number: rooms_num2} ->
+            rooms_num1 < rooms_num2
+
+          %{forwarded_tracks_number: forwarded_tracks1},
+          %{forwarded_tracks_number: forwarded_tracks2} ->
+            forwarded_tracks1 < forwarded_tracks2
+        end
+      )
+
+    min_node
   end
 
   defp get_rooms_ids() do

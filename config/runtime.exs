@@ -118,11 +118,6 @@ config :jellyfish,
 
 config :opentelemetry, traces_exporter: :none
 
-host = System.get_env("VIRTUAL_HOST") || "example.com"
-port = String.to_integer(System.get_env("PORT") || "4000")
-
-config :jellyfish, address: "#{host}:#{port}"
-
 if prod? do
   token =
     System.fetch_env!("SERVER_API_TOKEN") ||

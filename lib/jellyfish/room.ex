@@ -73,7 +73,7 @@ defmodule Jellyfish.Room do
     end
   end
 
-  @spec get_num_forwarded_tracks(id()) :: :ok
+  @spec get_num_forwarded_tracks(id()) :: integer()
   def get_num_forwarded_tracks(room_id) do
     GenServer.call(registry_id(room_id), :get_num_forwarded_tracks)
   end
@@ -278,9 +278,8 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_call(:get_num_forwarded_tracks, _from, state) do
-    # reply = Engine.get_num_forwarded_tracks(state.engine_pid)
-    reply = 0
-    {:reply, reply, state}
+    forwarded_tracks = Engine.get_num_forwarded_tracks(state.engine_pid)
+    {:reply, forwarded_tracks, state}
   end
 
   @impl true
