@@ -88,6 +88,8 @@ defmodule Jellyfish.MixProject do
       # Test deps
       {:websockex, "~> 0.4.3", only: [:test, :ci], runtime: false},
       {:excoveralls, "~> 0.15.0", only: :test, runtime: false},
+
+      # Load balancing tests
       {:divo, "~> 1.3.1", only: [:test, :ci]}
     ]
   end
@@ -98,7 +100,7 @@ defmodule Jellyfish.MixProject do
       "api.spec": &generate_api_spec/1,
       test: ["test --exclude cluster"],
       "test.cluster": ["test --only cluster"],
-      "test.cluster.ci": ["cmd docker compose run test; docker compose stop"]
+      "test.cluster.ci": ["cmd docker compose run test; docker compose down"]
     ]
   end
 

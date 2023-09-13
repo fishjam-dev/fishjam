@@ -49,8 +49,7 @@ defmodule Jellyfish.RoomService do
 
   @spec list_rooms() :: [Room.t()]
   def list_rooms() do
-    Jellyfish.RoomRegistry
-    |> Registry.select([{{:"$1", :_, :_}, [], [:"$1"]}])
+    get_rooms_ids()
     |> Enum.map(&Room.get_state(&1))
     |> Enum.reject(&(&1 == nil))
   end
@@ -67,8 +66,17 @@ defmodule Jellyfish.RoomService do
       )
     end
 
-    {min_node, _room_size} =
-      Enum.min_by(node_resources, fn {_node_name, room_num} -> room_num end)
+    {failed_rpcs, node_resources} =
+      Enum.split_with(node_resources, fn
+        {:badrpc, _info} -> true
+        _other -> false
+      end)
+
+    unless Enum.empty?(failed_rpcs) do
+      Logger.warning("These RPC calls fail: #{inspect(failed_rpcs)}")
+    end
+
+    min_node = find_best_node(node_resources)
 
     if Enum.count(node_resources) > 1 do
       Logger.info("Node with least used resources is #{inspect(min_node)}")
@@ -83,9 +91,23 @@ defmodule Jellyfish.RoomService do
     GenServer.call(__MODULE__, {:delete_room, room_id})
   end
 
-  @spec get_resource_usage() :: {Node.t(), integer()}
+  @spec get_resource_usage() :: %{
+          node: Node.t(),
+          forwarded_tracks_number: integer(),
+          rooms_number: integer()
+        }
   def get_resource_usage() do
-    list_rooms() |> Enum.count() |> then(&{Node.self(), &1})
+    room_ids = get_rooms_ids()
+
+    room_ids
+    |> Enum.map(fn room_id ->
+      Task.async(fn -> Room.get_num_forwarded_tracks(room_id) end)
+    end)
+    |> Task.await_many()
+    |> Enum.sum()
+    |> then(
+      &%{node: Node.self(), forwarded_tracks_number: &1, rooms_number: Enum.count(room_ids)}
+    )
   end
 
   @impl true
@@ -140,11 +162,6 @@ defmodule Jellyfish.RoomService do
   end
 
   @impl true
-  def handle_info({:resources, _node_name, _resources}, state) do
-    {:noreply, state}
-  end
-
-  @impl true
   def handle_info({:DOWN, _ref, :process, pid, :normal}, state) do
     {room_id, state} = pop_in(state, [:rooms, pid])
 
@@ -165,6 +182,29 @@ defmodule Jellyfish.RoomService do
     Event.broadcast(:server_notification, {:room_crashed, room_id})
 
     {:noreply, state}
+  end
+
+  defp find_best_node(node_resources) do
+    %{node: min_node} =
+      Enum.min(
+        node_resources,
+        fn
+          %{forwarded_tracks_number: forwarded_tracks, rooms_number: rooms_num1},
+          %{forwarded_tracks_number: forwarded_tracks, rooms_number: rooms_num2} ->
+            rooms_num1 < rooms_num2
+
+          %{forwarded_tracks_number: forwarded_tracks1},
+          %{forwarded_tracks_number: forwarded_tracks2} ->
+            forwarded_tracks1 < forwarded_tracks2
+        end
+      )
+
+    min_node
+  end
+
+  defp get_rooms_ids() do
+    Jellyfish.RoomRegistry
+    |> Registry.select([{{:"$1", :_, :_}, [], [:"$1"]}])
   end
 
   defp remove_room(room_id) do

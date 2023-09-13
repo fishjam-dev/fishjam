@@ -73,6 +73,11 @@ defmodule Jellyfish.Room do
     end
   end
 
+  @spec get_num_forwarded_tracks(id()) :: integer()
+  def get_num_forwarded_tracks(room_id) do
+    GenServer.call(registry_id(room_id), :get_num_forwarded_tracks)
+  end
+
   @spec add_peer(id(), Peer.peer(), map()) ::
           {:ok, Peer.t()} | :error | {:error, :reached_peers_limit}
   def add_peer(room_id, peer_type, options \\ %{}) do
@@ -269,6 +274,12 @@ defmodule Jellyfish.Room do
       end
 
     {:reply, reply, state}
+  end
+
+  @impl true
+  def handle_call(:get_num_forwarded_tracks, _from, state) do
+    forwarded_tracks = Engine.get_num_forwarded_tracks(state.engine_pid)
+    {:reply, forwarded_tracks, state}
   end
 
   @impl true
