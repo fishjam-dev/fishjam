@@ -278,8 +278,16 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_call(:get_num_forwarded_tracks, _from, state) do
-    forwarded_tracks = Engine.get_num_forwarded_tracks(state.engine_pid)
-    {:reply, forwarded_tracks, state}
+    pid = state.engine_pid
+
+    try do
+      forwarded_tracks = Engine.get_num_forwarded_tracks(pid)
+      {:reply, forwarded_tracks, state}
+    catch
+      :exit, {:noproc, {GenServer, :call, [^pid, :get_num_forwarded_tracks, _timeout]}} ->
+        Logger.warning("Call to room #{state.id} failed")
+        {:reply, 0, state}
+    end
   end
 
   @impl true
