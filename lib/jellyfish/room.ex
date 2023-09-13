@@ -130,10 +130,9 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_info({:room_created, node}, %__MODULE__{id: id, nodes: nodes} = state) do
-    cond do
-      node != Node.self() ->
-        Phoenix.PubSub.broadcast(Jellyfish.PubSub, id, {:room_exists, Node.self()})
-        Logger.info("#{node} created multipart room (room_id=#{id})")
+    if node != Node.self() do
+      Phoenix.PubSub.direct_broadcast(node, Jellyfish.PubSub, id, {:room_exists, Node.self()})
+      Logger.info("#{node} created multipart room (room_id=#{id})")
     end
 
     {:noreply, state}
