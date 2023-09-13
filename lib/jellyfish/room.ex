@@ -118,87 +118,13 @@ defmodule Jellyfish.Room do
 
   @impl true
   def init([id, max_peers, video_codec]) do
-    node = Node.self()
-    state = new(id, max_peers, video_codec, node)
+    state = new(id, max_peers, video_codec)
     Phoenix.PubSub.subscribe(Jellyfish.PubSub, id)
-    Phoenix.PubSub.broadcast(Jellyfish.PubSub, id, {:room_created, node})
+    Phoenix.PubSub.broadcast(Jellyfish.PubSub, id, {:room_created, Node.self()})
     Logger.metadata(room_id: id)
     Logger.info("Initialize room")
 
     {:ok, state}
-  end
-
-  @impl true
-  def handle_info({:room_created, node}, %__MODULE__{id: id, nodes: nodes} = state) do
-    if node != Node.self() do
-      Phoenix.PubSub.direct_broadcast(node, Jellyfish.PubSub, id, {:room_exists, Node.self()})
-      Logger.info("#{node} created multipart room (room_id=#{id})")
-    end
-
-    {:noreply, state}
-  end
-
-  @impl true
-  def handle_info({:room_exists, node}, %__MODULE__{nodes: nodes} = state) do
-    if node != Node.self() do
-      Logger.info("Room #{id} exists on node #{node}")
-
-      endpoint_id = UUID.uuid4()
-
-      Engine.add_endpoint(
-        state.engine_pid,
-        %Remote{rtc_engine: state.engine_pid, owner: self()},
-        id: endpoint_id
-      )
-
-      {:noreply, put_in(state, [:nodes, endpoint_id], node)}
-    else
-      {:noreply, state}
-    end
-  end
-
-  @impl true
-  def handle_info(%Message.EndpointAdded{}, state), do: {:noreply, state}
-
-  @impl true
-  def handle_info(
-        %Message.EndpointMessage{
-          endpoint_id: endpoint_id,
-          endpoint_type: Remote,
-          message: {:link_proposal, %Remote.LinkProposal{} = link_proposal}
-        },
-        %__MODULE__{id: room_id} = state
-      ) do
-    case get_in(state, [:nodes, endpoint_id]) do
-      nil ->
-        Logger.warning("Wrong Remote Endpoint")
-
-      node ->
-        Phoenix.PubSub.direct_broadcast(
-          node,
-          Jellyfish.PubSub,
-          room_id,
-          {:create_remote_endpoint, link_proposal, Node.self()}
-        )
-    end
-
-    {:noreply, state}
-  end
-
-  @impl true
-  def handle_info(
-        {:create_remote_endpoint, config, node},
-        %__MODULE__{engine_pid: engine_pid} = state
-      ) do
-    endpoint_id = UUID.uuid4()
-
-    Engine.add_endpoint(
-      state.engine_pid,
-      %Remote{rtc_engine: state.engine_pid, owner: self(), connection_setup: config},
-      id: endpoint_id
-    )
-
-    {:noreply, put_in(state, [:nodes, endpoint_id], node)}
   end
 
   @impl true
@@ -374,6 +300,79 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
+  def handle_info({:room_created, node}, %__MODULE__{id: id} = state) do
+    if node != Node.self() do
+      Phoenix.PubSub.direct_broadcast(node, Jellyfish.PubSub, id, {:room_exists, Node.self()})
+      Logger.info("#{node} created multipart room (room_id=#{id})")
+    end
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({:room_exists, node}, state) do
+    if node != Node.self() do
+      Logger.info("Room #{state.id} exists on node #{node}")
+
+      endpoint_id = UUID.uuid4()
+
+      Engine.add_endpoint(
+        state.engine_pid,
+        %Remote{rtc_engine: state.engine_pid, owner: self()},
+        id: endpoint_id
+      )
+
+      {:noreply, put_in(state, [:nodes, endpoint_id], node)}
+    else
+      {:noreply, state}
+    end
+  end
+
+  @impl true
+  def handle_info(%Message.EndpointAdded{}, state), do: {:noreply, state}
+
+  @impl true
+  def handle_info(
+        %Message.EndpointMessage{
+          endpoint_id: endpoint_id,
+          endpoint_type: Remote,
+          message: {:link_proposal, %Remote.LinkProposal{} = link_proposal}
+        },
+        %__MODULE__{id: room_id} = state
+      ) do
+    case get_in(state, [:nodes, endpoint_id]) do
+      nil ->
+        Logger.warning("Wrong Remote Endpoint")
+
+      node ->
+        Phoenix.PubSub.direct_broadcast(
+          node,
+          Jellyfish.PubSub,
+          room_id,
+          {:create_remote_endpoint, link_proposal, Node.self()}
+        )
+    end
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(
+        {:create_remote_endpoint, config, node},
+        %__MODULE__{engine_pid: engine_pid} = state
+      ) do
+    endpoint_id = UUID.uuid4()
+
+    Engine.add_endpoint(
+      engine_pid,
+      %Remote{rtc_engine: engine_pid, owner: self(), link_proposal: config},
+      id: endpoint_id
+    )
+
+    {:noreply, put_in(state, [:nodes, endpoint_id], node)}
+  end
+
+  @impl true
   def handle_info(%Message.EndpointCrashed{endpoint_id: endpoint_id}, state) do
     Logger.error("RTC Engine endpoint #{inspect(endpoint_id)} crashed")
 
@@ -433,7 +432,7 @@ defmodule Jellyfish.Room do
     {:noreply, state}
   end
 
-  defp new(id, max_peers, video_codec, node) do
+  defp new(id, max_peers, video_codec) do
     rtc_engine_options = [
       id: id
     ]
