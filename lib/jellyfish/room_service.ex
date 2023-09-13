@@ -55,27 +55,39 @@ defmodule Jellyfish.RoomService do
     |> Enum.reject(&(&1 == nil))
   end
 
-  @spec create_room(Room.max_peers(), String.t()) ::
+  @spec create_room(Room.max_peers(), String.t(), Room.id() | nil) ::
           {:ok, Room.t(), String.t()} | {:error, :invalid_max_peers | :invalid_video_codec}
-  def create_room(max_peers, video_codec) do
-    {node_resources, failed_nodes} =
-      :rpc.multicall(Jellyfish.RoomService, :get_resource_usage, [])
 
-    if Enum.count(failed_nodes) > 0 do
-      Logger.warn(
-        "Couldn't get resource usage of the following nodes. Reason: nodes don't exist. Nodes: #{inspect(failed_nodes)}"
-      )
-    end
+  # NOTICE:
+  # #########
+  # for purpose of testing linking rooms between jellyfishes in cluster
+  # we need to manually handle which client we want to create room on.
+  # So a code below, that creates room on node chosen by resource usage is temorary commented
+  # #########
 
-    {min_node, _room_size} =
-      Enum.min_by(node_resources, fn {_node_name, room_num} -> room_num end)
+  # def create_room(max_peers, video_codec, id \\ nil) do
+  #   {node_resources, failed_nodes} =
+  #     :rpc.multicall(Jellyfish.RoomService, :get_resource_usage, [])
 
-    if Enum.count(node_resources) > 1 do
-      Logger.info("Node with least used resources is #{inspect(min_node)}")
-      GenServer.call({__MODULE__, min_node}, {:create_room, max_peers, video_codec})
-    else
-      GenServer.call(__MODULE__, {:create_room, max_peers, video_codec})
-    end
+  #   if Enum.count(failed_nodes) > 0 do
+  #     Logger.warn(
+  #       "Couldn't get resource usage of the following nodes. Reason: nodes don't exist. Nodes: #{inspect(failed_nodes)}"
+  #     )
+  #   end
+
+  #   {min_node, _room_size} =
+  #     Enum.min_by(node_resources, fn {_node_name, room_num} -> room_num end)
+
+  #   if Enum.count(node_resources) > 1 do
+  #     Logger.info("Node with least used resources is #{inspect(min_node)}")
+  #     GenServer.call({__MODULE__, min_node}, {:create_room, max_peers, video_codec, id})
+  #   else
+  #     GenServer.call(__MODULE__, {:create_room, max_peers, video_codec, id})
+  #   end
+  # end
+
+  def create_room(max_peers, video_codec, id \\ nil) do
+    GenServer.call(__MODULE__, {:create_room, max_peers, video_codec, id})
   end
 
   @spec delete_room(Room.id()) :: :ok | {:error, :room_not_found}
@@ -100,11 +112,10 @@ defmodule Jellyfish.RoomService do
   end
 
   @impl true
-  def handle_call({:create_room, max_peers, video_codec}, _from, state) do
+  def handle_call({:create_room, max_peers, video_codec, id}, _from, state) do
     with :ok <- validate_max_peers(max_peers),
-         {:ok, video_codec} <- codec_to_atom(video_codec) do
-      {:ok, room_pid, room_id} = Room.start(max_peers, video_codec)
-
+         {:ok, video_codec} <- codec_to_atom(video_codec),
+         {:ok, room_pid, room_id} <- Room.start(max_peers, video_codec, id) do
       room = Room.get_state(room_id)
       Process.monitor(room_pid)
 
@@ -121,6 +132,9 @@ defmodule Jellyfish.RoomService do
 
       {:error, :video_codec} ->
         {:reply, {:error, :invalid_video_codec}, state}
+
+      {:error, {:already_started, _pid}} ->
+        {:reply, {:error, :already_started}, state}
     end
   end
 

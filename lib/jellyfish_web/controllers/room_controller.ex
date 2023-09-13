@@ -69,7 +69,9 @@ defmodule JellyfishWeb.RoomController do
   def create(conn, params) do
     with max_peers <- Map.get(params, "maxPeers"),
          video_codec <- Map.get(params, "videoCodec"),
-         {:ok, room, jellyfish_address} <- RoomService.create_room(max_peers, video_codec) do
+         room_id <- Map.get(params, "id"),
+         {:ok, room, jellyfish_address} <-
+           RoomService.create_room(max_peers, video_codec, room_id) do
       conn
       |> put_resp_content_type("application/json")
       |> put_status(:created)
@@ -80,6 +82,9 @@ defmodule JellyfishWeb.RoomController do
 
       {:error, :invalid_video_codec} ->
         {:error, :bad_request, "videoCodec must be 'h264' or 'vp8'"}
+
+      {:error, :already_started} ->
+        {:error, :bad_request, "room already started on server"}
     end
   end
 

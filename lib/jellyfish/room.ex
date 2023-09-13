@@ -13,6 +13,7 @@ defmodule Jellyfish.Room do
   alias Jellyfish.Peer
   alias Membrane.ICE.TURNManager
   alias Membrane.RTC.Engine
+  alias Membrane.RTC.Engine.Endpoint.Remote
   alias Membrane.RTC.Engine.Message
 
   @enforce_keys [
@@ -21,7 +22,7 @@ defmodule Jellyfish.Room do
     :engine_pid,
     :network_options
   ]
-  defstruct @enforce_keys ++ [components: %{}, peers: %{}]
+  defstruct @enforce_keys ++ [components: %{}, peers: %{}, nodes: %{}]
 
   @type id :: String.t()
   @type max_peers :: non_neg_integer() | nil
@@ -45,12 +46,13 @@ defmodule Jellyfish.Room do
           components: %{Component.id() => Component.t()},
           peers: %{Peer.id() => Peer.t()},
           engine_pid: pid(),
-          network_options: map()
+          network_options: map(),
+          nodes: %{binary() => node()}
         }
 
-  @spec start(max_peers(), video_codec()) :: {:ok, pid(), id()}
-  def start(max_peers, video_codec) do
-    id = UUID.uuid4()
+  @spec start(max_peers(), video_codec(), id() | nil) :: {:ok, pid(), id()}
+  def start(max_peers, video_codec, id \\ nil) do
+    id = id || UUID.uuid4()
 
     {:ok, pid} = GenServer.start(__MODULE__, [id, max_peers, video_codec], name: registry_id(id))
 
@@ -116,11 +118,88 @@ defmodule Jellyfish.Room do
 
   @impl true
   def init([id, max_peers, video_codec]) do
-    state = new(id, max_peers, video_codec)
+    node = Node.self()
+    state = new(id, max_peers, video_codec, node)
+    Phoenix.PubSub.subscribe(Jellyfish.PubSub, id)
+    Phoenix.PubSub.broadcast(Jellyfish.PubSub, id, {:room_created, node})
     Logger.metadata(room_id: id)
     Logger.info("Initialize room")
 
     {:ok, state}
+  end
+
+  @impl true
+  def handle_info({:room_created, node}, %__MODULE__{id: id, nodes: nodes} = state) do
+    cond do
+      node != Node.self() ->
+        Phoenix.PubSub.broadcast(Jellyfish.PubSub, id, {:room_exists, Node.self()})
+        Logger.info("#{node} created multipart room (room_id=#{id})")
+    end
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({:room_exists, node}, %__MODULE__{nodes: nodes} = state) do
+    if node != Node.self() do
+      Logger.info("Room #{id} exists on node #{node}")
+
+      endpoint_id = UUID.uuid4()
+
+      Engine.add_endpoint(
+        state.engine_pid,
+        %Remote{rtc_engine: state.engine_pid, owner: self()},
+        id: endpoint_id
+      )
+
+      {:noreply, put_in(state, [:nodes, endpoint_id], node)}
+    else
+      {:noreply, state}
+    end
+  end
+
+  @impl true
+  def handle_info(%Message.EndpointAdded{}, state), do: {:noreply, state}
+
+  @impl true
+  def handle_info(
+        %Message.EndpointMessage{
+          endpoint_id: endpoint_id,
+          endpoint_type: Remote,
+          message: {:link_proposal, %Remote.LinkProposal{} = link_proposal}
+        },
+        %__MODULE__{id: room_id} = state
+      ) do
+    case get_in(state, [:nodes, endpoint_id]) do
+      nil ->
+        Logger.warning("Wrong Remote Endpoint")
+
+      node ->
+        Phoenix.PubSub.direct_broadcast(
+          node,
+          Jellyfish.PubSub,
+          room_id,
+          {:create_remote_endpoint, link_proposal, Node.self()}
+        )
+    end
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(
+        {:create_remote_endpoint, config, node},
+        %__MODULE__{engine_pid: engine_pid} = state
+      ) do
+    endpoint_id = UUID.uuid4()
+
+    Engine.add_endpoint(
+      state.engine_pid,
+      %Remote{rtc_engine: state.engine_pid, owner: self(), connection_setup: config},
+      id: endpoint_id
+    )
+
+    {:noreply, put_in(state, [:nodes, endpoint_id], node)}
   end
 
   @impl true
@@ -355,7 +434,7 @@ defmodule Jellyfish.Room do
     {:noreply, state}
   end
 
-  defp new(id, max_peers, video_codec) do
+  defp new(id, max_peers, video_codec, node) do
     rtc_engine_options = [
       id: id
     ]
@@ -388,7 +467,8 @@ defmodule Jellyfish.Room do
       id: id,
       config: %{max_peers: max_peers, video_codec: video_codec},
       engine_pid: pid,
-      network_options: [integrated_turn_options: integrated_turn_options]
+      network_options: [integrated_turn_options: integrated_turn_options],
+      nodes: %{}
     }
   end
 
