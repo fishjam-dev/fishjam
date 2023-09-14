@@ -355,6 +355,12 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
+  def handle_info({:DOWN, _ref, :process, pid, _reason}, %{engine_pid: pid} = state) do
+    Logger.warning("Stop room #{state.id}, because its engine is failed")
+    {:stop, :shutdown, state}
+  end
+
+  @impl true
   def handle_info({:playlist_playable, :audio, _playlist_id}, state), do: {:noreply, state}
 
   @impl true
