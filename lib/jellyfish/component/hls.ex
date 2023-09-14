@@ -8,7 +8,7 @@ defmodule Jellyfish.Component.HLS do
   alias Jellyfish.Component.HLS.{LLStorage, RequestHandler, Storage}
   alias Jellyfish.Room
 
-  alias JellyfishWeb.ApiSpec
+  alias JellyfishWeb.ApiSpec.Component.HLS.Options
 
   alias Membrane.RTC.Engine.Endpoint.HLS
   alias Membrane.RTC.Engine.Endpoint.HLS.{CompositorConfig, HLSConfig, MixerConfig}
@@ -24,7 +24,7 @@ defmodule Jellyfish.Component.HLS do
 
   @impl true
   def config(options) do
-    with {:ok, valid_opts} <- OpenApiSpex.cast_value(options, ApiSpec.Component.HLS.schema()) do
+    with {:ok, valid_opts} <- OpenApiSpex.cast_value(options, Options.schema()) do
       low_latency? = valid_opts.lowLatency
       hls_config = create_hls_config(options.room_id, low_latency?: low_latency?)
 

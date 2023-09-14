@@ -131,7 +131,7 @@ defmodule JellyfishWeb.ComponentControllerTest do
                  "data" => %{
                    "id" => id,
                    "type" => "rtsp",
-                   "metadata" => %{"sourceUri" => @source_uri}
+                   "metadata" => %{}
                  }
                } =
                json_response(conn, :created)

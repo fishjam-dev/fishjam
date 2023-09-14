@@ -8,7 +8,7 @@ defmodule Jellyfish.Component.RTSPTest do
 
   @engine_pid "placeholder"
   @source_uri "rtsp://ef36c6dff23ecc5bbe311cc880d95dc8.se:2137/does/not/matter"
-  @metadata %{source_uri: @source_uri}
+  @metadata %{}
   @jellyfish_opts %{engine_pid: @engine_pid, room_id: "example-room-id"}
 
   test "sourceUri, default opts" do

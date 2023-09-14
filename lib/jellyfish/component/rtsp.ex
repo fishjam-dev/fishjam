@@ -7,15 +7,15 @@ defmodule Jellyfish.Component.RTSP do
 
   alias Membrane.RTC.Engine.Endpoint.RTSP
 
-  alias JellyfishWeb.ApiSpec
+  alias JellyfishWeb.ApiSpec.Component.RTSP.Options
 
-  @type metadata :: %{source_uri: URI.t()}
+  @type metadata :: %{}
 
   @impl true
   def config(%{engine_pid: engine} = options) do
     options = Map.drop(options, [:engine_pid, :room_id])
 
-    with {:ok, valid_opts} <- OpenApiSpex.cast_value(options, ApiSpec.Component.RTSP.schema()) do
+    with {:ok, valid_opts} <- OpenApiSpex.cast_value(options, Options.schema()) do
       endpoint_spec =
         Map.from_struct(valid_opts)
         # OpenApiSpex will remove invalid options, so the following conversion, while ugly, is memory-safe
@@ -26,15 +26,7 @@ defmodule Jellyfish.Component.RTSP do
         |> Map.put(:max_reconnect_attempts, :infinity)
         |> then(&struct(RTSP, &1))
 
-      # Strip login info
-      safe_uri =
-        endpoint_spec.source_uri
-        |> URI.parse()
-        |> Map.put(:authority, nil)
-        |> Map.put(:userinfo, nil)
-        |> URI.to_string()
-
-      {:ok, %{endpoint: endpoint_spec, metadata: %{source_uri: safe_uri}}}
+      {:ok, %{endpoint: endpoint_spec, metadata: %{}}}
     else
       {:error, _reason} = error -> error
     end
