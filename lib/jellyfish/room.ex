@@ -278,16 +278,8 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_call(:get_num_forwarded_tracks, _from, state) do
-    pid = state.engine_pid
-
-    try do
-      forwarded_tracks = Engine.get_num_forwarded_tracks(pid)
-      {:reply, forwarded_tracks, state}
-    catch
-      :exit, {:noproc, {GenServer, :call, [^pid, :get_num_forwarded_tracks, _timeout]}} ->
-        Logger.warning("Call to room #{state.id} failed")
-        {:reply, 0, state}
-    end
+    forwarded_tracks = Engine.get_num_forwarded_tracks(state.engine_pid)
+    {:reply, forwarded_tracks, state}
   end
 
   @impl true
@@ -339,12 +331,6 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def handle_info({:DOWN, _ref, :process, pid, reason}, %{engine_pid: pid} = state) do
-    Logger.warning("Stop room #{state.id}, because its engine is failed")
-    {:stop, reason, state}
-  end
-
-  @impl true
   def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
     state =
       case Enum.find(state.peers, fn {_id, peer} -> peer.socket_pid == pid end) do
@@ -387,9 +373,8 @@ defmodule Jellyfish.Room do
       id: id
     ]
 
-    {:ok, pid} = Engine.start(rtc_engine_options, [])
+    {:ok, pid} = Engine.start_link(rtc_engine_options, [])
     Engine.register(pid, self())
-    Process.monitor(pid)
 
     integrated_turn_options =
       if Application.fetch_env!(:jellyfish, :webrtc_used) do

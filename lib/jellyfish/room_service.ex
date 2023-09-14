@@ -101,7 +101,9 @@ defmodule Jellyfish.RoomService do
 
     room_ids
     |> Enum.map(fn room_id ->
-      Task.async(fn -> Room.get_num_forwarded_tracks(room_id) end)
+      Task.Supervisor.async(Jellyfish.TaskSupervisor, fn ->
+        Room.get_num_forwarded_tracks(room_id)
+      end)
     end)
     |> Task.await_many()
     |> Enum.sum()
