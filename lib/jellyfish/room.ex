@@ -339,6 +339,12 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
+  def handle_info({:DOWN, _ref, :process, pid, reason}, %{engine_pid: pid} = state) do
+    Logger.warning("Stop room #{state.id}, because its engine is failed")
+    {:stop, reason, state}
+  end
+
+  @impl true
   def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
     state =
       case Enum.find(state.peers, fn {_id, peer} -> peer.socket_pid == pid end) do
@@ -352,12 +358,6 @@ defmodule Jellyfish.Room do
       end
 
     {:noreply, state}
-  end
-
-  @impl true
-  def handle_info({:DOWN, _ref, :process, pid, _reason}, %{engine_pid: pid} = state) do
-    Logger.warning("Stop room #{state.id}, because its engine is failed")
-    {:stop, :shutdown, state}
   end
 
   @impl true
