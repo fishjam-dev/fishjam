@@ -75,5 +75,4 @@ defmodule JellyfishWeb.ApiSpec.Component.RTSP do
     },
     required: [:id, :type, :metadata]
   })
-
 end
