@@ -185,7 +185,7 @@ defmodule Jellyfish.RoomService do
   def handle_info({:DOWN, _ref, :process, pid, reason}, state) do
     {room_id, state} = pop_in(state, [:rooms, pid])
 
-    Logger.warning("Process #{room_id} is down with reason: #{inspect(reason)}")
+    Logger.warning("Process #{room_id} is down with reason: #{reason}")
 
     Phoenix.PubSub.broadcast(Jellyfish.PubSub, room_id, :room_crashed)
     Event.broadcast(:server_notification, {:room_crashed, room_id})
