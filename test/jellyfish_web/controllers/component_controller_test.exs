@@ -102,14 +102,15 @@ defmodule JellyfishWeb.ComponentControllerTest do
                ]
              } = json_response(conn, :ok)["data"]
 
-      [{pid, _value}] = Registry.lookup(Jellyfish.RequestHandlerRegistry, room_id)
-      assert Process.alive?(pid)
+      [{request_handler, _value}] = Registry.lookup(Jellyfish.RequestHandlerRegistry, room_id)
+      assert Process.alive?(request_handler)
+      Process.monitor(request_handler)
 
       room_conn = delete(conn, ~p"/room/#{room_id}")
       assert response(room_conn, :no_content)
 
+      assert_receive {:DOWN, _ref, :process, ^request_handler, :normal}
       assert Registry.lookup(Jellyfish.RequestHandlerRegistry, room_id) |> Enum.empty?()
-      refute Process.alive?(pid)
     end
 
     test "renders errors when request body structure is invalid", %{conn: conn, room_id: room_id} do
