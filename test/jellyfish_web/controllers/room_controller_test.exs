@@ -145,7 +145,7 @@ defmodule JellyfishWeb.RoomControllerTest do
       assert Enum.all?(rooms, &(&1.id != room_id))
     end
 
-    test "roomService removes room on engine crash", %{room_id: room_id} = state do
+    test "room closes on engine crash", %{room_id: room_id} = state do
       %{room_id: room2_id} = create_room(state)
 
       room_pid = RoomService.find_room!(room_id)

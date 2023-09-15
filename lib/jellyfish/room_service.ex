@@ -101,14 +101,21 @@ defmodule Jellyfish.RoomService do
 
     room_ids
     |> Enum.map(fn room_id ->
-      Task.Supervisor.async(Jellyfish.TaskSupervisor, fn ->
+      Task.Supervisor.async_nolink(Jellyfish.TaskSupervisor, fn ->
         Room.get_num_forwarded_tracks(room_id)
       end)
     end)
-    |> Task.await_many()
-    |> Enum.sum()
+    |> Task.yield_many()
+    |> Enum.map(fn {task, res} ->
+      res || Task.shutdown(task, :brutal_kill)
+    end)
+    |> Enum.filter(fn
+      {:ok, _res} -> true
+      _other -> false
+    end)
+    |> Enum.map(fn {:ok, res} -> res end)
     |> then(
-      &%{node: Node.self(), forwarded_tracks_number: &1, rooms_number: Enum.count(room_ids)}
+      &%{node: Node.self(), forwarded_tracks_number: Enum.sum(&1), rooms_number: Enum.count(&1)}
     )
   end
 
