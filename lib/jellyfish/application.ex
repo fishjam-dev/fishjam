@@ -25,7 +25,8 @@ defmodule Jellyfish.Application do
       {Registry, keys: :unique, name: Jellyfish.RoomRegistry},
       {Registry, keys: :unique, name: Jellyfish.RequestHandlerRegistry},
       # Start the Telemetry supervisor (must be started after Jellyfish.RoomRegistry)
-      JellyfishWeb.Telemetry
+      JellyfishWeb.Telemetry,
+      {Task.Supervisor, name: Jellyfish.TaskSupervisor}
     ]
 
     :ets.new(:rooms_to_tables, [:public, :set, :named_table])

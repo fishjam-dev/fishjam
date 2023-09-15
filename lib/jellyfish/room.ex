@@ -373,9 +373,8 @@ defmodule Jellyfish.Room do
       id: id
     ]
 
-    {:ok, pid} = Engine.start(rtc_engine_options, [])
+    {:ok, pid} = Engine.start_link(rtc_engine_options, [])
     Engine.register(pid, self())
-    Process.monitor(pid)
 
     integrated_turn_options =
       if Application.fetch_env!(:jellyfish, :webrtc_used) do

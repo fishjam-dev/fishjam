@@ -144,6 +144,25 @@ defmodule JellyfishWeb.RoomControllerTest do
       assert Enum.any?(rooms, &(&1.id == room2_id))
       assert Enum.all?(rooms, &(&1.id != room_id))
     end
+
+    test "room closes on engine crash", %{room_id: room_id} = state do
+      %{room_id: room2_id} = create_room(state)
+
+      room_pid = RoomService.find_room!(room_id)
+
+      :erlang.trace(Process.whereis(RoomService), true, [:receive])
+
+      %{engine_pid: engine_pid} = :sys.get_state(room_pid)
+
+      assert true = Process.exit(engine_pid, :error)
+
+      assert_receive({:trace, _pid, :receive, {:DOWN, _ref, :process, ^room_pid, :error}})
+
+      # Shouldn't throw an error as in ets should be only living processes
+      rooms = RoomService.list_rooms()
+      assert Enum.any?(rooms, &(&1.id == room2_id))
+      assert Enum.all?(rooms, &(&1.id != room_id))
+    end
   end
 
   defp create_room(state) do
