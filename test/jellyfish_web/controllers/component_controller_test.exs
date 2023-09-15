@@ -109,6 +109,7 @@ defmodule JellyfishWeb.ComponentControllerTest do
       assert response(room_conn, :no_content)
 
       assert Registry.lookup(Jellyfish.RequestHandlerRegistry, room_id) |> Enum.empty?()
+      refute Process.alive?(pid)
     end
 
     test "renders errors when request body structure is invalid", %{conn: conn, room_id: room_id} do
