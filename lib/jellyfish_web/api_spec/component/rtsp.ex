@@ -70,6 +70,7 @@ defmodule JellyfishWeb.ApiSpec.Component.RTSP do
     type: :object,
     properties: %{
       id: %Schema{type: :string, description: "Assigned component ID", example: "component-1"},
+      # FIXME: due to cyclic imports, we can't use ApiSpec.Component.Type here
       type: %Schema{type: :string, description: "Component type", example: "hls"},
       metadata: Metadata
     },

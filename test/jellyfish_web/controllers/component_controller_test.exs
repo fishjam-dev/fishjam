@@ -77,6 +77,8 @@ defmodule JellyfishWeb.ComponentControllerTest do
       room_conn = post(conn, ~p"/room", videoCodec: "h264")
       assert %{"id" => room_id} = json_response(room_conn, :created)["data"]["room"]
 
+      assert Registry.lookup(Jellyfish.RequestHandlerRegistry, room_id) |> Enum.empty?()
+
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls", options: %{lowLatency: true})
 
       assert response =
@@ -100,8 +102,13 @@ defmodule JellyfishWeb.ComponentControllerTest do
                ]
              } = json_response(conn, :ok)["data"]
 
+      [{pid, _value}] = Registry.lookup(Jellyfish.RequestHandlerRegistry, room_id)
+      assert Process.alive?(pid)
+
       room_conn = delete(conn, ~p"/room/#{room_id}")
       assert response(room_conn, :no_content)
+
+      assert Registry.lookup(Jellyfish.RequestHandlerRegistry, room_id) |> Enum.empty?()
     end
 
     test "renders errors when request body structure is invalid", %{conn: conn, room_id: room_id} do
