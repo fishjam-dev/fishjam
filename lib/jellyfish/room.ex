@@ -225,8 +225,6 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_call({:add_component, component_type, options}, _from, state) do
-    options = if is_nil(options), do: %{}, else: options
-
     options =
       Map.merge(
         %{engine_pid: state.engine_pid, room_id: state.id},
@@ -266,7 +264,7 @@ defmodule Jellyfish.Room do
 
         Logger.info("Removed component #{inspect(component_id)}")
 
-        if component.type == Component.HLS, do: remove_hls_processes(state.id)
+        if component.type == Component.HLS, do: remove_hls_processes(state.id, component.metadata)
 
         {:ok, state}
       else
@@ -323,8 +321,8 @@ defmodule Jellyfish.Room do
     else
       Event.broadcast(:server_notification, {:component_crashed, state.id, endpoint_id})
 
-      %{type: type} = Map.get(state.components, endpoint_id)
-      if type == Component.HLS, do: remove_hls_processes(state.id)
+      component = Map.get(state.components, endpoint_id)
+      if component.type == Component.HLS, do: remove_hls_processes(state.id, component.metadata)
     end
 
     {:noreply, state}
@@ -404,7 +402,10 @@ defmodule Jellyfish.Room do
     }
   end
 
-  defp remove_hls_processes(room_id), do: Component.HLS.RequestHandler.stop(room_id)
+  defp remove_hls_processes(room_id, %{low_latency: true}),
+    do: Component.HLS.RequestHandler.stop(room_id)
+
+  defp remove_hls_processes(_room_id, _metadata), do: nil
 
   defp registry_id(room_id), do: {:via, Registry, {Jellyfish.RoomRegistry, room_id}}
 

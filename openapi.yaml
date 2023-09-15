@@ -13,19 +13,14 @@ components:
       x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.Token
     Component:
       description: Describes component
-      properties:
-        id:
-          description: Assigned component id
-          example: component-1
-          type: string
-        metadata:
-          $ref: '#/components/schemas/ComponentMetadata'
-        type:
-          $ref: '#/components/schemas/ComponentType'
-      required:
-        - id
-        - type
-        - metadata
+      discriminator:
+        mapping:
+          hls: '#/components/schemas/ComponentHLS'
+          rtsp: '#/components/schemas/ComponentRTSP'
+        propertyName: type
+      oneOf:
+        - $ref: '#/components/schemas/ComponentHLS'
+        - $ref: '#/components/schemas/ComponentRTSP'
       title: Component
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component
@@ -39,22 +34,65 @@ components:
       title: ComponentDetailsResponse
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.ComponentDetailsResponse
-    ComponentMetadata:
-      description: Component-specific metadata
+    ComponentHLS:
+      description: Describes HLS component
       properties:
-        playable:
-          type: boolean
-      title: ComponentMetadata
+        id:
+          description: Assigned component ID
+          example: component-1
+          type: string
+        metadata:
+          $ref: '#/components/schemas/ComponentMetadataHLS'
+        type:
+          description: Component type
+          example: hls
+          type: string
+      required:
+        - id
+        - type
+        - metadata
+      title: ComponentHLS
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Metadata
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS
+    ComponentMetadataHLS:
+      description: Metadata specific to the HLS component
+      properties:
+        lowLatency:
+          description: Whether the component uses LL-HLS
+          type: boolean
+        playable:
+          description: Whether the generated HLS playlist is playable
+          type: boolean
+      required:
+        - playable
+        - lowLatency
+      title: ComponentMetadataHLS
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS.Metadata
+    ComponentMetadataRTSP:
+      description: Metadata specific to the RTSP component
+      properties: {}
+      title: ComponentMetadataRTSP
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.RTSP.Metadata
     ComponentOptions:
       description: Component-specific options
-      nullable: true
       oneOf:
+        - $ref: '#/components/schemas/ComponentOptionsHLS'
         - $ref: '#/components/schemas/ComponentOptionsRTSP'
       title: ComponentOptions
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Options
+    ComponentOptionsHLS:
+      description: Options specific to the HLS component
+      properties:
+        lowLatency:
+          default: false
+          description: Whether the component should use LL-HLS
+          type: boolean
+      title: ComponentOptionsHLS
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS.Options
     ComponentOptionsRTSP:
       description: Options specific to the RTSP component
       properties:
@@ -85,6 +123,26 @@ components:
       required:
         - sourceUri
       title: ComponentOptionsRTSP
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.RTSP.Options
+    ComponentRTSP:
+      description: Describes RTSP component
+      properties:
+        id:
+          description: Assigned component ID
+          example: component-1
+          type: string
+        metadata:
+          $ref: '#/components/schemas/ComponentMetadataRTSP'
+        type:
+          description: Component type
+          example: hls
+          type: string
+      required:
+        - id
+        - type
+        - metadata
+      title: ComponentRTSP
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.RTSP
     ComponentType:

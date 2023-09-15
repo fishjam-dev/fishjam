@@ -43,7 +43,13 @@ defmodule JellyfishWeb.ComponentControllerTest do
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
 
       assert response =
-               %{"data" => %{"id" => id, "type" => "hls", "metadata" => %{"playable" => false}}} =
+               %{
+                 "data" => %{
+                   "id" => id,
+                   "type" => "hls",
+                   "metadata" => %{"playable" => false, "lowLatency" => false}
+                 }
+               } =
                json_response(conn, :created)
 
       assert_response_schema(response, "ComponentDetailsResponse", @schema)
@@ -65,6 +71,46 @@ defmodule JellyfishWeb.ComponentControllerTest do
 
       room_conn = delete(conn, ~p"/room/#{room_id}")
       assert response(room_conn, :no_content)
+    end
+
+    test "renders component with ll-hls enabled", %{conn: conn} do
+      room_conn = post(conn, ~p"/room", videoCodec: "h264")
+      assert %{"id" => room_id} = json_response(room_conn, :created)["data"]["room"]
+
+      assert Registry.lookup(Jellyfish.RequestHandlerRegistry, room_id) |> Enum.empty?()
+
+      conn = post(conn, ~p"/room/#{room_id}/component", type: "hls", options: %{lowLatency: true})
+
+      assert response =
+               %{
+                 "data" => %{
+                   "id" => id,
+                   "type" => "hls",
+                   "metadata" => %{"playable" => false, "lowLatency" => true}
+                 }
+               } =
+               json_response(conn, :created)
+
+      assert_response_schema(response, "ComponentDetailsResponse", @schema)
+
+      conn = get(conn, ~p"/room/#{room_id}")
+
+      assert %{
+               "id" => ^room_id,
+               "components" => [
+                 %{"id" => ^id, "type" => "hls"}
+               ]
+             } = json_response(conn, :ok)["data"]
+
+      [{request_handler, _value}] = Registry.lookup(Jellyfish.RequestHandlerRegistry, room_id)
+      assert Process.alive?(request_handler)
+      Process.monitor(request_handler)
+
+      room_conn = delete(conn, ~p"/room/#{room_id}")
+      assert response(room_conn, :no_content)
+
+      assert_receive {:DOWN, _ref, :process, ^request_handler, :normal}
+      assert Registry.lookup(Jellyfish.RequestHandlerRegistry, room_id) |> Enum.empty?()
     end
 
     test "renders errors when request body structure is invalid", %{conn: conn, room_id: room_id} do
@@ -90,7 +136,13 @@ defmodule JellyfishWeb.ComponentControllerTest do
         )
 
       assert response =
-               %{"data" => %{"id" => id, "type" => "rtsp", "metadata" => %{}}} =
+               %{
+                 "data" => %{
+                   "id" => id,
+                   "type" => "rtsp",
+                   "metadata" => %{}
+                 }
+               } =
                json_response(conn, :created)
 
       assert_response_schema(response, "ComponentDetailsResponse", @schema)

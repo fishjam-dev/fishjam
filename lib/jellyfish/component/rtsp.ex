@@ -4,11 +4,10 @@ defmodule Jellyfish.Component.RTSP do
   """
 
   @behaviour Jellyfish.Endpoint.Config
-  @behaviour Jellyfish.Component
 
   alias Membrane.RTC.Engine.Endpoint.RTSP
 
-  alias JellyfishWeb.ApiSpec
+  alias JellyfishWeb.ApiSpec.Component.RTSP.Options
 
   @type metadata :: %{}
 
@@ -16,8 +15,8 @@ defmodule Jellyfish.Component.RTSP do
   def config(%{engine_pid: engine} = options) do
     options = Map.drop(options, [:engine_pid, :room_id])
 
-    with {:ok, valid_opts} <- OpenApiSpex.cast_value(options, ApiSpec.Component.RTSP.schema()) do
-      component_spec =
+    with {:ok, valid_opts} <- OpenApiSpex.cast_value(options, Options.schema()) do
+      endpoint_spec =
         Map.from_struct(valid_opts)
         # OpenApiSpex will remove invalid options, so the following conversion, while ugly, is memory-safe
         |> Map.new(fn {k, v} ->
@@ -27,12 +26,9 @@ defmodule Jellyfish.Component.RTSP do
         |> Map.put(:max_reconnect_attempts, :infinity)
         |> then(&struct(RTSP, &1))
 
-      {:ok, component_spec}
+      {:ok, %{endpoint: endpoint_spec, metadata: %{}}}
     else
       {:error, _reason} = error -> error
     end
   end
-
-  @impl true
-  def metadata(), do: %{}
 end

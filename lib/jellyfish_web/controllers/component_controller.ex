@@ -61,7 +61,7 @@ defmodule JellyfishWeb.ComponentController do
     ]
 
   def create(conn, %{"room_id" => room_id} = params) do
-    with component_options <- Map.get(params, "options", nil),
+    with component_options <- Map.get(params, "options", %{}),
          {:ok, component_type_string} <- Map.fetch(params, "type"),
          {:ok, component_type} <- Component.parse_type(component_type_string),
          {:ok, _room_pid} <- RoomService.find_room(room_id),

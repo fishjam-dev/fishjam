@@ -3,5 +3,11 @@ defmodule Jellyfish.Endpoint.Config do
   An interface for RTC Engine endpoint configuration.
   """
 
-  @callback config(map()) :: {:ok, Membrane.ChildrenSpec.child_definition()} | {:error, term()}
+  @callback config(map()) ::
+              {:ok,
+               %{
+                 :endpoint => Membrane.ChildrenSpec.child_definition(),
+                 optional(:metadata) => term()
+               }}
+              | {:error, term()}
 end

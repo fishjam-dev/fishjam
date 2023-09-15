@@ -2,9 +2,8 @@ defmodule JellyfishWeb.ApiSpec.Component do
   @moduledoc false
 
   require OpenApiSpex
-  alias OpenApiSpex.Schema
 
-  alias JellyfishWeb.ApiSpec.Component.RTSP
+  alias JellyfishWeb.ApiSpec.Component.{HLS, RTSP}
 
   defmodule Type do
     @moduledoc false
@@ -29,24 +28,9 @@ defmodule JellyfishWeb.ApiSpec.Component do
       description: "Component-specific options",
       type: :object,
       oneOf: [
-        RTSP
-      ],
-      nullable: true
-    })
-  end
-
-  defmodule Metadata do
-    @moduledoc false
-
-    require OpenApiSpex
-
-    OpenApiSpex.schema(%{
-      title: "ComponentMetadata",
-      description: "Component-specific metadata",
-      type: :object,
-      properties: %{
-        playable: %Schema{type: :boolean}
-      }
+        HLS.Options,
+        RTSP.Options
+      ]
     })
   end
 
@@ -54,11 +38,16 @@ defmodule JellyfishWeb.ApiSpec.Component do
     title: "Component",
     description: "Describes component",
     type: :object,
-    properties: %{
-      id: %Schema{type: :string, description: "Assigned component id", example: "component-1"},
-      type: Type,
-      metadata: Metadata
-    },
-    required: [:id, :type, :metadata]
+    oneOf: [
+      HLS,
+      RTSP
+    ],
+    discriminator: %OpenApiSpex.Discriminator{
+      propertyName: "type",
+      mapping: %{
+        "hls" => HLS,
+        "rtsp" => RTSP
+      }
+    }
   })
 end
