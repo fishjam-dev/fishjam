@@ -7,26 +7,6 @@ import Config
 # any compile-time configuration in here, as it won't be applied.
 # The block below contains prod specific runtime configuration.
 defmodule ConfigParser do
-  def parse_integrated_turn_ip(addr) do
-    addr = addr |> to_charlist()
-
-    case :inet.parse_address(addr) do
-      {:ok, parsed_ip} ->
-        parsed_ip
-
-      _error ->
-        with {:ok, parsed_ip} <- :inet.getaddr(addr, :inet) do
-          parsed_ip
-        else
-          _error ->
-            raise("""
-            Bad integrated TURN address. Expected IPv4 or a valid hostname, got: \
-            #{inspect(addr)}
-            """)
-        end
-    end
-  end
-
   def parse_integrated_turn_port_range(range) do
     with [str1, str2] <- String.split(range, "-"),
          from when from in 0..65_535 <- String.to_integer(str1),
@@ -39,6 +19,25 @@ defmodule ConfigParser do
         are numbers between 0 and 65535 and `from` is not bigger than `to`, got: \
         #{inspect(range)}
         """)
+    end
+  end
+
+  def parse_ip(var_value, var_name) do
+    var_value = var_value |> to_charlist()
+
+    case :inet.parse_address(var_value) do
+      {:ok, parsed_ip} ->
+        parsed_ip
+
+      _error ->
+        with {:ok, parsed_ip} <- :inet.getaddr(var_value, :inet) do
+          parsed_ip
+        else
+          _error ->
+            raise("""
+            Bad #{var_name} environment variable value. Expected valid ip address, got: #{inspect(var_value)}
+            """)
+        end
     end
   end
 
@@ -102,10 +101,11 @@ config :ex_dtls, impl: :nif
 config :jellyfish,
   webrtc_used: String.downcase(System.get_env("WEBRTC_USED", "true")) not in ["false", "f", "0"],
   integrated_turn_ip:
-    System.get_env("INTEGRATED_TURN_IP", "127.0.0.1") |> ConfigParser.parse_integrated_turn_ip(),
+    System.get_env("INTEGRATED_TURN_IP", "127.0.0.1")
+    |> ConfigParser.parse_ip("INTEGRATED_TURN_IP"),
   integrated_turn_listen_ip:
     System.get_env("INTEGRATED_TURN_LISTEN_IP", "127.0.0.1")
-    |> ConfigParser.parse_integrated_turn_ip(),
+    |> ConfigParser.parse_ip("INTEGRATED_TURN_LISTEN_IP"),
   integrated_turn_port_range:
     System.get_env("INTEGRATED_TURN_PORT_RANGE", "50000-59999")
     |> ConfigParser.parse_integrated_turn_port_range(),
@@ -114,9 +114,19 @@ config :jellyfish,
     |> ConfigParser.parse_port_number("INTEGRATED_TURN_TCP_PORT"),
   jwt_max_age: 24 * 3600,
   output_base_path: System.get_env("OUTPUT_BASE_PATH", "jellyfish_output") |> Path.expand(),
-  address: jellyfish_address
+  address: jellyfish_address,
+  metrics_ip: System.get_env("METRICS_IP", "127.0.0.1") |> ConfigParser.parse_ip("METRICS_IP"),
+  metrics_port:
+    System.get_env("METRICS_PORT", "9568") |> ConfigParser.parse_port_number("METRICS_PORT")
 
 config :opentelemetry, traces_exporter: :none
+
+# we set ip and port here to allow for 
+# running multiple Jellyfishes in development
+config :jellyfish, JellyfishWeb.Endpoint,
+  # Binding to loopback ipv4 address prevents access from other machines.
+  # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
+  http: [ip: {127, 0, 0, 1}, port: port]
 
 if prod? do
   token =
