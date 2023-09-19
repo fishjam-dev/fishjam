@@ -5,8 +5,7 @@ x-jellyfish-template: &jellyfish-template
   environment: &jellyfish-environment
     ERLANG_COOKIE: "panuozzo-pollo-e-pancetta"
     SERVER_API_TOKEN: "development"
-    SECRET_KEY_BASE: "super-secret-key"
-    VIRTUAL_HOST: "localhost"
+    HOST: "localhost"
     NODES: "app@app1 app@app2"
   networks:
     - net1
