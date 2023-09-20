@@ -4,6 +4,13 @@ defmodule Jellyfish.ConfigReaderTest do
   alias Jellyfish.ConfigReader
 
   defmacrop with_env(env, do: body) do
+    # get current env value, 
+    # execute test code,
+    # put back original env value
+    #
+    # if env was not set, we have
+    # to call System.delete_env as
+    # System.put_env does not accept `nil`
     quote do
       old = System.get_env(unquote(env))
       unquote(body)
