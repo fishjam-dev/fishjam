@@ -188,3 +188,5 @@ jellyfish_output
 
 # asdf
 .tool-versions
+
+.env
