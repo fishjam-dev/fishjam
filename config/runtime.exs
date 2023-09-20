@@ -58,6 +58,10 @@ if check_origin = ConfigReader.read_boolean("CHECK_ORIGIN") do
   config :jellyfish, JellyfishWeb.Endpoint, check_origin: check_origin
 end
 
+if ip = ConfigReader.read_ip("IP") do
+  config :jellyfish, JellyfishWeb.Endpoint, http: [ip: ip]
+end
+
 case System.get_env("SERVER_API_TOKEN") do
   nil when prod? == true ->
     raise """
