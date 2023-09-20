@@ -3,9 +3,10 @@ version: "3"
 x-jellyfish-template: &jellyfish-template
   build: .
   environment: &jellyfish-environment
-    ERLANG_COOKIE: "panuozzo-pollo-e-pancetta"
     JF_SERVER_API_TOKEN: "development"
+    JF_DIST_ENABLED: "true"
     JF_NODES: "app@app1 app@app2"
+    JF_COOKIE: "panuozzo-pollo-e-pancetta"
   networks:
     - net1
   restart: on-failure
@@ -34,10 +35,9 @@ services:
     <<: *jellyfish-template
     environment:
       <<: *jellyfish-environment
-      RELEASE_NODE: app@app1
-      NODE_NAME: app@app1
       JF_HOST: "localhost:4001"
       JF_PORT: 4001
+      JF_NODE_NAME: app@app1
     ports:
       - 4001:4001
 
@@ -45,10 +45,9 @@ services:
     <<: *jellyfish-template
     environment:
       <<: *jellyfish-environment
-      RELEASE_NODE: app@app2
-      NODE_NAME: app@app2
       JF_HOST: "localhost:4002"
       JF_PORT: 4002
+      JF_NODE_NAME: app@app2
     ports:
       - 4002:4002
 

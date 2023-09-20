@@ -11,18 +11,6 @@ alias Jellyfish.ConfigReader
 config :ex_dtls, impl: :nif
 config :opentelemetry, traces_exporter: :none
 
-nodes = ConfigReader.read_nodes("JF_NODES")
-
-if nodes do
-  config :libcluster,
-    topologies: [
-      epmd_cluster: [
-        strategy: Cluster.Strategy.Epmd,
-        config: [hosts: nodes]
-      ]
-    ]
-end
-
 prod? = config_env() == :prod
 
 ip =
@@ -57,7 +45,8 @@ config :jellyfish,
   output_base_path: System.get_env("JF_OUTPUT_BASE_PATH", "jellyfish_output") |> Path.expand(),
   address: "#{host}",
   metrics_ip: ConfigReader.read_ip("JF_METRICS_IP") || {127, 0, 0, 1},
-  metrics_port: ConfigReader.read_port("JF_METRICS_PORT") || 9568
+  metrics_port: ConfigReader.read_port("JF_METRICS_PORT") || 9568,
+  dist_config: ConfigReader.read_dist_config()
 
 case System.get_env("JF_SERVER_API_TOKEN") do
   nil when prod? == true ->

@@ -32,6 +32,8 @@ ENV MIX_ENV=prod
 # but not deps fetching
 # * any changes in the `config/runtime.exs` won't trigger 
 # anything
+# * any changes in rel directory should only trigger
+# making a new release
 COPY mix.exs mix.lock ./
 RUN mix deps.get --only $MIX_ENV
 
@@ -42,6 +44,8 @@ COPY lib lib
 RUN mix compile
 
 COPY config/runtime.exs config/
+
+COPY rel rel
 
 RUN mix release
 
