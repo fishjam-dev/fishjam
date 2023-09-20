@@ -27,15 +27,9 @@ defmodule Jellyfish.ConfigReader do
           parsed_ip
 
         _error ->
-          case :inet.getaddr(value, :inet) do
-            {:ok, parsed_ip} ->
-              parsed_ip
-
-            _error ->
-              raise("""
-              Bad #{env} environment variable value. Expected valid ip address, got: #{value}"
-              """)
-          end
+          raise("""
+          Bad #{env} environment variable value. Expected valid ip address, got: #{value}"
+          """)
       end
     end
   end
@@ -55,10 +49,11 @@ defmodule Jellyfish.ConfigReader do
   end
 
   def read_nodes(env) do
-    if value = System.get_env(env) do
+    value = System.get_env(env)
+
+    if value not in ["", nil] do
       value
-      |> String.split(" ")
-      |> Enum.reject(&(&1 == ""))
+      |> String.split(" ", trim: true)
       |> Enum.map(&String.to_atom(&1))
     end
   end

@@ -29,8 +29,10 @@ defmodule Jellyfish.ConfigReaderTest do
     with_env env_name do
       System.put_env(env_name, "127.0.0.1")
       assert ConfigReader.read_ip(env_name) == {127, 0, 0, 1}
-      :os.unsetenv(to_charlist(env_name))
+      System.delete_env(env_name)
       assert ConfigReader.read_ip(env_name) == nil
+      System.put_env(env_name, "example.com")
+      assert_raise RuntimeError, fn -> ConfigReader.read_ip(env_name) end
     end
   end
 
@@ -85,6 +87,8 @@ defmodule Jellyfish.ConfigReaderTest do
     with_env env_name do
       System.put_env(env_name, "app1@127.0.0.1 app2@127.0.0.2")
       assert ConfigReader.read_nodes(env_name) == [:"app1@127.0.0.1", :"app2@127.0.0.2"]
+      System.put_env(env_name, "")
+      assert ConfigReader.read_nodes(env_name) == nil
     end
   end
 end
