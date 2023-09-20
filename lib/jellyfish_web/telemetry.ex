@@ -11,10 +11,16 @@ defmodule JellyfishWeb.Telemetry do
 
   @impl true
   def init(_arg) do
-    children = [
-      MetricsAggregator,
-      {TelemetryMetricsPrometheus, metrics: metrics(&last_value/2)}
+    metrics_ip = Application.fetch_env!(:jellyfish, :metrics_ip)
+    metrics_port = Application.fetch_env!(:jellyfish, :metrics_port)
+
+    metrics_opts = [
+      metrics: metrics(&last_value/2),
+      port: metrics_port,
+      plug_cowboy_opts: [ip: metrics_ip]
     ]
+
+    children = [MetricsAggregator, {TelemetryMetricsPrometheus, metrics_opts}]
 
     Supervisor.init(children, strategy: :one_for_one)
   end

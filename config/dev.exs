@@ -15,7 +15,6 @@ config :jellyfish, JellyfishWeb.Endpoint,
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
-  secret_key_base: "eUQ+pDd8FmAwDrE4taJYgcYtaMqFMLygkVRBPfH8G98U1aveWB3Oa9TkOoehK61t",
   watchers: []
 
 # ## SSL Support
