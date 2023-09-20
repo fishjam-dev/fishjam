@@ -9,7 +9,7 @@ config :logger, level: :info
 
 # run the server automatically when using prod release
 config :jellyfish, JellyfishWeb.Endpoint,
-  http: [ip: {127, 0, 0, 1}, port: 8080],
+  http: [ip: {0, 0, 0, 0, 0, 0, 0, 0}, port: 8080],
   server: true
 
 # Runtime production configuration, including reading
