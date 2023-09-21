@@ -35,7 +35,7 @@ port =
 
 host =
   case System.get_env("JF_HOST") do
-    nil -> :inet.ntoa(ip)
+    nil -> :inet.ntoa(ip) |> to_string()
     other -> other
   end
 
