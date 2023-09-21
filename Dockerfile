@@ -100,6 +100,11 @@ WORKDIR /app
 # base path where jellyfish saves its artefacts
 ENV OUTPUT_BASE_PATH=./jellyfish_output
 
+# override default (127, 0, 0, 1) IP by 0.0.0.0 
+# as docker doesn't allow for connections outside the
+# container when we listen to 127.0.0.1
+ENV IP=0.0.0.0
+
 RUN mkdir ${OUTPUT_BASE_PATH} && chown jellyfish:jellyfish ${OUTPUT_BASE_PATH}
 
 COPY --from=build /app/_build/prod/rel/jellyfish ./
