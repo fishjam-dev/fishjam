@@ -94,14 +94,15 @@ RUN \
 WORKDIR /app
 
 # base path where jellyfish saves its artefacts
-ENV OUTPUT_BASE_PATH=./jellyfish_output
+ENV JF_OUTPUT_BASE_PATH=./jellyfish_output
 
 # override default (127, 0, 0, 1) IP by 0.0.0.0 
 # as docker doesn't allow for connections outside the
 # container when we listen to 127.0.0.1
 ENV JF_IP=0.0.0.0
+ENV JF_METRICS_IP=0.0.0.0
 
-RUN mkdir ${OUTPUT_BASE_PATH} && chown jellyfish:jellyfish ${OUTPUT_BASE_PATH}
+RUN mkdir ${JF_OUTPUT_BASE_PATH} && chown jellyfish:jellyfish ${JF_OUTPUT_BASE_PATH}
 
 COPY --from=build /app/_build/prod/rel/jellyfish ./
 
@@ -110,7 +111,7 @@ RUN chmod +x docker-entrypoint.sh
 
 ENV HOME=/app
 
-HEALTHCHECK CMD curl --fail -H "authorization: Bearer ${SERVER_API_TOKEN}" http://localhost:${PORT}/room || exit 1
+HEALTHCHECK CMD curl --fail -H "authorization: Bearer ${JF_SERVER_API_TOKEN}" http://localhost:${JF_PORT}/room || exit 1
 
 ENTRYPOINT ["./docker-entrypoint.sh"]
 
