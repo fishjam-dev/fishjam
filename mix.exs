@@ -75,7 +75,7 @@ defmodule Jellyfish.MixProject do
 
       # HLS endpoints deps
       {:membrane_audio_mix_plugin, "~> 0.15.2"},
-      {:membrane_video_compositor_plugin, "~> 0.5.1"},
+      {:membrane_video_compositor_plugin, "~> 0.5.4"},
 
       # Dialyzer and credo
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},
