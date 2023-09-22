@@ -35,14 +35,14 @@ port =
 
 host =
   case System.get_env("JF_HOST") do
-    nil -> :inet.ntoa(ip) |> to_string()
+    nil -> "#{:inet.ntoa(ip)}:#{port}"
     other -> other
   end
 
-host_port =
-  case ConfigReader.read_port("JF_HOST_PORT") do
-    nil -> port
-    other -> other
+{host_name, host_port} =
+  case String.split(host, ":") do
+    [host_name, host_port] -> {host_name, String.to_integer(host_port)}
+    _ -> {host, 443}
   end
 
 config :jellyfish,
@@ -55,19 +55,9 @@ config :jellyfish,
   integrated_turn_tcp_port: ConfigReader.read_port("JF_INTEGRATED_TURN_TCP_PORT"),
   jwt_max_age: 24 * 3600,
   output_base_path: System.get_env("JF_OUTPUT_BASE_PATH", "jellyfish_output") |> Path.expand(),
-  address: "#{host}:#{host_port}",
+  address: "#{host}",
   metrics_ip: ConfigReader.read_ip("JF_METRICS_IP") || {127, 0, 0, 1},
   metrics_port: ConfigReader.read_port("JF_METRICS_PORT") || 9568
-
-config :jellyfish, JellyfishWeb.Endpoint,
-  secret_key_base:
-    System.get_env("JF_SECRET_KEY_BASE") || Base.encode64(:crypto.strong_rand_bytes(48)),
-  http: [ip: ip, port: port],
-  url: [host: host, port: host_port]
-
-if check_origin = ConfigReader.read_boolean("JF_CHECK_ORIGIN") do
-  config :jellyfish, JellyfishWeb.Endpoint, check_origin: check_origin
-end
 
 case System.get_env("JF_SERVER_API_TOKEN") do
   nil when prod? == true ->
@@ -82,6 +72,16 @@ case System.get_env("JF_SERVER_API_TOKEN") do
 
   token ->
     config :jellyfish, server_api_token: token
+end
+
+config :jellyfish, JellyfishWeb.Endpoint,
+  secret_key_base:
+    System.get_env("JF_SECRET_KEY_BASE") || Base.encode64(:crypto.strong_rand_bytes(48)),
+  http: [ip: ip, port: port],
+  url: [host: host_name, port: host_port]
+
+if check_origin = ConfigReader.read_boolean("JF_CHECK_ORIGIN") do
+  config :jellyfish, JellyfishWeb.Endpoint, check_origin: check_origin
 end
 
 if prod? do
