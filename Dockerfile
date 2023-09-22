@@ -115,7 +115,7 @@ RUN chmod +x docker-entrypoint.sh
 
 ENV HOME=/app
 
-HEALTHCHECK CMD curl --fail -H "authorization: Bearer ${JF_SERVER_API_TOKEN}" http://localhost:${JF_PORT}/room || exit 1
+HEALTHCHECK CMD curl --fail -H "authorization: Bearer ${JF_SERVER_API_TOKEN}" http://localhost:${JF_PORT:-8080}/room || exit 1
 
 ENTRYPOINT ["./docker-entrypoint.sh"]
 
