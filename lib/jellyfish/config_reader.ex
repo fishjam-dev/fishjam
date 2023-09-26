@@ -59,20 +59,11 @@ defmodule Jellyfish.ConfigReader do
   def read_dist_config() do
     if read_boolean("JF_DIST_ENABLED") do
       node_name_value = System.get_env("JF_NODE_NAME")
-      cookie_value = System.get_env("JF_COOKIE")
-      nodes_value = System.get_env("JF_NODES") || ""
+      cookie_value = System.get_env("JF_COOKIE", "panuozzo-pollo-e-pancetta")
+      nodes_value = System.get_env("JF_NODES", "")
 
-      unset_var =
-        [{"JF_NODE_NAME", node_name_value}, {"JF_COOKIE", cookie_value}]
-        |> Enum.find(fn {_env_name, env_val} -> is_nil(env_val) end)
-
-      if unset_var do
-        {unset_var_name, _} = unset_var
-
-        raise """
-        JF_DIST_ENABLED has been set but #{unset_var_name} remains unset.
-        JF_DIST_ENABLED requires following env vars to be also set: JF_NODE_NAME JF_COOKIE.
-        """
+      unless node_name_value do
+        raise "JF_DIST_ENABLED has been set but JF_NODE_NAME remains unset."
       end
 
       node_name = parse_node_name(node_name_value)
