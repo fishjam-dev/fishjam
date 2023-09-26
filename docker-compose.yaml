@@ -5,6 +5,7 @@ x-jellyfish-template: &jellyfish-template
   environment: &jellyfish-environment
     JF_SERVER_API_TOKEN: "development"
     JF_DIST_ENABLED: "true"
+    JF_DIST_MODE: "sname"
     JF_NODES: "app@app1 app@app2"
   networks:
     - net1
