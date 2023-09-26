@@ -80,7 +80,9 @@ config :jellyfish, JellyfishWeb.Endpoint,
   http: [ip: ip, port: port],
   url: [host: host_name, port: host_port]
 
-if check_origin = ConfigReader.read_boolean("JF_CHECK_ORIGIN") do
+check_origin = ConfigReader.read_boolean("JF_CHECK_ORIGIN")
+
+if check_origin != nil do
   config :jellyfish, JellyfishWeb.Endpoint, check_origin: check_origin
 end
 
