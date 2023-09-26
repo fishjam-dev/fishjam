@@ -110,6 +110,9 @@ ENV JF_OUTPUT_BASE_PATH=./jellyfish_output
 ENV JF_IP=0.0.0.0
 ENV JF_METRICS_IP=0.0.0.0
 
+ENV JF_DIST_MIN_PORT=9000
+ENV JF_DIST_MAX_PORT=9000
+
 RUN mkdir ${JF_OUTPUT_BASE_PATH} && chown jellyfish:jellyfish ${JF_OUTPUT_BASE_PATH}
 
 COPY --from=build /app/_build/prod/rel/jellyfish ./
