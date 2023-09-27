@@ -58,12 +58,12 @@ defmodule Jellyfish.ConfigReader do
 
   def read_dist_config() do
     if read_boolean("JF_DIST_ENABLED") do
-      node_name_value = System.get_env("JF_NODE_NAME")
-      cookie_value = System.get_env("JF_COOKIE", "panuozzo-pollo-e-pancetta")
-      nodes_value = System.get_env("JF_NODES", "")
+      node_name_value = System.get_env("JF_DIST_NODE_NAME")
+      cookie_value = System.get_env("JF_DIST_COOKIE", "panuozzo-pollo-e-pancetta")
+      nodes_value = System.get_env("JF_DIST_NODES", "")
 
       unless node_name_value do
-        raise "JF_DIST_ENABLED has been set but JF_NODE_NAME remains unset."
+        raise "JF_DIST_ENABLED has been set but JF_DIST_NODE_NAME remains unset."
       end
 
       node_name = parse_node_name(node_name_value)
@@ -72,9 +72,9 @@ defmodule Jellyfish.ConfigReader do
 
       if nodes == [] do
         Logger.warning("""
-        JF_DIST_ENABLED has been set but JF_NODES remains unset.
+        JF_DIST_ENABLED has been set but JF_DIST_NODES remains unset.
         Make sure that at least one of your Jellyfish instances
-        has JF_NODES set.
+        has JF_DIST_NODES set.
         """)
       end
 

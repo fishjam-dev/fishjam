@@ -89,7 +89,7 @@ defmodule Jellyfish.ConfigReaderTest do
   end
 
   test "read_dist_config/0" do
-    with_env ["JF_DIST_ENABLED", "JF_COOKIE", "JF_NODE_NAME", "JF_NODES"] do
+    with_env ["JF_DIST_ENABLED", "JF_DIST_COOKIE", "JF_DIST_NODE_NAME", "JF_DIST_NODES"] do
       assert ConfigReader.read_dist_config() == [
                enabled: false,
                node_name: nil,
@@ -99,9 +99,9 @@ defmodule Jellyfish.ConfigReaderTest do
 
       System.put_env("JF_DIST_ENABLED", "true")
       assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
-      System.put_env("JF_COOKIE", "testcookie")
+      System.put_env("JF_DIST_COOKIE", "testcookie")
       assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
-      System.put_env("JF_NODE_NAME", "testnodename@127.0.0.1")
+      System.put_env("JF_DIST_NODE_NAME", "testnodename@127.0.0.1")
 
       assert ConfigReader.read_dist_config() == [
                enabled: true,
@@ -110,7 +110,7 @@ defmodule Jellyfish.ConfigReaderTest do
                nodes: []
              ]
 
-      System.put_env("JF_NODES", "testnodename1@127.0.0.1 testnodename2@127.0.0.1")
+      System.put_env("JF_DIST_NODES", "testnodename1@127.0.0.1 testnodename2@127.0.0.1")
 
       assert ConfigReader.read_dist_config() == [
                enabled: true,
