@@ -59,7 +59,7 @@ defmodule Jellyfish.ConfigReader do
   def read_dist_config() do
     if read_boolean("JF_DIST_ENABLED") do
       node_name_value = System.get_env("JF_DIST_NODE_NAME")
-      cookie_value = System.get_env("JF_DIST_COOKIE", "panuozzo-pollo-e-pancetta")
+      cookie_value = System.get_env("JF_DIST_COOKIE", "jellyfish_cookie")
       nodes_value = System.get_env("JF_DIST_NODES", "")
 
       unless node_name_value do
