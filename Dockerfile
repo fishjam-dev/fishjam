@@ -32,6 +32,8 @@ ENV MIX_ENV=prod
 # but not deps fetching
 # * any changes in the `config/runtime.exs` won't trigger 
 # anything
+# * any changes in rel directory should only trigger
+# making a new release
 COPY mix.exs mix.lock ./
 RUN mix deps.get --only $MIX_ENV
 
@@ -42,6 +44,8 @@ COPY lib lib
 RUN mix compile
 
 COPY config/runtime.exs config/
+
+COPY rel rel
 
 RUN mix release
 
@@ -105,6 +109,9 @@ ENV JF_OUTPUT_BASE_PATH=./jellyfish_output
 # container when we listen to 127.0.0.1
 ENV JF_IP=0.0.0.0
 ENV JF_METRICS_IP=0.0.0.0
+
+ENV JF_DIST_MIN_PORT=9000
+ENV JF_DIST_MAX_PORT=9000
 
 RUN mkdir ${JF_OUTPUT_BASE_PATH} && chown jellyfish:jellyfish ${JF_OUTPUT_BASE_PATH}
 

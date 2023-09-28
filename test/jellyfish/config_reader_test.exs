@@ -1,25 +1,32 @@
 defmodule Jellyfish.ConfigReaderTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
+
+  # run this test synchronously as we use
+  # official env vars in read_dist_config test
 
   alias Jellyfish.ConfigReader
 
   defmacrop with_env(env, do: body) do
-    # get current env value, 
+    # get current env(s) value(s), 
     # execute test code,
-    # put back original env value
+    # put back original env(s) value(s)
     #
     # if env was not set, we have
     # to call System.delete_env as
     # System.put_env does not accept `nil`
     quote do
-      old = System.get_env(unquote(env))
+      envs = List.wrap(unquote(env))
+      old_envs = Enum.map(envs, fn env_name -> {env_name, System.get_env(env_name)} end)
+
       unquote(body)
 
-      if old do
-        System.put_env(unquote(env), old)
-      else
-        System.delete_env(unquote(env))
-      end
+      Enum.each(old_envs, fn {env_name, env_value} ->
+        if env_value do
+          System.put_env(env_name, env_value)
+        else
+          System.delete_env(env_name)
+        end
+      end)
     end
   end
 
@@ -81,14 +88,36 @@ defmodule Jellyfish.ConfigReaderTest do
     end
   end
 
-  test "read_nodes/1" do
-    env_name = "JF_CONF_READER_TEST_NODES"
+  test "read_dist_config/0" do
+    with_env ["JF_DIST_ENABLED", "JF_DIST_COOKIE", "JF_DIST_NODE_NAME", "JF_DIST_NODES"] do
+      assert ConfigReader.read_dist_config() == [
+               enabled: false,
+               node_name: nil,
+               cookie: nil,
+               nodes: []
+             ]
 
-    with_env env_name do
-      System.put_env(env_name, "app1@127.0.0.1 app2@127.0.0.2")
-      assert ConfigReader.read_nodes(env_name) == [:"app1@127.0.0.1", :"app2@127.0.0.2"]
-      System.put_env(env_name, "")
-      assert ConfigReader.read_nodes(env_name) == nil
+      System.put_env("JF_DIST_ENABLED", "true")
+      assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
+      System.put_env("JF_DIST_COOKIE", "testcookie")
+      assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
+      System.put_env("JF_DIST_NODE_NAME", "testnodename@127.0.0.1")
+
+      assert ConfigReader.read_dist_config() == [
+               enabled: true,
+               node_name: :"testnodename@127.0.0.1",
+               cookie: :testcookie,
+               nodes: []
+             ]
+
+      System.put_env("JF_DIST_NODES", "testnodename1@127.0.0.1 testnodename2@127.0.0.1")
+
+      assert ConfigReader.read_dist_config() == [
+               enabled: true,
+               node_name: :"testnodename@127.0.0.1",
+               cookie: :testcookie,
+               nodes: [:"testnodename1@127.0.0.1", :"testnodename2@127.0.0.1"]
+             ]
     end
   end
 end
