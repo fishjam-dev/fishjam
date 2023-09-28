@@ -11,11 +11,11 @@ defmodule Jellyfish.ConfigReader do
         {from, to}
       else
         _else ->
-          raise("""
+          raise """
           Bad #{env} environment variable value. Expected "from-to", where `from` and `to` \
           are numbers between 0 and 65535 and `from` is not bigger than `to`, got: \
           #{value}
-          """)
+          """
       end
     end
   end
@@ -29,9 +29,9 @@ defmodule Jellyfish.ConfigReader do
           parsed_ip
 
         _error ->
-          raise("""
+          raise """
           Bad #{env} environment variable value. Expected valid ip address, got: #{value}"
-          """)
+          """
       end
     end
   end
@@ -43,16 +43,25 @@ defmodule Jellyfish.ConfigReader do
           port
 
         _other ->
-          raise("""
+          raise """
           Bad #{env} environment variable value. Expected valid port number, got: #{value}
-          """)
+          """
       end
     end
   end
 
   def read_boolean(env) do
     if value = System.get_env(env) do
-      String.downcase(value) not in ["false", "f", "0"]
+      case String.downcase(value) do
+        "true" ->
+          true
+
+        "false" ->
+          false
+
+        _other ->
+          raise "Bad #{env} environment variable value. Expected true or false, got: #{value}"
+      end
     end
   end
 

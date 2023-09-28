@@ -62,16 +62,12 @@ defmodule Jellyfish.ConfigReaderTest do
     env_name = "JF_CONF_READER_TEST_BOOL"
 
     with_env env_name do
-      for {env_value, expected_value} <- [
-            {"f", false},
-            {"0", false},
-            {"false", false},
-            {"1", true},
-            {"true", true}
-          ] do
-        System.put_env(env_name, env_value)
-        assert ConfigReader.read_boolean(env_name) == expected_value
-      end
+      System.put_env(env_name, "false")
+      assert ConfigReader.read_boolean(env_name) == false
+      System.put_env(env_name, "true")
+      assert ConfigReader.read_boolean(env_name) == true
+      System.put_env(env_name, "other")
+      assert_raise RuntimeError, fn -> ConfigReader.read_boolean(env_name) end
     end
   end
 
