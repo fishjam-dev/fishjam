@@ -65,29 +65,29 @@ defmodule Jellyfish.RoomService do
   # So a code below, that creates room on node chosen by resource usage is temorary commented
   # #########
 
-  # def create_room(max_peers, video_codec, id \\ nil) do
-  #   {node_resources, failed_nodes} =
-  #     :rpc.multicall(Jellyfish.RoomService, :get_resource_usage, [])
+  def create_room(max_peers, video_codec, nil) do
+    GenServer.call(__MODULE__, {:create_room, max_peers, video_codec, nil})
+  end
 
-  #   if Enum.count(failed_nodes) > 0 do
-  #     Logger.warn(
-  #       "Couldn't get resource usage of the following nodes. Reason: nodes don't exist. Nodes: #{inspect(failed_nodes)}"
-  #     )
-  #   end
+  def create_room(max_peers, video_codec, id) do
+    {node_resources, failed_nodes} =
+      :rpc.multicall(Jellyfish.RoomService, :get_resource_usage, [])
 
-  #   {min_node, _room_size} =
-  #     Enum.min_by(node_resources, fn {_node_name, room_num} -> room_num end)
+    if Enum.count(failed_nodes) > 0 do
+      Logger.warning(
+        "Couldn't get resource usage of the following nodes. Reason: nodes don't exist. Nodes: #{inspect(failed_nodes)}"
+      )
+    end
 
-  #   if Enum.count(node_resources) > 1 do
-  #     Logger.info("Node with least used resources is #{inspect(min_node)}")
-  #     GenServer.call({__MODULE__, min_node}, {:create_room, max_peers, video_codec, id})
-  #   else
-  #     GenServer.call(__MODULE__, {:create_room, max_peers, video_codec, id})
-  #   end
-  # end
+    {min_node, _room_size} =
+      Enum.min_by(node_resources, fn {_node_name, room_num} -> room_num end)
 
-  def create_room(max_peers, video_codec, id \\ nil) do
-    GenServer.call(__MODULE__, {:create_room, max_peers, video_codec, id})
+    if Enum.count(node_resources) > 1 do
+      Logger.info("Node with least used resources is #{inspect(min_node)}")
+      GenServer.call({__MODULE__, min_node}, {:create_room, max_peers, video_codec, id})
+    else
+      GenServer.call(__MODULE__, {:create_room, max_peers, video_codec, id})
+    end
   end
 
   @spec delete_room(Room.id()) :: :ok | {:error, :room_not_found}
@@ -173,7 +173,7 @@ defmodule Jellyfish.RoomService do
   def handle_info({:DOWN, _ref, :process, pid, reason}, state) do
     {room_id, state} = pop_in(state, [:rooms, pid])
 
-    Logger.warn("Process #{room_id} is down with reason: #{reason}")
+    Logger.warning("Process #{room_id} is down with reason: #{reason}")
 
     Phoenix.PubSub.broadcast(Jellyfish.PubSub, room_id, :room_crashed)
     Event.broadcast(:server_notification, {:room_crashed, room_id})
@@ -191,7 +191,7 @@ defmodule Jellyfish.RoomService do
       Event.broadcast(:server_notification, {:room_deleted, room_id})
     catch
       :exit, {:noproc, {GenServer, :stop, [^room, :normal, :infinity]}} ->
-        Logger.warn("Room process with id #{inspect(room_id)} doesn't exist")
+        Logger.warning("Room process with id #{inspect(room_id)} doesn't exist")
     end
   end
 

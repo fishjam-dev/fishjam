@@ -8,6 +8,7 @@ defmodule Jellyfish.Room do
 
   require Logger
 
+  alias Jellyfish.Component.Remote
   alias Jellyfish.Component
   alias Jellyfish.Event
   alias Jellyfish.Peer
@@ -22,7 +23,8 @@ defmodule Jellyfish.Room do
     :engine_pid,
     :network_options
   ]
-  defstruct @enforce_keys ++ [components: %{}, peers: %{}, nodes: %{}]
+  defstruct @enforce_keys ++
+              [components: %{}, peers: %{}, nodes: %{}, spawned_remote_endpoint?: false]
 
   @type id :: String.t()
   @type max_peers :: non_neg_integer() | nil
@@ -47,14 +49,19 @@ defmodule Jellyfish.Room do
           peers: %{Peer.id() => Peer.t()},
           engine_pid: pid(),
           network_options: map(),
-          nodes: %{binary() => node()}
+          spawned_remote_endpoint?: boolean()
         }
 
   @spec start(max_peers(), video_codec(), id() | nil) :: {:ok, pid(), id()}
   def start(max_peers, video_codec, id \\ nil) do
+    distributed_room? = id == nil
+
     id = id || UUID.uuid4()
 
-    {:ok, pid} = GenServer.start(__MODULE__, [id, max_peers, video_codec], name: registry_id(id))
+    {:ok, pid} =
+      GenServer.start(__MODULE__, [id, max_peers, video_codec, distributed_room?],
+        name: registry_id(id)
+      )
 
     {:ok, pid, id}
   end
@@ -67,7 +74,7 @@ defmodule Jellyfish.Room do
       GenServer.call(registry_room_id, :get_state)
     catch
       :exit, {:noproc, {GenServer, :call, [^registry_room_id, :get_state, _timeout]}} ->
-        Logger.warn(
+        Logger.warning(
           "Cannot get state of #{inspect(room_id)}, the room's process doesn't exist anymore"
         )
 
@@ -117,10 +124,10 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def init([id, max_peers, video_codec]) do
-    state = new(id, max_peers, video_codec)
-    Phoenix.PubSub.subscribe(Jellyfish.PubSub, id)
-    Phoenix.PubSub.broadcast(Jellyfish.PubSub, id, {:room_created, Node.self()})
+  def init([id, max_peers, video_codec, distributed_room?]) do
+    state = new(id, max_peers, video_codec, distributed_room?)
+    :ok = Phoenix.PubSub.subscribe(Jellyfish.PubSub, id)
+    :ok = Phoenix.PubSub.broadcast(Jellyfish.PubSub, id, {:room_created, Node.self()})
     Logger.metadata(room_id: id)
     Logger.info("Initialize room")
 
@@ -157,7 +164,7 @@ defmodule Jellyfish.Room do
           {{:ok, peer}, state}
         else
           {:error, reason} ->
-            Logger.warn("Unable to add peer: #{inspect(reason)}")
+            Logger.warning("Unable to add peer: #{inspect(reason)}")
             {:error, state}
         end
       end
@@ -241,15 +248,15 @@ defmodule Jellyfish.Room do
       {:reply, {:ok, component}, state}
     else
       {:error, :incompatible_codec} ->
-        Logger.warn("Unable to add component: incompatible codec")
+        Logger.warning("Unable to add component: incompatible codec")
         {:reply, {:error, :incompatible_codec}, state}
 
       {:error, :reached_components_limit} ->
-        Logger.warn("Unable to add component: reached components limit")
+        Logger.warning("Unable to add component: reached components limit")
         {:reply, {:error, :reached_components_limit}, state}
 
       {:error, reason} ->
-        Logger.warn("Unable to add component: #{inspect(reason)}")
+        Logger.warning("Unable to add component: #{inspect(reason)}")
         {:reply, :error, state}
     end
   end
@@ -286,12 +293,12 @@ defmodule Jellyfish.Room do
       send(socket_pid, {:media_event, data})
     else
       nil ->
-        Logger.warn(
+        Logger.warning(
           "Received Media Event from RTC Engine to peer #{inspect(to)} without established signaling connection"
         )
 
       :error ->
-        Logger.warn(
+        Logger.warning(
           "Received Media Event from RTC Engine to non existent peer (target id: #{inspect(to)})"
         )
     end
@@ -301,76 +308,26 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_info({:room_created, node}, %__MODULE__{id: id} = state) do
-    if node != Node.self() do
-      Phoenix.PubSub.direct_broadcast(node, Jellyfish.PubSub, id, {:room_exists, Node.self()})
-      Logger.info("#{node} created multipart room (room_id=#{id})")
-    end
+    state =
+      if node != Node.self() and not state.spawned_remote_endpoint? do
+        :ok =
+          Engine.add_endpoint(state.engine_pid, %Remote{rtc_engine: state.engine_pid},
+            id: to_string(Remote)
+          )
+
+        Logger.info("Multipart room (room_id=#{id}) is created on node: #{node}")
+        %{state | spawned_remote_endpoint?: true}
+      else
+        state
+      end
+
+    :ok = Engine.message_endpoint(state.engine_pid, to_string(Remote), {:new_node, node})
 
     {:noreply, state}
-  end
-
-  @impl true
-  def handle_info({:room_exists, node}, state) do
-    if node != Node.self() do
-      Logger.info("Room #{state.id} exists on node #{node}")
-
-      endpoint_id = UUID.uuid4()
-
-      Engine.add_endpoint(
-        state.engine_pid,
-        %Remote{rtc_engine: state.engine_pid, owner: self()},
-        id: endpoint_id
-      )
-
-      {:noreply, put_in(state, [:nodes, endpoint_id], node)}
-    else
-      {:noreply, state}
-    end
   end
 
   @impl true
   def handle_info(%Message.EndpointAdded{}, state), do: {:noreply, state}
-
-  @impl true
-  def handle_info(
-        %Message.EndpointMessage{
-          endpoint_id: endpoint_id,
-          endpoint_type: Remote,
-          message: {:link_proposal, %Remote.LinkProposal{} = link_proposal}
-        },
-        %__MODULE__{id: room_id} = state
-      ) do
-    case get_in(state, [:nodes, endpoint_id]) do
-      nil ->
-        Logger.warning("Wrong Remote Endpoint")
-
-      node ->
-        Phoenix.PubSub.direct_broadcast(
-          node,
-          Jellyfish.PubSub,
-          room_id,
-          {:create_remote_endpoint, link_proposal, Node.self()}
-        )
-    end
-
-    {:noreply, state}
-  end
-
-  @impl true
-  def handle_info(
-        {:create_remote_endpoint, config, node},
-        %__MODULE__{engine_pid: engine_pid} = state
-      ) do
-    endpoint_id = UUID.uuid4()
-
-    Engine.add_endpoint(
-      engine_pid,
-      %Remote{rtc_engine: engine_pid, owner: self(), link_proposal: config},
-      id: endpoint_id
-    )
-
-    {:noreply, put_in(state, [:nodes, endpoint_id], node)}
-  end
 
   @impl true
   def handle_info(%Message.EndpointCrashed{endpoint_id: endpoint_id}, state) do
@@ -428,11 +385,11 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_info(info, state) do
-    Logger.warn("Received unexpected info: #{inspect(info)}")
+    Logger.warning("Received unexpected info: #{inspect(info)}")
     {:noreply, state}
   end
 
-  defp new(id, max_peers, video_codec) do
+  defp new(id, max_peers, video_codec, distributed_room?) do
     rtc_engine_options = [
       id: id
     ]
@@ -461,12 +418,17 @@ defmodule Jellyfish.Room do
       TURNManager.ensure_tcp_turn_launched(integrated_turn_options, port: tcp_turn_port)
     end
 
+    if distributed_room? do
+      :ok = Engine.add_endpoint(pid, %Remote{rtc_engine: pid}, id: to_string(Remote))
+    end
+
     %__MODULE__{
       id: id,
       config: %{max_peers: max_peers, video_codec: video_codec},
       engine_pid: pid,
       network_options: [integrated_turn_options: integrated_turn_options],
-      nodes: %{}
+      nodes: %{},
+      spawned_remote_endpoint?: distributed_room?
     }
   end
 
