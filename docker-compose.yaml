@@ -7,8 +7,6 @@ x-jellyfish-template: &jellyfish-template
     JF_DIST_ENABLED: "true"
     JF_DIST_MODE: "sname"
     JF_DIST_NODES: "app@app1 app@app2"
-  networks:
-    - net1
   restart: on-failure
 
 services:
@@ -25,8 +23,6 @@ services:
       - .:/app
       - /app/_build
       - /app/deps
-    networks:
-      - net1
     depends_on:
       - app1
       - app2
@@ -50,7 +46,3 @@ services:
       JF_DIST_NODE_NAME: app@app2
     ports:
       - 4002:4002
-
-networks:
-  net1:
-    driver: bridge
