@@ -274,8 +274,6 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
 
   defp registry_id(room_id), do: {:via, Registry, {Jellyfish.RequestHandlerRegistry, room_id}}
 
-  defp send_partial_ready(nil), do: nil
-
   defp send_partial_ready(waiting_pids) do
     Enum.each(waiting_pids, fn pid -> send(pid, :manifest_ready) end)
   end
