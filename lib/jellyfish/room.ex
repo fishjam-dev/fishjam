@@ -374,23 +374,25 @@ defmodule Jellyfish.Room do
     {:ok, pid} = Engine.start_link(rtc_engine_options, [])
     Engine.register(pid, self())
 
+    webrtc_config = Application.fetch_env!(:jellyfish, :webrtc_config)
+
     integrated_turn_options =
-      if Application.fetch_env!(:jellyfish, :webrtc_used) do
-        turn_ip = Application.fetch_env!(:jellyfish, :integrated_turn_listen_ip)
-        turn_mock_ip = Application.fetch_env!(:jellyfish, :integrated_turn_ip)
+      if webrtc_config[:webrtc_used] do
+        turn_ip = webrtc_config[:integrated_turn_listen_ip]
+        turn_mock_ip = webrtc_config[:integrated_turn_ip]
 
         [
           ip: turn_ip,
           mock_ip: turn_mock_ip,
-          ports_range: Application.fetch_env!(:jellyfish, :integrated_turn_port_range)
+          ports_range: webrtc_config[:integrated_turn_port_range]
         ]
       else
         []
       end
 
-    tcp_turn_port = Application.fetch_env!(:jellyfish, :integrated_turn_tcp_port)
+    tcp_turn_port = webrtc_config[:integrated_turn_tcp_port]
 
-    if tcp_turn_port do
+    if webrtc_config[:webrtc_used] and tcp_turn_port != nil do
       TURNManager.ensure_tcp_turn_launched(integrated_turn_options, port: tcp_turn_port)
     end
 

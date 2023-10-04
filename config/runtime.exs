@@ -34,18 +34,13 @@ host =
   end
 
 config :jellyfish,
-  webrtc_used: ConfigReader.read_boolean("JF_WEBRTC_USED") || true,
-  integrated_turn_ip: ConfigReader.read_ip("JF_WEBRTC_TURN_IP") || {127, 0, 0, 1},
-  integrated_turn_listen_ip: ConfigReader.read_ip("JF_WEBRTC_TURN_LISTEN_IP") || {127, 0, 0, 1},
-  integrated_turn_port_range:
-    ConfigReader.read_port_range("JF_WEBRTC_TURN_PORT_RANGE") || {50_000, 59_999},
-  integrated_turn_tcp_port: ConfigReader.read_port("JF_WEBRTC_TURN_TCP_PORT"),
   jwt_max_age: 24 * 3600,
   output_base_path: System.get_env("JF_OUTPUT_BASE_PATH", "jellyfish_output") |> Path.expand(),
   address: "#{host}",
   metrics_ip: ConfigReader.read_ip("JF_METRICS_IP") || {127, 0, 0, 1},
   metrics_port: ConfigReader.read_port("JF_METRICS_PORT") || 9568,
-  dist_config: ConfigReader.read_dist_config()
+  dist_config: ConfigReader.read_dist_config(),
+  webrtc_config: ConfigReader.read_webrtc_config()
 
 case System.get_env("JF_SERVER_API_TOKEN") do
   nil when prod? == true ->
