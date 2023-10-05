@@ -14,11 +14,11 @@ defmodule Jellyfish.Peer.WebRTC do
 
   @impl true
   def config(options) do
-    if not Application.get_env(:jellyfish, :webrtc_used),
-      do:
-        raise(
-          "WebRTC peers can be used only if WEBRTC_USED environmental variable is not set to \"false\""
-        )
+    if not Application.fetch_env!(:jellyfish, :webrtc_config)[:webrtc_used] do
+      raise(
+        "WebRTC peers can only be used if JF_WEBRTC_USED environmental variable is not set to \"false\""
+      )
+    end
 
     with {:ok, valid_opts} <- OpenApiSpex.cast_value(options, ApiSpec.Peer.WebRTC.schema()) do
       handshake_options = [
