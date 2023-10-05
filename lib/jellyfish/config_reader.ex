@@ -93,6 +93,28 @@ defmodule Jellyfish.ConfigReader do
     end
   end
 
+  def read_webrtc_config() do
+    webrtc_used = read_boolean("JF_WEBRTC_USED")
+
+    if webrtc_used != false do
+      [
+        webrtc_used: true,
+        turn_ip: read_ip("JF_WEBRTC_TURN_IP") || {127, 0, 0, 1},
+        turn_listen_ip: read_ip("JF_WEBRTC_TURN_LISTEN_IP") || {127, 0, 0, 1},
+        turn_port_range: read_port_range("JF_WEBRTC_TURN_PORT_RANGE") || {50_000, 59_999},
+        turn_tcp_port: read_port("JF_WEBRTC_TURN_TCP_PORT")
+      ]
+    else
+      [
+        webrtc_used: false,
+        turn_ip: nil,
+        turn_listen_ip: nil,
+        turn_port_range: nil,
+        turn_tcp_port: nil
+      ]
+    end
+  end
+
   defp parse_node_name(node_name), do: String.to_atom(node_name)
   defp parse_cookie(cookie_value), do: String.to_atom(cookie_value)
 

@@ -7,10 +7,13 @@ defmodule Jellyfish.Application do
 
   require Logger
 
+  @version Mix.Project.config()[:version]
+
   @impl true
   def start(_type, _args) do
     scrape_interval = Application.fetch_env!(:jellyfish, :metrics_scrape_interval)
     dist_config = Application.fetch_env!(:jellyfish, :dist_config)
+    webrtc_config = Application.fetch_env!(:jellyfish, :webrtc_config)
 
     children =
       [
@@ -41,6 +44,11 @@ defmodule Jellyfish.Application do
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Jellyfish.Supervisor]
+
+    Logger.info("Starting Jellyfish v#{@version}")
+    Logger.info("Distribution config: #{inspect(Keyword.delete(dist_config, :cookie))}")
+    Logger.info("WebRTC config: #{inspect(webrtc_config)}")
+
     Supervisor.start_link(children, opts)
   end
 

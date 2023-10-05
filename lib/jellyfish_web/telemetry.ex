@@ -3,6 +3,7 @@ defmodule JellyfishWeb.Telemetry do
 
   use Supervisor
   import Telemetry.Metrics
+  require Logger
   alias JellyfishWeb.Telemetry.MetricsAggregator
 
   def start_link(arg) do
@@ -13,6 +14,10 @@ defmodule JellyfishWeb.Telemetry do
   def init(_arg) do
     metrics_ip = Application.fetch_env!(:jellyfish, :metrics_ip)
     metrics_port = Application.fetch_env!(:jellyfish, :metrics_port)
+
+    Logger.info(
+      "Starting prometheus metrics endpoint at: http://#{:inet.ntoa(metrics_ip)}:#{metrics_port}"
+    )
 
     metrics_opts = [
       metrics: metrics(&last_value/2),
