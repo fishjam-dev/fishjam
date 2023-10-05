@@ -7,7 +7,7 @@ defmodule Jellyfish.ConfigReaderTest do
   alias Jellyfish.ConfigReader
 
   defmacrop with_env(env, do: body) do
-    # get current env(s) value(s), 
+    # get current env(s) value(s),
     # execute test code,
     # put back original env(s) value(s)
     #
@@ -68,6 +68,29 @@ defmodule Jellyfish.ConfigReaderTest do
       assert ConfigReader.read_boolean(env_name) == true
       System.put_env(env_name, "other")
       assert_raise RuntimeError, fn -> ConfigReader.read_boolean(env_name) end
+    end
+  end
+
+  test "read_check_origin/1" do
+    env_name = "JF_CHECK_ORIGIN"
+
+    with_env env_name do
+      System.put_env(env_name, "false")
+      assert ConfigReader.read_check_origin(env_name) == false
+      System.put_env(env_name, "true")
+      assert ConfigReader.read_check_origin(env_name) == true
+      System.put_env(env_name, "jellyfish.ovh jellyfish2.ovh jellyfish3.ovh")
+
+      assert ConfigReader.read_check_origin(env_name) == [
+               "jellyfish.ovh",
+               "jellyfish2.ovh",
+               "jellyfish3.ovh"
+             ]
+
+      System.put_env(env_name, "jellyfish.ovh abc jellyfish3.ovh")
+      assert_raise RuntimeError, fn -> ConfigReader.read_check_origin(env_name) end
+      System.put_env(env_name, "other")
+      assert_raise RuntimeError, fn -> ConfigReader.read_check_origin(env_name) end
     end
   end
 

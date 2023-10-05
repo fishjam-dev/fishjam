@@ -50,7 +50,7 @@ defmodule Jellyfish.ConfigReader do
     end
   end
 
-  def read_boolean(env) do
+  defp parse_boolean(env, other_handler \\ nil) do
     if value = System.get_env(env) do
       case String.downcase(value) do
         "true" ->
@@ -59,10 +59,29 @@ defmodule Jellyfish.ConfigReader do
         "false" ->
           false
 
-        _other ->
+        _other when is_nil(other_handler) ->
           raise "Bad #{env} environment variable value. Expected true or false, got: #{value}"
+
+        _other ->
+          other_handler.(value)
       end
     end
+  end
+
+  def read_check_origin(env) do
+    parse_boolean(env, fn value ->
+      hosts = String.split(value, " ")
+
+      if Enum.all?(hosts, &String.contains?(&1, ".")) do
+        hosts
+      else
+        raise "Bad #{env} environment variable value. Expected true or false, or list of domains got: #{value}"
+      end
+    end)
+  end
+
+  def read_boolean(env) do
+    parse_boolean(env)
   end
 
   def read_dist_config() do
