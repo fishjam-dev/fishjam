@@ -211,15 +211,19 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
     []
   end
 
-  defp update_and_notify_manifest_ready(status, last_partial) do
-    {waiting_pids, status} =
-      status
-      |> Map.put(:last_partial, last_partial)
-      |> pop_in([:waiting_pids, last_partial])
+  defp update_and_notify_manifest_ready(%{waiting_pids: waiting_pids} = status, last_partial) do
+    partials_ready =
+      waiting_pids
+      |> Map.keys()
+      |> Enum.filter(fn partial -> is_partial_ready(partial, last_partial) end)
 
-    send_partial_ready(waiting_pids)
+    partials_ready
+    |> Enum.flat_map(fn partial -> Map.fetch!(waiting_pids, partial) end)
+    |> then(&send_partial_ready(&1))
 
-    status
+    waiting_pids = Map.drop(waiting_pids, partials_ready)
+
+    %{status | waiting_pids: waiting_pids, last_partial: last_partial}
   end
 
   defp handle_is_partial_ready(status, partial, from) do
@@ -269,8 +273,6 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   end
 
   defp registry_id(room_id), do: {:via, Registry, {Jellyfish.RequestHandlerRegistry, room_id}}
-
-  defp send_partial_ready(nil), do: nil
 
   defp send_partial_ready(waiting_pids) do
     Enum.each(waiting_pids, fn pid -> send(pid, :manifest_ready) end)
