@@ -46,7 +46,7 @@ defmodule Jellyfish.Application do
     opts = [strategy: :one_for_one, name: Jellyfish.Supervisor]
 
     Logger.info("Starting Jellyfish v#{@version}")
-    Logger.info("Distribution config: #{inspect(dist_config)}")
+    Logger.info("Distribution config: #{inspect(Keyword.delete(dist_config, :cookie))}")
     Logger.info("WebRTC config: #{inspect(webrtc_config)}")
 
     Supervisor.start_link(children, opts)

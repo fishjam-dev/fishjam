@@ -16,7 +16,7 @@ defmodule JellyfishWeb.Telemetry do
     metrics_port = Application.fetch_env!(:jellyfish, :metrics_port)
 
     Logger.info(
-      "Starting telemetry endpoint at: http://#{:inet.ntoa(metrics_ip)}:#{metrics_port}"
+      "Starting prometheus metrics endpoint at: http://#{:inet.ntoa(metrics_ip)}:#{metrics_port}"
     )
 
     metrics_opts = [
