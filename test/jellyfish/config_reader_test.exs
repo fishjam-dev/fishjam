@@ -87,10 +87,15 @@ defmodule Jellyfish.ConfigReaderTest do
                "jellyfish3.ovh"
              ]
 
-      System.put_env(env_name, "jellyfish.ovh abc jellyfish3.ovh")
-      assert_raise RuntimeError, fn -> ConfigReader.read_check_origin(env_name) end
-      System.put_env(env_name, "other")
-      assert_raise RuntimeError, fn -> ConfigReader.read_check_origin(env_name) end
+      # Case from phoenix documentation
+      System.put_env(env_name, "//another.com:888 //*.other.com")
+      assert ConfigReader.read_check_origin(env_name) == ["//another.com:888", "//*.other.com"]
+
+      System.put_env(env_name, "localhost")
+      assert ConfigReader.read_check_origin(env_name) == ["localhost"]
+
+      System.put_env(env_name, ":conn")
+      assert ConfigReader.read_check_origin(env_name) == :conn
     end
   end
 
