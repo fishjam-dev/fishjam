@@ -1,6 +1,7 @@
 defmodule WebHookPlug do
   @moduledoc false
   import Plug.Conn
+  alias Jellyfish.ServerMessage
   alias Phoenix.PubSub
 
   @pubsub Jellyfish.PubSub
@@ -14,6 +15,9 @@ defmodule WebHookPlug do
   def call(conn, _opts) do
     {:ok, body, conn} = Plug.Conn.read_body(conn, [])
     notification = Jason.decode!(body)
+
+    notification =
+      notification |> Map.get("notification") |> ServerMessage.decode() |> Map.get(:content)
 
     :ok = PubSub.broadcast(@pubsub, "webhook", notification)
 

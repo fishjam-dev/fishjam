@@ -121,7 +121,7 @@ defmodule Jellyfish.RoomService do
 
   @impl true
   def init(_opts) do
-    {:ok, %{rooms: %{}}, {:continue, nil}}
+    {:ok, %{rooms: %{}, rooms_webhook: %{}}, {:continue, nil}}
   end
 
   @impl true
@@ -141,10 +141,11 @@ defmodule Jellyfish.RoomService do
       Process.monitor(room_pid)
 
       state = put_in(state, [:rooms, room_pid], room_id)
+      state = put_in(state, [:rooms_webhook, room_id], webhook_url)
 
       Logger.info("Created room #{inspect(room.id)}")
 
-      Event.broadcast(:server_notification, {:room_created, room_id})
+      Event.broadcast_server_notification({:room_created, room_id}, room_id)
 
       {:reply, {:ok, room, Application.fetch_env!(:jellyfish, :address)}, state}
     else
@@ -164,7 +165,7 @@ defmodule Jellyfish.RoomService do
     response =
       case find_room(room_id) do
         {:ok, _room_pid} ->
-          remove_room(room_id)
+          remove_room(room_id, state)
           :ok
 
         {:error, _} ->
@@ -188,11 +189,12 @@ defmodule Jellyfish.RoomService do
   @impl true
   def handle_info({:DOWN, _ref, :process, pid, reason}, state) do
     {room_id, state} = pop_in(state, [:rooms, pid])
+    {webhook_url, state} = pop_in(state, [:rooms_webhook, room_id])
 
     Logger.warning("Process #{room_id} is down with reason: #{reason}")
 
     Phoenix.PubSub.broadcast(Jellyfish.PubSub, room_id, :room_crashed)
-    Event.broadcast(:server_notification, {:room_crashed, room_id})
+    Event.broadcast_server_notification({:room_crashed, room_id}, webhook_url)
 
     {:noreply, state}
   end
@@ -220,14 +222,15 @@ defmodule Jellyfish.RoomService do
     |> Registry.select([{{:"$1", :_, :_}, [], [:"$1"]}])
   end
 
-  defp remove_room(room_id) do
+  defp remove_room(room_id, state) do
     room = Room.registry_id(room_id)
 
     try do
       :ok = GenServer.stop(room, :normal)
       Logger.info("Deleted room #{inspect(room_id)}")
+      webhook_url = get_in(state, [:rooms_webhook, room_id])
 
-      Event.broadcast(:server_notification, {:room_deleted, room_id})
+      Event.broadcast_server_notification({:room_deleted, room_id}, webhook_url)
     catch
       :exit, {:noproc, {GenServer, :stop, [^room, :normal, :infinity]}} ->
         Logger.warning("Room process with id #{inspect(room_id)} doesn't exist")

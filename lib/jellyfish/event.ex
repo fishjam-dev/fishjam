@@ -3,6 +3,8 @@ defmodule Jellyfish.Event do
 
   alias Jellyfish.Room
 
+  alias Jellyfish.ServerMessage
+
   alias Jellyfish.ServerMessage.{
     ComponentCrashed,
     HlsPlayable,
@@ -18,20 +20,30 @@ defmodule Jellyfish.Event do
   @pubsub Jellyfish.PubSub
   @valid_topics [:server_notification, :metrics]
 
-  def broadcast(topic, message) when topic in @valid_topics do
+  def broadcast_metrics(message) do
+    topic = :metrics
     Phoenix.PubSub.broadcast(@pubsub, Atom.to_string(topic), {topic, message})
   end
 
-  def broadcast_room(topic, message, room_id) when topic in @valid_topics do
+  def broadcast_server_notification({type, _content} = message, webhook_url)
+      when type in [:room_deleted, :room_crashed] do
+    topic = :server_notification
     Phoenix.PubSub.broadcast(@pubsub, Atom.to_string(topic), {topic, message})
 
-    {atom, notification} = to_proto_server_notification(message)
+    content = to_proto({topic, message})
 
-    notification =
-      notification
-      |> Map.from_struct()
-      |> Map.put(:type, Atom.to_string(atom))
-      |> Map.delete(:__unknown_fields__)
+    notification = %ServerMessage{content: content} |> ServerMessage.encode()
+
+    Room.send_webhook_notification(notification, webhook_url)
+  end
+
+  def broadcast_server_notification(message, room_id) do
+    topic = :server_notification
+    Phoenix.PubSub.broadcast(@pubsub, Atom.to_string(topic), {topic, message})
+
+    content = to_proto({topic, message})
+
+    notification = %ServerMessage{content: content} |> ServerMessage.encode()
 
     Room.receive_room_notification(room_id, notification)
   end

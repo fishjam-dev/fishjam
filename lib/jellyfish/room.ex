@@ -305,13 +305,7 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_cast({:room_notification, notification}, state) do
-    case HTTPoison.post(state.webhook_url, Jason.encode!(notification)) do
-      {:ok, _result} ->
-        nil
-
-      {:error, error} ->
-        Logger.warning("Sending notification through webhook fails with error: #{inspect(error)}")
-    end
+    send_webhook_notification(notification, state.webhook_url)
 
     {:noreply, state}
   end
@@ -341,7 +335,7 @@ defmodule Jellyfish.Room do
     Logger.error("RTC Engine endpoint #{inspect(endpoint_id)} crashed")
 
     if Map.has_key?(state.peers, endpoint_id) do
-      Event.broadcast(:server_notification, {:peer_crashed, state.id, endpoint_id})
+      Event.broadcast_server_notification({:peer_crashed, state.id, endpoint_id}, state.id)
 
       peer = Map.fetch!(state.peers, endpoint_id)
 
@@ -349,7 +343,7 @@ defmodule Jellyfish.Room do
         send(peer.socket_pid, {:stop_connection, :endpoint_crashed})
       end
     else
-      Event.broadcast(:server_notification, {:component_crashed, state.id, endpoint_id})
+      Event.broadcast_server_notification({:component_crashed, state.id, endpoint_id}, state.id)
 
       component = Map.get(state.components, endpoint_id)
       if component.type == Component.HLS, do: remove_hls_processes(state.id, component.metadata)
@@ -384,7 +378,7 @@ defmodule Jellyfish.Room do
         if type == Component.HLS, do: id
       end)
 
-    Event.broadcast(:server_notification, {:hls_playable, state.id, endpoint_id})
+    Event.broadcast_server_notification({:hls_playable, state.id, endpoint_id}, state.id)
 
     state = update_in(state, [:components, endpoint_id, :metadata], &Map.put(&1, :playable, true))
     {:noreply, state}
@@ -407,6 +401,18 @@ defmodule Jellyfish.Room do
   end
 
   def registry_id(room_id), do: {:via, Registry, {Jellyfish.RoomRegistry, room_id}}
+
+  def send_webhook_notification(notification, webhook_url) when not is_nil(webhook_url) do
+    case HTTPoison.post(webhook_url, Jason.encode!(%{notification: notification})) do
+      {:ok, _result} ->
+        nil
+
+      {:error, error} ->
+        Logger.warning("Sending notification through webhook fails with error: #{inspect(error)}")
+    end
+  end
+
+  def send_webhook_notification(_notification, _state), do: :ok
 
   defp new(id, max_peers, video_codec, webhook_url) do
     rtc_engine_options = [
