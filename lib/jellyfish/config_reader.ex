@@ -50,7 +50,17 @@ defmodule Jellyfish.ConfigReader do
     end
   end
 
-  def read_boolean(env) do
+  def read_check_origin(env) do
+    read_boolean(env, fn
+      ":conn" ->
+        :conn
+
+      value ->
+        String.split(value, " ")
+    end)
+  end
+
+  def read_boolean(env, fallback \\ nil) do
     if value = System.get_env(env) do
       case String.downcase(value) do
         "true" ->
@@ -59,8 +69,11 @@ defmodule Jellyfish.ConfigReader do
         "false" ->
           false
 
-        _other ->
+        _other when is_nil(fallback) ->
           raise "Bad #{env} environment variable value. Expected true or false, got: #{value}"
+
+        _other ->
+          fallback.(value)
       end
     end
   end
