@@ -1,6 +1,8 @@
 defmodule Jellyfish.Event do
   @moduledoc false
 
+  alias Jellyfish.Room
+
   alias Jellyfish.ServerMessage.{
     ComponentCrashed,
     HlsPlayable,
@@ -18,6 +20,20 @@ defmodule Jellyfish.Event do
 
   def broadcast(topic, message) when topic in @valid_topics do
     Phoenix.PubSub.broadcast(@pubsub, Atom.to_string(topic), {topic, message})
+  end
+
+  def broadcast_room(topic, message, room_id) when topic in @valid_topics do
+    Phoenix.PubSub.broadcast(@pubsub, Atom.to_string(topic), {topic, message})
+
+    {atom, notification} = to_proto_server_notification(message)
+
+    notification =
+      notification
+      |> Map.from_struct()
+      |> Map.put(:type, Atom.to_string(atom))
+      |> Map.delete(:__unknown_fields__)
+
+    Room.receive_room_notification(room_id, notification)
   end
 
   def subscribe(topic) when topic in @valid_topics do

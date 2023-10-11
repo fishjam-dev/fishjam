@@ -54,9 +54,9 @@ defmodule Jellyfish.RoomService do
     |> Enum.reject(&(&1 == nil))
   end
 
-  @spec create_room(Room.max_peers(), String.t()) ::
+  @spec create_room(Room.max_peers(), String.t(), String.t()) ::
           {:ok, Room.t(), String.t()} | {:error, :invalid_max_peers | :invalid_video_codec}
-  def create_room(max_peers, video_codec) do
+  def create_room(max_peers, video_codec, webhook_url) do
     {node_resources, failed_nodes} =
       :rpc.multicall(Jellyfish.RoomService, :get_resource_usage, [])
 
@@ -80,9 +80,9 @@ defmodule Jellyfish.RoomService do
 
     if Enum.count(node_resources) > 1 do
       Logger.info("Node with least used resources is #{inspect(min_node)}")
-      GenServer.call({__MODULE__, min_node}, {:create_room, max_peers, video_codec})
+      GenServer.call({__MODULE__, min_node}, {:create_room, max_peers, video_codec, webhook_url})
     else
-      GenServer.call(__MODULE__, {:create_room, max_peers, video_codec})
+      GenServer.call(__MODULE__, {:create_room, max_peers, video_codec, webhook_url})
     end
   end
 
@@ -131,10 +131,11 @@ defmodule Jellyfish.RoomService do
   end
 
   @impl true
-  def handle_call({:create_room, max_peers, video_codec}, _from, state) do
+  def handle_call({:create_room, max_peers, video_codec, webhook_url}, _from, state) do
     with :ok <- validate_max_peers(max_peers),
-         {:ok, video_codec} <- codec_to_atom(video_codec) do
-      {:ok, room_pid, room_id} = Room.start(max_peers, video_codec)
+         {:ok, video_codec} <- codec_to_atom(video_codec),
+         :ok <- validate_webhook_url(webhook_url) do
+      {:ok, room_pid, room_id} = Room.start(max_peers, video_codec, webhook_url)
 
       room = Room.get_state(room_id)
       Process.monitor(room_pid)
@@ -152,6 +153,9 @@ defmodule Jellyfish.RoomService do
 
       {:error, :video_codec} ->
         {:reply, {:error, :invalid_video_codec}, state}
+
+      {:error, :not_valid_url} ->
+        {:reply, {:error, :invalid_webhook_url}, state}
     end
   end
 
@@ -217,7 +221,7 @@ defmodule Jellyfish.RoomService do
   end
 
   defp remove_room(room_id) do
-    room = {:via, Registry, {Jellyfish.RoomRegistry, room_id}}
+    room = Room.registry_id(room_id)
 
     try do
       :ok = GenServer.stop(room, :normal)
@@ -233,6 +237,20 @@ defmodule Jellyfish.RoomService do
   defp validate_max_peers(nil), do: :ok
   defp validate_max_peers(max_peers) when is_integer(max_peers) and max_peers >= 0, do: :ok
   defp validate_max_peers(_max_peers), do: {:error, :max_peers}
+
+  defp validate_webhook_url(nil), do: :ok
+
+  defp validate_webhook_url(uri) do
+    uri
+    |> URI.parse()
+    |> Map.take([:host, :path, :scheme])
+    |> Enum.all?(fn {_key, value} -> not is_nil(value) end)
+    |> if do
+      :ok
+    else
+      {:error, :not_valid_url}
+    end
+  end
 
   defp codec_to_atom("h264"), do: {:ok, :h264}
   defp codec_to_atom("vp8"), do: {:ok, :vp8}

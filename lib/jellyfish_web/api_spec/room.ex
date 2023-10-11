@@ -26,6 +26,12 @@ defmodule JellyfishWeb.ApiSpec.Room do
           type: :string,
           enum: ["h264", "vp8"],
           nullable: true
+        },
+        webhookUrl: %Schema{
+          description: "Address on which HTTP requests will be send with jellyfish notifications",
+          type: :string,
+          example: "https://backend.address.com/jellyfish-notifications-endpoint",
+          nullable: true
         }
       }
     })

@@ -73,7 +73,9 @@ defmodule JellyfishWeb.RoomController do
   def create(conn, params) do
     with max_peers <- Map.get(params, "maxPeers"),
          video_codec <- Map.get(params, "videoCodec"),
-         {:ok, room, jellyfish_address} <- RoomService.create_room(max_peers, video_codec) do
+         webhook_url <- Map.get(params, "webhookUrl"),
+         {:ok, room, jellyfish_address} <-
+           RoomService.create_room(max_peers, video_codec, webhook_url) do
       conn
       |> put_resp_content_type("application/json")
       |> put_status(:created)
@@ -84,6 +86,10 @@ defmodule JellyfishWeb.RoomController do
 
       {:error, :invalid_video_codec} ->
         {:error, :bad_request, "videoCodec must be 'h264' or 'vp8'"}
+
+      {:error, :invalid_webhook_url} ->
+        webhook_url = Map.get(params, "webhookUrl")
+        {:error, :bad_request, "webhookUrl must be valid URI, received url was: #{webhook_url}"}
     end
   end
 

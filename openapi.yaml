@@ -319,6 +319,11 @@ components:
             - vp8
           nullable: true
           type: string
+        webhookUrl:
+          description: Address on which HTTP requests will be send with jellyfish notifications
+          example: https://backend.address.com/jellyfish-notifications-endpoint
+          nullable: true
+          type: string
       title: RoomConfig
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Room.Config

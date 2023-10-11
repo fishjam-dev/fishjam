@@ -19,11 +19,13 @@ defmodule Jellyfish.Room do
     :id,
     :config,
     :engine_pid,
-    :network_options
+    :network_options,
+    :webhook_url
   ]
   defstruct @enforce_keys ++ [components: %{}, peers: %{}]
 
   @type id :: String.t()
+  @type webhook_url :: non_neg_integer() | nil
   @type max_peers :: non_neg_integer() | nil
   @type video_codec :: :h264 | :vp8 | nil
 
@@ -34,6 +36,7 @@ defmodule Jellyfish.Room do
   * `components` - map of components
   * `peers` - map of peers
   * `engine` - pid of engine
+  * `webhook_url` - url on which notifcations from this room should be send
   """
   @type t :: %__MODULE__{
           id: id(),
@@ -45,14 +48,18 @@ defmodule Jellyfish.Room do
           components: %{Component.id() => Component.t()},
           peers: %{Peer.id() => Peer.t()},
           engine_pid: pid(),
-          network_options: map()
+          network_options: map(),
+          webhook_url: String.t()
         }
 
-  @spec start(max_peers(), video_codec()) :: {:ok, pid(), id()}
-  def start(max_peers, video_codec) do
+  @spec start(max_peers(), video_codec(), String.t()) :: {:ok, pid(), id()}
+  def start(max_peers, video_codec, webhook_url) do
     id = UUID.uuid4()
 
-    {:ok, pid} = GenServer.start(__MODULE__, [id, max_peers, video_codec], name: registry_id(id))
+    {:ok, pid} =
+      GenServer.start(__MODULE__, [id, max_peers, video_codec, webhook_url],
+        name: registry_id(id)
+      )
 
     {:ok, pid, id}
   end
@@ -119,9 +126,14 @@ defmodule Jellyfish.Room do
     GenServer.cast(registry_id(room_id), {:media_event, peer_id, event})
   end
 
+  @spec receive_room_notification(id(), any()) :: :ok
+  def receive_room_notification(room_id, notification) do
+    GenServer.cast(registry_id(room_id), {:room_notification, notification})
+  end
+
   @impl true
-  def init([id, max_peers, video_codec]) do
-    state = new(id, max_peers, video_codec)
+  def init([id, max_peers, video_codec, webhook_url]) do
+    state = new(id, max_peers, video_codec, webhook_url)
     Logger.metadata(room_id: id)
     Logger.info("Initialize room")
 
@@ -287,6 +299,24 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
+  def handle_cast({:room_notification, _notification}, state) when is_nil(state.webhook_url) do
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_cast({:room_notification, notification}, state) do
+    case HTTPoison.post(state.webhook_url, Jason.encode!(notification)) do
+      {:ok, _result} ->
+        nil
+
+      {:error, error} ->
+        Logger.warning("Sending notification through webhook fails with error: #{inspect(error)}")
+    end
+
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_info(%Message.EndpointMessage{endpoint_id: to, message: {:media_event, data}}, state) do
     with {:ok, peer} <- Map.fetch(state.peers, to),
          socket_pid when is_pid(socket_pid) <- Map.get(peer, :socket_pid) do
@@ -376,7 +406,9 @@ defmodule Jellyfish.Room do
     :ok
   end
 
-  defp new(id, max_peers, video_codec) do
+  def registry_id(room_id), do: {:via, Registry, {Jellyfish.RoomRegistry, room_id}}
+
+  defp new(id, max_peers, video_codec, webhook_url) do
     rtc_engine_options = [
       id: id
     ]
@@ -410,7 +442,8 @@ defmodule Jellyfish.Room do
       id: id,
       config: %{max_peers: max_peers, video_codec: video_codec},
       engine_pid: pid,
-      network_options: [turn_options: turn_options]
+      network_options: [turn_options: turn_options],
+      webhook_url: webhook_url
     }
   end
 
@@ -429,8 +462,6 @@ defmodule Jellyfish.Room do
     do: Component.HLS.RequestHandler.stop(room_id)
 
   defp remove_hls_processes(_room_id, _metadata), do: nil
-
-  defp registry_id(room_id), do: {:via, Registry, {Jellyfish.RoomRegistry, room_id}}
 
   defp check_component_allowed(Component.HLS, %{
          config: %{video_codec: video_codec},
