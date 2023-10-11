@@ -47,7 +47,11 @@ defmodule JellyfishWeb.ComponentControllerTest do
                  "data" => %{
                    "id" => id,
                    "type" => "hls",
-                   "metadata" => %{"playable" => false, "lowLatency" => false}
+                   "metadata" => %{
+                     "playable" => false,
+                     "lowLatency" => false,
+                     "persistent" => false
+                   }
                  }
                } =
                json_response(conn, :created)
@@ -71,6 +75,55 @@ defmodule JellyfishWeb.ComponentControllerTest do
 
       room_conn = delete(conn, ~p"/room/#{room_id}")
       assert response(room_conn, :no_content)
+    end
+
+    test "renders component with peristent enabled", %{conn: conn} do
+      room_conn = post(conn, ~p"/room", videoCodec: "h264")
+      assert %{"id" => room_id} = json_response(room_conn, :created)["data"]["room"]
+
+      conn = post(conn, ~p"/room/#{room_id}/component", type: "hls", options: %{persistent: true})
+
+      assert response =
+               %{
+                 "data" => %{
+                   "type" => "hls",
+                   "metadata" => %{
+                     "playable" => false,
+                     "lowLatency" => false,
+                     "persistent" => true
+                   }
+                 }
+               } =
+               json_response(conn, :created)
+
+      assert_response_schema(response, "ComponentDetailsResponse", @schema)
+    end
+
+    test "renders component with targetWindowDuration set", %{conn: conn} do
+      room_conn = post(conn, ~p"/room", videoCodec: "h264")
+      assert %{"id" => room_id} = json_response(room_conn, :created)["data"]["room"]
+
+      conn =
+        post(conn, ~p"/room/#{room_id}/component",
+          type: "hls",
+          options: %{targetWindowDuration: 10}
+        )
+
+      assert response =
+               %{
+                 "data" => %{
+                   "type" => "hls",
+                   "metadata" => %{
+                     "playable" => false,
+                     "lowLatency" => false,
+                     "persistent" => false,
+                     "targetWindowDuration" => 10
+                   }
+                 }
+               } =
+               json_response(conn, :created)
+
+      assert_response_schema(response, "ComponentDetailsResponse", @schema)
     end
 
     test "renders component with ll-hls enabled", %{conn: conn} do

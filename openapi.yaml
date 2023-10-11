@@ -60,12 +60,19 @@ components:
         lowLatency:
           description: Whether the component uses LL-HLS
           type: boolean
+        persistent:
+          description: Whether the video is stored after end of stream
+          type: boolean
         playable:
           description: Whether the generated HLS playlist is playable
           type: boolean
+        targetWindowDuration:
+          description: Duration of stream available for viewer
+          type: integer
       required:
         - playable
         - lowLatency
+        - persistent
       title: ComponentMetadataHLS
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS.Metadata
@@ -90,6 +97,14 @@ components:
           default: false
           description: Whether the component should use LL-HLS
           type: boolean
+        persistent:
+          default: false
+          description: Whether the video is stored after end of stream
+          type: boolean
+        targetWindowDuration:
+          description: Duration of stream available for viewer
+          nullable: true
+          type: integer
       title: ComponentOptionsHLS
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS.Options

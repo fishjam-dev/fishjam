@@ -14,19 +14,40 @@ defmodule Jellyfish.Component.HLS do
   alias Membrane.RTC.Engine.Endpoint.HLS.{CompositorConfig, HLSConfig, MixerConfig}
   alias Membrane.Time
 
+  @cleanup_after Time.seconds(60)
   @segment_duration Time.seconds(6)
   @partial_segment_duration Time.milliseconds(1_100)
-
   @type metadata :: %{
+          optional(:target_window_duration) => pos_integer(),
           playable: boolean(),
-          low_latency: boolean()
+          low_latency: boolean(),
+          persistent: boolean()
         }
 
   @impl true
   def config(options) do
     with {:ok, valid_opts} <- OpenApiSpex.cast_value(options, Options.schema()) do
       low_latency? = valid_opts.lowLatency
-      hls_config = create_hls_config(options.room_id, low_latency?: low_latency?)
+      target_window_duration = valid_opts.targetWindowDuration
+      persistent? = valid_opts.persistent
+
+      hls_config =
+        create_hls_config(options.room_id,
+          low_latency?: low_latency?,
+          target_window_duration: target_window_duration,
+          persistent?: persistent?
+        )
+
+      metadata = %{
+        playable: false,
+        low_latency: low_latency?,
+        persistent: persistent?
+      }
+
+      metadata =
+        if is_nil(target_window_duration),
+          do: metadata,
+          else: Map.put(metadata, :target_window_duration, target_window_duration)
 
       {:ok,
        %{
@@ -47,10 +68,7 @@ defmodule Jellyfish.Component.HLS do
            },
            hls_config: hls_config
          },
-         metadata: %{
-           playable: false,
-           low_latency: low_latency?
-         }
+         metadata: metadata
        }}
     else
       {:error, _reason} = error -> error
@@ -63,16 +81,24 @@ defmodule Jellyfish.Component.HLS do
     Path.join([base_path, "hls_output", "#{room_id}"])
   end
 
-  defp create_hls_config(room_id, low_latency?: low_latency?) do
+  defp create_hls_config(room_id,
+         low_latency?: low_latency?,
+         target_window_duration: target_window_duration,
+         persistent?: persistent?
+       ) do
     partial_duration = if low_latency?, do: @partial_segment_duration, else: nil
     hls_storage = setup_hls_storage(room_id, low_latency?: low_latency?)
+
+    cleanup_after = if persistent?, do: nil, else: @cleanup_after
 
     %HLSConfig{
       hls_mode: :muxed_av,
       mode: :live,
-      target_window_duration: :infinity,
+      target_window_duration: target_window_duration || :infinity,
       segment_duration: @segment_duration,
       partial_segment_duration: partial_duration,
+      persist?: persistent?,
+      cleanup_after: cleanup_after,
       storage: hls_storage
     }
   end
