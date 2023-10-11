@@ -5,7 +5,7 @@ defmodule Jellyfish.Component.HLS do
 
   @behaviour Jellyfish.Endpoint.Config
 
-  alias Jellyfish.Component.HLS.{LLStorage, RequestHandler, Storage}
+  alias Jellyfish.Component.HLS.{LLStorage, Storage}
   alias Jellyfish.Room
 
   alias JellyfishWeb.ApiSpec.Component.HLS.Options
@@ -78,8 +78,6 @@ defmodule Jellyfish.Component.HLS do
   end
 
   defp setup_hls_storage(room_id, low_latency?: true) do
-    RequestHandler.start(room_id)
-
     fn directory -> %LLStorage{directory: directory, room_id: room_id} end
   end
 

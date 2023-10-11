@@ -112,8 +112,20 @@ defmodule JellyfishWeb.RoomControllerTest do
     setup [:create_room]
 
     test "deletes chosen room", %{conn: conn, room_id: room_id} do
+      room_pid = RoomService.find_room!(room_id)
+      %{engine_pid: engine_pid} = :sys.get_state(room_pid)
+
+      assert Process.alive?(room_pid)
+      assert Process.alive?(engine_pid)
+
+      Process.monitor(room_pid)
+      Process.monitor(engine_pid)
+
       conn = delete(conn, ~p"/room/#{room_id}")
       assert response(conn, :no_content)
+
+      assert_receive({:DOWN, _ref, :process, ^room_pid, :normal})
+      assert_receive({:DOWN, _ref, :process, ^engine_pid, :normal})
 
       conn = get(conn, ~p"/room/#{room_id}")
       assert json_response(conn, :not_found) == %{"errors" => "Room #{room_id} does not exist"}
@@ -132,12 +144,17 @@ defmodule JellyfishWeb.RoomControllerTest do
       %{room_id: room2_id} = create_room(state)
 
       room_pid = RoomService.find_room!(room_id)
+      %{engine_pid: engine_pid} = :sys.get_state(room_pid)
+
+      assert Process.alive?(engine_pid)
+      Process.monitor(engine_pid)
 
       :erlang.trace(Process.whereis(RoomService), true, [:receive])
 
       assert true = Process.exit(room_pid, :error)
 
       assert_receive({:trace, _pid, :receive, {:DOWN, _ref, :process, ^room_pid, :error}})
+      assert_receive({:DOWN, _ref, :process, ^engine_pid, :error})
 
       # Shouldn't throw an error as in ets should be only living processes
       rooms = RoomService.list_rooms()

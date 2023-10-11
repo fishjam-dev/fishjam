@@ -106,10 +106,19 @@ defmodule JellyfishWeb.ComponentControllerTest do
       assert Process.alive?(request_handler)
       Process.monitor(request_handler)
 
+      {:ok, %{engine_pid: engine_pid}} = Jellyfish.RoomService.get_room(room_id)
+      assert Process.alive?(request_handler)
+      Process.monitor(engine_pid)
+
       room_conn = delete(conn, ~p"/room/#{room_id}")
       assert response(room_conn, :no_content)
 
+      # Engine can terminate up to around 5 seconds
+      # Hls endpoint tries to process all streams to the end before termination
+      # It has 5 seconds for it
+      assert_receive {:DOWN, _ref, :process, ^engine_pid, :normal}, 10_000
       assert_receive {:DOWN, _ref, :process, ^request_handler, :normal}
+
       assert Registry.lookup(Jellyfish.RequestHandlerRegistry, room_id) |> Enum.empty?()
     end
 

@@ -234,7 +234,7 @@ defmodule Jellyfish.Room do
     with :ok <- check_component_allowed(component_type, state),
          {:ok, component} <- Component.new(component_type, options) do
       state = put_in(state, [:components, component.id], component)
-
+      maybe_spawn_hls_processes(state.id, component.metadata)
       :ok = Engine.add_endpoint(state.engine_pid, component.engine_endpoint, id: component.id)
 
       Logger.info("Added component #{inspect(component.id)}")
@@ -366,6 +366,16 @@ defmodule Jellyfish.Room do
     {:noreply, state}
   end
 
+  @impl true
+  def terminate(_reason, %{engine_pid: engine_pid} = state) do
+    Engine.terminate(engine_pid, asynchronous?: true, timeout: 10_000)
+
+    hls_component = hls_component(state)
+    unless is_nil(hls_component), do: remove_hls_processes(state.id, hls_component.metadata)
+
+    :ok
+  end
+
   defp new(id, max_peers, video_codec) do
     rtc_engine_options = [
       id: id
@@ -403,6 +413,17 @@ defmodule Jellyfish.Room do
       network_options: [turn_options: turn_options]
     }
   end
+
+  defp hls_component(%{components: components}),
+    do:
+      Enum.find_value(components, fn {_id, component} ->
+        if component.type == Component.HLS, do: component
+      end)
+
+  defp maybe_spawn_hls_processes(room_id, %{low_latency: true}),
+    do: Component.HLS.RequestHandler.start(room_id)
+
+  defp maybe_spawn_hls_processes(_room_id, _metadata), do: nil
 
   defp remove_hls_processes(room_id, %{low_latency: true}),
     do: Component.HLS.RequestHandler.stop(room_id)
