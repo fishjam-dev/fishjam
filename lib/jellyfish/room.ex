@@ -36,7 +36,7 @@ defmodule Jellyfish.Room do
   * `components` - map of components
   * `peers` - map of peers
   * `engine` - pid of engine
-  * `webhook_url` - url on which notifcations from this room should be send
+  * `webhook_url` - url where notifcations from this room should be sent
   """
   @type t :: %__MODULE__{
           id: id(),
