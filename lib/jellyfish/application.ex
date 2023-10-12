@@ -27,6 +27,7 @@ defmodule Jellyfish.Application do
         JellyfishWeb.Endpoint,
         # Start the RoomService
         Jellyfish.RoomService,
+        Jellyfish.WebhookNotifier,
         {Registry, keys: :unique, name: Jellyfish.RoomRegistry},
         {Registry, keys: :unique, name: Jellyfish.RequestHandlerRegistry},
         # Start the Telemetry supervisor (must be started after Jellyfish.RoomRegistry)
@@ -98,7 +99,7 @@ defmodule Jellyfish.Application do
         Couldn't start epmd daemon.
         Epmd is required to run Jellyfish in a distributed mode.
         You can try to start it manually with:
-          
+
           epmd -daemon
 
         and run Jellyfish again.

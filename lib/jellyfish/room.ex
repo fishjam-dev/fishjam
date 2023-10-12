@@ -19,13 +19,11 @@ defmodule Jellyfish.Room do
     :id,
     :config,
     :engine_pid,
-    :network_options,
-    :webhook_url
+    :network_options
   ]
   defstruct @enforce_keys ++ [components: %{}, peers: %{}]
 
   @type id :: String.t()
-  @type webhook_url :: non_neg_integer() | nil
   @type max_peers :: non_neg_integer() | nil
   @type video_codec :: :h264 | :vp8 | nil
 
@@ -36,7 +34,6 @@ defmodule Jellyfish.Room do
   * `components` - map of components
   * `peers` - map of peers
   * `engine` - pid of engine
-  * `webhook_url` - url where notifcations from this room should be sent
   """
   @type t :: %__MODULE__{
           id: id(),
@@ -48,18 +45,15 @@ defmodule Jellyfish.Room do
           components: %{Component.id() => Component.t()},
           peers: %{Peer.id() => Peer.t()},
           engine_pid: pid(),
-          network_options: map(),
-          webhook_url: String.t()
+          network_options: map()
         }
 
-  @spec start(max_peers(), video_codec(), String.t()) :: {:ok, pid(), id()}
-  def start(max_peers, video_codec, webhook_url) do
+  @spec start(max_peers(), video_codec()) :: {:ok, pid(), id()}
+  def start(max_peers, video_codec) do
     id = UUID.uuid4()
 
     {:ok, pid} =
-      GenServer.start(__MODULE__, [id, max_peers, video_codec, webhook_url],
-        name: registry_id(id)
-      )
+      GenServer.start(__MODULE__, [id, max_peers, video_codec], name: registry_id(id))
 
     {:ok, pid, id}
   end
@@ -132,8 +126,8 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def init([id, max_peers, video_codec, webhook_url]) do
-    state = new(id, max_peers, video_codec, webhook_url)
+  def init([id, max_peers, video_codec]) do
+    state = new(id, max_peers, video_codec)
     Logger.metadata(room_id: id)
     Logger.info("Initialize room")
 
@@ -299,18 +293,6 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def handle_cast({:room_notification, _notification}, state) when is_nil(state.webhook_url) do
-    {:noreply, state}
-  end
-
-  @impl true
-  def handle_cast({:room_notification, notification}, state) do
-    send_webhook_notification(notification, state.webhook_url)
-
-    {:noreply, state}
-  end
-
-  @impl true
   def handle_info(%Message.EndpointMessage{endpoint_id: to, message: {:media_event, data}}, state) do
     with {:ok, peer} <- Map.fetch(state.peers, to),
          socket_pid when is_pid(socket_pid) <- Map.get(peer, :socket_pid) do
@@ -335,7 +317,7 @@ defmodule Jellyfish.Room do
     Logger.error("RTC Engine endpoint #{inspect(endpoint_id)} crashed")
 
     if Map.has_key?(state.peers, endpoint_id) do
-      Event.broadcast_server_notification({:peer_crashed, state.id, endpoint_id}, state.id)
+      Event.broadcast_server_notification({:peer_crashed, state.id, endpoint_id})
 
       peer = Map.fetch!(state.peers, endpoint_id)
 
@@ -343,7 +325,7 @@ defmodule Jellyfish.Room do
         send(peer.socket_pid, {:stop_connection, :endpoint_crashed})
       end
     else
-      Event.broadcast_server_notification({:component_crashed, state.id, endpoint_id}, state.id)
+      Event.broadcast_server_notification({:component_crashed, state.id, endpoint_id})
 
       component = Map.get(state.components, endpoint_id)
       if component.type == Component.HLS, do: remove_hls_processes(state.id, component.metadata)
@@ -378,7 +360,7 @@ defmodule Jellyfish.Room do
         if type == Component.HLS, do: id
       end)
 
-    Event.broadcast_server_notification({:hls_playable, state.id, endpoint_id}, state.id)
+    Event.broadcast_server_notification({:hls_playable, state.id, endpoint_id})
 
     state = update_in(state, [:components, endpoint_id, :metadata], &Map.put(&1, :playable, true))
     {:noreply, state}
@@ -400,21 +382,10 @@ defmodule Jellyfish.Room do
     :ok
   end
 
-  def registry_id(room_id), do: {:via, Registry, {Jellyfish.RoomRegistry, room_id}}
+  def registry_id(room_id),
+    do: {:via, Registry, {Jellyfish.RoomRegistry, room_id}}
 
-  def send_webhook_notification(notification, webhook_url) when not is_nil(webhook_url) do
-    case HTTPoison.post(webhook_url, Jason.encode!(%{notification: notification})) do
-      {:ok, _result} ->
-        nil
-
-      {:error, error} ->
-        Logger.warning("Sending notification through webhook fails with error: #{inspect(error)}")
-    end
-  end
-
-  def send_webhook_notification(_notification, _state), do: :ok
-
-  defp new(id, max_peers, video_codec, webhook_url) do
+  defp new(id, max_peers, video_codec) do
     rtc_engine_options = [
       id: id
     ]
@@ -448,8 +419,7 @@ defmodule Jellyfish.Room do
       id: id,
       config: %{max_peers: max_peers, video_codec: video_codec},
       engine_pid: pid,
-      network_options: [turn_options: turn_options],
-      webhook_url: webhook_url
+      network_options: [turn_options: turn_options]
     }
   end
 

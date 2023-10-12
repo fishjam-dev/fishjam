@@ -7,8 +7,7 @@ defmodule Jellyfish.RoomService do
 
   require Logger
 
-  alias Jellyfish.Event
-  alias Jellyfish.Room
+  alias Jellyfish.{Event, Room, WebhookNotifier}
 
   def start_link(args) do
     GenServer.start_link(__MODULE__, args, name: __MODULE__)
@@ -17,7 +16,7 @@ defmodule Jellyfish.RoomService do
   @spec find_room(Room.id()) :: {:ok, pid()} | {:error, :room_not_found}
   def find_room(room_id) do
     case Registry.lookup(Jellyfish.RoomRegistry, room_id) do
-      [{room_pid, nil}] ->
+      [{room_pid, _webhook_url}] ->
         {:ok, room_pid}
 
       _not_found ->
@@ -121,7 +120,7 @@ defmodule Jellyfish.RoomService do
 
   @impl true
   def init(_opts) do
-    {:ok, %{rooms: %{}, rooms_webhook: %{}}, {:continue, nil}}
+    {:ok, %{rooms: %{}}, {:continue, nil}}
   end
 
   @impl true
@@ -135,17 +134,18 @@ defmodule Jellyfish.RoomService do
     with :ok <- validate_max_peers(max_peers),
          {:ok, video_codec} <- codec_to_atom(video_codec),
          :ok <- validate_webhook_url(webhook_url) do
-      {:ok, room_pid, room_id} = Room.start(max_peers, video_codec, webhook_url)
+      {:ok, room_pid, room_id} = Room.start(max_peers, video_codec)
 
       room = Room.get_state(room_id)
       Process.monitor(room_pid)
 
       state = put_in(state, [:rooms, room_pid], room_id)
-      state = put_in(state, [:rooms_webhook, room_id], webhook_url)
+
+      WebhookNotifier.add_webhook(room_id, webhook_url)
 
       Logger.info("Created room #{inspect(room.id)}")
 
-      Event.broadcast_server_notification({:room_created, room_id}, room_id)
+      Event.broadcast_server_notification({:room_created, room_id})
 
       {:reply, {:ok, room, Application.fetch_env!(:jellyfish, :address)}, state}
     else
@@ -165,7 +165,7 @@ defmodule Jellyfish.RoomService do
     response =
       case find_room(room_id) do
         {:ok, _room_pid} ->
-          remove_room(room_id, state)
+          remove_room(room_id)
           :ok
 
         {:error, _} ->
@@ -189,12 +189,11 @@ defmodule Jellyfish.RoomService do
   @impl true
   def handle_info({:DOWN, _ref, :process, pid, reason}, state) do
     {room_id, state} = pop_in(state, [:rooms, pid])
-    {webhook_url, state} = pop_in(state, [:rooms_webhook, room_id])
 
     Logger.warning("Process #{room_id} is down with reason: #{reason}")
 
     Phoenix.PubSub.broadcast(Jellyfish.PubSub, room_id, :room_crashed)
-    Event.broadcast_server_notification({:room_crashed, room_id}, webhook_url)
+    Event.broadcast_server_notification({:room_crashed, room_id})
 
     {:noreply, state}
   end
@@ -222,15 +221,14 @@ defmodule Jellyfish.RoomService do
     |> Registry.select([{{:"$1", :_, :_}, [], [:"$1"]}])
   end
 
-  defp remove_room(room_id, state) do
+  defp remove_room(room_id) do
     room = Room.registry_id(room_id)
 
     try do
       :ok = GenServer.stop(room, :normal)
       Logger.info("Deleted room #{inspect(room_id)}")
-      webhook_url = get_in(state, [:rooms_webhook, room_id])
 
-      Event.broadcast_server_notification({:room_deleted, room_id}, webhook_url)
+      Event.broadcast_server_notification({:room_deleted, room_id})
     catch
       :exit, {:noproc, {GenServer, :stop, [^room, :normal, :infinity]}} ->
         Logger.warning("Room process with id #{inspect(room_id)} doesn't exist")

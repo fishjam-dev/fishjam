@@ -48,7 +48,7 @@ defmodule JellyfishWeb.PeerSocket do
               room_pid: room_pid
             })
 
-          Event.broadcast_server_notification({:peer_connected, room_id, peer_id}, room_id)
+          Event.broadcast_server_notification({:peer_connected, room_id, peer_id})
 
           {:reply, :ok, {:binary, encoded_message}, state}
         else
@@ -135,10 +135,7 @@ defmodule JellyfishWeb.PeerSocket do
     """)
 
     if Map.has_key?(state, :peer_id) do
-      Event.broadcast_server_notification(
-        {:peer_disconnected, state.room_id, state.peer_id},
-        state.room_id
-      )
+      Event.broadcast_server_notification({:peer_disconnected, state.room_id, state.peer_id})
     end
 
     :ok
