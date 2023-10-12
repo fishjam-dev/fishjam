@@ -89,7 +89,7 @@ defmodule JellyfishWeb.RoomController do
 
       {:error, :invalid_webhook_url} ->
         webhook_url = Map.get(params, "webhookUrl")
-        {:error, :bad_request, "webhookUrl must be valid URI, received url was: #{webhook_url}"}
+{:error, :bad_request, "webhookUrl must be valid URL, received URL was: #{webhook_url}"}
     end
   end
 
