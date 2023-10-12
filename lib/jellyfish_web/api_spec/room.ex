@@ -28,7 +28,7 @@ defmodule JellyfishWeb.ApiSpec.Room do
           nullable: true
         },
         webhookUrl: %Schema{
-          description: "Address on which HTTP requests will be send with jellyfish notifications",
+description: "URL where Jellyfish notifications will be sent",
           type: :string,
           example: "https://backend.address.com/jellyfish-notifications-endpoint",
           nullable: true
