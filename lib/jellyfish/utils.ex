@@ -7,6 +7,9 @@ defmodule Jellyfish.Utils do
     Map.new(map, fn {k, v} -> {snake_case_to_camel_case(k), v} end)
   end
 
+  # Macro.underscore/camelize:
+  # Do not use it as a general mechanism for underscoring strings as it does
+  # not support Unicode or characters that are not valid in Elixir identifiers.
   defp snake_case_to_camel_case(atom) do
     [first | rest] = "#{atom}" |> String.split("_")
     rest = rest |> Enum.map(&String.capitalize/1)

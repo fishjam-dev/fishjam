@@ -27,27 +27,14 @@ defmodule Jellyfish.Component.HLS do
   @impl true
   def config(options) do
     with {:ok, valid_opts} <- OpenApiSpex.cast_value(options, Options.schema()) do
-      low_latency? = valid_opts.lowLatency
-      target_window_duration = valid_opts.targetWindowDuration
-      persistent? = valid_opts.persistent
-
-      hls_config =
-        create_hls_config(options.room_id,
-          low_latency?: low_latency?,
-          target_window_duration: target_window_duration,
-          persistent?: persistent?
-        )
-
-      metadata = %{
-        playable: false,
-        low_latency: low_latency?,
-        persistent: persistent?
-      }
+      valid_opts = valid_opts |> Map.from_struct() |> Map.new(fn {k, v} -> {underscore(k), v} end)
+      hls_config = create_hls_config(options.room_id, valid_opts)
 
       metadata =
-        if is_nil(target_window_duration),
-          do: metadata,
-          else: Map.put(metadata, :target_window_duration, target_window_duration)
+        valid_opts
+        |> Map.put(:playable, false)
+        |> Enum.filter(fn {_, v} -> v != nil end)
+        |> Enum.into(%{})
 
       {:ok,
        %{
@@ -81,15 +68,18 @@ defmodule Jellyfish.Component.HLS do
     Path.join([base_path, "hls_output", "#{room_id}"])
   end
 
-  defp create_hls_config(room_id,
-         low_latency?: low_latency?,
-         target_window_duration: target_window_duration,
-         persistent?: persistent?
+  defp create_hls_config(
+         room_id,
+         %{
+           low_latency: low_latency,
+           target_window_duration: target_window_duration,
+           persistent: persistent
+         }
        ) do
-    partial_duration = if low_latency?, do: @partial_segment_duration, else: nil
-    hls_storage = setup_hls_storage(room_id, low_latency?: low_latency?)
+    partial_duration = if low_latency, do: @partial_segment_duration, else: nil
+    hls_storage = setup_hls_storage(room_id, low_latency: low_latency)
 
-    cleanup_after = if persistent?, do: nil, else: @cleanup_after
+    cleanup_after = if persistent, do: nil, else: @cleanup_after
 
     %HLSConfig{
       hls_mode: :muxed_av,
@@ -97,17 +87,19 @@ defmodule Jellyfish.Component.HLS do
       target_window_duration: target_window_duration || :infinity,
       segment_duration: @segment_duration,
       partial_segment_duration: partial_duration,
-      persist?: persistent?,
+      persist?: persistent,
       cleanup_after: cleanup_after,
       storage: hls_storage
     }
   end
 
-  defp setup_hls_storage(room_id, low_latency?: true) do
+  defp setup_hls_storage(room_id, low_latency: true) do
     fn directory -> %LLStorage{directory: directory, room_id: room_id} end
   end
 
-  defp setup_hls_storage(_room_id, low_latency?: false) do
+  defp setup_hls_storage(_room_id, low_latency: false) do
     fn directory -> %Storage{directory: directory} end
   end
+
+  defp underscore(k), do: k |> Atom.to_string() |> Macro.underscore() |> String.to_atom()
 end
