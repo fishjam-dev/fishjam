@@ -58,7 +58,9 @@ defmodule Jellyfish.WebhookNotifier do
         nil
 
       {:error, error} ->
-        Logger.warning("Sending notification through webhook fails with error: #{inspect(error)}")
+        Logger.warning(
+          "Sending notification through webhook fails with error: #{inspect(error)} on address #{webhook_url}"
+        )
     end
   end
 

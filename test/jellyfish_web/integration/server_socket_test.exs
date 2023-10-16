@@ -85,6 +85,8 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
         conn = delete(conn, ~p"/room/#{id}")
         assert response(conn, 204)
       end)
+
+      :ok = PubSub.unsubscribe(@pubsub, "webhook")
     end)
   end
 
