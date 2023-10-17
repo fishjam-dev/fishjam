@@ -155,7 +155,7 @@ defmodule Jellyfish.RoomService do
       {:error, :video_codec} ->
         {:reply, {:error, :invalid_video_codec}, state}
 
-      {:error, :not_valid_url} ->
+      {:error, :invalid_webhook_url} ->
         {:reply, {:error, :invalid_webhook_url}, state}
     end
   end
@@ -249,7 +249,7 @@ defmodule Jellyfish.RoomService do
     |> if do
       :ok
     else
-      {:error, :not_valid_url}
+      {:error, :invalid_webhook_url}
     end
   end
 

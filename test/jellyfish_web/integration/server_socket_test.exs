@@ -195,6 +195,55 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
   end
 
   test "sends a message when peer connects", %{conn: conn} do
+    {room_id, peer_id, conn} = prepare_for_server_notification_test(conn)
+
+    conn = delete(conn, ~p"/room/#{room_id}")
+    assert response(conn, :no_content)
+
+    assert_receive %RoomDeleted{room_id: ^room_id}
+
+    assert_receive {:room_deleted, %RoomDeleted{room_id: ^room_id}},
+                   1_000
+
+    refute_received %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}
+    refute_received {:peer_disconnected, %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}}
+  end
+
+  test "sends a message when peer connects and room crashes", %{conn: conn} do
+    {room_id, peer_id, _conn} = prepare_for_server_notification_test(conn)
+    {:ok, room_pid} = Jellyfish.RoomService.find_room(room_id)
+
+    Process.exit(room_pid, :kill)
+
+    assert_receive %RoomCrashed{room_id: ^room_id}
+
+    assert_receive {:room_crashed, %RoomCrashed{room_id: ^room_id}},
+                   1_000
+
+    refute_received %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}
+    refute_received {:peer_disconnected, %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}}
+  end
+
+  test "sends a message when peer connects and it crashes", %{conn: conn} do
+    {room_id, peer_id, conn} = prepare_for_server_notification_test(conn)
+
+    {:ok, room_pid} = Jellyfish.RoomService.find_room(room_id)
+
+    state = :sys.get_state(room_pid)
+
+    peer_socket_pid = state.peers[peer_id].socket_pid
+
+    Process.exit(peer_socket_pid, :kill)
+
+    assert_receive %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}
+
+    assert_receive {:peer_disconnected, %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}},
+                   2_000
+
+    delete(conn, ~p"/room/#{room_id}")
+  end
+
+  def prepare_for_server_notification_test(conn) do
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
     ws = create_and_authenticate()
 
@@ -203,23 +252,14 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     {room_id, peer_id, peer_token, conn} =
       add_room_and_peer(conn, server_api_token)
 
-    {:ok, peer_ws} = WS.start_link("ws://127.0.0.1:#{@port}/socket/peer/websocket", :peer)
+    {:ok, peer_ws} = WS.start("ws://127.0.0.1:#{@port}/socket/peer/websocket", :peer)
     auth_request = peer_auth_request(peer_token)
     :ok = WS.send_binary_frame(peer_ws, auth_request)
 
     assert_receive %PeerConnected{peer_id: ^peer_id, room_id: ^room_id}
     assert_receive {:peer_connected, %PeerConnected{peer_id: ^peer_id, room_id: ^room_id}}, 1_000
 
-    conn = delete(conn, ~p"/room/#{room_id}/peer/#{peer_id}")
-    assert response(conn, :no_content)
-
-    assert_receive %PeerDisconnected{peer_id: ^peer_id, room_id: ^room_id}
-
-    assert_receive {:peer_disconnected, %PeerDisconnected{peer_id: ^peer_id, room_id: ^room_id}},
-                   1_000
-
-    conn = delete(conn, ~p"/room/#{room_id}")
-    assert response(conn, :no_content)
+    {room_id, peer_id, conn}
   end
 
   def create_and_authenticate() do

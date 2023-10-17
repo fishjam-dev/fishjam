@@ -82,10 +82,14 @@ defmodule JellyfishWeb.RoomController do
       |> render("show.json", room: room, jellyfish_address: jellyfish_address)
     else
       {:error, :invalid_max_peers} ->
-        {:error, :bad_request, "maxPeers must be a number"}
+        max_peers = Map.get(params, "maxPeers")
+        {:error, :bad_request, "maxPeers must be a number received maxPeers was: #{max_peers}"}
 
       {:error, :invalid_video_codec} ->
-        {:error, :bad_request, "videoCodec must be 'h264' or 'vp8'"}
+        video_codec = Map.get(params, "videoCodec")
+
+        {:error, :bad_request,
+         "videoCodec must be 'h264' or 'vp8' received codec was: #{video_codec}"}
 
       {:error, :invalid_webhook_url} ->
         webhook_url = Map.get(params, "webhookUrl")

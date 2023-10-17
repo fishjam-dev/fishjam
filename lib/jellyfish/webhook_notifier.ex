@@ -1,6 +1,6 @@
 defmodule Jellyfish.WebhookNotifier do
   @moduledoc """
-  Module responsible for sending notifications to webhooks.
+  Module responsible for sending notifications through webhooks.
   """
 
   use GenServer
@@ -20,13 +20,8 @@ defmodule Jellyfish.WebhookNotifier do
 
   @impl true
   def init(_opts) do
-    {:ok, %{}, {:continue, nil}}
-  end
-
-  @impl true
-  def handle_continue(_continue_arg, state) do
     :ok = Event.subscribe(:server_notification)
-    {:noreply, state}
+    {:ok, %{}}
   end
 
   @impl true
@@ -36,14 +31,14 @@ defmodule Jellyfish.WebhookNotifier do
 
   @impl true
   def handle_info(msg, state) do
-    {atom, %{room_id: room_id}} = content = Event.to_proto(msg)
+    {event_type, %{room_id: room_id}} = content = Event.to_proto(msg)
     notification = %ServerMessage{content: content} |> ServerMessage.encode()
 
     webhook_url = Map.get(state, room_id)
     send_webhook_notification(notification, webhook_url)
 
     state =
-      if atom in [:room_crashed, :room_deleted] do
+      if event_type in [:room_crashed, :room_deleted] do
         Map.delete(state, room_id)
       else
         state
@@ -59,7 +54,7 @@ defmodule Jellyfish.WebhookNotifier do
 
       {:error, error} ->
         Logger.warning(
-          "Sending notification through webhook fails with error: #{inspect(error)} on address #{webhook_url}"
+          "Couldn't send notification through webhook: #{webhook_url}, reason: #{inspect(error)}"
         )
     end
   end

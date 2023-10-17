@@ -130,13 +130,9 @@ defmodule JellyfishWeb.PeerSocket do
   @impl true
   def terminate(_reason, state) do
     Logger.info("""
-    WebSocket associated with peer #{inspect(Map.get(state, :peer_id, ""))} stopped, \
-    room: #{inspect(Map.get(state, :room_id, ""))}
+    WebSocket associated with peer #{inspect(state.peer_id)} stopped, \
+    room: #{inspect(state.room_id)}
     """)
-
-    if Map.has_key?(state, :peer_id) do
-      Event.broadcast_server_notification({:peer_disconnected, state.room_id, state.peer_id})
-    end
 
     :ok
   end

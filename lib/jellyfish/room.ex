@@ -52,8 +52,7 @@ defmodule Jellyfish.Room do
   def start(max_peers, video_codec) do
     id = UUID.uuid4()
 
-    {:ok, pid} =
-      GenServer.start(__MODULE__, [id, max_peers, video_codec], name: registry_id(id))
+    {:ok, pid} = GenServer.start(__MODULE__, [id, max_peers, video_codec], name: registry_id(id))
 
     {:ok, pid, id}
   end
@@ -118,11 +117,6 @@ defmodule Jellyfish.Room do
   @spec receive_media_event(id(), Peer.id(), String.t()) :: :ok
   def receive_media_event(room_id, peer_id, event) do
     GenServer.cast(registry_id(room_id), {:media_event, peer_id, event})
-  end
-
-  @spec receive_room_notification(id(), any()) :: :ok
-  def receive_room_notification(room_id, notification) do
-    GenServer.cast(registry_id(room_id), {:room_notification, notification})
   end
 
   @impl true
@@ -343,6 +337,7 @@ defmodule Jellyfish.Room do
 
         {peer_id, peer} ->
           :ok = Engine.remove_endpoint(state.engine_pid, peer_id)
+          Event.broadcast_server_notification({:peer_disconnected, state.id, peer_id})
           peer = %{peer | status: :disconnected, socket_pid: nil}
           put_in(state, [:peers, peer_id], peer)
       end

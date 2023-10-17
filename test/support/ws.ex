@@ -11,6 +11,11 @@ defmodule JellyfishWeb.WS do
     WebSockex.start_link(url, __MODULE__, state)
   end
 
+  def start(url, type) do
+    state = %{caller: self(), type: type}
+    WebSockex.start(url, __MODULE__, state)
+  end
+
   def send_frame(ws, msg) do
     WebSockex.send_frame(ws, {:text, Jason.encode!(msg)})
   end
