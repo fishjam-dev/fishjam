@@ -33,7 +33,7 @@ defmodule Jellyfish.Component.HLS do
       metadata =
         valid_opts
         |> Map.put(:playable, false)
-        |> Enum.filter(fn {_, v} -> v != nil end)
+        |> Enum.reject(fn {_, v} -> is_nil(v) end)
         |> Enum.into(%{})
 
       {:ok,
