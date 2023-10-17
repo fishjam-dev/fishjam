@@ -53,5 +53,6 @@ defmodule JellyfishWeb.Endpoint do
   plug Plug.Head
   plug Plug.Session, @session_options
   plug CORSPlug, origin: ["*"]
+  plug JellyfishWeb.TrafficMetricsPlug
   plug JellyfishWeb.Router
 end
