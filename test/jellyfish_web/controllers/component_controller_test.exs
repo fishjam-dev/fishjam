@@ -50,7 +50,8 @@ defmodule JellyfishWeb.ComponentControllerTest do
                    "metadata" => %{
                      "playable" => false,
                      "lowLatency" => false,
-                     "persistent" => false
+                     "persistent" => false,
+                     "targetWindowDuration" => nil
                    }
                  }
                } =
@@ -90,7 +91,8 @@ defmodule JellyfishWeb.ComponentControllerTest do
                    "metadata" => %{
                      "playable" => false,
                      "lowLatency" => false,
-                     "persistent" => true
+                     "persistent" => true,
+                     "targetWindowDuration" => nil
                    }
                  }
                } =

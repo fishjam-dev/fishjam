@@ -25,14 +25,15 @@ defmodule JellyfishWeb.ApiSpec.Component.HLS do
         },
         targetWindowDuration: %Schema{
           type: :integer,
-          description: "Duration of stream available for viewer"
+          description: "Duration of stream available for viewer",
+          nullable: true
         },
         persistent: %Schema{
           type: :boolean,
           description: "Whether the video is stored after end of stream"
         }
       },
-      required: [:playable, :lowLatency, :persistent]
+      required: [:playable, :lowLatency, :persistent, :targetWindowDuration]
     })
   end
 

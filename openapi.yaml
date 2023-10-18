@@ -68,11 +68,13 @@ components:
           type: boolean
         targetWindowDuration:
           description: Duration of stream available for viewer
+          nullable: true
           type: integer
       required:
         - playable
         - lowLatency
         - persistent
+        - targetWindowDuration
       title: ComponentMetadataHLS
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS.Metadata
