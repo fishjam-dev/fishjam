@@ -83,17 +83,17 @@ defmodule JellyfishWeb.RoomController do
     else
       {:error, :invalid_max_peers} ->
         max_peers = Map.get(params, "maxPeers")
-        {:error, :bad_request, "maxPeers must be a number received maxPeers was: #{max_peers}"}
+
+        {:error, :bad_request, "Expected maxPeers to be a number, got: #{max_peers}"}
 
       {:error, :invalid_video_codec} ->
         video_codec = Map.get(params, "videoCodec")
 
-        {:error, :bad_request,
-         "videoCodec must be 'h264' or 'vp8' received codec was: #{video_codec}"}
+        {:error, :bad_request, "Expected videoCodec to be 'h264' or 'vp8', got: #{video_codec}"}
 
       {:error, :invalid_webhook_url} ->
         webhook_url = Map.get(params, "webhookUrl")
-        {:error, :bad_request, "webhookUrl must be valid URL, received URL was: #{webhook_url}"}
+        {:error, :bad_request, "Expected webhookUrl to be valid URL, got: #{webhook_url}"}
     end
   end
 

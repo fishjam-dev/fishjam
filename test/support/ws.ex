@@ -6,14 +6,14 @@ defmodule JellyfishWeb.WS do
   alias Jellyfish.PeerMessage
   alias Jellyfish.ServerMessage
 
-  def start_link(url, type) do
-    state = %{caller: self(), type: type}
-    WebSockex.start_link(url, __MODULE__, state)
-  end
-
   def start(url, type) do
     state = %{caller: self(), type: type}
     WebSockex.start(url, __MODULE__, state)
+  end
+
+  def start_link(url, type) do
+    state = %{caller: self(), type: type}
+    WebSockex.start_link(url, __MODULE__, state)
   end
 
   def send_frame(ws, msg) do

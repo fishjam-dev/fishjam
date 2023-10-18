@@ -19,7 +19,9 @@ defmodule WebHookPlug do
     notification =
       notification |> Map.get("notification") |> ServerMessage.decode() |> Map.get(:content)
 
-    :ok = PubSub.broadcast(@pubsub, "webhook", notification)
+    {_notification_type, notification} = notification
+
+    :ok = PubSub.broadcast(@pubsub, "webhook", {:webhook_notification, notification})
 
     conn
     |> put_resp_content_type("text/plain")
