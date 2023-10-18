@@ -22,9 +22,18 @@ defmodule JellyfishWeb.ApiSpec.Component.HLS do
         lowLatency: %Schema{
           type: :boolean,
           description: "Whether the component uses LL-HLS"
+        },
+        targetWindowDuration: %Schema{
+          type: :integer,
+          description: "Duration of stream available for viewer",
+          nullable: true
+        },
+        persistent: %Schema{
+          type: :boolean,
+          description: "Whether the video is stored after end of stream"
         }
       },
-      required: [:playable, :lowLatency]
+      required: [:playable, :lowLatency, :persistent, :targetWindowDuration]
     })
   end
 
@@ -41,6 +50,16 @@ defmodule JellyfishWeb.ApiSpec.Component.HLS do
         lowLatency: %Schema{
           type: :boolean,
           description: "Whether the component should use LL-HLS",
+          default: false
+        },
+        targetWindowDuration: %Schema{
+          type: :integer,
+          description: "Duration of stream available for viewer",
+          nullable: true
+        },
+        persistent: %Schema{
+          type: :boolean,
+          description: "Whether the video is stored after end of stream",
           default: false
         }
       },
