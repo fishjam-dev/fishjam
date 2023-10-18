@@ -16,7 +16,7 @@ defmodule Jellyfish.RoomService do
   @spec find_room(Room.id()) :: {:ok, pid()} | {:error, :room_not_found}
   def find_room(room_id) do
     case Registry.lookup(Jellyfish.RoomRegistry, room_id) do
-      [{room_pid, _webhook_url}] ->
+      [{room_pid, _value}] ->
         {:ok, room_pid}
 
       _not_found ->
