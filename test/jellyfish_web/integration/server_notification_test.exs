@@ -1,4 +1,4 @@
-defmodule JellyfishWeb.Integration.ServerSocketTest do
+defmodule JellyfishWeb.Integration.ServerNotificationTest do
   use JellyfishWeb.ConnCase
 
   alias __MODULE__.Endpoint
@@ -22,10 +22,14 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
   }
 
   alias JellyfishWeb.{PeerSocket, ServerSocket, WS}
+  alias Phoenix.PubSub
 
   @port 5907
+  @webhook_port 2929
+  @webhook_url "http://127.0.0.1:#{@webhook_port}/"
   @path "ws://127.0.0.1:#{@port}/socket/server/websocket"
   @auth_response %Authenticated{}
+  @pubsub Jellyfish.PubSub
 
   @max_peers 1
 
@@ -57,10 +61,18 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
 
   setup_all do
     assert {:ok, _pid} = Endpoint.start_link()
+
+    webserver =
+      {Plug.Cowboy, plug: WebHookPlug, scheme: :http, options: [port: @webhook_port]}
+
+    {:ok, _pid} = Supervisor.start_link([webserver], strategy: :one_for_one)
+
     :ok
   end
 
   setup(%{conn: conn}) do
+    :ok = PubSub.subscribe(@pubsub, "webhook")
+
     on_exit(fn ->
       server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
       conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
@@ -73,6 +85,8 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
         conn = delete(conn, ~p"/room/#{id}")
         assert response(conn, 204)
       end)
+
+      :ok = PubSub.unsubscribe(@pubsub, "webhook")
     end)
   end
 
@@ -126,7 +140,11 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     {:ok, room_pid} = RoomService.find_room(room_id)
 
     send(room_pid, {:playlist_playable, :video, "hls_output/#{room_id}"})
-    assert_receive %HlsPlayable{room_id: room_id, component_id: ^hls_id}
+    assert_receive %HlsPlayable{room_id: ^room_id, component_id: ^hls_id}
+
+    assert_receive {:webhook_notification,
+                    %HlsPlayable{room_id: ^room_id, component_id: ^hls_id}},
+                   1_000
 
     conn = delete(conn, ~p"/room/#{room_id}/")
     assert response(conn, :no_content)
@@ -148,63 +166,71 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
 
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
-    conn = post(conn, ~p"/room", maxPeers: 1)
+    conn = post(conn, ~p"/room", maxPeers: 1, webhookUrl: @webhook_url)
     assert %{"id" => room_id} = json_response(conn, :created)["data"]["room"]
 
     assert_receive %RoomCreated{room_id: ^room_id}
+    assert_receive {:webhook_notification, %RoomCreated{room_id: ^room_id}}, 1_000
 
     conn = delete(conn, ~p"/room/#{room_id}")
     assert response(conn, :no_content)
 
     assert_receive %RoomDeleted{room_id: ^room_id}
+    assert_receive {:webhook_notification, %RoomDeleted{room_id: ^room_id}}, 1_000
   end
 
-  test "sends a message when room crashes", %{conn: conn} do
-    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
-    ws = create_and_authenticate()
+  test "sends a message when peer connects", %{conn: conn} do
+    {room_id, peer_id, conn} = subscribe_on_notifications_and_connect_peer(conn)
 
-    subscribe(ws, :server_notification)
+    conn = delete(conn, ~p"/room/#{room_id}")
+    assert response(conn, :no_content)
 
-    conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
+    assert_receive %RoomDeleted{room_id: ^room_id}
 
-    conn = post(conn, ~p"/room", maxPeers: 1)
-    assert %{"id" => room_id} = json_response(conn, :created)["data"]["room"]
+    assert_receive {:webhook_notification, %RoomDeleted{room_id: ^room_id}},
+                   1_000
+
+    refute_received %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}
+
+    refute_received {:webhook_notification,
+                     %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}}
+  end
+
+  test "sends a message when peer connects and room crashes", %{conn: conn} do
+    {room_id, peer_id, _conn} = subscribe_on_notifications_and_connect_peer(conn)
     {:ok, room_pid} = Jellyfish.RoomService.find_room(room_id)
 
     Process.exit(room_pid, :kill)
 
     assert_receive %RoomCrashed{room_id: ^room_id}
+
+    assert_receive {:webhook_notification, %RoomCrashed{room_id: ^room_id}},
+                   1_000
+
+    refute_received %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}
+
+    refute_received {:webhook_notification,
+                     %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}}
   end
 
-  test "sends a message when peer connects", %{conn: conn} do
-    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
-    ws = create_and_authenticate()
+  test "sends a message when peer connects and it crashes", %{conn: conn} do
+    {room_id, peer_id, conn} = subscribe_on_notifications_and_connect_peer(conn)
 
-    subscribe(ws, :server_notification)
+    {:ok, room_pid} = Jellyfish.RoomService.find_room(room_id)
 
-    {room_id, peer_id, peer_token, conn} = add_room_and_peer(conn, server_api_token)
+    state = :sys.get_state(room_pid)
 
-    {:ok, peer_ws} = WS.start_link("ws://127.0.0.1:#{@port}/socket/peer/websocket", :peer)
-    auth_request = peer_auth_request(peer_token)
-    :ok = WS.send_binary_frame(peer_ws, auth_request)
+    peer_socket_pid = state.peers[peer_id].socket_pid
 
-    assert_receive %PeerConnected{peer_id: ^peer_id, room_id: ^room_id}
+    Process.exit(peer_socket_pid, :kill)
 
-    conn = delete(conn, ~p"/room/#{room_id}/")
-    assert response(conn, :no_content)
+    assert_receive %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}
 
-    assert_receive %PeerDisconnected{peer_id: ^peer_id, room_id: ^room_id}
-  end
+    assert_receive {:webhook_notification,
+                    %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}},
+                   2_000
 
-  def create_and_authenticate() do
-    token = Application.fetch_env!(:jellyfish, :server_api_token)
-    auth_request = auth_request(token)
-
-    {:ok, ws} = WS.start_link(@path, :server)
-    :ok = WS.send_binary_frame(ws, auth_request)
-    assert_receive @auth_response, 1000
-
-    ws
+    delete(conn, ~p"/room/#{room_id}")
   end
 
   test "sends metrics", %{conn: conn} do
@@ -231,6 +257,38 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
     assert String.contains?(endpoint_id, "endpoint_id")
   end
 
+  def subscribe_on_notifications_and_connect_peer(conn) do
+    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+    ws = create_and_authenticate()
+
+    subscribe(ws, :server_notification)
+
+    {room_id, peer_id, peer_token, conn} =
+      add_room_and_peer(conn, server_api_token)
+
+    {:ok, peer_ws} = WS.start("ws://127.0.0.1:#{@port}/socket/peer/websocket", :peer)
+    auth_request = peer_auth_request(peer_token)
+    :ok = WS.send_binary_frame(peer_ws, auth_request)
+
+    assert_receive %PeerConnected{peer_id: ^peer_id, room_id: ^room_id}
+
+    assert_receive {:webhook_notification, %PeerConnected{peer_id: ^peer_id, room_id: ^room_id}},
+                   1_000
+
+    {room_id, peer_id, conn}
+  end
+
+  def create_and_authenticate() do
+    token = Application.fetch_env!(:jellyfish, :server_api_token)
+    auth_request = auth_request(token)
+
+    {:ok, ws} = WS.start_link(@path, :server)
+    :ok = WS.send_binary_frame(ws, auth_request)
+    assert_receive @auth_response, 1000
+
+    ws
+  end
+
   def subscribe(ws, event_type) do
     proto_event_type = to_proto_event_type(event_type)
 
@@ -251,7 +309,13 @@ defmodule JellyfishWeb.Integration.ServerSocketTest do
   defp add_room_and_peer(conn, server_api_token) do
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
-    conn = post(conn, ~p"/room", maxPeers: @max_peers, videoCodec: "h264")
+    conn =
+      post(conn, ~p"/room",
+        maxPeers: @max_peers,
+        videoCodec: "h264",
+        webhookUrl: @webhook_url
+      )
+
     assert %{"id" => room_id} = json_response(conn, :created)["data"]["room"]
 
     conn = post(conn, ~p"/room/#{room_id}/peer", type: "webrtc")

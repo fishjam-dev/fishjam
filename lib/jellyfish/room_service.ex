@@ -7,8 +7,7 @@ defmodule Jellyfish.RoomService do
 
   require Logger
 
-  alias Jellyfish.Event
-  alias Jellyfish.Room
+  alias Jellyfish.{Event, Room, WebhookNotifier}
 
   def start_link(args) do
     GenServer.start_link(__MODULE__, args, name: __MODULE__)
@@ -17,7 +16,7 @@ defmodule Jellyfish.RoomService do
   @spec find_room(Room.id()) :: {:ok, pid()} | {:error, :room_not_found}
   def find_room(room_id) do
     case Registry.lookup(Jellyfish.RoomRegistry, room_id) do
-      [{room_pid, nil}] ->
+      [{room_pid, _value}] ->
         {:ok, room_pid}
 
       _not_found ->
@@ -54,9 +53,9 @@ defmodule Jellyfish.RoomService do
     |> Enum.reject(&(&1 == nil))
   end
 
-  @spec create_room(Room.max_peers(), String.t()) ::
+  @spec create_room(Room.max_peers(), String.t(), String.t()) ::
           {:ok, Room.t(), String.t()} | {:error, :invalid_max_peers | :invalid_video_codec}
-  def create_room(max_peers, video_codec) do
+  def create_room(max_peers, video_codec, webhook_url) do
     {node_resources, failed_nodes} =
       :rpc.multicall(Jellyfish.RoomService, :get_resource_usage, [])
 
@@ -80,9 +79,9 @@ defmodule Jellyfish.RoomService do
 
     if Enum.count(node_resources) > 1 do
       Logger.info("Node with least used resources is #{inspect(min_node)}")
-      GenServer.call({__MODULE__, min_node}, {:create_room, max_peers, video_codec})
+      GenServer.call({__MODULE__, min_node}, {:create_room, max_peers, video_codec, webhook_url})
     else
-      GenServer.call(__MODULE__, {:create_room, max_peers, video_codec})
+      GenServer.call(__MODULE__, {:create_room, max_peers, video_codec, webhook_url})
     end
   end
 
@@ -131,9 +130,10 @@ defmodule Jellyfish.RoomService do
   end
 
   @impl true
-  def handle_call({:create_room, max_peers, video_codec}, _from, state) do
+  def handle_call({:create_room, max_peers, video_codec, webhook_url}, _from, state) do
     with :ok <- validate_max_peers(max_peers),
-         {:ok, video_codec} <- codec_to_atom(video_codec) do
+         {:ok, video_codec} <- codec_to_atom(video_codec),
+         :ok <- validate_webhook_url(webhook_url) do
       {:ok, room_pid, room_id} = Room.start(max_peers, video_codec)
 
       room = Room.get_state(room_id)
@@ -141,9 +141,11 @@ defmodule Jellyfish.RoomService do
 
       state = put_in(state, [:rooms, room_pid], room_id)
 
+      WebhookNotifier.add_webhook(room_id, webhook_url)
+
       Logger.info("Created room #{inspect(room.id)}")
 
-      Event.broadcast(:server_notification, {:room_created, room_id})
+      Event.broadcast_server_notification({:room_created, room_id})
 
       {:reply, {:ok, room, Application.fetch_env!(:jellyfish, :address)}, state}
     else
@@ -152,6 +154,9 @@ defmodule Jellyfish.RoomService do
 
       {:error, :video_codec} ->
         {:reply, {:error, :invalid_video_codec}, state}
+
+      {:error, :invalid_webhook_url} ->
+        {:reply, {:error, :invalid_webhook_url}, state}
     end
   end
 
@@ -188,7 +193,7 @@ defmodule Jellyfish.RoomService do
     Logger.warning("Process #{room_id} is down with reason: #{reason}")
 
     Phoenix.PubSub.broadcast(Jellyfish.PubSub, room_id, :room_crashed)
-    Event.broadcast(:server_notification, {:room_crashed, room_id})
+    Event.broadcast_server_notification({:room_crashed, room_id})
 
     {:noreply, state}
   end
@@ -217,13 +222,13 @@ defmodule Jellyfish.RoomService do
   end
 
   defp remove_room(room_id) do
-    room = {:via, Registry, {Jellyfish.RoomRegistry, room_id}}
+    room = Room.registry_id(room_id)
 
     try do
       :ok = GenServer.stop(room, :normal)
       Logger.info("Deleted room #{inspect(room_id)}")
 
-      Event.broadcast(:server_notification, {:room_deleted, room_id})
+      Event.broadcast_server_notification({:room_deleted, room_id})
     catch
       :exit, {:noproc, {GenServer, :stop, [^room, :normal, :infinity]}} ->
         Logger.warning("Room process with id #{inspect(room_id)} doesn't exist")
@@ -233,6 +238,20 @@ defmodule Jellyfish.RoomService do
   defp validate_max_peers(nil), do: :ok
   defp validate_max_peers(max_peers) when is_integer(max_peers) and max_peers >= 0, do: :ok
   defp validate_max_peers(_max_peers), do: {:error, :max_peers}
+
+  defp validate_webhook_url(nil), do: :ok
+
+  defp validate_webhook_url(uri) do
+    uri
+    |> URI.parse()
+    |> Map.take([:host, :path, :scheme])
+    |> Enum.all?(fn {_key, value} -> not is_nil(value) end)
+    |> if do
+      :ok
+    else
+      {:error, :invalid_webhook_url}
+    end
+  end
 
   defp codec_to_atom("h264"), do: {:ok, :h264}
   defp codec_to_atom("vp8"), do: {:ok, :vp8}

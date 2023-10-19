@@ -16,7 +16,11 @@ defmodule Jellyfish.Event do
   @pubsub Jellyfish.PubSub
   @valid_topics [:server_notification, :metrics]
 
-  def broadcast(topic, message) when topic in @valid_topics do
+  def broadcast_metrics(message), do: broadcast(:metrics, message)
+
+  def broadcast_server_notification(message), do: broadcast(:server_notification, message)
+
+  defp broadcast(topic, message) do
     Phoenix.PubSub.broadcast(@pubsub, Atom.to_string(topic), {topic, message})
   end
 

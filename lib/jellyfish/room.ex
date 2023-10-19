@@ -48,6 +48,8 @@ defmodule Jellyfish.Room do
           network_options: map()
         }
 
+  def registry_id(room_id), do: {:via, Registry, {Jellyfish.RoomRegistry, room_id}}
+
   @spec start(max_peers(), video_codec()) :: {:ok, pid(), id()}
   def start(max_peers, video_codec) do
     id = UUID.uuid4()
@@ -311,7 +313,7 @@ defmodule Jellyfish.Room do
     Logger.error("RTC Engine endpoint #{inspect(endpoint_id)} crashed")
 
     if Map.has_key?(state.peers, endpoint_id) do
-      Event.broadcast(:server_notification, {:peer_crashed, state.id, endpoint_id})
+      Event.broadcast_server_notification({:peer_crashed, state.id, endpoint_id})
 
       peer = Map.fetch!(state.peers, endpoint_id)
 
@@ -319,7 +321,7 @@ defmodule Jellyfish.Room do
         send(peer.socket_pid, {:stop_connection, :endpoint_crashed})
       end
     else
-      Event.broadcast(:server_notification, {:component_crashed, state.id, endpoint_id})
+      Event.broadcast_server_notification({:component_crashed, state.id, endpoint_id})
 
       component = Map.get(state.components, endpoint_id)
       if component.type == Component.HLS, do: remove_hls_processes(state.id, component.metadata)
@@ -337,6 +339,7 @@ defmodule Jellyfish.Room do
 
         {peer_id, peer} ->
           :ok = Engine.remove_endpoint(state.engine_pid, peer_id)
+          Event.broadcast_server_notification({:peer_disconnected, state.id, peer_id})
           peer = %{peer | status: :disconnected, socket_pid: nil}
           put_in(state, [:peers, peer_id], peer)
       end
@@ -354,7 +357,7 @@ defmodule Jellyfish.Room do
         if type == Component.HLS, do: id
       end)
 
-    Event.broadcast(:server_notification, {:hls_playable, state.id, endpoint_id})
+    Event.broadcast_server_notification({:hls_playable, state.id, endpoint_id})
 
     state = update_in(state, [:components, endpoint_id, :metadata], &Map.put(&1, :playable, true))
     {:noreply, state}
@@ -429,8 +432,6 @@ defmodule Jellyfish.Room do
     do: Component.HLS.RequestHandler.stop(room_id)
 
   defp remove_hls_processes(_room_id, _metadata), do: nil
-
-  defp registry_id(room_id), do: {:via, Registry, {Jellyfish.RoomRegistry, room_id}}
 
   defp check_component_allowed(Component.HLS, %{
          config: %{video_codec: video_codec},

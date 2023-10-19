@@ -45,7 +45,7 @@ defmodule Jellyfish.MetricsScraper do
 
     report
     |> prepare_report(state)
-    |> then(&Event.broadcast(:metrics, &1))
+    |> then(&Event.broadcast_metrics(&1))
 
     Process.send_after(self(), :scrape, state.scrape_interval)
 
