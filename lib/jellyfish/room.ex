@@ -216,6 +216,7 @@ defmodule Jellyfish.Room do
           do: send(peer.socket_pid, {:stop_connection, :peer_removed})
 
         Logger.info("Removed peer #{inspect(peer_id)} from room #{inspect(state.id)}")
+        Event.broadcast_server_notification({:peer_disconnected, state.id, peer_id})
 
         {:ok, state}
       else

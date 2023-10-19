@@ -182,18 +182,16 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   test "sends a message when peer connects", %{conn: conn} do
     {room_id, peer_id, conn} = subscribe_on_notifications_and_connect_peer(conn)
 
-    conn = delete(conn, ~p"/room/#{room_id}")
+    conn = delete(conn, ~p"/room/#{room_id}/peer/#{peer_id}")
     assert response(conn, :no_content)
 
-    assert_receive %RoomDeleted{room_id: ^room_id}
+    assert_receive %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}
 
-    assert_receive {:webhook_notification, %RoomDeleted{room_id: ^room_id}},
-                   1_000
+    assert_receive {:webhook_notification,
+                    %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}},
+                   2_500
 
-    refute_received %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}
-
-    refute_received {:webhook_notification,
-                     %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}}
+    _conn = delete(conn, ~p"/room/#{room_id}")
   end
 
   test "sends a message when peer connects and room crashes", %{conn: conn} do
