@@ -128,12 +128,7 @@ defmodule JellyfishWeb.PeerSocket do
   end
 
   @impl true
-  def terminate(_reason, state) do
-    Logger.info("""
-    WebSocket associated with peer #{inspect(state.peer_id)} stopped, \
-    room: #{inspect(state.room_id)}
-    """)
-
+  def terminate(_reason, _state) do
     :ok
   end
 
