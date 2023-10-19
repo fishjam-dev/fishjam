@@ -48,6 +48,8 @@ defmodule Jellyfish.Room do
           network_options: map()
         }
 
+  def registry_id(room_id), do: {:via, Registry, {Jellyfish.RoomRegistry, room_id}}
+
   @spec start(max_peers(), video_codec()) :: {:ok, pid(), id()}
   def start(max_peers, video_codec) do
     id = UUID.uuid4()
@@ -376,9 +378,6 @@ defmodule Jellyfish.Room do
 
     :ok
   end
-
-  def registry_id(room_id),
-    do: {:via, Registry, {Jellyfish.RoomRegistry, room_id}}
 
   defp new(id, max_peers, video_codec) do
     rtc_engine_options = [
