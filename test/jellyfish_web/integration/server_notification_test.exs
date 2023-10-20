@@ -179,12 +179,10 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     assert_receive {:webhook_notification, %RoomDeleted{room_id: ^room_id}}, 1_000
   end
 
-  test "sends a message when peer connects", %{conn: conn} do
+  test "sends a message when peer connects and room is deleted", %{conn: conn} do
     {room_id, peer_id, conn} = subscribe_on_notifications_and_connect_peer(conn)
 
-    conn = delete(conn, ~p"/room/#{room_id}")
-    assert response(conn, :no_content)
-
+    _conn = delete(conn, ~p"/room/#{room_id}")
     assert_receive %RoomDeleted{room_id: ^room_id}
 
     assert_receive {:webhook_notification, %RoomDeleted{room_id: ^room_id}},
@@ -194,6 +192,25 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
 
     refute_received {:webhook_notification,
                      %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}}
+  end
+
+  test "sends a message when peer connects and peer is removed", %{conn: conn} do
+    {room_id, peer_id, conn} = subscribe_on_notifications_and_connect_peer(conn)
+
+    conn = delete(conn, ~p"/room/#{room_id}/peer/#{peer_id}")
+    assert response(conn, :no_content)
+
+    assert_receive %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}
+
+    assert_receive {:webhook_notification,
+                    %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}},
+                   2_500
+
+    _conn = delete(conn, ~p"/room/#{room_id}")
+    assert_receive %RoomDeleted{room_id: ^room_id}
+
+    assert_receive {:webhook_notification, %RoomDeleted{room_id: ^room_id}},
+                   1_000
   end
 
   test "sends a message when peer connects and room crashes", %{conn: conn} do
