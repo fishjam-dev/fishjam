@@ -48,9 +48,18 @@ defmodule Jellyfish.WebhookNotifier do
   end
 
   defp send_webhook_notification(notification, webhook_url) when not is_nil(webhook_url) do
-    case HTTPoison.post(webhook_url, Jason.encode!(%{notification: notification})) do
-      {:ok, _result} ->
+    case HTTPoison.post(
+           webhook_url,
+           Jason.encode!(%{notification: notification}),
+           [{"Content-Type", "application/json"}]
+         ) do
+      {:ok, result} when result.status_code >= 200 and result.status_code < 300 ->
         nil
+
+      {:ok, result} ->
+        Logger.warning(
+          "Notification send through webhook: #{webhook_url}, but resulted with not sucessful response: #{inspect(result)}"
+        )
 
       {:error, error} ->
         Logger.warning(
