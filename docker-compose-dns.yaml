@@ -1,0 +1,81 @@
+version: "3"
+
+x-jellyfish-template: &jellyfish-template
+  build: .
+  environment: &jellyfish-environment
+    JF_SERVER_API_TOKEN: "development"
+    JF_DIST_ENABLED: "true"
+    JF_DIST_STRATEGY_NAME: "DNS"
+  restart: on-failure
+
+services:
+  test:
+    image: membraneframeworklabs/docker_membrane
+    command:
+      - sh
+      - -c
+      - |
+        cd app/ 
+        mix deps.get 
+        MIX_ENV=ci mix test --only cluster
+    volumes:
+      - .:/app
+      - /app/_build
+      - /app/deps
+    networks:
+      dns-network:
+        aliases:
+          - dnsmasq
+    depends_on:
+      - app1
+      - app2
+      - dnsmasq
+
+  app1:
+    <<: *jellyfish-template
+    environment:
+      <<: *jellyfish-environment
+      JF_HOST: "localhost:4001"
+      JF_PORT: 4001
+      JF_DIST_NODE_NAME: app@app1.dns-network
+      JF_DIST_NODE_BASENAME: "app"
+      JF_DIST_QUERY: "app2.dns-network"
+    ports:
+      - 4001:4001
+    networks:
+      dns-network:
+        aliases:
+          - app1
+    dns:
+      - dnsmasq
+
+  app2:
+    <<: *jellyfish-template
+    environment:
+      <<: *jellyfish-environment
+      JF_HOST: "localhost:4002"
+      JF_PORT: 4002
+      JF_DIST_NODE_NAME: app@app2.dns-network
+      JF_DIST_NODE_BASENAME: "app"
+      JF_DIST_QUERY: "app1.dns-network"
+    ports:
+      - 4002:4002
+    networks:
+      dns-network:
+        aliases:
+          - app2
+    dns:
+      - dnsmasq
+
+  dnsmasq:
+    image: andyshinn/dnsmasq:2.78
+    volumes:
+      - /etc/resolv.conf:/etc/resolv.dnsmasq.conf
+    command: -d -q --no-hosts --no-resolv --no-poll --server 127.0.0.11 --listen-address 0.0.0.0 --port 53 --log-queries --log-facility=- --address=/./127.0.0.11
+    networks:
+      dns-network:
+        aliases:
+          - dnsmasq
+
+networks:
+  dns-network:

@@ -79,30 +79,63 @@ defmodule Jellyfish.ConfigReader do
   end
 
   def read_dist_config() do
-    if read_boolean("JF_DIST_ENABLED") do
-      node_name_value = System.get_env("JF_DIST_NODE_NAME")
-      cookie_value = System.get_env("JF_DIST_COOKIE", "jellyfish_cookie")
-      nodes_value = System.get_env("JF_DIST_NODES", "")
+    dist_enabled? = read_boolean("JF_DIST_ENABLED")
+    dist_strategy = System.get_env("JF_DIST_STRATEGY_NAME")
+    node_name_value = System.get_env("JF_DIST_NODE_NAME")
+    cookie_value = System.get_env("JF_DIST_COOKIE", "jellyfish_cookie")
 
-      unless node_name_value do
-        raise "JF_DIST_ENABLED has been set but JF_DIST_NODE_NAME remains unset."
-      end
+    cond do
+      !dist_enabled? ->
+        [enabled: false, node_name: nil, cookie: nil, nodes: []]
 
-      node_name = parse_node_name(node_name_value)
-      cookie = parse_cookie(cookie_value)
-      nodes = parse_nodes(nodes_value)
+      dist_strategy == "EPMD" ->
+        nodes_value = System.get_env("JF_DIST_NODES", "")
 
-      if nodes == [] do
-        Logger.warning("""
-        JF_DIST_ENABLED has been set but JF_DIST_NODES remains unset.
-        Make sure that at least one of your Jellyfish instances
-        has JF_DIST_NODES set.
-        """)
-      end
+        node_name = parse_node_name(node_name_value)
+        cookie = parse_cookie(cookie_value)
+        nodes = parse_nodes(nodes_value)
 
-      [enabled: true, node_name: node_name, cookie: cookie, nodes: nodes]
-    else
-      [enabled: false, node_name: nil, cookie: nil, nodes: []]
+        if nodes == [] do
+          Logger.warning("""
+          JF_DIST_ENABLED has been set but JF_DIST_NODES remains unset.
+          Make sure that at least one of your Jellyfish instances
+          has JF_DIST_NODES set.
+          """)
+        end
+
+        [
+          enabled: true,
+          strategy: Cluster.Strategy.Epmd,
+          node_name: node_name,
+          cookie: cookie,
+          config: [hosts: nodes]
+        ]
+
+      dist_strategy == "DNS" ->
+        node_name = parse_node_name(node_name_value)
+        cookie = parse_cookie(cookie_value)
+
+        query = parse_dns_string("JF_DIST_QUERY")
+        node_basename = parse_dns_string("JF_DIST_NODE_BASENAME")
+        polling_interval = parse_polling_interval()
+
+        [
+          enabled: true,
+          strategy: Cluster.Strategy.DNSPoll,
+          node_name: node_name,
+          cookie: cookie,
+          config: [
+            polling_interval: polling_interval,
+            query: query,
+            node_basename: node_basename
+          ]
+        ]
+
+      true ->
+        raise """
+        JF_DIST_ENABLED has been set but unknown JF_DIST_STRATEGY was provided.
+        Availabile strategies are EPMD or DNS, provided strategy name was: #{dist_strategy}
+        """
     end
   end
 
@@ -128,12 +161,47 @@ defmodule Jellyfish.ConfigReader do
     end
   end
 
-  defp parse_node_name(node_name), do: String.to_atom(node_name)
+  defp parse_node_name(node_name) do
+    unless node_name do
+      raise "JF_DIST_ENABLED has been set but JF_DIST_NODE_NAME remains unset."
+    end
+
+    String.to_atom(node_name)
+  end
+
   defp parse_cookie(cookie_value), do: String.to_atom(cookie_value)
 
   defp parse_nodes(nodes_value) do
     nodes_value
     |> String.split(" ", trim: true)
     |> Enum.map(&String.to_atom(&1))
+  end
+
+  defp parse_dns_string(env_name) do
+    env = System.get_env(env_name)
+
+    unless env do
+      raise "DNS strategy has been set but #{env_name} remains unset."
+    end
+
+    env
+  end
+
+  defp parse_polling_interval() do
+    env_value = System.get_env("JF_DIST_POLLING_INTERVAL", "5000")
+
+    polling_interval =
+      try do
+        String.to_integer(env_value)
+      rescue
+        ArgumentError ->
+          raise "Error during parsing `JF_DIST_POLLING_INTERVAL`. Provided value should be integer and was: #{env_value}"
+      end
+
+    if polling_interval <= 0 do
+      raise "`JF_DIST_POLLING_INTERVAL` must be positivie integer. Provided value was: #{polling_interval}"
+    else
+      polling_interval
+    end
   end
 end
