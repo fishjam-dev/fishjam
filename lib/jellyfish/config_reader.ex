@@ -195,7 +195,10 @@ defmodule Jellyfish.ConfigReader do
         String.to_integer(env_value)
       rescue
         ArgumentError ->
-          raise "Error during parsing `JF_DIST_POLLING_INTERVAL`. Provided value should be integer and was: #{env_value}"
+          reraise(
+            "Error during parsing `JF_DIST_POLLING_INTERVAL`. Provided value should be integer and was: #{env_value}",
+            __STACKTRACE__
+          )
       end
 
     if polling_interval <= 0 do

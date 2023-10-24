@@ -17,6 +17,9 @@ jobs:
     steps:
       - checkout
       - run: docker compose run test
+      - run: docker compose down
+      - run: docker compose -f docker-compose-dns.yaml down
+      - run: docker compose -f docker-compose-dns.yaml up test
     
   test:
     docker:

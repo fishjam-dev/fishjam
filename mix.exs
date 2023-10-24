@@ -98,7 +98,9 @@ defmodule Jellyfish.MixProject do
       test: ["test --exclude cluster"],
       "test.cluster": ["test --only cluster"],
       "test.cluster.ci": ["cmd docker compose run test; docker compose down"],
-      "test.cluster.dns.ci": ["cmd docker compose -f docker-compose-dns.yaml run test; docker compose -f docker-compose-dns.yaml down"]
+      "test.cluster.dns.ci": [
+        "cmd docker compose -f docker-compose-dns.yaml up test; docker compose -f docker-compose-dns.yaml down"
+      ]
     ]
   end
 
