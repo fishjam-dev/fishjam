@@ -41,6 +41,8 @@ defmodule Jellyfish.Application do
         end
 
     :ets.new(:rooms_to_tables, [:public, :set, :named_table])
+
+    # stores Room.id() => path() pairs
     :ets.new(:hls_folder_path, [:public, :set, :named_table])
 
     # See https://hexdocs.pm/elixir/Supervisor.html

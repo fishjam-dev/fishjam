@@ -37,7 +37,8 @@ defmodule JellyfishWeb.RecordingController do
       ]
     ],
     responses: [
-      ok: ApiSpec.data("Success", ApiSpec.RecordingListResponse)
+      ok: ApiSpec.data("Success", ApiSpec.RecordingListResponse),
+      not_found: ApiSpec.error("Unable to obtain recordings")
     ]
 
   operation :delete,
@@ -64,28 +65,29 @@ defmodule JellyfishWeb.RecordingController do
 
       Conn.send_resp(conn, 200, file)
     else
-      {:error, :recording_not_found} ->
-        {:error, :not_found, "Recording not found"}
-
       {:error, _reason} ->
         {:error, :not_found, "File not found"}
     end
   end
 
   def show(conn, _params) do
-    recordings = Recording.list_all()
+    case Recording.list_all() do
+      {:ok, recordings} ->
+        conn
+        |> put_resp_content_type("application/json")
+        |> render("show.json", recordings: recordings)
 
-    conn
-    |> put_resp_content_type("application/json")
-    |> render("show.json", recordings: recordings)
+      :error ->
+        {:error, :not_found, "Unable to obtain recordings"}
+    end
   end
 
   def delete(conn, %{"recording_id" => recording_id}) do
-    if Recording.exists?(recording_id) do
-      Recording.delete(recording_id)
+    with :ok <- Recording.delete(recording_id) do
       send_resp(conn, :no_content, "")
     else
-      {:error, :not_found, "Recording not found"}
+      _error ->
+        {:error, :not_found, "Recording not found"}
     end
   end
 end

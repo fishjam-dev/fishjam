@@ -467,6 +467,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/RecordingListResponse'
           description: Success
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unable to obtain recordings
       summary: Shows information about the room
       tags: []
   /recording/{recording_id}:
