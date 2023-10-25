@@ -278,6 +278,18 @@ components:
       title: PeerType
       type: string
       x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.Type
+    RecordingListResponse:
+      description: Response containing list of all recording
+      properties:
+        data:
+          items:
+            type: string
+          type: array
+      required:
+        - data
+      title: RecordingListResponse
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.RecordingListResponse
     Room:
       description: Description of the room state
       properties:
@@ -422,6 +434,79 @@ paths:
           required: false
           schema:
             $ref: '#/components/schemas/HlsSkip'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HlsResponse'
+          description: File was found
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: File not found
+      summary: Send file
+      tags: []
+  /recording/{id}:
+    delete:
+      callbacks: {}
+      operationId: delete_recording
+      parameters:
+        - description: Recording id
+          in: path
+          name: recording_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Successfully deleted recording
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Recording doesn't exist
+      summary: Delete the recording
+      tags: []
+    get:
+      callbacks: {}
+      operationId: get_recordings
+      parameters:
+        - description: Recording ID
+          in: path
+          name: recording_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingListResponse'
+          description: Success
+      summary: Shows information about the room
+      tags: []
+  /recording/{recording_id}/{filename}:
+    get:
+      callbacks: {}
+      operationId: JellyfishWeb.RecordingController.index
+      parameters:
+        - description: Recording id
+          in: path
+          name: recording_id
+          required: true
+          schema:
+            type: string
+        - description: Name of the file
+          in: path
+          name: filename
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           content:

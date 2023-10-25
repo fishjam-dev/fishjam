@@ -23,7 +23,9 @@
   {ComponentDetailsResponse, "Response containing component details",
    JellyfishWeb.ApiSpec.Component},
   {RoomsListingResponse, "Response containing list of all rooms",
-   %OpenApiSpex.Schema{type: :array, items: JellyfishWeb.ApiSpec.Room}}
+   %OpenApiSpex.Schema{type: :array, items: JellyfishWeb.ApiSpec.Room}},
+  {RecordingListResponse, "Response containing list of all recording",
+   %OpenApiSpex.Schema{type: :array, items: %OpenApiSpex.Schema{type: :string}}}
 ]
 |> Enum.map(fn {title, description, schema} ->
   module = Module.concat(JellyfishWeb.ApiSpec, title)

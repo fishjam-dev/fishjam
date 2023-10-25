@@ -46,15 +46,41 @@ defmodule Jellyfish.Component.HLS.RequestHandlerTest do
     assert {:ok, _pid} = RequestHandler.start(room_id)
   end
 
-  test "file request", %{room_id: room_id} do
-    add_mock_manifest(room_id)
+  test "file request - live stream", %{room_id: room_id} do
+    add_mock_manifest(room_id, persistent: false)
 
     assert {:ok, @manifest_content} == RequestHandler.handle_file_request(room_id, @manifest)
 
-    assert {:error, :enoent} == RequestHandler.handle_file_request(room_id, @wrong_manifest)
-    assert {:error, :enoent} == RequestHandler.handle_file_request(@wrong_room_id, @manifest)
+    # Non persistent live streams and recordings resides in different folders
+    assert {:error, :recording_not_found} ==
+             RequestHandler.handle_recording_request(room_id, @manifest)
 
-    remove_mock_manifest(room_id)
+    assert {:error, :enoent} == RequestHandler.handle_file_request(room_id, @wrong_manifest)
+
+    assert {:error, :room_not_found} ==
+             RequestHandler.handle_file_request(@wrong_room_id, @manifest)
+
+    remove_mock_manifest(room_id, persistent: false)
+  end
+
+  test "file request - recordings", %{room_id: room_id} do
+    add_mock_manifest(room_id, persistent: true)
+
+    # Persistent live streams reside in the same directory as recordings.
+    # Nevertheless, the `RequestHandler` is capable of differentiating between them
+    assert {:error, :recording_not_found} ==
+             RequestHandler.handle_recording_request(room_id, @manifest)
+
+    assert {:ok, @manifest_content} == RequestHandler.handle_file_request(room_id, @manifest)
+
+    # When a room or HLS endpoint finishes, the corresponding path is removed from ETS.
+    # This implies that from this point the HLS stream becomes a recording.
+    EtsHelper.delete_hls_folder_path(room_id)
+
+    assert {:ok, @manifest_content} == RequestHandler.handle_recording_request(room_id, @manifest)
+    assert {:error, :room_not_found} == RequestHandler.handle_file_request(room_id, @manifest)
+
+    assert {:ok, @manifest_content}
   end
 
   test "manifest request", %{room_id: room_id} do
@@ -149,20 +175,22 @@ defmodule Jellyfish.Component.HLS.RequestHandlerTest do
              RequestHandler.handle_partial_request(room_id, @future_partial_name)
   end
 
-  defp add_mock_manifest(room_id) do
-    room_id
-    |> HLS.output_dir()
-    |> File.mkdir_p!()
+  defp add_mock_manifest(room_id, persistent: persistent) do
+    path = HLS.output_dir(room_id, persistent: persistent)
+    File.mkdir_p!(path)
 
-    room_id
-    |> HLS.output_dir()
+    path
     |> Path.join(@manifest)
     |> File.write!(@manifest_content)
+
+    EtsHelper.add_hls_folder_path(room_id, path)
   end
 
-  defp remove_mock_manifest(room_id) do
+  defp remove_mock_manifest(room_id, persistent: persistent) do
     room_id
-    |> HLS.output_dir()
+    |> HLS.output_dir(persistent: persistent)
     |> :file.del_dir_r()
+
+    EtsHelper.delete_hls_folder_path(room_id)
   end
 end

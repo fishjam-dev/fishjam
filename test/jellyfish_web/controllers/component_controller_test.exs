@@ -3,6 +3,8 @@ defmodule JellyfishWeb.ComponentControllerTest do
 
   import OpenApiSpex.TestAssertions
 
+  alias Jellyfish.Component.HLS
+
   @schema JellyfishWeb.ApiSpec.spec()
   @source_uri "rtsp://placeholder-19inrifjbsjb.it:12345/afwefae"
 
@@ -59,6 +61,8 @@ defmodule JellyfishWeb.ComponentControllerTest do
 
       assert_response_schema(response, "ComponentDetailsResponse", @schema)
 
+      assert_hls_path(room_id, persistent: false)
+
       conn = get(conn, ~p"/room/#{room_id}")
 
       assert %{
@@ -76,6 +80,7 @@ defmodule JellyfishWeb.ComponentControllerTest do
 
       room_conn = delete(conn, ~p"/room/#{room_id}")
       assert response(room_conn, :no_content)
+      assert_no_hls_path(room_id)
     end
 
     test "renders component with peristent enabled", %{conn: conn} do
@@ -99,6 +104,10 @@ defmodule JellyfishWeb.ComponentControllerTest do
                json_response(conn, :created)
 
       assert_response_schema(response, "ComponentDetailsResponse", @schema)
+      assert_hls_path(room_id, persistent: true)
+
+      # It is persistent stream so we have to remove it manually
+      room_id |> HLS.Recording.directory() |> File.rm_rf!()
     end
 
     test "renders component with targetWindowDuration set", %{conn: conn} do
@@ -272,5 +281,14 @@ defmodule JellyfishWeb.ComponentControllerTest do
     assert %{"id" => id} = json_response(conn, :created)["data"]
 
     %{component_id: id}
+  end
+
+  defp assert_hls_path(room_id, persistent: persistent) do
+    hls_path = HLS.output_dir(room_id, persistent: persistent)
+    assert {:ok, ^hls_path} = HLS.EtsHelper.get_hls_folder_path(room_id)
+  end
+
+  defp assert_no_hls_path(room_id) do
+    assert {:error, :room_not_found} = HLS.EtsHelper.get_hls_folder_path(room_id)
   end
 end
