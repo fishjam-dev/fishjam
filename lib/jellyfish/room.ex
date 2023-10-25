@@ -428,7 +428,6 @@ defmodule Jellyfish.Room do
   defp on_hls_startup(room_id, %{low_latency: low_latency, persistent: persistent}) do
     room_id
     |> HLS.output_dir(persistent: persistent)
-    |> create_folder()
     |> then(&HLS.EtsHelper.add_hls_folder_path(room_id, &1))
 
     if low_latency, do: spawn_request_handler(room_id)
@@ -479,10 +478,4 @@ defmodule Jellyfish.Room do
 
   defp hls_component_already_present?(components),
     do: components |> Map.values() |> Enum.any?(&(&1.type == Component.HLS))
-
-  defp create_folder(directory) do
-    File.rm_rf!(directory)
-    File.mkdir_p!(directory)
-    directory
-  end
 end
