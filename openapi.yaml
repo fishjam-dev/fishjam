@@ -449,7 +449,27 @@ paths:
           description: File not found
       summary: Send file
       tags: []
-  /recording/{id}:
+  /recording:
+    get:
+      callbacks: {}
+      operationId: get_recordings
+      parameters:
+        - description: Recording ID
+          in: path
+          name: recording_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingListResponse'
+          description: Success
+      summary: Shows information about the room
+      tags: []
+  /recording/{recording_id}:
     delete:
       callbacks: {}
       operationId: delete_recording
@@ -470,25 +490,6 @@ paths:
                 $ref: '#/components/schemas/Error'
           description: Recording doesn't exist
       summary: Delete the recording
-      tags: []
-    get:
-      callbacks: {}
-      operationId: get_recordings
-      parameters:
-        - description: Recording ID
-          in: path
-          name: recording_id
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RecordingListResponse'
-          description: Success
-      summary: Shows information about the room
       tags: []
   /recording/{recording_id}/{filename}:
     get:
