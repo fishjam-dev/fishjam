@@ -135,6 +135,10 @@ defmodule JellyfishWeb.ComponentControllerTest do
                json_response(conn, :created)
 
       assert_response_schema(response, "ComponentDetailsResponse", @schema)
+
+      room_conn = delete(conn, ~p"/room/#{room_id}")
+      assert response(room_conn, :no_content)
+      assert_no_hls_path(room_id)
     end
 
     test "renders component with ll-hls enabled", %{conn: conn} do
@@ -176,6 +180,7 @@ defmodule JellyfishWeb.ComponentControllerTest do
 
       room_conn = delete(conn, ~p"/room/#{room_id}")
       assert response(room_conn, :no_content)
+      assert_no_hls_path(room_id)
 
       # Engine can terminate up to around 5 seconds
       # Hls endpoint tries to process all streams to the end before termination

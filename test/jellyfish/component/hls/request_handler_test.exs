@@ -81,6 +81,8 @@ defmodule Jellyfish.Component.HLS.RequestHandlerTest do
     assert {:error, :room_not_found} == RequestHandler.handle_file_request(room_id, @manifest)
 
     assert {:ok, @manifest_content}
+
+    remove_mock_manifest(room_id, persistent: true)
   end
 
   test "manifest request", %{room_id: room_id} do
