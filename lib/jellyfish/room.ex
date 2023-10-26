@@ -9,7 +9,7 @@ defmodule Jellyfish.Room do
   require Logger
 
   alias Jellyfish.Component
-  alias Jellyfish.Component.HLS
+  alias Jellyfish.Component.{HLS, RTSP}
   alias Jellyfish.Event
   alias Jellyfish.Peer
   alias Membrane.ICE.TURNManager
@@ -356,7 +356,7 @@ defmodule Jellyfish.Room do
   def handle_info({:playlist_playable, :video, _playlist_id}, state) do
     endpoint_id =
       Enum.find_value(state.components, fn {id, %{type: type}} ->
-        if type == Component.HLS, do: id
+        if type == HLS, do: id
       end)
 
     Event.broadcast_server_notification({:hls_playable, state.id, endpoint_id})
@@ -434,7 +434,7 @@ defmodule Jellyfish.Room do
   end
 
   defp spawn_request_handler(room_id),
-    do: Component.HLS.RequestHandler.start(room_id)
+    do: HLS.RequestHandler.start(room_id)
 
   defp on_hls_removal(room_id, %{low_latency: low_latency, persistent: persistent}) do
     unless persistent do
@@ -450,7 +450,7 @@ defmodule Jellyfish.Room do
   defp remove_request_handler(room_id),
     do: HLS.RequestHandler.stop(room_id)
 
-  defp check_component_allowed(Component.HLS, %{
+  defp check_component_allowed(HLS, %{
          config: %{video_codec: video_codec},
          components: components
        }) do
@@ -466,7 +466,7 @@ defmodule Jellyfish.Room do
     end
   end
 
-  defp check_component_allowed(Component.RTSP, %{config: %{video_codec: video_codec}}) do
+  defp check_component_allowed(RTSP, %{config: %{video_codec: video_codec}}) do
     # Right now, RTSP component can only publish H264, so there's no point adding it
     # to a room which enforces another video codec, e.g. VP8
     if video_codec in [:h264, nil],
@@ -477,5 +477,5 @@ defmodule Jellyfish.Room do
   defp check_component_allowed(_component_type, _state), do: :ok
 
   defp hls_component_already_present?(components),
-    do: components |> Map.values() |> Enum.any?(&(&1.type == Component.HLS))
+    do: components |> Map.values() |> Enum.any?(&(&1.type == HLS))
 end

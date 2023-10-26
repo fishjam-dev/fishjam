@@ -6,36 +6,29 @@ defmodule JellyfishWeb.RecordingController do
 
   alias Jellyfish.Component.HLS.{Recording, RequestHandler}
   alias JellyfishWeb.ApiSpec
-  alias JellyfishWeb.ApiSpec.HLS.Response
 
   alias Plug.Conn
 
   action_fallback JellyfishWeb.FallbackController
 
   @playlist_content_type "application/vnd.apple.mpegurl"
+  @recording_id_spec [in: :path, description: "Recording id", type: :string]
 
   operation :index,
     summary: "Send file",
     parameters: [
-      recording_id: [in: :path, description: "Recording id", type: :string],
+      recording_id: @recording_id_spec,
       filename: [in: :path, description: "Name of the file", type: :string]
     ],
     required: [:recording_id, :filename],
     responses: [
-      ok: ApiSpec.data("File was found", Response),
+      ok: ApiSpec.data("File was found", ApiSpec.HLS.Response),
       not_found: ApiSpec.error("File not found")
     ]
 
   operation :show,
     operation_id: "get_recordings",
     summary: "Shows information about the room",
-    parameters: [
-      recording_id: [
-        in: :path,
-        description: "Recording ID",
-        type: :string
-      ]
-    ],
     responses: [
       ok: ApiSpec.data("Success", ApiSpec.RecordingListResponse),
       not_found: ApiSpec.error("Unable to obtain recordings")
@@ -44,13 +37,7 @@ defmodule JellyfishWeb.RecordingController do
   operation :delete,
     operation_id: "delete_recording",
     summary: "Delete the recording",
-    parameters: [
-      recording_id: [
-        in: :path,
-        type: :string,
-        description: "Recording id"
-      ]
-    ],
+    parameters: [recording_id: @recording_id_spec],
     responses: [
       no_content: %OpenApiSpex.Response{description: "Successfully deleted recording"},
       not_found: ApiSpec.error("Recording doesn't exist")

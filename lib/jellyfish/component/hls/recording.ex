@@ -4,15 +4,11 @@ defmodule Jellyfish.Component.HLS.Recording do
   alias Jellyfish.Component.HLS.EtsHelper
   alias Jellyfish.Room
 
+  @recordings_folder "recordings"
+
   @spec exists?(Room.id()) :: boolean()
   def exists?(id) do
-    with true <- directory(id) |> File.exists?(),
-         {:error, :room_not_found} <- EtsHelper.get_hls_folder_path(id) do
-      true
-    else
-      {:ok, _path} -> false
-      false -> false
-    end
+    directory(id) |> File.exists?() and not live_stream?(id)
   end
 
   @spec list_all() :: {:ok, [Room.id()]} | :error
@@ -35,7 +31,14 @@ defmodule Jellyfish.Component.HLS.Recording do
 
   defp root_directory() do
     base_path = Application.fetch_env!(:jellyfish, :output_base_path)
-    Path.join([base_path, "recordings"])
+    Path.join([base_path, @recordings_folder])
+  end
+
+  defp live_stream?(id) do
+    case EtsHelper.get_hls_folder_path(id) do
+      {:ok, _path} -> true
+      {:error, :room_not_found} -> false
+    end
   end
 
   defp do_delete(id) do

@@ -453,13 +453,7 @@ paths:
     get:
       callbacks: {}
       operationId: get_recordings
-      parameters:
-        - description: Recording ID
-          in: path
-          name: recording_id
-          required: true
-          schema:
-            type: string
+      parameters: []
       responses:
         '200':
           content:

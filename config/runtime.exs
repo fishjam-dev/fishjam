@@ -33,15 +33,9 @@ host =
     _ -> {host, 443}
   end
 
-output_base_path =
-  case Application.fetch_env(:jellyfish, :output_base_path) do
-    {:ok, value} -> value
-    :error -> System.get_env("JF_OUTPUT_BASE_PATH", "jellyfish_output")
-  end
-
 config :jellyfish,
   jwt_max_age: 24 * 3600,
-  output_base_path: output_base_path |> Path.expand(),
+  output_base_path: System.get_env("JF_OUTPUT_BASE_PATH", "jellyfish_output") |> Path.expand(),
   address: "#{host}",
   metrics_ip: ConfigReader.read_ip("JF_METRICS_IP") || {127, 0, 0, 1},
   metrics_port: ConfigReader.read_port("JF_METRICS_PORT") || 9568,

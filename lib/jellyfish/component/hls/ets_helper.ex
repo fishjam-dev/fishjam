@@ -11,7 +11,7 @@ defmodule Jellyfish.Component.HLS.EtsHelper do
   @delta_recent_partial_key :delta_recent_partial
   @delta_manifest_key :delta_manifest
 
-  @hls_folder_path :hls_folder_path
+  @hls_folder_path :rooms_to_folder_paths
 
   @type partial :: {non_neg_integer(), non_neg_integer()}
 
@@ -126,7 +126,7 @@ defmodule Jellyfish.Component.HLS.EtsHelper do
     get_from_ets(room_id, @delta_manifest_key)
   end
 
-  @spec get_hls_folder_path(Room.id()) :: {:ok, String.t()} | {:error, atom()}
+  @spec get_hls_folder_path(Room.id()) :: {:ok, String.t()} | {:error, :room_not_found}
   def get_hls_folder_path(room_id) do
     get_path(room_id)
   end
