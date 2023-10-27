@@ -70,11 +70,9 @@ defmodule JellyfishWeb.RecordingController do
   end
 
   def delete(conn, %{"recording_id" => recording_id}) do
-    with :ok <- Recording.delete(recording_id) do
-      send_resp(conn, :no_content, "")
-    else
-      _error ->
-        {:error, :not_found, "Recording not found"}
+    case Recording.delete(recording_id) do
+      :ok -> send_resp(conn, :no_content, "")
+      _error -> {:error, :not_found, "Recording not found"}
     end
   end
 end

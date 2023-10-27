@@ -107,7 +107,7 @@ defmodule JellyfishWeb.ComponentControllerTest do
       assert_hls_path(room_id, persistent: true)
 
       # It is persistent stream so we have to remove it manually
-      {:ok, _removed_files} = room_id |> HLS.Recording.directory() |> File.rm_rf()
+      assert {:ok, _removed_files} = room_id |> HLS.Recording.directory() |> File.rm_rf()
     end
 
     test "renders component with targetWindowDuration set", %{conn: conn} do
