@@ -29,11 +29,11 @@ defmodule JellyfishWeb.HLSControllerTest do
   @schema JellyfishWeb.ApiSpec.spec()
 
   setup_all do
-    output_path = HLS.output_dir(@room_id)
+    output_path = HLS.output_dir(@room_id, persistent: false)
     File.mkdir_p!(output_path)
 
     prepare_files(output_path)
-    prepare_ets()
+    prepare_ets(output_path)
     prepare_request_handler()
 
     on_exit(fn -> :file.del_dir_r(output_path) end)
@@ -145,7 +145,7 @@ defmodule JellyfishWeb.HLSControllerTest do
     File.write!(master_manifest_path, @master_manifest_content)
   end
 
-  defp prepare_ets() do
+  defp prepare_ets(output_path) do
     {:ok, table} = EtsHelper.add_room(@room_id)
 
     EtsHelper.add_partial(table, @partial_content, @partial_name)
@@ -153,6 +153,8 @@ defmodule JellyfishWeb.HLSControllerTest do
     EtsHelper.update_delta_recent_partial(table, @partial_sn)
     EtsHelper.update_manifest(table, @manifest_content)
     EtsHelper.update_delta_manifest(table, @delta_manifest_content)
+
+    EtsHelper.add_hls_folder_path(@room_id, output_path)
   end
 
   defp prepare_request_handler() do

@@ -22,6 +22,12 @@ defmodule JellyfishWeb.Router do
     get "/:room_id/:filename", HLSController, :index
   end
 
+  scope "/recording", JellyfishWeb do
+    get "/:recording_id/:filename", RecordingController, :index
+    delete "/:recording_id", RecordingController, :delete
+    get "/", RecordingController, :show
+  end
+
   # Enable LiveDashboard in development
   if Application.compile_env(:jellyfish, :dev_routes) do
     # If you want to use the LiveDashboard in production, you should put

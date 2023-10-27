@@ -4,8 +4,7 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   use GenServer
   use Bunch.Access
 
-  alias Jellyfish.Component.HLS
-  alias Jellyfish.Component.HLS.EtsHelper
+  alias Jellyfish.Component.HLS.{EtsHelper, Recording}
   alias Jellyfish.Room
 
   @enforce_keys [:room_id, :room_pid]
@@ -33,15 +32,41 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   ### HLS Controller API
   ###
 
+  # FIXME: Opportunity for Improvement
+  #
+  # During stress test simulations involving 500 clients (at a rate of 1 Gb/s)
+  # it has been observed that RAM usage can surge up to 1 GB due solely to HLS requests.
+  # This spike is primarily caused by the current strategy of reading files individually for each request, rather than caching them in memory.
+  #
+  # Recommendation:
+  # To mitigate this issue, consider implementing a cache storage mechanism that maintains the last six segments.
+  # This way, whenever possible, these segments are retrieved from the cache instead of being repeatedly read from the file.
+
   @doc """
   Handles requests: playlists (regular hls), master playlist, headers, regular segments
   """
-  @spec handle_file_request(Room.id(), String.t()) :: {:ok, binary()} | {:error | String.t()}
+  @spec handle_file_request(Room.id(), String.t()) :: {:ok, binary()} | {:error, atom()}
   def handle_file_request(room_id, filename) do
-    room_id
-    |> HLS.output_dir()
-    |> Path.join(filename)
-    |> File.read()
+    with {:ok, path} <- EtsHelper.get_hls_folder_path(room_id) do
+      path
+      |> Path.join(filename)
+      |> File.read()
+    end
+  end
+
+  @doc """
+  Handles VOD requests: master playlist, headers, regular segments
+  """
+  @spec handle_recording_request(Room.id(), String.t()) :: {:ok, binary()} | {:error, atom()}
+  def handle_recording_request(recording_id, filename) do
+    if Recording.exists?(recording_id) do
+      recording_id
+      |> Recording.directory()
+      |> Path.join(filename)
+      |> File.read()
+    else
+      {:error, :recording_not_found}
+    end
   end
 
   @doc """

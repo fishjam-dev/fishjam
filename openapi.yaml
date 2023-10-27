@@ -278,6 +278,18 @@ components:
       title: PeerType
       type: string
       x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.Type
+    RecordingListResponse:
+      description: Response containing list of all recording
+      properties:
+        data:
+          items:
+            type: string
+          type: array
+      required:
+        - data
+      title: RecordingListResponse
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.RecordingListResponse
     Room:
       description: Description of the room state
       properties:
@@ -436,7 +448,85 @@ paths:
                 $ref: '#/components/schemas/Error'
           description: File not found
       summary: Send file
-      tags: []
+      tags:
+        - hls
+  /recording:
+    get:
+      callbacks: {}
+      operationId: get_recordings
+      parameters: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingListResponse'
+          description: Success
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unable to obtain recordings
+      summary: Shows information about the room
+      tags:
+        - recording
+  /recording/{recording_id}:
+    delete:
+      callbacks: {}
+      operationId: delete_recording
+      parameters:
+        - description: Recording id
+          in: path
+          name: recording_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Successfully deleted recording
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Recording doesn't exist
+      summary: Delete the recording
+      tags:
+        - recording
+  /recording/{recording_id}/{filename}:
+    get:
+      callbacks: {}
+      operationId: send_file
+      parameters:
+        - description: Recording id
+          in: path
+          name: recording_id
+          required: true
+          schema:
+            type: string
+        - description: Name of the file
+          in: path
+          name: filename
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HlsResponse'
+          description: File was found
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: File not found
+      summary: Send file
+      tags:
+        - recording
   /room:
     get:
       callbacks: {}

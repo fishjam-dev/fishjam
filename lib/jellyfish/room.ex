@@ -9,6 +9,7 @@ defmodule Jellyfish.Room do
   require Logger
 
   alias Jellyfish.Component
+  alias Jellyfish.Component.{HLS, RTSP}
   alias Jellyfish.Event
   alias Jellyfish.Peer
   alias Membrane.ICE.TURNManager
@@ -237,7 +238,7 @@ defmodule Jellyfish.Room do
     with :ok <- check_component_allowed(component_type, state),
          {:ok, component} <- Component.new(component_type, options) do
       state = put_in(state, [:components, component.id], component)
-      maybe_spawn_hls_processes(state.id, component.metadata)
+      if component_type == HLS, do: on_hls_startup(state.id, component.metadata)
       :ok = Engine.add_endpoint(state.engine_pid, component.engine_endpoint, id: component.id)
 
       Logger.info("Added component #{inspect(component.id)}")
@@ -267,7 +268,7 @@ defmodule Jellyfish.Room do
 
         Logger.info("Removed component #{inspect(component_id)}")
 
-        if component.type == Component.HLS, do: remove_hls_processes(state.id, component.metadata)
+        if component.type == HLS, do: on_hls_removal(state.id, component.metadata)
 
         {:ok, state}
       else
@@ -325,7 +326,7 @@ defmodule Jellyfish.Room do
       Event.broadcast_server_notification({:component_crashed, state.id, endpoint_id})
 
       component = Map.get(state.components, endpoint_id)
-      if component.type == Component.HLS, do: remove_hls_processes(state.id, component.metadata)
+      if component.type == HLS, do: on_hls_removal(state.id, component.metadata)
     end
 
     {:noreply, state}
@@ -355,7 +356,7 @@ defmodule Jellyfish.Room do
   def handle_info({:playlist_playable, :video, _playlist_id}, state) do
     endpoint_id =
       Enum.find_value(state.components, fn {id, %{type: type}} ->
-        if type == Component.HLS, do: id
+        if type == HLS, do: id
       end)
 
     Event.broadcast_server_notification({:hls_playable, state.id, endpoint_id})
@@ -375,7 +376,7 @@ defmodule Jellyfish.Room do
     Engine.terminate(engine_pid, asynchronous?: true, timeout: 10_000)
 
     hls_component = hls_component(state)
-    unless is_nil(hls_component), do: remove_hls_processes(state.id, hls_component.metadata)
+    unless is_nil(hls_component), do: on_hls_removal(state.id, hls_component.metadata)
 
     :ok
   end
@@ -421,20 +422,35 @@ defmodule Jellyfish.Room do
   defp hls_component(%{components: components}),
     do:
       Enum.find_value(components, fn {_id, component} ->
-        if component.type == Component.HLS, do: component
+        if component.type == HLS, do: component
       end)
 
-  defp maybe_spawn_hls_processes(room_id, %{low_latency: true}),
-    do: Component.HLS.RequestHandler.start(room_id)
+  defp on_hls_startup(room_id, %{low_latency: low_latency, persistent: persistent}) do
+    room_id
+    |> HLS.output_dir(persistent: persistent)
+    |> then(&HLS.EtsHelper.add_hls_folder_path(room_id, &1))
 
-  defp maybe_spawn_hls_processes(_room_id, _metadata), do: nil
+    if low_latency, do: spawn_request_handler(room_id)
+  end
 
-  defp remove_hls_processes(room_id, %{low_latency: true}),
-    do: Component.HLS.RequestHandler.stop(room_id)
+  defp spawn_request_handler(room_id),
+    do: HLS.RequestHandler.start(room_id)
 
-  defp remove_hls_processes(_room_id, _metadata), do: nil
+  defp on_hls_removal(room_id, %{low_latency: low_latency, persistent: persistent}) do
+    unless persistent do
+      {:ok, path} = HLS.EtsHelper.get_hls_folder_path(room_id)
+      File.rm_rf!(path)
+    end
 
-  defp check_component_allowed(Component.HLS, %{
+    HLS.EtsHelper.delete_hls_folder_path(room_id)
+
+    if low_latency, do: remove_request_handler(room_id)
+  end
+
+  defp remove_request_handler(room_id),
+    do: HLS.RequestHandler.stop(room_id)
+
+  defp check_component_allowed(HLS, %{
          config: %{video_codec: video_codec},
          components: components
        }) do
@@ -450,7 +466,7 @@ defmodule Jellyfish.Room do
     end
   end
 
-  defp check_component_allowed(Component.RTSP, %{config: %{video_codec: video_codec}}) do
+  defp check_component_allowed(RTSP, %{config: %{video_codec: video_codec}}) do
     # Right now, RTSP component can only publish H264, so there's no point adding it
     # to a room which enforces another video codec, e.g. VP8
     if video_codec in [:h264, nil],
@@ -461,5 +477,5 @@ defmodule Jellyfish.Room do
   defp check_component_allowed(_component_type, _state), do: :ok
 
   defp hls_component_already_present?(components),
-    do: components |> Map.values() |> Enum.any?(&(&1.type == Component.HLS))
+    do: components |> Map.values() |> Enum.any?(&(&1.type == HLS))
 end

@@ -11,6 +11,8 @@ defmodule Jellyfish.Component.HLS.EtsHelper do
   @delta_recent_partial_key :delta_recent_partial
   @delta_manifest_key :delta_manifest
 
+  @hls_folder_path :rooms_to_folder_paths
+
   @type partial :: {non_neg_integer(), non_neg_integer()}
 
   ###
@@ -82,6 +84,16 @@ defmodule Jellyfish.Component.HLS.EtsHelper do
     :ets.delete(table, filename)
   end
 
+  @spec add_hls_folder_path(Room.id(), String.t()) :: true
+  def add_hls_folder_path(room_id, path) do
+    :ets.insert(@hls_folder_path, {room_id, path})
+  end
+
+  @spec delete_hls_folder_path(Room.id()) :: true
+  def delete_hls_folder_path(room_id) do
+    :ets.delete(@hls_folder_path, room_id)
+  end
+
   ###
   ### ETS GETTERS
   ###
@@ -114,6 +126,11 @@ defmodule Jellyfish.Component.HLS.EtsHelper do
     get_from_ets(room_id, @delta_manifest_key)
   end
 
+  @spec get_hls_folder_path(Room.id()) :: {:ok, String.t()} | {:error, :room_not_found}
+  def get_hls_folder_path(room_id) do
+    get_path(room_id)
+  end
+
   ###
   ### PRIVATE FUNCTIONS
   ###
@@ -130,6 +147,10 @@ defmodule Jellyfish.Component.HLS.EtsHelper do
 
   defp get_table(room_id) do
     lookup_helper(@rooms_to_tables, room_id, :room_not_found)
+  end
+
+  defp get_path(room_id) do
+    lookup_helper(@hls_folder_path, room_id, :room_not_found)
   end
 
   defp lookup_helper(table, key, error) do
