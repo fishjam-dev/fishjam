@@ -14,7 +14,10 @@ defmodule JellyfishWeb.RecordingController do
   @playlist_content_type "application/vnd.apple.mpegurl"
   @recording_id_spec [in: :path, description: "Recording id", type: :string]
 
+  tags [:recording]
+
   operation :index,
+    operation_id: "send_file",
     summary: "Send file",
     parameters: [
       recording_id: @recording_id_spec,

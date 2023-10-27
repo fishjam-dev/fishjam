@@ -448,7 +448,8 @@ paths:
                 $ref: '#/components/schemas/Error'
           description: File not found
       summary: Send file
-      tags: []
+      tags:
+        - hls
   /recording:
     get:
       callbacks: {}
@@ -468,7 +469,8 @@ paths:
                 $ref: '#/components/schemas/Error'
           description: Unable to obtain recordings
       summary: Shows information about the room
-      tags: []
+      tags:
+        - recording
   /recording/{recording_id}:
     delete:
       callbacks: {}
@@ -490,11 +492,12 @@ paths:
                 $ref: '#/components/schemas/Error'
           description: Recording doesn't exist
       summary: Delete the recording
-      tags: []
+      tags:
+        - recording
   /recording/{recording_id}/{filename}:
     get:
       callbacks: {}
-      operationId: JellyfishWeb.RecordingController.index
+      operationId: send_file
       parameters:
         - description: Recording id
           in: path
@@ -522,7 +525,8 @@ paths:
                 $ref: '#/components/schemas/Error'
           description: File not found
       summary: Send file
-      tags: []
+      tags:
+        - recording
   /room:
     get:
       callbacks: {}

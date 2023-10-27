@@ -12,6 +12,8 @@ defmodule JellyfishWeb.HLSController do
 
   action_fallback JellyfishWeb.FallbackController
 
+  tags [:hls]
+
   operation :index,
     summary: "Send file",
     parameters: [
