@@ -127,6 +127,10 @@ defmodule Jellyfish.ConfigReaderTest do
       assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
       System.put_env("JF_DIST_COOKIE", "testcookie")
       assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
+      System.put_env("JF_DIST_NODE_NAME", "testnodename@abc@def")
+      assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
+      System.put_env("JF_DIST_NODE_NAME", "testnodename")
+      assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
       System.put_env("JF_DIST_NODE_NAME", "testnodename@127.0.0.1")
 
       assert ConfigReader.read_dist_config() == [
@@ -175,8 +179,6 @@ defmodule Jellyfish.ConfigReaderTest do
       System.put_env("JF_DIST_NODE_NAME", "testnodename@127.0.0.1")
       assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
       System.put_env("JF_DIST_QUERY", "my-app.example.com")
-      assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
-      System.put_env("JF_DIST_NODE_BASENAME", "my-app")
 
       assert ConfigReader.read_dist_config() == [
                enabled: true,
@@ -186,7 +188,7 @@ defmodule Jellyfish.ConfigReaderTest do
                strategy_config: [
                  polling_interval: 5_000,
                  query: "my-app.example.com",
-                 node_basename: "my-app"
+                 node_basename: "testnodename"
                ]
              ]
 
@@ -203,7 +205,7 @@ defmodule Jellyfish.ConfigReaderTest do
                strategy_config: [
                  polling_interval: 10_000,
                  query: "my-app.example.com",
-                 node_basename: "my-app"
+                 node_basename: "testnodename"
                ]
              ]
 

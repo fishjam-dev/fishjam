@@ -170,7 +170,9 @@ defmodule Jellyfish.ConfigReader do
     end
 
     query = parse_dns_string.("JF_DIST_QUERY")
-    node_basename = parse_dns_string.("JF_DIST_NODE_BASENAME")
+
+    [node_basename, _ip_addres_or_fqdn | []] = String.split(node_name_value, "@")
+
     polling_interval = parse_polling_interval()
 
     [
@@ -186,7 +188,15 @@ defmodule Jellyfish.ConfigReader do
     ]
   end
 
-  defp parse_node_name(node_name), do: String.to_atom(node_name)
+  defp parse_node_name(node_name) do
+    case String.split(node_name, "@") do
+      [_node_basename, _ip_addres_or_fqdn | []] ->
+        String.to_atom(node_name)
+
+      _other ->
+        raise "JF_DIST_NODE_NAME has improper format should have <basename>@<ip_address> or <basename>@<fqdn> and has got: #{node_name}"
+    end
+  end
 
   defp parse_cookie(cookie_value), do: String.to_atom(cookie_value)
 
