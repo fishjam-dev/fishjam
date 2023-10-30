@@ -126,9 +126,8 @@ defmodule Jellyfish.ConfigReader do
 
         if nodes == [] do
           Logger.warning("""
-          JF_DIST_ENABLED has been set but JF_DIST_NODES remains unset.
-          Make sure that at least one of your Jellyfish instances
-          has JF_DIST_NODES set.
+          NODES_LIST strategy requires JF_DIST_NODES to be set
+          by at least one Jellyfish instace. This instance has JF_DIST_NODES unset.
           """)
         end
 
