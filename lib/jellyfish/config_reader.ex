@@ -111,30 +111,7 @@ defmodule Jellyfish.ConfigReader do
         [enabled: false, strategy: nil, node_name: nil, cookie: nil, strategy_config: nil]
 
       dist_strategy == "NODES_LIST" or is_nil(dist_strategy) ->
-        nodes_value = System.get_env("JF_DIST_NODES", "")
-
-        unless node_name_value do
-          raise "JF_DIST_ENABLED has been set but JF_DIST_NODE_NAME remains unset."
-        end
-
-        node_name = parse_node_name(node_name_value)
-        cookie = parse_cookie(cookie_value)
-        nodes = parse_nodes(nodes_value)
-
-        if nodes == [] do
-          Logger.warning("""
-          NODES_LIST strategy requires JF_DIST_NODES to be set
-          by at least one Jellyfish instace. This instance has JF_DIST_NODES unset.
-          """)
-        end
-
-        [
-          enabled: true,
-          strategy: Cluster.Strategy.Epmd,
-          node_name: node_name,
-          cookie: cookie,
-          strategy_config: [hosts: nodes]
-        ]
+        do_read_nodes_list_config(node_name_value, cookie_value)
 
       dist_strategy == "DNS" ->
         do_read_dns_config(node_name_value, cookie_value)
@@ -145,6 +122,33 @@ defmodule Jellyfish.ConfigReader do
         Availabile strategies are EPMD or DNS, provided strategy name was: "#{dist_strategy}"
         """
     end
+  end
+
+  defp do_read_nodes_list_config(node_name_value, cookie_value) do
+    nodes_value = System.get_env("JF_DIST_NODES", "")
+
+    unless node_name_value do
+      raise "JF_DIST_ENABLED has been set but JF_DIST_NODE_NAME remains unset."
+    end
+
+    node_name = parse_node_name(node_name_value)
+    cookie = parse_cookie(cookie_value)
+    nodes = parse_nodes(nodes_value)
+
+    if nodes == [] do
+      Logger.warning("""
+      NODES_LIST strategy requires JF_DIST_NODES to be set
+      by at least one Jellyfish instace. This instance has JF_DIST_NODES unset.
+      """)
+    end
+
+    [
+      enabled: true,
+      strategy: Cluster.Strategy.Epmd,
+      node_name: node_name,
+      cookie: cookie,
+      strategy_config: [hosts: nodes]
+    ]
   end
 
   defp do_read_dns_config(node_name_value, cookie_value) do
