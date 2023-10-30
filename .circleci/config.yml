@@ -17,7 +17,7 @@ jobs:
     steps:
       - checkout
       - run: docker compose -f docker-compose-epmd.yaml up test --exit-code-from test
-      - run: docker compose down
+      - run: docker compose -f docker-compose-epmd.yaml down 
       - run: docker compose -f docker-compose-dns.yaml up test --exit-code-from test
     
   test:

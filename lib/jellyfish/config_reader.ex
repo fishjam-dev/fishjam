@@ -78,6 +78,28 @@ defmodule Jellyfish.ConfigReader do
     end
   end
 
+  def read_webrtc_config() do
+    webrtc_used = read_boolean("JF_WEBRTC_USED")
+
+    if webrtc_used != false do
+      [
+        webrtc_used: true,
+        turn_ip: read_ip("JF_WEBRTC_TURN_IP") || {127, 0, 0, 1},
+        turn_listen_ip: read_ip("JF_WEBRTC_TURN_LISTEN_IP") || {127, 0, 0, 1},
+        turn_port_range: read_port_range("JF_WEBRTC_TURN_PORT_RANGE") || {50_000, 59_999},
+        turn_tcp_port: read_port("JF_WEBRTC_TURN_TCP_PORT")
+      ]
+    else
+      [
+        webrtc_used: false,
+        turn_ip: nil,
+        turn_listen_ip: nil,
+        turn_port_range: nil,
+        turn_tcp_port: nil
+      ]
+    end
+  end
+
   def read_dist_config() do
     dist_enabled? = read_boolean("JF_DIST_ENABLED")
     dist_strategy = System.get_env("JF_DIST_STRATEGY_NAME")
@@ -116,38 +138,7 @@ defmodule Jellyfish.ConfigReader do
         ]
 
       dist_strategy == "DNS" ->
-        unless node_name_value do
-          raise "JF_DIST_ENABLED has been set but JF_DIST_NODE_NAME remains unset."
-        end
-
-        node_name = parse_node_name(node_name_value)
-        cookie = parse_cookie(cookie_value)
-
-        parse_dns_string = fn env_name ->
-          env = System.get_env(env_name)
-
-          unless env do
-            raise "DNS strategy has been set but #{env_name} remains unset."
-          end
-
-          env
-        end
-
-        query = parse_dns_string.("JF_DIST_QUERY")
-        node_basename = parse_dns_string.("JF_DIST_NODE_BASENAME")
-        polling_interval = parse_polling_interval()
-
-        [
-          enabled: true,
-          strategy: Cluster.Strategy.DNSPoll,
-          node_name: node_name,
-          cookie: cookie,
-          strategy_config: [
-            polling_interval: polling_interval,
-            query: query,
-            node_basename: node_basename
-          ]
-        ]
+        do_read_dns_config(dist_strategy, node_name_value, cookie_value)
 
       true ->
         raise """
@@ -157,26 +148,39 @@ defmodule Jellyfish.ConfigReader do
     end
   end
 
-  def read_webrtc_config() do
-    webrtc_used = read_boolean("JF_WEBRTC_USED")
-
-    if webrtc_used != false do
-      [
-        webrtc_used: true,
-        turn_ip: read_ip("JF_WEBRTC_TURN_IP") || {127, 0, 0, 1},
-        turn_listen_ip: read_ip("JF_WEBRTC_TURN_LISTEN_IP") || {127, 0, 0, 1},
-        turn_port_range: read_port_range("JF_WEBRTC_TURN_PORT_RANGE") || {50_000, 59_999},
-        turn_tcp_port: read_port("JF_WEBRTC_TURN_TCP_PORT")
-      ]
-    else
-      [
-        webrtc_used: false,
-        turn_ip: nil,
-        turn_listen_ip: nil,
-        turn_port_range: nil,
-        turn_tcp_port: nil
-      ]
+  defp do_read_dns_config(dist_strategy, node_name_value, cookie_value) do
+    unless node_name_value do
+      raise "JF_DIST_ENABLED has been set but JF_DIST_NODE_NAME remains unset."
     end
+
+    node_name = parse_node_name(node_name_value)
+    cookie = parse_cookie(cookie_value)
+
+    parse_dns_string = fn env_name ->
+      env = System.get_env(env_name)
+
+      if !env and dist_strategy == "DNS" do
+        raise "DNS strategy has been set but #{env_name} remains unset."
+      end
+
+      env
+    end
+
+    query = parse_dns_string.("JF_DIST_QUERY")
+    node_basename = parse_dns_string.("JF_DIST_NODE_BASENAME")
+    polling_interval = parse_polling_interval()
+
+    [
+      enabled: true,
+      strategy: Cluster.Strategy.DNSPoll,
+      node_name: node_name,
+      cookie: cookie,
+      strategy_config: [
+        polling_interval: polling_interval,
+        query: query,
+        node_basename: node_basename
+      ]
+    ]
   end
 
   defp parse_node_name(node_name), do: String.to_atom(node_name)
