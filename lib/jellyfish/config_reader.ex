@@ -85,11 +85,15 @@ defmodule Jellyfish.ConfigReader do
     cookie_value = System.get_env("JF_DIST_COOKIE", "jellyfish_cookie")
 
     cond do
-      !dist_enabled? ->
-        [enabled: false, node_name: nil, cookie: nil, nodes: []]
+      is_nil(dist_enabled?) or not dist_enabled? ->
+        [enabled: false, strategy: nil, node_name: nil, cookie: nil, strategy_config: nil]
 
-      dist_strategy == "EPMD" ->
+      dist_strategy == "NODES_LIST" or is_nil(dist_strategy) ->
         nodes_value = System.get_env("JF_DIST_NODES", "")
+
+        unless node_name_value do
+          raise "JF_DIST_ENABLED has been set but JF_DIST_NODE_NAME remains unset."
+        end
 
         node_name = parse_node_name(node_name_value)
         cookie = parse_cookie(cookie_value)
@@ -108,15 +112,29 @@ defmodule Jellyfish.ConfigReader do
           strategy: Cluster.Strategy.Epmd,
           node_name: node_name,
           cookie: cookie,
-          config: [hosts: nodes]
+          strategy_config: [hosts: nodes]
         ]
 
       dist_strategy == "DNS" ->
+        unless node_name_value do
+          raise "JF_DIST_ENABLED has been set but JF_DIST_NODE_NAME remains unset."
+        end
+
         node_name = parse_node_name(node_name_value)
         cookie = parse_cookie(cookie_value)
 
-        query = parse_dns_string("JF_DIST_QUERY")
-        node_basename = parse_dns_string("JF_DIST_NODE_BASENAME")
+        parse_dns_string = fn env_name ->
+          env = System.get_env(env_name)
+
+          unless env do
+            raise "DNS strategy has been set but #{env_name} remains unset."
+          end
+
+          env
+        end
+
+        query = parse_dns_string.("JF_DIST_QUERY")
+        node_basename = parse_dns_string.("JF_DIST_NODE_BASENAME")
         polling_interval = parse_polling_interval()
 
         [
@@ -124,7 +142,7 @@ defmodule Jellyfish.ConfigReader do
           strategy: Cluster.Strategy.DNSPoll,
           node_name: node_name,
           cookie: cookie,
-          config: [
+          strategy_config: [
             polling_interval: polling_interval,
             query: query,
             node_basename: node_basename
@@ -134,7 +152,7 @@ defmodule Jellyfish.ConfigReader do
       true ->
         raise """
         JF_DIST_ENABLED has been set but unknown JF_DIST_STRATEGY was provided.
-        Availabile strategies are EPMD or DNS, provided strategy name was: #{dist_strategy}
+        Availabile strategies are EPMD or DNS, provided strategy name was: "#{dist_strategy}"
         """
     end
   end
@@ -161,13 +179,7 @@ defmodule Jellyfish.ConfigReader do
     end
   end
 
-  defp parse_node_name(node_name) do
-    unless node_name do
-      raise "JF_DIST_ENABLED has been set but JF_DIST_NODE_NAME remains unset."
-    end
-
-    String.to_atom(node_name)
-  end
+  defp parse_node_name(node_name), do: String.to_atom(node_name)
 
   defp parse_cookie(cookie_value), do: String.to_atom(cookie_value)
 
@@ -177,34 +189,18 @@ defmodule Jellyfish.ConfigReader do
     |> Enum.map(&String.to_atom(&1))
   end
 
-  defp parse_dns_string(env_name) do
-    env = System.get_env(env_name)
-
-    unless env do
-      raise "DNS strategy has been set but #{env_name} remains unset."
-    end
-
-    env
-  end
-
   defp parse_polling_interval() do
     env_value = System.get_env("JF_DIST_POLLING_INTERVAL", "5000")
 
-    polling_interval =
-      try do
-        String.to_integer(env_value)
-      rescue
-        ArgumentError ->
-          reraise(
-            "Error during parsing `JF_DIST_POLLING_INTERVAL`. Provided value should be integer and was: #{env_value}",
-            __STACKTRACE__
-          )
-      end
+    case Integer.parse(env_value) do
+      {polling_interval, ""} when polling_interval > 0 ->
+        polling_interval
 
-    if polling_interval <= 0 do
-      raise "`JF_DIST_POLLING_INTERVAL` must be positivie integer. Provided value was: #{polling_interval}"
-    else
-      polling_interval
+      {polling_interval, ""} ->
+        raise "`JF_DIST_POLLING_INTERVAL` must be positivie integer. Provided value was: #{polling_interval}"
+
+      _other ->
+        raise "Error during parsing `JF_DIST_POLLING_INTERVAL`. Provided value should be integer and was: #{env_value}"
     end
   end
 end

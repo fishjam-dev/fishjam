@@ -112,19 +112,18 @@ defmodule Jellyfish.ConfigReaderTest do
     end
   end
 
-  test "read_dist_config/0" do
+  test "read_dist_config/0 EPMD" do
     # EPMD strategy
     with_env ["JF_DIST_ENABLED", "JF_DIST_COOKIE", "JF_DIST_NODE_NAME", "JF_DIST_NODES"] do
       assert ConfigReader.read_dist_config() == [
                enabled: false,
+               strategy: nil,
                node_name: nil,
                cookie: nil,
-               nodes: []
+               strategy_config: nil
              ]
 
       System.put_env("JF_DIST_ENABLED", "true")
-      assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
-      System.put_env("JF_DIST_STRATEGY_NAME", "EPMD")
       assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
       System.put_env("JF_DIST_COOKIE", "testcookie")
       assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
@@ -135,7 +134,7 @@ defmodule Jellyfish.ConfigReaderTest do
                strategy: Cluster.Strategy.Epmd,
                node_name: :"testnodename@127.0.0.1",
                cookie: :testcookie,
-               config: [hosts: []]
+               strategy_config: [hosts: []]
              ]
 
       System.put_env("JF_DIST_NODES", "testnodename1@127.0.0.1 testnodename2@127.0.0.1")
@@ -145,17 +144,26 @@ defmodule Jellyfish.ConfigReaderTest do
                strategy: Cluster.Strategy.Epmd,
                node_name: :"testnodename@127.0.0.1",
                cookie: :testcookie,
-               config: [hosts: [:"testnodename1@127.0.0.1", :"testnodename2@127.0.0.1"]]
+               strategy_config: [hosts: [:"testnodename1@127.0.0.1", :"testnodename2@127.0.0.1"]]
              ]
     end
+  end
 
+  test "read_dist_config/0 DNS" do
     # DNS strategy
-    with_env ["JF_DIST_ENABLED", "JF_DIST_COOKIE", "JF_DIST_NODE_NAME", "JF_DIST_NODES"] do
+    with_env [
+      "JF_DIST_ENABLED",
+      "JF_DIST_COOKIE",
+      "JF_DIST_NODE_NAME",
+      "JF_DIST_NODES",
+      "JF_DIST_STRATEGY_NAME"
+    ] do
       assert ConfigReader.read_dist_config() == [
                enabled: false,
+               strategy: nil,
                node_name: nil,
                cookie: nil,
-               nodes: []
+               strategy_config: nil
              ]
 
       System.put_env("JF_DIST_ENABLED", "true")
@@ -175,7 +183,7 @@ defmodule Jellyfish.ConfigReaderTest do
                strategy: Cluster.Strategy.DNSPoll,
                node_name: :"testnodename@127.0.0.1",
                cookie: :testcookie,
-               config: [
+               strategy_config: [
                  polling_interval: 5_000,
                  query: "my-app.example.com",
                  node_basename: "my-app"
@@ -192,7 +200,7 @@ defmodule Jellyfish.ConfigReaderTest do
                strategy: Cluster.Strategy.DNSPoll,
                node_name: :"testnodename@127.0.0.1",
                cookie: :testcookie,
-               config: [
+               strategy_config: [
                  polling_interval: 10_000,
                  query: "my-app.example.com",
                  node_basename: "my-app"

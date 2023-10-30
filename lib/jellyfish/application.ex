@@ -82,7 +82,7 @@ defmodule Jellyfish.Application do
     topologies = [
       cluster: [
         strategy: dist_config[:strategy],
-        config: dist_config[:config]
+        config: dist_config[:strategy_config]
       ]
     ]
 
