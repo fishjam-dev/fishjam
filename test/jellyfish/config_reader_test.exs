@@ -153,7 +153,6 @@ defmodule Jellyfish.ConfigReaderTest do
   end
 
   test "read_dist_config/0 DNS" do
-    # DNS strategy
     with_env [
       "JF_DIST_ENABLED",
       "JF_DIST_COOKIE",
