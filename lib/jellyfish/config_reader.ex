@@ -60,7 +60,6 @@ defmodule Jellyfish.ConfigReader do
     end)
   end
 
-  @spec read_boolean(binary(), (binary() -> boolean()) | nil) :: boolean() | nil
   def read_boolean(env, fallback \\ nil) do
     if value = System.get_env(env) do
       case String.downcase(value) do
@@ -76,8 +75,6 @@ defmodule Jellyfish.ConfigReader do
         _other ->
           fallback.(value)
       end
-    else
-      nil
     end
   end
 
@@ -140,7 +137,7 @@ defmodule Jellyfish.ConfigReader do
         ]
 
       dist_strategy == "DNS" ->
-        do_read_dns_config(dist_strategy, node_name_value, cookie_value)
+        do_read_dns_config(node_name_value, cookie_value)
 
       true ->
         raise """
@@ -150,7 +147,7 @@ defmodule Jellyfish.ConfigReader do
     end
   end
 
-  defp do_read_dns_config(dist_strategy, node_name_value, cookie_value) do
+  defp do_read_dns_config(node_name_value, cookie_value) do
     unless node_name_value do
       raise "JF_DIST_ENABLED has been set but JF_DIST_NODE_NAME remains unset."
     end
@@ -159,7 +156,7 @@ defmodule Jellyfish.ConfigReader do
     cookie = parse_cookie(cookie_value)
 
     query_value = System.get_env("JF_DIST_QUERY")
-    
+
     unless query_value do
       raise "JF_DIST_QUERY is required by DNS strategy"
     end
@@ -175,7 +172,7 @@ defmodule Jellyfish.ConfigReader do
       cookie: cookie,
       strategy_config: [
         polling_interval: polling_interval,
-        query: query,
+        query: query_value,
         node_basename: node_basename
       ]
     ]
