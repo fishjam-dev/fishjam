@@ -112,8 +112,7 @@ defmodule Jellyfish.ConfigReaderTest do
     end
   end
 
-  test "read_dist_config/0 EPMD" do
-    # EPMD strategy
+  test "read_dist_config/0 NODES_LIST" do
     with_env ["JF_DIST_ENABLED", "JF_DIST_COOKIE", "JF_DIST_NODE_NAME", "JF_DIST_NODES"] do
       assert ConfigReader.read_dist_config() == [
                enabled: false,
