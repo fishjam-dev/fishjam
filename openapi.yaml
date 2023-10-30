@@ -468,7 +468,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Unable to obtain recordings
-      summary: Shows information about the room
+      summary: Lists all available recordings
       tags:
         - recording
   /recording/{recording_id}:
@@ -491,7 +491,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Recording doesn't exist
-      summary: Delete the recording
+      summary: Deletes the recording
       tags:
         - recording
   /recording/{recording_id}/{filename}:

@@ -31,7 +31,7 @@ defmodule JellyfishWeb.RecordingController do
 
   operation :show,
     operation_id: "get_recordings",
-    summary: "Shows information about the room",
+    summary: "Lists all available recordings",
     responses: [
       ok: ApiSpec.data("Success", ApiSpec.RecordingListResponse),
       not_found: ApiSpec.error("Unable to obtain recordings")
@@ -39,7 +39,7 @@ defmodule JellyfishWeb.RecordingController do
 
   operation :delete,
     operation_id: "delete_recording",
-    summary: "Delete the recording",
+    summary: "Deletes the recording",
     parameters: [recording_id: @recording_id_spec],
     responses: [
       no_content: %OpenApiSpex.Response{description: "Successfully deleted recording"},
