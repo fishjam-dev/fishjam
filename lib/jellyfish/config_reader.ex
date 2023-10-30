@@ -159,17 +159,11 @@ defmodule Jellyfish.ConfigReader do
     node_name = parse_node_name(node_name_value)
     cookie = parse_cookie(cookie_value)
 
-    parse_dns_string = fn env_name ->
-      env = System.get_env(env_name)
-
-      if !env and dist_strategy == "DNS" do
-        raise "DNS strategy has been set but #{env_name} remains unset."
-      end
-
-      env
+    query_value = System.get_env("JF_DIST_QUERY")
+    
+    unless query_value do
+      raise "JF_DIST_QUERY is required by DNS strategy"
     end
-
-    query = parse_dns_string.("JF_DIST_QUERY")
 
     [node_basename, _ip_addres_or_fqdn | []] = String.split(node_name_value, "@")
 
