@@ -194,7 +194,7 @@ defmodule Jellyfish.ConfigReader do
         String.to_atom(node_name)
 
       _other ->
-        raise "JF_DIST_NODE_NAME has improper format should have <basename>@<ip_address> or <basename>@<fqdn> and has got: #{node_name}"
+        raise "JF_DIST_NODE_NAME has to be in form of <nodename>@<hostname>. Got: #{node_name}"
     end
   end
 
