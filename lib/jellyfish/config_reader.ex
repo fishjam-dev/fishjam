@@ -60,6 +60,7 @@ defmodule Jellyfish.ConfigReader do
     end)
   end
 
+  @spec read_boolean(binary(), (binary() -> boolean()) | nil) :: boolean() | nil
   def read_boolean(env, fallback \\ nil) do
     if value = System.get_env(env) do
       case String.downcase(value) do
@@ -75,6 +76,8 @@ defmodule Jellyfish.ConfigReader do
         _other ->
           fallback.(value)
       end
+    else
+      nil
     end
   end
 
