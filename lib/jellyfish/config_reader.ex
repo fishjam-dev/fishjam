@@ -213,11 +213,8 @@ defmodule Jellyfish.ConfigReader do
       {polling_interval, ""} when polling_interval > 0 ->
         polling_interval
 
-      {polling_interval, ""} ->
-        raise "`JF_DIST_POLLING_INTERVAL` must be positivie integer. Provided value was: #{polling_interval}"
-
       _other ->
-        raise "Error during parsing `JF_DIST_POLLING_INTERVAL`. Provided value should be integer and was: #{env_value}"
+        raise "`JF_DIST_POLLING_INTERVAL` must be a positivie integer. Got: #{env_value}"
     end
   end
 end
