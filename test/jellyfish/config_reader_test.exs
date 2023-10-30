@@ -112,36 +112,105 @@ defmodule Jellyfish.ConfigReaderTest do
     end
   end
 
-  test "read_dist_config/0" do
+  test "read_dist_config/0 NODES_LIST" do
     with_env ["JF_DIST_ENABLED", "JF_DIST_COOKIE", "JF_DIST_NODE_NAME", "JF_DIST_NODES"] do
       assert ConfigReader.read_dist_config() == [
                enabled: false,
+               strategy: nil,
                node_name: nil,
                cookie: nil,
-               nodes: []
+               strategy_config: nil
              ]
 
       System.put_env("JF_DIST_ENABLED", "true")
       assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
       System.put_env("JF_DIST_COOKIE", "testcookie")
       assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
+      System.put_env("JF_DIST_NODE_NAME", "testnodename@abc@def")
+      assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
+      System.put_env("JF_DIST_NODE_NAME", "testnodename")
+      assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
       System.put_env("JF_DIST_NODE_NAME", "testnodename@127.0.0.1")
 
       assert ConfigReader.read_dist_config() == [
                enabled: true,
+               strategy: Cluster.Strategy.Epmd,
                node_name: :"testnodename@127.0.0.1",
                cookie: :testcookie,
-               nodes: []
+               strategy_config: [hosts: []]
              ]
 
       System.put_env("JF_DIST_NODES", "testnodename1@127.0.0.1 testnodename2@127.0.0.1")
 
       assert ConfigReader.read_dist_config() == [
                enabled: true,
+               strategy: Cluster.Strategy.Epmd,
                node_name: :"testnodename@127.0.0.1",
                cookie: :testcookie,
-               nodes: [:"testnodename1@127.0.0.1", :"testnodename2@127.0.0.1"]
+               strategy_config: [hosts: [:"testnodename1@127.0.0.1", :"testnodename2@127.0.0.1"]]
              ]
+    end
+  end
+
+  test "read_dist_config/0 DNS" do
+    with_env [
+      "JF_DIST_ENABLED",
+      "JF_DIST_COOKIE",
+      "JF_DIST_NODE_NAME",
+      "JF_DIST_NODES",
+      "JF_DIST_STRATEGY_NAME"
+    ] do
+      assert ConfigReader.read_dist_config() == [
+               enabled: false,
+               strategy: nil,
+               node_name: nil,
+               cookie: nil,
+               strategy_config: nil
+             ]
+
+      System.put_env("JF_DIST_ENABLED", "true")
+      assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
+      System.put_env("JF_DIST_STRATEGY_NAME", "DNS")
+      assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
+      System.put_env("JF_DIST_COOKIE", "testcookie")
+      assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
+      System.put_env("JF_DIST_NODE_NAME", "testnodename@127.0.0.1")
+      assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
+      System.put_env("JF_DIST_QUERY", "my-app.example.com")
+
+      assert ConfigReader.read_dist_config() == [
+               enabled: true,
+               strategy: Cluster.Strategy.DNSPoll,
+               node_name: :"testnodename@127.0.0.1",
+               cookie: :testcookie,
+               strategy_config: [
+                 polling_interval: 5_000,
+                 query: "my-app.example.com",
+                 node_basename: "testnodename"
+               ]
+             ]
+
+      System.put_env(
+        "JF_DIST_POLLING_INTERVAL",
+        "10000"
+      )
+
+      assert ConfigReader.read_dist_config() == [
+               enabled: true,
+               strategy: Cluster.Strategy.DNSPoll,
+               node_name: :"testnodename@127.0.0.1",
+               cookie: :testcookie,
+               strategy_config: [
+                 polling_interval: 10_000,
+                 query: "my-app.example.com",
+                 node_basename: "testnodename"
+               ]
+             ]
+
+      System.put_env("JF_DIST_POLLING_INTERVAL", "abcd")
+      assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
+      System.put_env("JF_DIST_POLLING_INTERVAL", "-25")
+      assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
     end
   end
 end

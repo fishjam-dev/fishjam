@@ -78,34 +78,6 @@ defmodule Jellyfish.ConfigReader do
     end
   end
 
-  def read_dist_config() do
-    if read_boolean("JF_DIST_ENABLED") do
-      node_name_value = System.get_env("JF_DIST_NODE_NAME")
-      cookie_value = System.get_env("JF_DIST_COOKIE", "jellyfish_cookie")
-      nodes_value = System.get_env("JF_DIST_NODES", "")
-
-      unless node_name_value do
-        raise "JF_DIST_ENABLED has been set but JF_DIST_NODE_NAME remains unset."
-      end
-
-      node_name = parse_node_name(node_name_value)
-      cookie = parse_cookie(cookie_value)
-      nodes = parse_nodes(nodes_value)
-
-      if nodes == [] do
-        Logger.warning("""
-        JF_DIST_ENABLED has been set but JF_DIST_NODES remains unset.
-        Make sure that at least one of your Jellyfish instances
-        has JF_DIST_NODES set.
-        """)
-      end
-
-      [enabled: true, node_name: node_name, cookie: cookie, nodes: nodes]
-    else
-      [enabled: false, node_name: nil, cookie: nil, nodes: []]
-    end
-  end
-
   def read_webrtc_config() do
     webrtc_used = read_boolean("JF_WEBRTC_USED")
 
@@ -128,12 +100,115 @@ defmodule Jellyfish.ConfigReader do
     end
   end
 
-  defp parse_node_name(node_name), do: String.to_atom(node_name)
+  def read_dist_config() do
+    dist_enabled? = read_boolean("JF_DIST_ENABLED")
+    dist_strategy = System.get_env("JF_DIST_STRATEGY_NAME")
+    node_name_value = System.get_env("JF_DIST_NODE_NAME")
+    cookie_value = System.get_env("JF_DIST_COOKIE", "jellyfish_cookie")
+
+    cond do
+      is_nil(dist_enabled?) or not dist_enabled? ->
+        [enabled: false, strategy: nil, node_name: nil, cookie: nil, strategy_config: nil]
+
+      dist_strategy == "NODES_LIST" or is_nil(dist_strategy) ->
+        do_read_nodes_list_config(node_name_value, cookie_value)
+
+      dist_strategy == "DNS" ->
+        do_read_dns_config(node_name_value, cookie_value)
+
+      true ->
+        raise """
+        JF_DIST_ENABLED has been set but unknown JF_DIST_STRATEGY was provided.
+        Availabile strategies are EPMD or DNS, provided strategy name was: "#{dist_strategy}"
+        """
+    end
+  end
+
+  defp do_read_nodes_list_config(node_name_value, cookie_value) do
+    nodes_value = System.get_env("JF_DIST_NODES", "")
+
+    unless node_name_value do
+      raise "JF_DIST_ENABLED has been set but JF_DIST_NODE_NAME remains unset."
+    end
+
+    node_name = parse_node_name(node_name_value)
+    cookie = parse_cookie(cookie_value)
+    nodes = parse_nodes(nodes_value)
+
+    if nodes == [] do
+      Logger.warning("""
+      NODES_LIST strategy requires JF_DIST_NODES to be set
+      by at least one Jellyfish instace. This instance has JF_DIST_NODES unset.
+      """)
+    end
+
+    [
+      enabled: true,
+      strategy: Cluster.Strategy.Epmd,
+      node_name: node_name,
+      cookie: cookie,
+      strategy_config: [hosts: nodes]
+    ]
+  end
+
+  defp do_read_dns_config(node_name_value, cookie_value) do
+    unless node_name_value do
+      raise "JF_DIST_ENABLED has been set but JF_DIST_NODE_NAME remains unset."
+    end
+
+    node_name = parse_node_name(node_name_value)
+    cookie = parse_cookie(cookie_value)
+
+    query_value = System.get_env("JF_DIST_QUERY")
+
+    unless query_value do
+      raise "JF_DIST_QUERY is required by DNS strategy"
+    end
+
+    [node_basename, _ip_addres_or_fqdn | []] = String.split(node_name_value, "@")
+
+    polling_interval = parse_polling_interval()
+
+    [
+      enabled: true,
+      strategy: Cluster.Strategy.DNSPoll,
+      node_name: node_name,
+      cookie: cookie,
+      strategy_config: [
+        polling_interval: polling_interval,
+        query: query_value,
+        node_basename: node_basename
+      ]
+    ]
+  end
+
+  defp parse_node_name(node_name) do
+    case String.split(node_name, "@") do
+      [_node_basename, _ip_addres_or_fqdn | []] ->
+        String.to_atom(node_name)
+
+      _other ->
+        raise "JF_DIST_NODE_NAME has to be in form of <nodename>@<hostname>. Got: #{node_name}"
+    end
+  end
+
   defp parse_cookie(cookie_value), do: String.to_atom(cookie_value)
 
   defp parse_nodes(nodes_value) do
     nodes_value
     |> String.split(" ", trim: true)
     |> Enum.map(&String.to_atom(&1))
+  end
+
+  defp parse_polling_interval() do
+    env_value = System.get_env("JF_DIST_POLLING_INTERVAL", "5000")
+
+    case Integer.parse(env_value) do
+      {polling_interval, ""} when polling_interval > 0 ->
+        polling_interval
+
+      _other ->
+        raise "`JF_DIST_POLLING_INTERVAL` must be a positivie integer. Got: #{env_value}"
+    end
   end
 end

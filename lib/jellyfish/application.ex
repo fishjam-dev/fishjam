@@ -81,9 +81,9 @@ defmodule Jellyfish.Application do
     end
 
     topologies = [
-      epmd_cluster: [
-        strategy: Cluster.Strategy.Epmd,
-        config: [hosts: dist_config[:nodes]]
+      cluster: [
+        strategy: dist_config[:strategy],
+        config: dist_config[:strategy_config]
       ]
     ]
 
