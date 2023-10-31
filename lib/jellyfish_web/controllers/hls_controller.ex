@@ -15,7 +15,8 @@ defmodule JellyfishWeb.HLSController do
   tags [:hls]
 
   operation :index,
-    summary: "Send file",
+    operation_id: "getHlsContent",
+    summary: "Retrieve HLS Content",
     parameters: [
       room_id: [in: :path, description: "Room id", type: :string],
       filename: [in: :path, description: "Name of the file", type: :string],
