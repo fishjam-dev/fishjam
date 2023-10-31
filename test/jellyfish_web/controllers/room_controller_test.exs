@@ -1,5 +1,5 @@
 defmodule JellyfishWeb.RoomControllerTest do
-  use JellyfishWeb.ConnCase
+  use JellyfishWeb.ConnCase, async: false
 
   import OpenApiSpex.TestAssertions
   alias Jellyfish.RoomService
@@ -9,6 +9,8 @@ defmodule JellyfishWeb.RoomControllerTest do
   setup %{conn: conn} do
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
+
+    delete_all_rooms(conn)
 
     on_exit(fn -> delete_all_rooms(conn) end)
 
@@ -53,7 +55,12 @@ defmodule JellyfishWeb.RoomControllerTest do
 
   describe "index" do
     test "lists all rooms", %{conn: conn} do
+      conn = get(conn, ~p"/room")
+      response = json_response(conn, :ok)
+      assert Enum.empty?(response["data"])
+
       conn = post(conn, ~p"/room", maxPeers: 10)
+
       conn = get(conn, ~p"/room")
       response = json_response(conn, :ok)
       assert_response_schema(response, "RoomsListingResponse", @schema)
