@@ -15,6 +15,7 @@ defmodule Jellyfish.Component.HLS.Recording do
   def list_all() do
     case File.ls(root_directory()) do
       {:ok, files} -> {:ok, Enum.filter(files, &exists?(&1))}
+      {:error, :enoent} -> {:ok, []}
       {:error, _reason} -> :error
     end
   end
