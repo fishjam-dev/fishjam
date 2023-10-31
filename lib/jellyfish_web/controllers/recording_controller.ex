@@ -17,8 +17,8 @@ defmodule JellyfishWeb.RecordingController do
   tags [:recording]
 
   operation :index,
-    operation_id: "send_file",
-    summary: "Send file",
+    operation_id: "getRecordingContent",
+    summary: "Retrieve Recording (HLS) Content",
     parameters: [
       recording_id: @recording_id_spec,
       filename: [in: :path, description: "Name of the file", type: :string]

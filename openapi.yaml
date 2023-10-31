@@ -396,7 +396,7 @@ paths:
   /hls/{room_id}/{filename}:
     get:
       callbacks: {}
-      operationId: JellyfishWeb.HLSController.index
+      operationId: getHlsContent
       parameters:
         - description: Room id
           in: path
@@ -447,7 +447,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: File not found
-      summary: Send file
+      summary: Retrieve HLS Content
       tags:
         - hls
   /recording:
@@ -497,7 +497,7 @@ paths:
   /recording/{recording_id}/{filename}:
     get:
       callbacks: {}
-      operationId: send_file
+      operationId: getRecordingContent
       parameters:
         - description: Recording id
           in: path
@@ -524,7 +524,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: File not found
-      summary: Send file
+      summary: Retrieve Recording (HLS) Content
       tags:
         - recording
   /room:
