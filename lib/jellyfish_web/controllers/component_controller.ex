@@ -85,6 +85,10 @@ defmodule JellyfishWeb.ComponentController do
 
       {:error, :reached_components_limit} ->
         {:error, :bad_request, "Reached components limit in room #{room_id}"}
+
+      {:error, :wrong_s3_setup} ->
+        {:error, :bad_request,
+         "HLS can be stored on S3 bucket only when `targetWindowDuration` is nil and `lowLatency` is set to false. Room: #{room_id}"}
     end
   end
 

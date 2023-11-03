@@ -1,9 +1,9 @@
-defmodule Jellyfish.Component.HLS.LLStorageTest do
+defmodule Jellyfish.Component.HLS.Storage.LLTest do
   @moduledoc false
 
   use ExUnit.Case, async: true
 
-  alias Jellyfish.Component.HLS.{EtsHelper, LLStorage, RequestHandler}
+  alias Jellyfish.Component.HLS.{EtsHelper, Storage, RequestHandler}
 
   @segment_name "segment"
   @segment_content <<1, 2, 3>>
@@ -27,9 +27,9 @@ defmodule Jellyfish.Component.HLS.LLStorageTest do
 
     File.mkdir_p!(directory)
 
-    config = %LLStorage{directory: directory, room_id: room_id}
+    config = %Storage.LL{directory: directory, room_id: room_id}
 
-    storage = LLStorage.init(config)
+    storage = Storage.LL.init(config)
     {:ok, _pid} = RequestHandler.start(room_id)
 
     %{storage: storage, directory: directory, room_id: room_id}
@@ -102,7 +102,7 @@ defmodule Jellyfish.Component.HLS.LLStorageTest do
   end
 
   defp store_segment(storage) do
-    LLStorage.store(
+    Storage.LL.store(
       :parent_id,
       @segment_name,
       @segment_content,
@@ -113,7 +113,7 @@ defmodule Jellyfish.Component.HLS.LLStorageTest do
   end
 
   defp store_partial(storage) do
-    LLStorage.store(
+    Storage.LL.store(
       :parent_id,
       @segment_name,
       @partial_content,
@@ -124,7 +124,7 @@ defmodule Jellyfish.Component.HLS.LLStorageTest do
   end
 
   defp store_manifest(storage) do
-    LLStorage.store(
+    Storage.LL.store(
       :parent_id,
       @manifest_name,
       @manifest_content,
@@ -135,7 +135,7 @@ defmodule Jellyfish.Component.HLS.LLStorageTest do
   end
 
   defp store_delta_manifest(storage) do
-    LLStorage.store(
+    Storage.LL.store(
       :parent_id,
       @delta_manifest_name,
       @delta_manifest_content,
@@ -146,7 +146,7 @@ defmodule Jellyfish.Component.HLS.LLStorageTest do
   end
 
   defp store_header(storage) do
-    LLStorage.store(
+    Storage.LL.store(
       :parent_id,
       @header_name,
       @header_content,

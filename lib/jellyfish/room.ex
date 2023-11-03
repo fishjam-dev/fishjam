@@ -12,6 +12,9 @@ defmodule Jellyfish.Room do
   alias Jellyfish.Component.{HLS, RTSP}
   alias Jellyfish.Event
   alias Jellyfish.Peer
+
+  alias JellyfishWeb.ApiSpec.Component.HLS.Options
+
   alias Membrane.ICE.TURNManager
   alias Membrane.RTC.Engine
   alias Membrane.RTC.Engine.Message
@@ -236,6 +239,7 @@ defmodule Jellyfish.Room do
       )
 
     with :ok <- check_component_allowed(component_type, state),
+         :ok <- check_component_options(component_type, options),
          {:ok, component} <- Component.new(component_type, options) do
       state = put_in(state, [:components, component.id], component)
       if component_type == HLS, do: on_hls_startup(state.id, component.metadata)
@@ -252,6 +256,10 @@ defmodule Jellyfish.Room do
       {:error, :reached_components_limit} ->
         Logger.warning("Unable to add component: reached components limit")
         {:reply, {:error, :reached_components_limit}, state}
+
+      {:error, :wrong_s3_setup} ->
+        Logger.warning("Unable to add component: wrong s3 setup")
+        {:reply, {:error, :wrong_s3_setup}, state}
 
       {:error, reason} ->
         Logger.warning("Unable to add component: #{inspect(reason)}")
@@ -475,6 +483,18 @@ defmodule Jellyfish.Room do
   end
 
   defp check_component_allowed(_component_type, _state), do: :ok
+
+  defp check_component_options(RTSP, _options), do: :ok
+
+  defp check_component_options(HLS, options) do
+    {:ok, valid_opts} = OpenApiSpex.cast_value(options, Options.schema())
+
+    case valid_opts do
+      %{s3: nil} -> :ok
+      %{low_latency: false, target_window_duration: nil} -> {:error, :wrong_s3_setup}
+      _else -> :ok
+    end
+  end
 
   defp hls_component_already_present?(components),
     do: components |> Map.values() |> Enum.any?(&(&1.type == HLS))

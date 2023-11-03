@@ -5,7 +5,8 @@ defmodule Jellyfish.Component.HLS do
 
   @behaviour Jellyfish.Endpoint.Config
 
-  alias Jellyfish.Component.HLS.{LLStorage, Recording, Storage}
+  alias Jellyfish.Component.HLS.Recording
+  alias Jellyfish.Component.HLS.Storage
   alias Jellyfish.Room
 
   alias JellyfishWeb.ApiSpec.Component.HLS.Options
@@ -26,11 +27,16 @@ defmodule Jellyfish.Component.HLS do
   @impl true
   def config(options) do
     with {:ok, valid_opts} <- OpenApiSpex.cast_value(options, Options.schema()) do
-      valid_opts = valid_opts |> Map.from_struct() |> Map.new(fn {k, v} -> {underscore(k), v} end)
+      valid_opts =
+        valid_opts
+        |> Map.from_struct()
+        |> Map.new(fn {k, v} -> {underscore(k), serialize(v)} end)
+
       hls_config = create_hls_config(options.room_id, valid_opts)
 
       metadata =
         valid_opts
+        |> Map.delete(:s3)
         |> Map.put(:playable, false)
         |> Enum.into(%{})
 
@@ -75,11 +81,12 @@ defmodule Jellyfish.Component.HLS do
          %{
            low_latency: low_latency,
            target_window_duration: target_window_duration,
-           persistent: persistent
+           persistent: persistent,
+           s3: s3
          }
        ) do
     partial_duration = if low_latency, do: @partial_segment_duration, else: nil
-    hls_storage = setup_hls_storage(room_id, low_latency: low_latency)
+    hls_storage = setup_hls_storage(room_id, low_latency: low_latency, s3: s3)
 
     %HLSConfig{
       hls_mode: :muxed_av,
@@ -92,13 +99,22 @@ defmodule Jellyfish.Component.HLS do
     }
   end
 
-  defp setup_hls_storage(room_id, low_latency: true) do
-    fn directory -> %LLStorage{directory: directory, room_id: room_id} end
+  defp setup_hls_storage(room_id, low_latency: _low_latency, s3: s3) when not is_nil(s3) do
+    fn directory -> %Storage.S3{room_id: room_id, directory: directory, config: s3} end
   end
 
-  defp setup_hls_storage(_room_id, low_latency: false) do
-    fn directory -> %Storage{directory: directory} end
+  defp setup_hls_storage(room_id, low_latency: true, s3: _s3) do
+    fn directory -> %Storage.LL{directory: directory, room_id: room_id} end
+  end
+
+  defp setup_hls_storage(_room_id, low_latency: false, s3: _s3) do
+    fn directory -> %Storage.Regular{directory: directory} end
   end
 
   defp underscore(k), do: k |> Atom.to_string() |> Macro.underscore() |> String.to_atom()
+
+  defp serialize(v) when is_struct(v),
+    do: v |> Map.from_struct() |> Map.new(fn {k, v} -> {underscore(k), v} end)
+
+  defp serialize(v), do: v
 end

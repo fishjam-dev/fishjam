@@ -1,4 +1,4 @@
-defmodule Jellyfish.Component.HLS.LLStorage do
+defmodule Jellyfish.Component.HLS.Storage.LL do
   @moduledoc false
 
   @behaviour Membrane.HTTPAdaptiveStream.Storage
