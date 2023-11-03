@@ -6,13 +6,15 @@ defmodule JellyfishWeb.RoomControllerTest do
 
   @schema JellyfishWeb.ApiSpec.spec()
 
+  setup_all do
+    delete_all_rooms()
+  end
+
   setup %{conn: conn} do
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
-    delete_all_rooms(conn)
-
-    on_exit(fn -> delete_all_rooms(conn) end)
+    on_exit(fn -> delete_all_rooms() end)
 
     [conn: conn]
   end
@@ -201,14 +203,18 @@ defmodule JellyfishWeb.RoomControllerTest do
     %{room_id: id}
   end
 
-  defp delete_all_rooms(conn) do
-    conn = get(conn, ~p"/room")
-    assert rooms = json_response(conn, :ok)["data"]
+  defp delete_all_rooms() do
+    token = Application.fetch_env!(:jellyfish, :server_api_token)
+    headers = [Authorization: "Bearer #{token}", Accept: "Application/json; Charset=utf-8"]
 
-    Enum.reduce(rooms, conn, fn room, conn ->
-      conn = delete(conn, ~p"/room/#{room["id"]}")
-      assert response(conn, :no_content)
-      conn
+    assert {:ok, %HTTPoison.Response{status_code: 200, body: body}} =
+             HTTPoison.get("http://127.0.0.1:4002/room", headers)
+
+    rooms = Jason.decode!(body)["data"]
+
+    Enum.each(rooms, fn room ->
+      assert {:ok, %HTTPoison.Response{status_code: 204}} =
+               HTTPoison.delete("http://127.0.0.1:4002/room/#{room["id"]}", headers)
     end)
   end
 end

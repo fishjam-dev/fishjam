@@ -11,16 +11,17 @@ defmodule JellyfishWeb.ComponentControllerTest do
   setup %{conn: conn} do
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
+    conn = put_req_header(conn, "accept", "application/json")
 
-    room_conn = post(conn, ~p"/room")
-    assert %{"id" => id} = json_response(room_conn, :created)["data"]["room"]
+    conn = post(conn, ~p"/room")
+    assert %{"id" => id} = json_response(conn, :created)["data"]["room"]
 
     on_exit(fn ->
-      room_conn = delete(conn, ~p"/room/#{id}")
-      assert response(room_conn, :no_content)
+      conn = delete(conn, ~p"/room/#{id}")
+      assert response(conn, :no_content)
     end)
 
-    {:ok, %{conn: put_req_header(conn, "accept", "application/json"), room_id: id}}
+    {:ok, %{conn: conn, room_id: id}}
   end
 
   describe "create component" do
