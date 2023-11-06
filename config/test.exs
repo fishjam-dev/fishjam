@@ -8,7 +8,7 @@ config :jellyfish,
 # you can enable the server option below.
 config :jellyfish, JellyfishWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
-  server: false
+  server: true
 
 # Print only warnings and errors during test
 config :logger, level: :warning

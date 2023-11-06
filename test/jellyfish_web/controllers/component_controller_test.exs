@@ -11,16 +11,17 @@ defmodule JellyfishWeb.ComponentControllerTest do
   setup %{conn: conn} do
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
+    conn = put_req_header(conn, "accept", "application/json")
 
-    room_conn = post(conn, ~p"/room")
-    assert %{"id" => id} = json_response(room_conn, :created)["data"]["room"]
+    conn = post(conn, ~p"/room")
+    assert %{"id" => id} = json_response(conn, :created)["data"]["room"]
 
     on_exit(fn ->
-      room_conn = delete(conn, ~p"/room/#{id}")
-      assert response(room_conn, :no_content)
+      conn = delete(conn, ~p"/room/#{id}")
+      assert response(conn, :no_content)
     end)
 
-    {:ok, %{conn: put_req_header(conn, "accept", "application/json"), room_id: id}}
+    {:ok, %{conn: conn, room_id: id}}
   end
 
   describe "create component" do
@@ -39,8 +40,8 @@ defmodule JellyfishWeb.ComponentControllerTest do
 
   describe "create hls component" do
     test "renders component when data is valid, allows max 1 hls per room", %{conn: conn} do
-      room_conn = post(conn, ~p"/room", videoCodec: "h264")
-      assert %{"id" => room_id} = json_response(room_conn, :created)["data"]["room"]
+      conn = post(conn, ~p"/room", videoCodec: "h264")
+      assert %{"id" => room_id} = json_response(conn, :created)["data"]["room"]
 
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
 
@@ -78,14 +79,14 @@ defmodule JellyfishWeb.ComponentControllerTest do
       assert json_response(conn, :bad_request)["errors"] ==
                "Reached components limit in room #{room_id}"
 
-      room_conn = delete(conn, ~p"/room/#{room_id}")
-      assert response(room_conn, :no_content)
+      conn = delete(conn, ~p"/room/#{room_id}")
+      assert response(conn, :no_content)
       assert_no_hls_path(room_id)
     end
 
     test "renders component with peristent enabled", %{conn: conn} do
-      room_conn = post(conn, ~p"/room", videoCodec: "h264")
-      assert %{"id" => room_id} = json_response(room_conn, :created)["data"]["room"]
+      conn = post(conn, ~p"/room", videoCodec: "h264")
+      assert %{"id" => room_id} = json_response(conn, :created)["data"]["room"]
 
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls", options: %{persistent: true})
 
@@ -111,8 +112,8 @@ defmodule JellyfishWeb.ComponentControllerTest do
     end
 
     test "renders component with targetWindowDuration set", %{conn: conn} do
-      room_conn = post(conn, ~p"/room", videoCodec: "h264")
-      assert %{"id" => room_id} = json_response(room_conn, :created)["data"]["room"]
+      conn = post(conn, ~p"/room", videoCodec: "h264")
+      assert %{"id" => room_id} = json_response(conn, :created)["data"]["room"]
 
       conn =
         post(conn, ~p"/room/#{room_id}/component",
@@ -136,14 +137,14 @@ defmodule JellyfishWeb.ComponentControllerTest do
 
       assert_response_schema(response, "ComponentDetailsResponse", @schema)
 
-      room_conn = delete(conn, ~p"/room/#{room_id}")
-      assert response(room_conn, :no_content)
+      conn = delete(conn, ~p"/room/#{room_id}")
+      assert response(conn, :no_content)
       assert_no_hls_path(room_id)
     end
 
     test "renders component with ll-hls enabled", %{conn: conn} do
-      room_conn = post(conn, ~p"/room", videoCodec: "h264")
-      assert %{"id" => room_id} = json_response(room_conn, :created)["data"]["room"]
+      conn = post(conn, ~p"/room", videoCodec: "h264")
+      assert %{"id" => room_id} = json_response(conn, :created)["data"]["room"]
 
       assert Registry.lookup(Jellyfish.RequestHandlerRegistry, room_id) |> Enum.empty?()
 
@@ -178,8 +179,8 @@ defmodule JellyfishWeb.ComponentControllerTest do
       assert Process.alive?(request_handler)
       Process.monitor(engine_pid)
 
-      room_conn = delete(conn, ~p"/room/#{room_id}")
-      assert response(room_conn, :no_content)
+      conn = delete(conn, ~p"/room/#{room_id}")
+      assert response(conn, :no_content)
       assert_no_hls_path(room_id)
 
       # Engine can terminate up to around 5 seconds
