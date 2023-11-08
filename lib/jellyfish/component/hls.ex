@@ -25,8 +25,7 @@ defmodule Jellyfish.Component.HLS do
 
   @impl true
   def config(options) do
-    with {:ok, valid_opts} <- OpenApiSpex.cast_value(options, Options.schema()) do
-      valid_opts = valid_opts |> Map.from_struct() |> Map.new(fn {k, v} -> {underscore(k), v} end)
+    with {:ok, valid_opts} <- serialize_options(options) do
       hls_config = create_hls_config(options.room_id, valid_opts)
 
       metadata =
@@ -70,6 +69,19 @@ defmodule Jellyfish.Component.HLS do
     Path.join([base_path, "temporary_hls", "#{room_id}"])
   end
 
+  def serialize_options(options) do
+    with {:ok, valid_opts} <- OpenApiSpex.Cast.cast(Options.schema(), options) do
+      valid_opts =
+        valid_opts
+        |> Map.from_struct()
+        |> Map.new(fn {k, v} -> {underscore(k), serialize(v)} end)
+
+      {:ok, valid_opts}
+    else
+      {:error, _reason} = error -> error
+    end
+  end
+
   defp create_hls_config(
          room_id,
          %{
@@ -101,4 +113,9 @@ defmodule Jellyfish.Component.HLS do
   end
 
   defp underscore(k), do: k |> Atom.to_string() |> Macro.underscore() |> String.to_atom()
+
+  defp serialize(v) when is_struct(v),
+    do: v |> Map.from_struct() |> Map.new(fn {k, v} -> {underscore(k), v} end)
+
+  defp serialize(v), do: v
 end

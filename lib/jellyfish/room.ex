@@ -12,6 +12,7 @@ defmodule Jellyfish.Room do
   alias Jellyfish.Component.{HLS, RTSP}
   alias Jellyfish.Event
   alias Jellyfish.Peer
+
   alias Membrane.ICE.TURNManager
   alias Membrane.RTC.Engine
   alias Membrane.RTC.Engine.Message
@@ -235,11 +236,15 @@ defmodule Jellyfish.Room do
         options
       )
 
+    component_options = Map.delete(options, "s3")
+
     with :ok <- check_component_allowed(component_type, state),
-         {:ok, component} <- Component.new(component_type, options) do
+         {:ok, component} <- Component.new(component_type, component_options) do
       state = put_in(state, [:components, component.id], component)
+
       if component_type == HLS, do: on_hls_startup(state.id, component.metadata)
       :ok = Engine.add_endpoint(state.engine_pid, component.engine_endpoint, id: component.id)
+      if component_type == HLS, do: spawn_hls_manager(options)
 
       Logger.info("Added component #{inspect(component.id)}")
 
@@ -436,12 +441,7 @@ defmodule Jellyfish.Room do
   defp spawn_request_handler(room_id),
     do: HLS.RequestHandler.start(room_id)
 
-  defp on_hls_removal(room_id, %{low_latency: low_latency, persistent: persistent}) do
-    unless persistent do
-      {:ok, path} = HLS.EtsHelper.get_hls_folder_path(room_id)
-      File.rm_rf!(path)
-    end
-
+  defp on_hls_removal(room_id, %{low_latency: low_latency}) do
     HLS.EtsHelper.delete_hls_folder_path(room_id)
 
     if low_latency, do: remove_request_handler(room_id)
@@ -478,4 +478,11 @@ defmodule Jellyfish.Room do
 
   defp hls_component_already_present?(components),
     do: components |> Map.values() |> Enum.any?(&(&1.type == HLS))
+
+  defp spawn_hls_manager(%{engine_pid: engine_pid, room_id: room_id} = options) do
+    {:ok, hls_dir} = HLS.EtsHelper.get_hls_folder_path(room_id)
+    {:ok, valid_opts} = HLS.serialize_options(options)
+
+    HLS.Manager.start(room_id, engine_pid, hls_dir, valid_opts)
+  end
 end

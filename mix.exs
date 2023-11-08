@@ -58,6 +58,12 @@ defmodule Jellyfish.MixProject do
       {:open_api_spex, "~> 3.16"},
       {:ymlr, "~> 3.0"},
 
+      # aws deps
+      {:ex_aws, "~> 2.1"},
+      {:ex_aws_s3, "~> 2.0"},
+      {:hackney, "~> 1.9"},
+      {:sweet_xml, "~> 0.6"},
+
       # protobuf deps
       {:protobuf, "~> 0.12.0"},
 
