@@ -19,6 +19,20 @@ config :logger, :console,
   metadata: [:request_id, :room_id]
 
 config :phoenix, :json_library, Jason
+config :phoenix, :logger, false
+
+config :logger,
+  compile_time_purge_matching: [
+    [module: Membrane.RTC.Engine, level_lower_than: :warning],
+    [module: Membrane.RTC.Engine.Endpoint.RTSP, level_lower_than: :warning],
+    [module: Membrane.RTC.Engine.Endpoint.HLS, level_lower_than: :warning],
+    [module: Membrane.RTC.Engine.Endpoint.WebRTC, level_lower_than: :warning],
+    [module: Membrane.RTC.Engine.Tee, level_lower_than: :warning],
+    [
+      module: Membrane.RTC.Engine.Endpoint.WebRTC.RTPConnectionAllocator,
+      level_lower_than: :warning
+    ]
+  ]
 
 config :jellyfish,
   divo: "docker-compose.yaml",

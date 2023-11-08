@@ -15,6 +15,7 @@ defmodule Jellyfish.Room do
   alias Membrane.ICE.TURNManager
   alias Membrane.RTC.Engine
   alias Membrane.RTC.Engine.Message
+  alias Membrane.RTC.Engine.Message.{EndpointAdded, EndpointRemoved}
 
   @enforce_keys [
     :id,
@@ -362,6 +363,31 @@ defmodule Jellyfish.Room do
     Event.broadcast_server_notification({:hls_playable, state.id, endpoint_id})
 
     state = update_in(state, [:components, endpoint_id, :metadata], &Map.put(&1, :playable, true))
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(%Membrane.RTC.Engine.Message.EndpointMessage{} = msg, state) do
+    Logger.debug("Received msg from endpoint: #{inspect(msg)}")
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(
+        %EndpointRemoved{endpoint_id: endpoint_id},
+        state
+      )
+      when not is_map_key(state.components, endpoint_id) or
+             not is_map_key(state.peers, endpoint_id) do
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(
+        %EndpointAdded{endpoint_id: endpoint_id},
+        state
+      )
+      when is_map_key(state.components, endpoint_id) or is_map_key(state.peers, endpoint_id) do
     {:noreply, state}
   end
 
