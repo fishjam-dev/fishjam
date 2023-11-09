@@ -367,7 +367,7 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def handle_info(%Membrane.RTC.Engine.Message.EndpointMessage{} = msg, state) do
+  def handle_info(%Message.EndpointMessage{} = msg, state) do
     Logger.debug("Received msg from endpoint: #{inspect(msg)}")
     {:noreply, state}
   end
