@@ -24,7 +24,6 @@ config :phoenix, :logger, false
 config :logger,
   compile_time_purge_matching: [
     [application: :membrane_rtc_engine, level_lower_than: :warning],
-    [module: Membrane.RTC.Engine, level_lower_than: :info],
     [application: :membrane_rtc_engine_webrtc, level_lower_than: :warning]
   ]
 

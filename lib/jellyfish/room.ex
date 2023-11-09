@@ -392,6 +392,12 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
+  def handle_info(%Message.TrackAdded{} = track_info, state) do
+    Logger.info("Endpoint #{track_info.endpoint_id} added track #{inspect(track_info)}")
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_info(info, state) do
     Logger.warning("Received unexpected info: #{inspect(info)}")
     {:noreply, state}
