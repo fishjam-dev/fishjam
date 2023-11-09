@@ -1,9 +1,11 @@
 defmodule Jellyfish.Component.HLS.Manager do
   @moduledoc """
   Module responsible for HLS processing.
+  Responsibilities include: uploading stream to S3, and removing HLS from local memory.
   """
 
-  use GenServer
+  use GenServer, restart: :temporary
+  use Bunch
 
   require Logger
 
@@ -14,50 +16,60 @@ defmodule Jellyfish.Component.HLS.Manager do
 
   @spec start(Room.id(), pid(), String.t(), map()) :: :ok
   def start(room_id, engine_pid, hls_dir, hls_options) do
-    {:ok, _pid} = GenServer.start(__MODULE__, [room_id, engine_pid, hls_dir, hls_options])
+    {:ok, _pid} =
+      DynamicSupervisor.start_child(
+        Jellyfish.HLS.ManagerSupervisor,
+        {__MODULE__,
+         %{room_id: room_id, engine_pid: engine_pid, hls_dir: hls_dir, hls_options: hls_options}}
+      )
+
     :ok
   end
 
-  @impl true
-  def init([room_id, engine_pid, hls_dir, hls_options]) do
-    Process.monitor(engine_pid)
-    Logger.info("Initialize s3 uploader")
+  def start_link(opts) do
+    GenServer.start_link(__MODULE__, opts)
+  end
 
-    {:ok, %{room_id: room_id, engine_pid: engine_pid, hls_dir: hls_dir, hls_options: hls_options}}
+  @impl true
+  def init(%{engine_pid: engine_pid, room_id: room_id} = state) do
+    Process.monitor(engine_pid)
+    Logger.info("Initialize hls manager, room: #{inspect(room_id)}")
+
+    {:ok, state}
   end
 
   @impl true
   def handle_info(
         {:DOWN, _ref, :process, engine_pid, _reason},
-        %{engine_pid: engine_pid} = state
+        %{engine_pid: engine_pid, hls_options: hls_options, hls_dir: hls_dir, room_id: room_id} =
+          state
       ) do
-    unless is_nil(state.hls_options.s3) do
-      state.hls_options.s3
-      |> create_aws_config()
-      |> upload_to_s3(state.hls_dir, state.hls_options.s3.bucket, state.room_id)
-    end
-
-    maybe_remove_hls(state.hls_options, state.hls_dir)
+    unless is_nil(hls_options.s3), do: upload_to_s3(hls_dir, room_id, hls_options.s3)
+    unless hls_options.persistent, do: remove_hls(hls_dir, room_id)
 
     {:stop, :normal, state}
   end
 
-  defp upload_to_s3(config, hls_dir, bucket, room_id) do
-    hls_dir
-    |> get_hls_files()
-    |> Enum.each(fn file ->
-      content = get_content(hls_dir, file)
-      s3_path = get_s3_path(room_id, file)
-      opts = get_options(file)
+  defp upload_to_s3(hls_dir, room_id, credentials) do
+    Logger.info("Start uploading to s3, room: #{inspect(room_id)}")
 
-      bucket
-      |> ExAws.S3.put_object(s3_path, content, opts)
-      |> ExAws.request(config)
-    end)
+    config = create_aws_config(credentials)
+
+    result =
+      hls_dir
+      |> get_hls_files()
+      |> Bunch.Enum.try_each(fn file ->
+        content = get_content(hls_dir, file)
+        s3_path = get_s3_path(room_id, file)
+        opts = get_options(file)
+
+        credentials.bucket
+        |> ExAws.S3.put_object(s3_path, content, opts)
+        |> ExAws.request(config)
+      end)
+
+    Logger.info("End uploading to s3 with result: #{result}, room: #{inspect(room_id)}")
   end
-
-  defp maybe_remove_hls(%{persistent: false}, hls_dir), do: remove_hls(hls_dir)
-  defp maybe_remove_hls(%{persistent: true}, _hls_dir), do: nil
 
   defp get_hls_files(hls_dir) do
     hls_dir
@@ -85,5 +97,8 @@ defmodule Jellyfish.Component.HLS.Manager do
 
   defp get_s3_path(room_id, file), do: Path.join(room_id, file)
 
-  defp remove_hls(hls_dir), do: File.rm_rf!(hls_dir)
+  defp remove_hls(hls_dir, room_id) do
+    File.rm_rf!(hls_dir)
+    Logger.info("Remove hls from local memory, room: #{inspect(room_id)}")
+  end
 end

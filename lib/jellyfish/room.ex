@@ -242,9 +242,12 @@ defmodule Jellyfish.Room do
          {:ok, component} <- Component.new(component_type, component_options) do
       state = put_in(state, [:components, component.id], component)
 
-      if component_type == HLS, do: on_hls_startup(state.id, component.metadata)
+      if component_type == HLS do
+        on_hls_startup(state.id, component.metadata)
+        spawn_hls_manager(options)
+      end
+
       :ok = Engine.add_endpoint(state.engine_pid, component.engine_endpoint, id: component.id)
-      if component_type == HLS, do: spawn_hls_manager(options)
 
       Logger.info("Added component #{inspect(component.id)}")
 

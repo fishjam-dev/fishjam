@@ -44,7 +44,8 @@ defmodule JellyfishWeb.ApiSpec.Component.HLS do
 
     OpenApiSpex.schema(%{
       title: "S3Credentials",
-      description: "An AWS S3 credential that will be used to send HLS stream",
+      description:
+        "An AWS S3 credential that will be used to send HLS stream. The stream will only be uploaded if credentials are provided",
       type: :object,
       properties: %{
         accessKeyId: %Schema{
