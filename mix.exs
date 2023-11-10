@@ -62,7 +62,6 @@ defmodule Jellyfish.MixProject do
       # aws deps
       {:ex_aws, "~> 2.1"},
       {:ex_aws_s3, "~> 2.0"},
-      {:hackney, "~> 1.9"},
       {:sweet_xml, "~> 0.6"},
 
       # protobuf deps
@@ -92,7 +91,7 @@ defmodule Jellyfish.MixProject do
       # Test deps
       {:websockex, "~> 0.4.3", only: [:test, :ci], runtime: false},
       {:excoveralls, "~> 0.15.0", only: :test, runtime: false},
-      {:mox, "~> 1.0", only: :test},
+      {:mox, "~> 1.0", only: [:test, :ci]},
 
       # Load balancing tests
       {:divo, "~> 1.3.1", only: [:test, :ci]}
