@@ -160,10 +160,8 @@ defmodule JellyfishWeb.ComponentControllerTest do
                                                      _headers,
                                                      _http_opts ->
         assert req_body == @body
-
         assert String.contains?(url, bucket)
-
-        assert url |> String.split("/") |> List.last() |> then(&Enum.member?(@files, &1))
+        assert String.ends_with?(url, @files)
 
         send(parent, {ref, :request})
         {:ok, %{status_code: 200, headers: %{}}}

@@ -39,23 +39,27 @@ defmodule Jellyfish.Component.HLS.ManagerTest do
     options: options
   } do
     create_expect(0)
+    pid = start_process()
 
-    {:ok, pid} = Manager.start(room_id, spawn(fn -> nil end), hls_dir, options)
-    ref = Process.monitor(pid)
+    {:ok, manager} = Manager.start(room_id, pid, hls_dir, options)
+    ref = Process.monitor(manager)
 
-    assert_receive {:DOWN, ^ref, :process, ^pid, _reason}
+    kill_process(pid)
+
+    assert_receive {:DOWN, ^ref, :process, ^manager, :normal}
     assert length(File.ls!(hls_dir)) == 4
   end
 
   test "Spawn manager with credentials", %{room_id: room_id, hls_dir: hls_dir, options: options} do
     create_expect(4)
+    pid = start_process()
 
-    {:ok, pid} =
-      Manager.start(room_id, spawn(fn -> nil end), hls_dir, %{options | s3: @s3_credentials})
+    {:ok, manager} = Manager.start(room_id, pid, hls_dir, %{options | s3: @s3_credentials})
+    ref = Process.monitor(manager)
 
-    ref = Process.monitor(pid)
+    kill_process(pid)
 
-    assert_receive {:DOWN, ^ref, :process, ^pid, _reason}
+    assert_receive {:DOWN, ^ref, :process, ^manager, :normal}
     assert length(File.ls!(hls_dir)) == 4
   end
 
@@ -65,13 +69,14 @@ defmodule Jellyfish.Component.HLS.ManagerTest do
     options: options
   } do
     create_expect(0)
+    pid = start_process()
 
-    {:ok, pid} =
-      Manager.start(room_id, spawn(fn -> nil end), hls_dir, %{options | persistent: false})
+    {:ok, manager} = Manager.start(room_id, pid, hls_dir, %{options | persistent: false})
+    ref = Process.monitor(manager)
 
-    ref = Process.monitor(pid)
+    kill_process(pid)
 
-    assert_receive {:DOWN, ^ref, :process, ^pid, _reason}
+    assert_receive {:DOWN, ^ref, :process, ^manager, :normal}
     assert {:error, _} = File.ls(hls_dir)
   end
 
@@ -84,4 +89,14 @@ defmodule Jellyfish.Component.HLS.ManagerTest do
       {:ok, %{status_code: 200, headers: %{}}}
     end)
   end
+
+  defp start_process(),
+    do:
+      spawn(fn ->
+        receive do
+          :stop -> nil
+        end
+      end)
+
+  defp kill_process(pid), do: send(pid, :stop)
 end
