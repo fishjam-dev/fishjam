@@ -24,7 +24,9 @@ config :phoenix, :logger, false
 config :logger,
   compile_time_purge_matching: [
     [application: :membrane_rtc_engine, level_lower_than: :warning],
-    [application: :membrane_rtc_engine_webrtc, level_lower_than: :warning]
+    [application: :membrane_rtc_engine_webrtc, level_lower_than: :warning],
+    [application: :membrane_rtc_engine_hls, level_lower_than: :warning],
+    [application: :membrane_rtc_engine_rtsp, level_lower_than: :warning]
   ]
 
 config :jellyfish,

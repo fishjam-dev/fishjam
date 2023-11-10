@@ -14,8 +14,15 @@ defmodule Jellyfish.Room do
   alias Jellyfish.Peer
   alias Membrane.ICE.TURNManager
   alias Membrane.RTC.Engine
-  alias Membrane.RTC.Engine.Message
-  alias Membrane.RTC.Engine.Message.{EndpointAdded, EndpointRemoved}
+
+  alias Membrane.RTC.Engine.Message.{
+    EndpointAdded,
+    EndpointCrashed,
+    EndpointMessage,
+    EndpointRemoved,
+    TrackAdded,
+    TrackRemoved
+  }
 
   @enforce_keys [
     :id,
@@ -49,6 +56,9 @@ defmodule Jellyfish.Room do
           engine_pid: pid(),
           network_options: map()
         }
+
+  defguardp endpoint_exists?(state, endpoint_id)
+            when is_map_key(state.components, endpoint_id) or is_map_key(state.peers, endpoint_id)
 
   def registry_id(room_id), do: {:via, Registry, {Jellyfish.RoomRegistry, room_id}}
 
@@ -292,7 +302,7 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def handle_info(%Message.EndpointMessage{endpoint_id: to, message: {:media_event, data}}, state) do
+  def handle_info(%EndpointMessage{endpoint_id: to, message: {:media_event, data}}, state) do
     with {:ok, peer} <- Map.fetch(state.peers, to),
          socket_pid when is_pid(socket_pid) <- Map.get(peer, :socket_pid) do
       send(socket_pid, {:media_event, data})
@@ -312,7 +322,7 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def handle_info(%Message.EndpointCrashed{endpoint_id: endpoint_id}, state) do
+  def handle_info(%EndpointCrashed{endpoint_id: endpoint_id}, state) do
     Logger.error("RTC Engine endpoint #{inspect(endpoint_id)} crashed")
 
     if Map.has_key?(state.peers, endpoint_id) do
@@ -367,7 +377,7 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def handle_info(%Message.EndpointMessage{} = msg, state) do
+  def handle_info(%EndpointMessage{} = msg, state) do
     Logger.debug("Received msg from endpoint: #{inspect(msg)}")
     {:noreply, state}
   end
@@ -377,8 +387,7 @@ defmodule Jellyfish.Room do
         %EndpointRemoved{endpoint_id: endpoint_id},
         state
       )
-      when not is_map_key(state.components, endpoint_id) or
-             not is_map_key(state.peers, endpoint_id) do
+      when not endpoint_exists?(state, endpoint_id) do
     {:noreply, state}
   end
 
@@ -387,13 +396,19 @@ defmodule Jellyfish.Room do
         %EndpointAdded{endpoint_id: endpoint_id},
         state
       )
-      when is_map_key(state.components, endpoint_id) or is_map_key(state.peers, endpoint_id) do
+      when endpoint_exists?(state, endpoint_id) do
     {:noreply, state}
   end
 
   @impl true
-  def handle_info(%Message.TrackAdded{} = track_info, state) do
+  def handle_info(%TrackAdded{} = track_info, state) do
     Logger.info("Endpoint #{track_info.endpoint_id} added track #{inspect(track_info)}")
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(%TrackRemoved{} = track_info, state) do
+    Logger.info("Endpoint #{track_info.endpoint_id} removed track #{inspect(track_info)}")
     {:noreply, state}
   end
 
