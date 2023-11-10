@@ -486,6 +486,6 @@ defmodule Jellyfish.Room do
     {:ok, hls_dir} = HLS.EtsHelper.get_hls_folder_path(room_id)
     {:ok, valid_opts} = HLS.serialize_options(options)
 
-    HLS.Manager.start(room_id, engine_pid, hls_dir, valid_opts)
+    {:ok, _pid} = HLS.Manager.start(room_id, engine_pid, hls_dir, valid_opts)
   end
 end

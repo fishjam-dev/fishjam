@@ -1,7 +1,9 @@
 defmodule Jellyfish.Component.HLS.Manager do
   @moduledoc """
   Module responsible for HLS processing.
-  Responsibilities include: uploading stream to S3, and removing HLS from local memory.
+  It:
+  * uploads HLS playlist to S3
+  * removes HLS playlist from a disk
   """
 
   use GenServer, restart: :temporary
@@ -14,18 +16,23 @@ defmodule Jellyfish.Component.HLS.Manager do
   @hls_extensions [".m4s", ".m3u8", ".mp4"]
   @playlist_content_type "application/vnd.apple.mpegurl"
 
-  @spec start(Room.id(), pid(), String.t(), map()) :: :ok
-  def start(room_id, engine_pid, hls_dir, hls_options) do
-    {:ok, _pid} =
-      DynamicSupervisor.start_child(
-        Jellyfish.HLS.ManagerSupervisor,
-        {__MODULE__,
-         %{room_id: room_id, engine_pid: engine_pid, hls_dir: hls_dir, hls_options: hls_options}}
-      )
+  @type options :: %{
+          room_id: Room.id(),
+          engine_pid: pid(),
+          hls_dir: String.t(),
+          hls_options: map()
+        }
 
-    :ok
+  @spec start(Room.id(), pid(), String.t(), map()) :: {:ok, pid()} | {:error, term()}
+  def start(room_id, engine_pid, hls_dir, hls_options) do
+    DynamicSupervisor.start_child(
+      Jellyfish.HLS.ManagerSupervisor,
+      {__MODULE__,
+       %{room_id: room_id, engine_pid: engine_pid, hls_dir: hls_dir, hls_options: hls_options}}
+    )
   end
 
+  @spec start_link(options()) :: GenServer.on_start()
   def start_link(opts) do
     GenServer.start_link(__MODULE__, opts)
   end
@@ -33,7 +40,7 @@ defmodule Jellyfish.Component.HLS.Manager do
   @impl true
   def init(%{engine_pid: engine_pid, room_id: room_id} = state) do
     Process.monitor(engine_pid)
-    Logger.info("Initialize hls manager, room: #{inspect(room_id)}")
+    Logger.info("Initialize hls manager, room: #{room_id}")
 
     {:ok, state}
   end
@@ -51,7 +58,7 @@ defmodule Jellyfish.Component.HLS.Manager do
   end
 
   defp upload_to_s3(hls_dir, room_id, credentials) do
-    Logger.info("Start uploading to s3, room: #{inspect(room_id)}")
+    Logger.info("Start uploading to s3, room: #{room_id}")
 
     config = create_aws_config(credentials)
 
@@ -63,12 +70,22 @@ defmodule Jellyfish.Component.HLS.Manager do
         s3_path = get_s3_path(room_id, file)
         opts = get_options(file)
 
-        credentials.bucket
-        |> ExAws.S3.put_object(s3_path, content, opts)
-        |> ExAws.request(config)
+        upload_file_to_s3(content, s3_path, opts, config, credentials)
       end)
 
-    Logger.info("End uploading to s3 with result: #{result}, room: #{inspect(room_id)}")
+    Logger.info("Finished uploading to s3 with result: #{result}, room: #{room_id}")
+  end
+
+  defp upload_file_to_s3(content, s3_path, opts, config, credentials) do
+    result =
+      credentials.bucket
+      |> ExAws.S3.put_object(s3_path, content, opts)
+      |> ExAws.request(config)
+
+    case result do
+      {:ok, _value} -> :ok
+      error -> error
+    end
   end
 
   defp get_hls_files(hls_dir) do
@@ -99,6 +116,6 @@ defmodule Jellyfish.Component.HLS.Manager do
 
   defp remove_hls(hls_dir, room_id) do
     File.rm_rf!(hls_dir)
-    Logger.info("Remove hls from local memory, room: #{inspect(room_id)}")
+    Logger.info("Remove hls from local memory, room: #{room_id}")
   end
 end

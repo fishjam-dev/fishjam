@@ -2,11 +2,14 @@ defmodule JellyfishWeb.ComponentControllerTest do
   use JellyfishWeb.ConnCase
 
   import OpenApiSpex.TestAssertions
+  import Mox
 
   alias Jellyfish.Component.HLS
 
   @schema JellyfishWeb.ApiSpec.spec()
   @source_uri "rtsp://placeholder-19inrifjbsjb.it:12345/afwefae"
+  @files ["manifest.m3u8", "header.mp4", "segment_1.m3u8", "segment_2.m3u8"]
+  @body <<1, 2, 3, 4>>
 
   setup %{conn: conn} do
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
@@ -109,6 +112,76 @@ defmodule JellyfishWeb.ComponentControllerTest do
 
       # It is persistent stream so we have to remove it manually
       assert {:ok, _removed_files} = room_id |> HLS.Recording.directory() |> File.rm_rf()
+    end
+
+    setup :set_mox_from_context
+    setup :verify_on_exit!
+
+    test "renders component with s3 credentials", %{conn: conn} do
+      conn = post(conn, ~p"/room", videoCodec: "h264")
+      assert %{"id" => room_id} = json_response(conn, :created)["data"]["room"]
+
+      bucket = "bucket"
+
+      conn =
+        post(conn, ~p"/room/#{room_id}/component",
+          type: "hls",
+          options: %{
+            persistent: false,
+            s3: %{
+              accessKeyId: "access_key_id",
+              secretAccessKey: "secret_access_key",
+              region: "region",
+              bucket: bucket
+            }
+          }
+        )
+
+      assert response =
+               %{
+                 "data" => %{
+                   "type" => "hls",
+                   "metadata" => %{
+                     "playable" => false,
+                     "lowLatency" => false,
+                     "persistent" => false,
+                     "targetWindowDuration" => nil
+                   }
+                 }
+               } =
+               json_response(conn, :created)
+
+      parent = self()
+      ref = make_ref()
+
+      expect(ExAws.Request.HttpMock, :request, 4, fn _method,
+                                                     url,
+                                                     req_body,
+                                                     _headers,
+                                                     _http_opts ->
+        assert req_body == @body
+
+        assert String.contains?(url, bucket)
+
+        assert url |> String.split("/") |> List.last() |> then(&Enum.member?(@files, &1))
+
+        send(parent, {ref, :request})
+        {:ok, %{status_code: 200, headers: %{}}}
+      end)
+
+      assert_response_schema(response, "ComponentDetailsResponse", @schema)
+      assert_hls_path(room_id, persistent: false)
+
+      # waits for directory to be created
+      # then adds 4 files to it
+      add_files_for_s3_upload(room_id)
+
+      conn = delete(conn, ~p"/room/#{room_id}")
+      assert response(conn, :no_content)
+
+      # above we created 4 files
+      # so there should be axactly 4 requests
+      for _ <- 1..4, do: assert_receive({^ref, :request}, 10_000)
     end
 
     test "renders component with targetWindowDuration set", %{conn: conn} do
@@ -296,5 +369,23 @@ defmodule JellyfishWeb.ComponentControllerTest do
 
   defp assert_no_hls_path(room_id) do
     assert {:error, :room_not_found} = HLS.EtsHelper.get_hls_folder_path(room_id)
+  end
+
+  defp add_files_for_s3_upload(room_id) do
+    {:ok, hls_dir} = HLS.EtsHelper.get_hls_folder_path(room_id)
+    assert :ok = wait_for_folder(hls_dir, 1000)
+
+    for filename <- @files, do: :ok = hls_dir |> Path.join(filename) |> File.write(@body)
+  end
+
+  defp wait_for_folder(_hls_dir, milliseconds) when milliseconds < 0, do: {:error, :timeout}
+
+  defp wait_for_folder(hls_dir, milliseconds) do
+    if File.exists?(hls_dir) do
+      :ok
+    else
+      Process.sleep(100)
+      wait_for_folder(hls_dir, milliseconds - 100)
+    end
   end
 end

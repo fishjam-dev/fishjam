@@ -57,6 +57,7 @@ defmodule Jellyfish.MixProject do
       {:cors_plug, "~> 3.0"},
       {:open_api_spex, "~> 3.16"},
       {:ymlr, "~> 3.0"},
+      {:bunch, "~> 1.6"},
 
       # aws deps
       {:ex_aws, "~> 2.1"},
@@ -91,6 +92,7 @@ defmodule Jellyfish.MixProject do
       # Test deps
       {:websockex, "~> 0.4.3", only: [:test, :ci], runtime: false},
       {:excoveralls, "~> 0.15.0", only: :test, runtime: false},
+      {:mox, "~> 1.0", only: :test},
 
       # Load balancing tests
       {:divo, "~> 1.3.1", only: [:test, :ci]}

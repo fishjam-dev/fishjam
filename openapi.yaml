@@ -387,7 +387,7 @@ components:
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.RoomsListingResponse
     S3Credentials:
-      description: An AWS S3 credential that will be used to send HLS stream
+      description: An AWS S3 credential that will be used to send HLS stream. The stream will only be uploaded if credentials are provided
       properties:
         accessKeyId:
           description: An AWS access key identifier, linked to your AWS account.
