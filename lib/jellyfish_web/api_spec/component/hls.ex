@@ -97,7 +97,8 @@ defmodule JellyfishWeb.ApiSpec.Component.HLS do
         s3: %Schema{
           type: :object,
           description: "Credentials to AWS S3 bucket.",
-          oneOf: [S3]
+          oneOf: [S3],
+          nullable: true
         }
       },
       required: []

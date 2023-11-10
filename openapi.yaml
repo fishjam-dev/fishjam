@@ -105,6 +105,7 @@ components:
           type: boolean
         s3:
           description: Credentials to AWS S3 bucket.
+          nullable: true
           oneOf:
             - $ref: '#/components/schemas/S3Credentials'
           type: object
