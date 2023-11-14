@@ -38,26 +38,26 @@ defmodule Jellyfish.Component.HLS.ManagerTest do
     hls_dir: hls_dir,
     options: options
   } do
-    create_expect(0)
-    pid = start_process()
+    http_mock_expect(0)
+    pid = start_mock_engine()
 
     {:ok, manager} = Manager.start(room_id, pid, hls_dir, options)
     ref = Process.monitor(manager)
 
-    kill_process(pid)
+    kill_mock_engine(pid)
 
     assert_receive {:DOWN, ^ref, :process, ^manager, :normal}
     assert length(File.ls!(hls_dir)) == 4
   end
 
   test "Spawn manager with credentials", %{room_id: room_id, hls_dir: hls_dir, options: options} do
-    create_expect(4)
-    pid = start_process()
+    http_mock_expect(4)
+    pid = start_mock_engine()
 
     {:ok, manager} = Manager.start(room_id, pid, hls_dir, %{options | s3: @s3_credentials})
     ref = Process.monitor(manager)
 
-    kill_process(pid)
+    kill_mock_engine(pid)
 
     assert_receive {:DOWN, ^ref, :process, ^manager, :normal}
     assert length(File.ls!(hls_dir)) == 4
@@ -68,19 +68,19 @@ defmodule Jellyfish.Component.HLS.ManagerTest do
     hls_dir: hls_dir,
     options: options
   } do
-    create_expect(0)
-    pid = start_process()
+    http_mock_expect(0)
+    pid = start_mock_engine()
 
     {:ok, manager} = Manager.start(room_id, pid, hls_dir, %{options | persistent: false})
     ref = Process.monitor(manager)
 
-    kill_process(pid)
+    kill_mock_engine(pid)
 
     assert_receive {:DOWN, ^ref, :process, ^manager, :normal}
     assert {:error, _} = File.ls(hls_dir)
   end
 
-  defp create_expect(n) do
+  defp http_mock_expect(n) do
     expect(ExAws.Request.HttpMock, :request, n, fn _method,
                                                    _url,
                                                    _req_body,
@@ -90,7 +90,7 @@ defmodule Jellyfish.Component.HLS.ManagerTest do
     end)
   end
 
-  defp start_process(),
+  defp start_mock_engine(),
     do:
       spawn(fn ->
         receive do
@@ -98,5 +98,5 @@ defmodule Jellyfish.Component.HLS.ManagerTest do
         end
       end)
 
-  defp kill_process(pid), do: send(pid, :stop)
+  defp kill_mock_engine(pid), do: send(pid, :stop)
 end
