@@ -32,7 +32,8 @@ defmodule Jellyfish.Application do
         {Registry, keys: :unique, name: Jellyfish.RequestHandlerRegistry},
         # Start the Telemetry supervisor (must be started after Jellyfish.RoomRegistry)
         JellyfishWeb.Telemetry,
-        {Task.Supervisor, name: Jellyfish.TaskSupervisor}
+        {Task.Supervisor, name: Jellyfish.TaskSupervisor},
+        {DynamicSupervisor, name: Jellyfish.HLS.ManagerSupervisor, strategy: :one_for_one}
       ] ++
         if dist_config[:enabled] do
           config_distribution(dist_config)

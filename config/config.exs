@@ -24,4 +24,6 @@ config :jellyfish,
   divo: "docker-compose.yaml",
   divo_wait: [dwell: 1_500, max_tries: 50]
 
+config :ex_aws, :http_client, Jellyfish.Component.HLS.HTTPoison
+
 import_config "#{config_env()}.exs"
