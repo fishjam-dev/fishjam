@@ -63,60 +63,30 @@ defmodule JellyfishWeb.Telemetry.MetricsAggregator do
         measurement: :traffic_ingress_total,
         description: "Total traffic received (bytes)"
       ),
-      last_value("jellyfish.traffic.ingress.throughput.bytes_per_second",
-        event_name: [:jellyfish],
-        measurement: :traffic_ingress_throughput,
-        description: "Current throughput for received traffic (bytes/second)"
-      ),
       sum("jellyfish.traffic.egress.total.bytes",
         event_name: [:jellyfish],
         measurement: :traffic_egress_total,
         description: "Total traffic sent (bytes)"
-      ),
-      last_value("jellyfish.traffic.egress.throughput.bytes_per_second",
-        event_name: [:jellyfish],
-        measurement: :traffic_egress_throughput,
-        description: "Current throughput for sent traffic (bytes/second)"
       ),
       sum("jellyfish.traffic.ingress.webrtc.total.bytes",
         event_name: [:jellyfish],
         measurement: :traffic_ingress_total_webrtc,
         description: "Total WebRTC traffic received (bytes)"
       ),
-      last_value("jellyfish.traffic.ingress.webrtc.throughput.bytes_per_second",
-        event_name: [:jellyfish],
-        measurement: :traffic_ingress_throughput_webrtc,
-        description: "Current throughput for received WebRTC traffic (bytes/second)"
-      ),
       sum("jellyfish.traffic.egress.webrtc.total.bytes",
         event_name: [:jellyfish],
         measurement: :traffic_egress_total_webrtc,
         description: "Total WebRTC traffic sent (bytes)"
-      ),
-      last_value("jellyfish.traffic.egress.webrtc.throughput.bytes_per_second",
-        event_name: [:jellyfish],
-        measurement: :traffic_egress_throughput_webrtc,
-        description: "Current throughput for sent WebRTC traffic (bytes/second)"
       ),
       sum("jellyfish.traffic.ingress.http.total.bytes",
         event_name: [:jellyfish],
         measurement: :traffic_ingress_total_http,
         description: "Total HTTP traffic received (bytes)"
       ),
-      last_value("jellyfish.traffic.ingress.http.throughput.bytes_per_second",
-        event_name: [:jellyfish],
-        measurement: :traffic_ingress_throughput_http,
-        description: "Current throughput for received HTTP traffic (bytes/second)"
-      ),
       sum("jellyfish.traffic.egress.http.total.bytes",
         event_name: [:jellyfish],
         measurement: :traffic_egress_total_http,
         description: "Total HTTP traffic sent (bytes)"
-      ),
-      last_value("jellyfish.traffic.egress.http.throughput.bytes_per_second",
-        event_name: [:jellyfish],
-        measurement: :traffic_egress_throughput_http,
-        description: "Current throughput for sent HTTP traffic (bytes/second)"
       ),
       last_value("jellyfish.rooms",
         description: "Amount of rooms currently present in Jellyfish"
@@ -176,15 +146,9 @@ defmodule JellyfishWeb.Telemetry.MetricsAggregator do
         traffic_ingress_total: ingress_delta,
         traffic_ingress_total_webrtc: ingress_delta_webrtc,
         traffic_ingress_total_http: ingress_delta_http,
-        traffic_ingress_throughput: rate(ingress_delta),
-        traffic_ingress_throughput_webrtc: rate(ingress_delta_webrtc),
-        traffic_ingress_throughput_http: rate(ingress_delta_http),
         traffic_egress_total: egress_delta,
         traffic_egress_total_webrtc: egress_delta_webrtc,
         traffic_egress_total_http: egress_delta_http,
-        traffic_egress_throughput: rate(egress_delta),
-        traffic_egress_throughput_webrtc: rate(egress_delta_webrtc),
-        traffic_egress_throughput_http: rate(egress_delta_http),
         rooms: Enum.count(rooms)
       }
     )
@@ -206,6 +170,4 @@ defmodule JellyfishWeb.Telemetry.MetricsAggregator do
 
     {:noreply, state}
   end
-
-  defp rate(amount), do: div(amount, @metric_forwarding_interval)
 end
