@@ -129,6 +129,12 @@ defmodule Jellyfish.Room do
     GenServer.call(registry_id(room_id), {:remove_component, component_id})
   end
 
+  @spec hls_subscribe(id(), [track_id :: String.t()]) ::
+          :ok | {:error, term()}
+  def hls_subscribe(room_id, tracks) do
+    GenServer.call(registry_id(room_id), {:hls_subscribe, tracks})
+  end
+
   @spec receive_media_event(id(), Peer.id(), String.t()) :: :ok
   def receive_media_event(room_id, peer_id, event) do
     GenServer.cast(registry_id(room_id), {:media_event, peer_id, event})
@@ -292,6 +298,23 @@ defmodule Jellyfish.Room do
         {:ok, state}
       else
         {{:error, :component_not_found}, state}
+      end
+
+    {:reply, reply, state}
+  end
+
+  @impl true
+  def handle_call({:hls_subscribe, tracks}, _from, state) do
+    hls_component = hls_component(state)
+
+    reply =
+      case validate_hls_subscription(hls_component) do
+        :ok ->
+          Engine.message_endpoint(state.engine_pid, hls_component.id, {:subscribe, tracks})
+          :ok
+
+        {:error, _reason} = error ->
+          error
       end
 
     {:reply, reply, state}
@@ -535,4 +558,11 @@ defmodule Jellyfish.Room do
 
     {:ok, _pid} = HLS.Manager.start(room_id, engine_pid, hls_dir, valid_opts)
   end
+
+  defp validate_hls_subscription(nil), do: {:error, :hls_component_not_exists}
+
+  defp validate_hls_subscription(%{metadata: %{subscribe_mode: :auto}}),
+    do: {:error, :invalid_subscribe_mode}
+
+  defp validate_hls_subscription(%{metadata: %{subscribe_mode: :manual}}), do: :ok
 end

@@ -20,6 +20,7 @@ defmodule JellyfishWeb.Router do
 
   scope "/hls", JellyfishWeb do
     get "/:room_id/:filename", HLSController, :index
+    post "/:room_id/subscribe", SubscriptionController, :create
   end
 
   scope "/recording", JellyfishWeb do
