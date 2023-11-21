@@ -4,15 +4,15 @@ defmodule JellyfishWeb.ApiSpec.Component.HLS do
   require OpenApiSpex
   alias OpenApiSpex.Schema
 
-  defmodule Metadata do
+  defmodule Properties do
     @moduledoc false
 
     require OpenApiSpex
     alias OpenApiSpex.Schema
 
     OpenApiSpex.schema(%{
-      title: "ComponentMetadataHLS",
-      description: "Metadata specific to the HLS component",
+      title: "ComponentPropertiesHLS",
+      description: "Properties specific to the HLS component",
       type: :object,
       properties: %{
         playable: %Schema{
@@ -107,14 +107,14 @@ defmodule JellyfishWeb.ApiSpec.Component.HLS do
 
   OpenApiSpex.schema(%{
     title: "ComponentHLS",
-    description: "Describes HLS component",
+    description: "Describes the HLS component",
     type: :object,
     properties: %{
       id: %Schema{type: :string, description: "Assigned component ID", example: "component-1"},
       # FIXME: due to cyclic imports, we can't use ApiSpec.Component.Type here
       type: %Schema{type: :string, description: "Component type", example: "hls"},
-      metadata: Metadata
+      properties: Properties
     },
-    required: [:id, :type, :metadata]
+    required: [:id, :type, :properties]
   })
 end

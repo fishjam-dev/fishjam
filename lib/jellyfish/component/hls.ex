@@ -16,7 +16,7 @@ defmodule Jellyfish.Component.HLS do
 
   @segment_duration Time.seconds(6)
   @partial_segment_duration Time.milliseconds(1_100)
-  @type metadata :: %{
+  @type properties :: %{
           optional(:target_window_duration) => pos_integer(),
           playable: boolean(),
           low_latency: boolean(),
@@ -28,7 +28,7 @@ defmodule Jellyfish.Component.HLS do
     with {:ok, valid_opts} <- serialize_options(options) do
       hls_config = create_hls_config(options.room_id, valid_opts)
 
-      metadata =
+      properties =
         valid_opts
         |> Map.put(:playable, false)
         |> Enum.into(%{})
@@ -38,7 +38,7 @@ defmodule Jellyfish.Component.HLS do
          endpoint: %HLS{
            rtc_engine: options.engine_pid,
            owner: self(),
-           output_directory: output_dir(options.room_id, persistent: metadata.persistent),
+           output_directory: output_dir(options.room_id, persistent: properties.persistent),
            mixer_config: %MixerConfig{
              video: %CompositorConfig{
                stream_format: %Membrane.RawVideo{
@@ -52,7 +52,7 @@ defmodule Jellyfish.Component.HLS do
            },
            hls_config: hls_config
          },
-         metadata: metadata
+         properties: properties
        }}
     else
       {:error, _reason} = error -> error

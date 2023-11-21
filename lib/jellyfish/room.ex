@@ -254,7 +254,7 @@ defmodule Jellyfish.Room do
       state = put_in(state, [:components, component.id], component)
 
       if component_type == HLS do
-        on_hls_startup(state.id, component.metadata)
+        on_hls_startup(state.id, component.properties)
         spawn_hls_manager(options)
       end
 
@@ -287,7 +287,7 @@ defmodule Jellyfish.Room do
 
         Logger.info("Removed component #{inspect(component_id)}")
 
-        if component.type == HLS, do: on_hls_removal(state.id, component.metadata)
+        if component.type == HLS, do: on_hls_removal(state.id, component.properties)
 
         {:ok, state}
       else
@@ -345,7 +345,7 @@ defmodule Jellyfish.Room do
       Event.broadcast_server_notification({:component_crashed, state.id, endpoint_id})
 
       component = Map.get(state.components, endpoint_id)
-      if component.type == HLS, do: on_hls_removal(state.id, component.metadata)
+      if component.type == HLS, do: on_hls_removal(state.id, component.properties)
     end
 
     {:noreply, state}
@@ -380,7 +380,9 @@ defmodule Jellyfish.Room do
 
     Event.broadcast_server_notification({:hls_playable, state.id, endpoint_id})
 
-    state = update_in(state, [:components, endpoint_id, :metadata], &Map.put(&1, :playable, true))
+    state =
+      update_in(state, [:components, endpoint_id, :properties], &Map.put(&1, :playable, true))
+
     {:noreply, state}
   end
 
@@ -431,7 +433,7 @@ defmodule Jellyfish.Room do
     Engine.terminate(engine_pid, asynchronous?: true, timeout: 10_000)
 
     hls_component = hls_component(state)
-    unless is_nil(hls_component), do: on_hls_removal(state.id, hls_component.metadata)
+    unless is_nil(hls_component), do: on_hls_removal(state.id, hls_component.properties)
 
     :ok
   end
