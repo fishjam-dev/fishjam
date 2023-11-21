@@ -8,7 +8,7 @@ defmodule Jellyfish.Component.RTSPTest do
 
   @engine_pid "placeholder"
   @source_uri "rtsp://ef36c6dff23ecc5bbe311cc880d95dc8.se:2137/does/not/matter"
-  @metadata %{}
+  @properties %{}
   @jellyfish_opts %{engine_pid: @engine_pid, room_id: "example-room-id"}
 
   test "sourceUri, default opts" do
@@ -20,7 +20,7 @@ defmodule Jellyfish.Component.RTSPTest do
       max_reconnect_attempts: :infinity
     }
 
-    {:ok, %{endpoint: ^expected, metadata: @metadata}} = Component.RTSP.config(options)
+    {:ok, %{endpoint: ^expected, properties: @properties}} = Component.RTSP.config(options)
   end
 
   test "sourceUri, custom opts" do
@@ -40,7 +40,7 @@ defmodule Jellyfish.Component.RTSPTest do
       |> Map.put(:max_reconnect_attempts, :infinity)
       |> then(&struct(Endpoint.RTSP, &1))
 
-    {:ok, %{endpoint: ^expected, metadata: @metadata}} = Component.RTSP.config(options)
+    {:ok, %{endpoint: ^expected, properties: @properties}} = Component.RTSP.config(options)
   end
 
   test "missing required sourceUri" do

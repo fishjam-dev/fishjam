@@ -7,7 +7,7 @@ defmodule Jellyfish.Endpoint.Config do
               {:ok,
                %{
                  :endpoint => Membrane.ChildrenSpec.child_definition(),
-                 optional(:metadata) => term()
+                 optional(:properties) => term()
                }}
               | {:error, term()}
 end
