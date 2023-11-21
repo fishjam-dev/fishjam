@@ -26,7 +26,7 @@ defmodule JellyfishWeb.SubscriptionController do
     with tracks <- Map.get(params, "tracks", %{}),
          {:ok, _room_pid} <- RoomService.find_room(room_id),
          :ok <- Room.hls_subscribe(room_id, tracks) do
-      send_resp(conn, :created, "Tracks succesfully added.")
+      send_resp(conn, :created, "Successfully subscribed for tracks.")
     else
       :error ->
         {:error, :bad_request, "Invalid request body structure"}

@@ -34,7 +34,8 @@ defmodule JellyfishWeb.ApiSpec.Component.HLS do
         },
         subscribeMode: %Schema{
           type: :string,
-          description: "Whether the HLS should subscribe to tracks automatically or manually.",
+          description:
+            "Whether the HLS component should subscribe to tracks automatically or manually",
           enum: ["auto", "manual"]
         }
       },
@@ -107,7 +108,8 @@ defmodule JellyfishWeb.ApiSpec.Component.HLS do
         },
         subscribeMode: %Schema{
           type: :string,
-          description: "Whether the HLS should subscribe to tracks automatically or manually.",
+          description:
+            "Whether the HLS component should subscribe to tracks automatically or manually.",
           enum: ["auto", "manual"],
           default: "auto"
         }

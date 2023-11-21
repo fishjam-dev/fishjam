@@ -10,7 +10,7 @@ defmodule JellyfishWeb.ApiSpec.Subscription do
 
     OpenApiSpex.schema(%{
       title: "Track",
-      description: "Track",
+      description: "Track id",
       type: :string,
       example: "track-1"
     })
