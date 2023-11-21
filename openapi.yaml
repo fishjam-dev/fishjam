@@ -67,7 +67,7 @@ components:
           description: Whether the generated HLS playlist is playable
           type: boolean
         subscribeMode:
-          description: Whether the HLS should subscribe to tracks automatically or manually.
+          description: Whether the HLS component should subscribe to tracks automatically or manually
           enum:
             - auto
             - manual
@@ -118,7 +118,7 @@ components:
           type: object
         subscribeMode:
           default: auto
-          description: Whether the HLS should subscribe to tracks automatically or manually.
+          description: Whether the HLS component should subscribe to tracks automatically or manually.
           enum:
             - auto
             - manual
@@ -436,7 +436,7 @@ components:
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Subscription.Tracks
     Track:
-      description: Track
+      description: Track id
       example: track-1
       title: Track
       type: string
