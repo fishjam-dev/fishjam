@@ -31,9 +31,15 @@ defmodule JellyfishWeb.ApiSpec.Component.HLS do
         persistent: %Schema{
           type: :boolean,
           description: "Whether the video is stored after end of stream"
+        },
+        subscribeMode: %Schema{
+          type: :string,
+          description:
+            "Whether the HLS component should subscribe to tracks automatically or manually",
+          enum: ["auto", "manual"]
         }
       },
-      required: [:playable, :lowLatency, :persistent, :targetWindowDuration]
+      required: [:playable, :lowLatency, :persistent, :targetWindowDuration, :subscribeMode]
     })
   end
 
@@ -99,6 +105,13 @@ defmodule JellyfishWeb.ApiSpec.Component.HLS do
           description: "Credentials to AWS S3 bucket.",
           oneOf: [S3],
           nullable: true
+        },
+        subscribeMode: %Schema{
+          type: :string,
+          description:
+            "Whether the HLS component should subscribe to tracks automatically or manually.",
+          enum: ["auto", "manual"],
+          default: "auto"
         }
       },
       required: []

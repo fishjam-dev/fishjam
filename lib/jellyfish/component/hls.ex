@@ -50,7 +50,8 @@ defmodule Jellyfish.Component.HLS do
                }
              }
            },
-           hls_config: hls_config
+           hls_config: hls_config,
+           subscribe_mode: valid_opts.subscribe_mode
          },
          metadata: metadata
        }}
@@ -75,6 +76,7 @@ defmodule Jellyfish.Component.HLS do
         valid_opts
         |> Map.from_struct()
         |> Map.new(fn {k, v} -> {underscore(k), serialize(v)} end)
+        |> Map.update!(:subscribe_mode, &String.to_atom/1)
 
       {:ok, valid_opts}
     else

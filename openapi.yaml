@@ -66,6 +66,12 @@ components:
         playable:
           description: Whether the generated HLS playlist is playable
           type: boolean
+        subscribeMode:
+          description: Whether the HLS component should subscribe to tracks automatically or manually
+          enum:
+            - auto
+            - manual
+          type: string
         targetWindowDuration:
           description: Duration of stream available for viewer
           nullable: true
@@ -75,6 +81,7 @@ components:
         - lowLatency
         - persistent
         - targetWindowDuration
+        - subscribeMode
       title: ComponentMetadataHLS
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS.Metadata
@@ -109,6 +116,13 @@ components:
           oneOf:
             - $ref: '#/components/schemas/S3Credentials'
           type: object
+        subscribeMode:
+          default: auto
+          description: Whether the HLS component should subscribe to tracks automatically or manually.
+          enum:
+            - auto
+            - manual
+          type: string
         targetWindowDuration:
           description: Duration of stream available for viewer
           nullable: true
@@ -410,6 +424,23 @@ components:
       title: S3Credentials
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS.S3
+    SubscriptionConfig:
+      description: Subscription config
+      properties:
+        tracks:
+          description: List of tracks that hls endpoint will subscribe for
+          items:
+            $ref: '#/components/schemas/Track'
+          type: array
+      title: SubscriptionConfig
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Subscription.Tracks
+    Track:
+      description: Track id
+      example: track-1
+      title: Track
+      type: string
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Subscription.Track
   securitySchemes:
     authorization:
       scheme: bearer
@@ -422,6 +453,42 @@ info:
   version: 0.2.0
 openapi: 3.0.0
 paths:
+  /hls/{room_id}/subscribe:
+    post:
+      callbacks: {}
+      operationId: subscribe_tracks
+      parameters:
+        - description: Room ID
+          in: path
+          name: room_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriptionConfig'
+        description: Subscribe configuration
+        required: false
+      responses:
+        '201':
+          description: Tracks succesfully added.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Invalid request structure
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Room doesn't exist
+      summary: Subscribe hls component for tracks
+      tags:
+        - hls
   /hls/{room_id}/{filename}:
     get:
       callbacks: {}
