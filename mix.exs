@@ -69,16 +69,9 @@ defmodule Jellyfish.MixProject do
 
       # Membrane deps
       {:membrane_rtc_engine,
-       github: "jellyfish-dev/membrane_rtc_engine",
-       branch: "manual-track-addition",
-       sparse: "engine",
-       override: true},
+       github: "jellyfish-dev/membrane_rtc_engine", sparse: "engine", override: true},
       {:membrane_rtc_engine_webrtc, "~> 0.3.0", override: true},
-      {:membrane_rtc_engine_hls,
-       github: "jellyfish-dev/membrane_rtc_engine",
-       branch: "manual-track-addition",
-       sparse: "hls",
-       override: true},
+      {:membrane_rtc_engine_hls, github: "jellyfish-dev/membrane_rtc_engine", sparse: "hls"},
       {:membrane_rtc_engine_rtsp, "~> 0.2.1"},
       {:membrane_ice_plugin, "~> 0.16.0"},
       {:membrane_telemetry_metrics, "~> 0.1.0"},
