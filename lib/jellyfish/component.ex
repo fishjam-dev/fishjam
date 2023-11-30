@@ -10,7 +10,7 @@ defmodule Jellyfish.Component do
 
   use Bunch.Access
 
-  alias Jellyfish.Component.{HLS, RTSP}
+  alias Jellyfish.Component.{File, HLS, RTSP}
 
   @enforce_keys [
     :id,
@@ -21,7 +21,7 @@ defmodule Jellyfish.Component do
   defstruct @enforce_keys
 
   @type id :: String.t()
-  @type component :: HLS | RTSP
+  @type component :: HLS | RTSP | File
   @type properties :: HLS.properties() | RTSP.properties() | File.properties()
 
   @typedoc """
@@ -43,6 +43,7 @@ defmodule Jellyfish.Component do
     case type do
       "hls" -> {:ok, HLS}
       "rtsp" -> {:ok, RTSP}
+      "file" -> {:ok, File}
       _other -> {:error, :invalid_type}
     end
   end

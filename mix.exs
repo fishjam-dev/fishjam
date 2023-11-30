@@ -68,11 +68,16 @@ defmodule Jellyfish.MixProject do
       {:protobuf, "~> 0.12.0"},
 
       # Membrane deps
-      {:membrane_rtc_engine, "~> 0.17.1", override: true},
+      {:membrane_rtc_engine, "~> 0.18.0", override: true},
       {:membrane_rtc_engine_webrtc, "~> 0.3.0", override: true},
       {:membrane_rtc_engine_hls,
        github: "jellyfish-dev/membrane_rtc_engine", sparse: "hls", override: true},
       {:membrane_rtc_engine_rtsp, "~> 0.2.1"},
+      {:membrane_rtc_engine_file,
+       github: "jellyfish-dev/membrane_rtc_engine",
+       sparse: "file",
+       override: true,
+       branch: "RTC-398-file-demux-ogg"},
       {:membrane_ice_plugin, "~> 0.16.0"},
       {:membrane_telemetry_metrics, "~> 0.1.0"},
 

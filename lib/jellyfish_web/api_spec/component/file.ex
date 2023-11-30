@@ -28,13 +28,13 @@ defmodule JellyfishWeb.ApiSpec.Component.File do
       description: "Options specific to the File component",
       type: :object,
       properties: %{
-        file_path: %Schema{
+        filePath: %Schema{
           type: :string,
           description: "Path to track file. Must be either OPUS or h264",
           example: "/root/video.h264"
         }
       },
-      required: [:file_path]
+      required: [:filePath]
     })
   end
 

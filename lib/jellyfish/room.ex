@@ -9,7 +9,7 @@ defmodule Jellyfish.Room do
   require Logger
 
   alias Jellyfish.Component
-  alias Jellyfish.Component.{HLS, RTSP}
+  alias Jellyfish.Component.{File, HLS, RTSP}
   alias Jellyfish.Event
   alias Jellyfish.Peer
 
@@ -380,7 +380,19 @@ defmodule Jellyfish.Room do
 
     Event.broadcast_server_notification({:hls_playable, state.id, endpoint_id})
 
-    state = update_in(state, [:components, endpoint_id, :properties], &Map.put(&1, :playable, true))
+    state =
+      update_in(state, [:components, endpoint_id, :properties], &Map.put(&1, :playable, true))
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(%EndpointMessage{endpoint_id: endpoint_id, message: :tracks_added}, state) do
+    if state.components[endpoint_id].type == File do
+      Logger.debug("Received track ready from file component")
+      Engine.Endpoint.File.start_sending(state.engine_pid, endpoint_id)
+    end
+
     {:noreply, state}
   end
 
