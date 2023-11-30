@@ -24,7 +24,7 @@ defmodule Jellyfish.Component.FileTest do
       track_config: %Endpoint.File.TrackConfig{
         type: :video,
         encoding: :H264,
-        clock_rate: 90000,
+        clock_rate: 90_000,
         fmtp: %FMTP{pt: 96},
         opts: [
           framerate: {30, 1}
@@ -45,7 +45,7 @@ defmodule Jellyfish.Component.FileTest do
       track_config: %Endpoint.File.TrackConfig{
         type: :audio,
         encoding: :OPUS,
-        clock_rate: 48000,
+        clock_rate: 48_000,
         fmtp: %FMTP{pt: 108},
         opts: []
       },
@@ -59,6 +59,24 @@ defmodule Jellyfish.Component.FileTest do
     options = Map.put(@jellyfish_opts, "filePath", @missing_file_path)
 
     {:error, :file_does_not_exist} = Component.File.config(options)
+  end
+
+  @tag :tmp_dir
+  test "invalid extension", %{tmp_dir: tmp_dir} do
+    filename = tmp_dir |> Path.join("sounds.aac")
+    filename |> File.touch()
+    options = Map.put(@jellyfish_opts, "filePath", filename)
+
+    {:error, :invalid_extension} = Component.File.config(options)
+  end
+
+  @tag :tmp_dir
+  test "no extension", %{tmp_dir: tmp_dir} do
+    filename = tmp_dir |> Path.join("h264")
+    filename |> File.touch()
+    options = Map.put(@jellyfish_opts, "filePath", filename)
+
+    {:error, :invalid_extension} = Component.File.config(options)
   end
 
   test "missing filePath" do

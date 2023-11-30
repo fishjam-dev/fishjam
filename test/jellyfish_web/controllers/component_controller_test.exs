@@ -320,6 +320,59 @@ defmodule JellyfishWeb.ComponentControllerTest do
     end
   end
 
+    describe "Create File Component" do
+    test "renders component with required options", %{conn: conn, room_id: room_id} do
+      conn =
+        post(conn, ~p"/room/#{room_id}/component",
+          type: "file",
+          options: %{filePath: @file_path}
+        )
+
+      assert response =
+               %{
+                 "data" => %{
+                   "id" => id,
+                   "type" => "file",
+                   "properties" => %{}
+                 }
+               } =
+               json_response(conn, :created)
+
+      assert_response_schema(response, "ComponentDetailsResponse", @schema)
+
+      conn = get(conn, ~p"/room/#{room_id}")
+
+      assert %{
+               "id" => ^room_id,
+               "components" => [
+                 %{"id" => ^id, "type" => "file"}
+               ]
+             } = json_response(conn, :ok)["data"]
+    end
+
+    test "renders error when component requires options not present in request", %{
+      conn: conn,
+      room_id: room_id
+    } do
+      conn = post(conn, ~p"/room/#{room_id}/component", type: "file")
+
+      assert json_response(conn, :bad_request)["errors"] == "Invalid request body structure"
+    end
+
+    test "renders error when filePath is invalid", %{
+      conn: conn,
+      room_id: room_id
+    } do
+      conn =
+        post(conn, ~p"/room/#{room_id}/component",
+          type: "file",
+          options: %{filePath: "some/fake/path.h264"}
+        )
+
+      assert json_response(conn, :bad_request)["errors"] == "Invalid request body structure"
+    end
+  end
+
   describe "delete component" do
     setup [:create_rtsp_component]
 
@@ -348,37 +401,6 @@ defmodule JellyfishWeb.ComponentControllerTest do
       room_id = "abc"
       conn = delete(conn, ~p"/room/#{room_id}/component/#{component_id}")
       assert json_response(conn, :not_found)["errors"] == "Room #{room_id} does not exist"
-    end
-  end
-
-  describe "Create File Component" do
-    test "renders component with required options", %{conn: conn, room_id: room_id} do
-      conn =
-        post(conn, ~p"/room/#{room_id}/component",
-          type: "file",
-          options: %{filePath: @file_path}
-        )
-
-      assert response =
-               %{
-                 "data" => %{
-                   "id" => id,
-                   "type" => "file",
-                   "properties" => %{}
-                 }
-               } =
-               json_response(conn, :created)
-
-      assert_response_schema(response, "ComponentDetailsResponse", @schema)
-
-      conn = get(conn, ~p"/room/#{room_id}")
-
-      assert %{
-               "id" => ^room_id,
-               "components" => [
-                 %{"id" => ^id, "type" => "file"}
-               ]
-             } = json_response(conn, :ok)["data"]
     end
   end
 
