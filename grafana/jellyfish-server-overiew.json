@@ -67,6 +67,8 @@
             },
             "id": 6,
             "options": {
+                "minVizHeight": 75,
+                "minVizWidth": 75,
                 "orientation": "auto",
                 "reduceOptions": {
                     "calcs": [
@@ -78,7 +80,7 @@
                 "showThresholdLabels": false,
                 "showThresholdMarkers": false
             },
-            "pluginVersion": "10.1.2",
+            "pluginVersion": "10.2.2",
             "targets": [
                 {
                     "datasource": {
@@ -109,6 +111,7 @@
                         "mode": "continuous-BlYlRd"
                     },
                     "custom": {
+                        "axisBorderShow": false,
                         "axisCenteredZero": false,
                         "axisColorMode": "text",
                         "axisLabel": "",
@@ -212,9 +215,10 @@
                     "fieldConfig": {
                         "defaults": {
                             "color": {
-                                "mode": "continuous-BlYlRd"
+                                "mode": "palette-classic"
                             },
                             "custom": {
+                                "axisBorderShow": false,
                                 "axisCenteredZero": false,
                                 "axisColorMode": "text",
                                 "axisLabel": "",
@@ -255,7 +259,7 @@
                                     }
                                 ]
                             },
-                            "unit": "Bps"
+                            "unit": "bps"
                         },
                         "overrides": []
                     },
@@ -289,7 +293,7 @@
                                 "uid": "${ds}"
                             },
                             "editorMode": "code",
-                            "expr": "jellyfish_traffic_ingress_throughput_bytes_per_second{instance=~\"$instance\"}",
+                            "expr": "irate(jellyfish_traffic_ingress_total_bytes{instance=~\"$instance\"}[$__rate_interval])*8",
                             "instant": false,
                             "legendFormat": "{{instance}}",
                             "range": true,
@@ -308,9 +312,10 @@
                     "fieldConfig": {
                         "defaults": {
                             "color": {
-                                "mode": "continuous-BlYlRd"
+                                "mode": "palette-classic"
                             },
                             "custom": {
+                                "axisBorderShow": false,
                                 "axisCenteredZero": false,
                                 "axisColorMode": "text",
                                 "axisLabel": "",
@@ -351,7 +356,7 @@
                                     }
                                 ]
                             },
-                            "unit": "Bps"
+                            "unit": "bps"
                         },
                         "overrides": []
                     },
@@ -385,7 +390,7 @@
                                 "uid": "${ds}"
                             },
                             "editorMode": "code",
-                            "expr": "jellyfish_traffic_egress_throughput_bytes_per_second{instance=~\"$instance\"}",
+                            "expr": "irate(jellyfish_traffic_egress_total_bytes{instance=~\"$instance\"}[$__rate_interval])*8",
                             "instant": false,
                             "legendFormat": "{{instance}}",
                             "range": true,
@@ -407,6 +412,7 @@
                                 "mode": "palette-classic"
                             },
                             "custom": {
+                                "axisBorderShow": false,
                                 "axisCenteredZero": false,
                                 "axisColorMode": "text",
                                 "axisLabel": "",
@@ -447,7 +453,7 @@
                                     }
                                 ]
                             },
-                            "unit": "Bps"
+                            "unit": "bps"
                         },
                         "overrides": [
                             {
@@ -497,7 +503,7 @@
                                 "uid": "${ds}"
                             },
                             "editorMode": "code",
-                            "expr": "jellyfish_traffic_ingress_throughput_bytes_per_second{instance=~\"$instance\"}",
+                            "expr": "irate(jellyfish_traffic_ingress_total_bytes{instance=~\"$instance\"}[$__rate_interval])*8",
                             "instant": false,
                             "legendFormat": "{{instance}} ingress",
                             "range": true,
@@ -509,7 +515,7 @@
                                 "uid": "${ds}"
                             },
                             "editorMode": "code",
-                            "expr": "jellyfish_traffic_egress_throughput_bytes_per_second{instance=~\"$instance\"}",
+                            "expr": "irate(jellyfish_traffic_egress_total_bytes{instance=~\"$instance\"}[$__rate_interval])*8",
                             "hide": false,
                             "instant": false,
                             "legendFormat": "{{instance}} egress",
@@ -546,6 +552,7 @@
                                 "mode": "continuous-BlYlRd"
                             },
                             "custom": {
+                                "axisBorderShow": false,
                                 "axisCenteredZero": false,
                                 "axisColorMode": "text",
                                 "axisLabel": "",
@@ -598,7 +605,7 @@
                         "h": 8,
                         "w": 24,
                         "x": 0,
-                        "y": 42
+                        "y": 21
                     },
                     "id": 10,
                     "options": {
@@ -637,7 +644,6 @@
     ],
     "refresh": "",
     "schemaVersion": 38,
-    "style": "dark",
     "tags": [],
     "templating": {
         "list": [
@@ -701,6 +707,6 @@
     "timezone": "",
     "title": "Jellyfishes dashboard",
     "uid": "ef7bdb94-c912-49ac-a273-e7a31598001a",
-    "version": 17,
+    "version": 48,
     "weekStart": ""
 }
