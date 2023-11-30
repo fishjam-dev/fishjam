@@ -60,7 +60,8 @@ defmodule JellyfishWeb.ComponentControllerTest do
                      "playable" => false,
                      "lowLatency" => false,
                      "persistent" => false,
-                     "targetWindowDuration" => nil
+                     "targetWindowDuration" => nil,
+                     "subscribeMode" => "auto"
                    }
                  }
                } =
@@ -104,7 +105,8 @@ defmodule JellyfishWeb.ComponentControllerTest do
                      "playable" => false,
                      "lowLatency" => false,
                      "persistent" => true,
-                     "targetWindowDuration" => nil
+                     "targetWindowDuration" => nil,
+                     "subscribeMode" => "auto"
                    }
                  }
                } =
@@ -148,7 +150,8 @@ defmodule JellyfishWeb.ComponentControllerTest do
                      "playable" => false,
                      "lowLatency" => false,
                      "persistent" => false,
-                     "targetWindowDuration" => nil
+                     "targetWindowDuration" => nil,
+                     "subscribeMode" => "auto"
                    }
                  }
                } =
@@ -203,7 +206,8 @@ defmodule JellyfishWeb.ComponentControllerTest do
                      "playable" => false,
                      "lowLatency" => false,
                      "persistent" => false,
-                     "targetWindowDuration" => 10
+                     "targetWindowDuration" => 10,
+                     "subscribeMode" => "auto"
                    }
                  }
                } =
