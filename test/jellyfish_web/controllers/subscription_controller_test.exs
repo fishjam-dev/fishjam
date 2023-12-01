@@ -38,7 +38,7 @@ defmodule JellyfishWeb.SubscriptionControllerTest do
       assert %{
                "data" => %{
                  "type" => "hls",
-                 "metadata" => %{"subscribeMode" => "auto"}
+                 "properties" => %{"subscribeMode" => "auto"}
                }
              } =
                json_response(conn, :created)
@@ -59,7 +59,7 @@ defmodule JellyfishWeb.SubscriptionControllerTest do
       assert %{
                "data" => %{
                  "type" => "hls",
-                 "metadata" => %{"subscribeMode" => "manual"}
+                 "properties" => %{"subscribeMode" => "manual"}
                }
              } =
                json_response(conn, :created)

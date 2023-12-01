@@ -563,8 +563,8 @@ defmodule Jellyfish.Room do
 
   defp validate_hls_subscription(nil), do: {:error, :hls_component_not_exists}
 
-  defp validate_hls_subscription(%{metadata: %{subscribe_mode: :auto}}),
+  defp validate_hls_subscription(%{properties: %{subscribe_mode: :auto}}),
     do: {:error, :invalid_subscribe_mode}
 
-  defp validate_hls_subscription(%{metadata: %{subscribe_mode: :manual}}), do: :ok
+  defp validate_hls_subscription(%{properties: %{subscribe_mode: :manual}}), do: :ok
 end
