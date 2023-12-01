@@ -54,7 +54,7 @@ defmodule JellyfishWeb.RecordingControllerTest do
 
   test "list of recordings", %{conn: conn} do
     conn = get(conn, ~p"/recording")
-    assert @recording_id in json_response(conn, :ok)["recordings"]
+    assert @recording_id in json_response(conn, :ok)["data"]
   end
 
   test "delete recording", %{conn: conn} do
@@ -63,13 +63,13 @@ defmodule JellyfishWeb.RecordingControllerTest do
     |> prepare_files()
 
     conn = get(conn, ~p"/recording")
-    assert @for_deleting_id in json_response(conn, :ok)["recordings"]
+    assert @for_deleting_id in json_response(conn, :ok)["data"]
 
     conn = delete(conn, ~p"/recording/#{@for_deleting_id}")
     response(conn, 204)
 
     conn = get(conn, ~p"/recording")
-    assert @for_deleting_id not in json_response(conn, :ok)["recordings"]
+    assert @for_deleting_id not in json_response(conn, :ok)["data"]
 
     conn
     |> delete(~p"/recording/#{@for_deleting_id}")
