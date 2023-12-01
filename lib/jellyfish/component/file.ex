@@ -10,20 +10,18 @@ defmodule Jellyfish.Component.File do
   alias Membrane.RTC.Engine.Endpoint.File, as: FileEndpoint
 
   @type properties :: %{}
-  @allowed_extensions [".opus", ".h264"]
 
   @impl true
   def config(%{engine_pid: engine} = options) do
     options = Map.drop(options, [:engine_pid, :room_id])
 
     with {:ok, valid_opts} <- OpenApiSpex.cast_value(options, Options.schema()),
-         {:ok, file_path} <- validate_file_path(valid_opts.filePath) do
-      track_config = get_track_config(file_path)
-
+         :ok <- validate_file_path(valid_opts.filePath),
+         {:ok, track_config} <- get_track_config(valid_opts.filePath) do
       endpoint_spec =
         %FileEndpoint{
           rtc_engine: engine,
-          file_path: file_path,
+          file_path: valid_opts.filePath,
           track_config: track_config,
           payload_type: track_config.fmtp.pt
         }
@@ -35,11 +33,7 @@ defmodule Jellyfish.Component.File do
   end
 
   defp validate_file_path(file_path) do
-    cond do
-      not File.exists?(file_path) -> {:error, :file_does_not_exist}
-      Path.extname(file_path) not in @allowed_extensions -> {:error, :invalid_extension}
-      true -> {:ok, file_path}
-    end
+    if File.exists?(file_path), do: :ok, else: {:error, :file_does_not_exist}
   end
 
   defp get_track_config(file_path) do
@@ -47,21 +41,25 @@ defmodule Jellyfish.Component.File do
   end
 
   defp do_get_track_config(".h264") do
-    %FileEndpoint.TrackConfig{
-      type: :video,
-      encoding: :H264,
-      clock_rate: 90_000,
-      fmtp: %FMTP{pt: 96},
-      opts: [framerate: {30, 1}]
-    }
+    {:ok,
+     %FileEndpoint.TrackConfig{
+       type: :video,
+       encoding: :H264,
+       clock_rate: 90_000,
+       fmtp: %FMTP{pt: 96},
+       opts: [framerate: {30, 1}]
+     }}
   end
 
   defp do_get_track_config(".opus") do
-    %FileEndpoint.TrackConfig{
-      type: :audio,
-      encoding: :OPUS,
-      clock_rate: 48_000,
-      fmtp: %FMTP{pt: 108}
-    }
+    {:ok,
+     %FileEndpoint.TrackConfig{
+       type: :audio,
+       encoding: :OPUS,
+       clock_rate: 48_000,
+       fmtp: %FMTP{pt: 108}
+     }}
   end
+
+  defp do_get_track_config(_extension), do: {:error, :invalid_extension}
 end

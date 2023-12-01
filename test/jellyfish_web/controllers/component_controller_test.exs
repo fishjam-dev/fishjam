@@ -324,7 +324,7 @@ defmodule JellyfishWeb.ComponentControllerTest do
     end
   end
 
-    describe "Create File Component" do
+  describe "Create File Component" do
     test "renders component with required options", %{conn: conn, room_id: room_id} do
       conn =
         post(conn, ~p"/room/#{room_id}/component",
