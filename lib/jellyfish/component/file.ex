@@ -71,7 +71,7 @@ defmodule Jellyfish.Component.File do
      }}
   end
 
-  defp do_get_track_config(".opus") do
+  defp do_get_track_config(".ogg") do
     {:ok,
      %FileEndpoint.TrackConfig{
        type: :audio,
@@ -81,5 +81,5 @@ defmodule Jellyfish.Component.File do
      }}
   end
 
-  defp do_get_track_config(_extension), do: {:error, :invalid_extension}
+  defp do_get_track_config(_extension), do: {:error, :unsupported_file_type}
 end

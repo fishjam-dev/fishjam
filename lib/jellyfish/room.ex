@@ -9,7 +9,7 @@ defmodule Jellyfish.Room do
   require Logger
 
   alias Jellyfish.Component
-  alias Jellyfish.Component.{File, HLS, RTSP}
+  alias Jellyfish.Component.{HLS, RTSP}
   alias Jellyfish.Event
   alias Jellyfish.Peer
 
@@ -410,16 +410,6 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def handle_info(%EndpointMessage{endpoint_id: endpoint_id, message: :tracks_added}, state) do
-    if state.components[endpoint_id].type == File do
-      Logger.debug("Received track ready from file component")
-      Engine.Endpoint.File.start_sending(state.engine_pid, endpoint_id)
-    end
-
-    {:noreply, state}
-  end
-
-  @impl true
   def handle_info(%EndpointMessage{} = msg, state) do
     Logger.debug("Received msg from endpoint: #{inspect(msg)}")
     {:noreply, state}
@@ -463,7 +453,7 @@ defmodule Jellyfish.Room do
 
   @impl true
   def terminate(_reason, %{engine_pid: engine_pid} = state) do
-    Engine.terminate(engine_pid, asynchronous?: true, timeout: 10_000)
+    Engine.terminate(engine_pid)
 
     hls_component = hls_component(state)
     unless is_nil(hls_component), do: on_hls_removal(state.id, hls_component.properties)

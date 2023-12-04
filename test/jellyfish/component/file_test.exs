@@ -12,7 +12,7 @@ defmodule Jellyfish.Component.FileTest do
 
   @fixtures_location "test/fixtures"
   @video_filename "video.h264"
-  @audio_filename "audio.opus"
+  @audio_filename "audio.ogg"
 
   @properties %{}
   @jellyfish_opts %{engine_pid: @engine_pid, room_id: "example-room-id"}
@@ -82,7 +82,7 @@ defmodule Jellyfish.Component.FileTest do
 
     options = Map.put(@jellyfish_opts, "filePath", filename)
 
-    {:error, :invalid_extension} = Component.File.config(options)
+    {:error, :unsupported_file_type} = Component.File.config(options)
   end
 
   test "no extension", %{base_path: base_path} do
@@ -91,7 +91,7 @@ defmodule Jellyfish.Component.FileTest do
 
     options = Map.put(@jellyfish_opts, "filePath", filename)
 
-    {:error, :invalid_extension} = Component.File.config(options)
+    {:error, :unsupported_file_type} = Component.File.config(options)
   end
 
   test "file outside of media files directory", %{base_path: base_path} do

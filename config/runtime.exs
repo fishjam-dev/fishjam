@@ -36,7 +36,7 @@ host =
 config :jellyfish,
   jwt_max_age: 24 * 3600,
   media_files_path:
-    System.get_env("JF_MEDIA_FILES_PATH", "jellyfish_media_files") |> Path.expand(),
+    System.get_env("JF_RESOURCES_BASE_PATH", "jellyfish_resources") |> Path.expand(),
   address: "#{host}",
   metrics_ip: ConfigReader.read_ip("JF_METRICS_IP") || {127, 0, 0, 1},
   metrics_port: ConfigReader.read_port("JF_METRICS_PORT") || 9568,
