@@ -1,4 +1,4 @@
-Application.put_env(:jellyfish, :output_base_path, "tmp/hls_output/")
+Application.put_env(:jellyfish, :media_files_path, "tmp/jellyfish_media_files/")
 
 Mox.defmock(ExAws.Request.HttpMock, for: ExAws.Request.HttpClient)
 

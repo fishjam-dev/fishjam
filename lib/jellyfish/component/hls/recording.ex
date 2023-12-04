@@ -31,7 +31,7 @@ defmodule Jellyfish.Component.HLS.Recording do
   end
 
   defp root_directory() do
-    base_path = Application.fetch_env!(:jellyfish, :output_base_path)
+    base_path = Application.fetch_env!(:jellyfish, :media_files_path)
     Path.join([base_path, @recordings_folder])
   end
 

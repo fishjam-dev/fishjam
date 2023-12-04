@@ -66,7 +66,7 @@ defmodule Jellyfish.Component.HLS do
   end
 
   def output_dir(room_id, persistent: false) do
-    base_path = Application.fetch_env!(:jellyfish, :output_base_path)
+    base_path = Application.fetch_env!(:jellyfish, :media_files_path)
     Path.join([base_path, "temporary_hls", "#{room_id}"])
   end
 

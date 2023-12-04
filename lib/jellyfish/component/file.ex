@@ -17,11 +17,12 @@ defmodule Jellyfish.Component.File do
 
     with {:ok, valid_opts} <- OpenApiSpex.cast_value(options, Options.schema()),
          :ok <- validate_file_path(valid_opts.filePath),
-         {:ok, track_config} <- get_track_config(valid_opts.filePath) do
+         path = expand_file_path(valid_opts.filePath),
+         {:ok, track_config} <- get_track_config(path) do
       endpoint_spec =
         %FileEndpoint{
           rtc_engine: engine,
-          file_path: valid_opts.filePath,
+          file_path: path,
           track_config: track_config,
           payload_type: track_config.fmtp.pt
         }
@@ -33,7 +34,26 @@ defmodule Jellyfish.Component.File do
   end
 
   defp validate_file_path(file_path) do
-    if File.exists?(file_path), do: :ok, else: {:error, :file_does_not_exist}
+    base_path =
+      Application.fetch_env!(:jellyfish, :media_files_path)
+      |> Path.expand()
+
+    file_path = expand_file_path(file_path)
+
+    cond do
+      not path_inside_directory?(file_path, base_path) -> {:error, :invalid_file_path}
+      not File.exists?(file_path) -> {:error, :file_does_not_exist}
+      true -> :ok
+    end
+  end
+
+  defp path_inside_directory?(path, directory) do
+    relative_to = Path.relative_to(path, directory)
+    String.first(relative_to) != "/"
+  end
+
+  defp expand_file_path(file_path) do
+    Application.fetch_env!(:jellyfish, :media_files_path) |> Path.join(file_path) |> Path.expand()
   end
 
   defp get_track_config(file_path) do
