@@ -18,14 +18,15 @@ defmodule JellyfishWeb.ComponentControllerTest do
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
     conn = put_req_header(conn, "accept", "application/json")
 
-    media_sources_directory = Application.fetch_env!(:jellyfish, :media_files_path)
-    |> Path.join(@file_component_directory)
-    |> Path.expand()
+    media_sources_directory =
+      Application.fetch_env!(:jellyfish, :media_files_path)
+      |> Path.join(@file_component_directory)
+      |> Path.expand()
 
     File.mkdir_p!(media_sources_directory)
 
-    media_sources_directory |>
-    Path.join(@file_component_source)
+    media_sources_directory
+    |> Path.join(@file_component_source)
     |> File.touch!()
 
     conn = post(conn, ~p"/room")
