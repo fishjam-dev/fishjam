@@ -453,7 +453,7 @@ defmodule Jellyfish.Room do
 
   @impl true
   def terminate(_reason, %{engine_pid: engine_pid} = state) do
-    Engine.terminate(engine_pid)
+    Engine.terminate(engine_pid, asynchronous?: true, timeout: 10_000)
 
     hls_component = hls_component(state)
     unless is_nil(hls_component), do: on_hls_removal(state.id, hls_component.properties)

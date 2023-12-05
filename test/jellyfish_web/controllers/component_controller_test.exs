@@ -8,7 +8,8 @@ defmodule JellyfishWeb.ComponentControllerTest do
 
   @schema JellyfishWeb.ApiSpec.spec()
   @source_uri "rtsp://placeholder-19inrifjbsjb.it:12345/afwefae"
-  @file_path "test/fixtures/video.h264"
+  @file_component_directory "file_component_sources"
+  @file_component_source "video.h264"
   @files ["manifest.m3u8", "header.mp4", "segment_1.m3u8", "segment_2.m3u8"]
   @body <<1, 2, 3, 4>>
 
@@ -16,6 +17,16 @@ defmodule JellyfishWeb.ComponentControllerTest do
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
     conn = put_req_header(conn, "accept", "application/json")
+
+    media_sources_directory = Application.fetch_env!(:jellyfish, :media_files_path)
+    |> Path.join(@file_component_directory)
+    |> Path.expand()
+
+    File.mkdir_p!(media_sources_directory)
+
+    media_sources_directory |>
+    Path.join(@file_component_source)
+    |> File.touch!()
 
     conn = post(conn, ~p"/room")
     assert %{"id" => id} = json_response(conn, :created)["data"]["room"]
@@ -329,7 +340,7 @@ defmodule JellyfishWeb.ComponentControllerTest do
       conn =
         post(conn, ~p"/room/#{room_id}/component",
           type: "file",
-          options: %{filePath: @file_path}
+          options: %{filePath: @file_component_source}
         )
 
       assert response =
