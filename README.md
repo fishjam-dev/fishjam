@@ -27,7 +27,7 @@ To get the list of all available SDKs, go to [SDKs page](https://jellyfish-dev.g
 
 - WebRTC Dashboard
 
-    A standalone dashboard that can create rooms, add peers and send media between the peers. Available [here](https://github.com/jellyfish-dev/jellyfish-react-client/tree/main/examples/dashboard).
+    A standalone dashboard that can create rooms, add peers and send media between the peers. Available [here](https://github.com/jellyfish-dev/jellyfish-dashboard).
 To use the dashboard, you need to set up Jellyfish with WebRTC, refer to [WebRTC peer page](https://jellyfish-dev.github.io/jellyfish-docs/getting_started/peers/webrtc) in Jellyfish docs to learn how to do that.
 Dashboard makes HTTP requests to Jellyfish that need to be authorized and requires a token to do so, learn more from [Authentication page](https://jellyfish-dev.github.io/jellyfish-docs/getting_started/authentication) in Jellyfish docs.
 
