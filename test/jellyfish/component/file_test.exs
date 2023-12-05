@@ -16,9 +16,13 @@ defmodule Jellyfish.Component.FileTest do
 
   @properties %{}
   @jellyfish_opts %{engine_pid: @engine_pid, room_id: "example-room-id"}
+  @files_location "file_component_sources"
 
   setup_all do
-    base_path = Application.fetch_env!(:jellyfish, :media_files_path) |> Path.expand()
+    base_path =
+      Application.fetch_env!(:jellyfish, :media_files_path)
+      |> Path.join(@files_location)
+      |> Path.expand()
 
     File.mkdir_p!(base_path)
 

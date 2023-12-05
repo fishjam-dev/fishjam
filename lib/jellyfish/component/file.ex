@@ -11,6 +11,8 @@ defmodule Jellyfish.Component.File do
 
   @type properties :: %{}
 
+  @files_location "file_component_sources"
+
   @impl true
   def config(%{engine_pid: engine} = options) do
     options = Map.drop(options, [:engine_pid, :room_id])
@@ -36,6 +38,7 @@ defmodule Jellyfish.Component.File do
   defp validate_file_path(file_path) do
     base_path =
       Application.fetch_env!(:jellyfish, :media_files_path)
+      |> Path.join(@files_location)
       |> Path.expand()
 
     file_path = expand_file_path(file_path)
@@ -53,7 +56,8 @@ defmodule Jellyfish.Component.File do
   end
 
   defp expand_file_path(file_path) do
-    Application.fetch_env!(:jellyfish, :media_files_path) |> Path.join(file_path) |> Path.expand()
+    media_files_path = Application.fetch_env!(:jellyfish, :media_files_path)
+    [media_files_path, @files_location, file_path] |> Path.join() |> Path.expand()
   end
 
   defp get_track_config(file_path) do
