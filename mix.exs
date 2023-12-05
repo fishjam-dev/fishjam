@@ -69,16 +69,29 @@ defmodule Jellyfish.MixProject do
 
       # Membrane deps
       {:membrane_rtc_engine,
-       github: "jellyfish-dev/membrane_rtc_engine", sparse: "engine", override: true},
-      {:membrane_rtc_engine_webrtc, "~> 0.3.0", override: true},
-      {:membrane_rtc_engine_hls, github: "jellyfish-dev/membrane_rtc_engine", sparse: "hls"},
-      {:membrane_rtc_engine_rtsp, "~> 0.2.1"},
-      {:membrane_ice_plugin, "~> 0.16.0"},
+       github: "jellyfish-dev/membrane_rtc_engine",
+       ref: "49f2ba31ab65fa912f4112afe28b32cd274e14f2",
+       sparse: "engine",
+       override: true},
+      {:membrane_rtc_engine_webrtc,
+       github: "jellyfish-dev/membrane_rtc_engine",
+       ref: "49f2ba31ab65fa912f4112afe28b32cd274e14f2",
+       sparse: "webrtc",
+       override: true},
+      {:membrane_rtc_engine_hls,
+       github: "jellyfish-dev/membrane_rtc_engine",
+       ref: "49f2ba31ab65fa912f4112afe28b32cd274e14f2",
+       sparse: "hls"},
+      {:membrane_rtc_engine_rtsp,
+       github: "jellyfish-dev/membrane_rtc_engine",
+       ref: "49f2ba31ab65fa912f4112afe28b32cd274e14f2",
+       sparse: "rtsp"},
+      {:membrane_ice_plugin, "~> 0.17.0"},
       {:membrane_telemetry_metrics, "~> 0.1.0"},
 
       # HLS endpoints deps
-      {:membrane_audio_mix_plugin, "~> 0.15.2"},
-      {:membrane_video_compositor_plugin, "~> 0.5.4"},
+      {:membrane_audio_mix_plugin, "~> 0.16.0"},
+      {:membrane_video_compositor_plugin, "~> 0.6.0"},
 
       # Dialyzer and credo
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},
