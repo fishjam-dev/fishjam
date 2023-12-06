@@ -53,7 +53,7 @@ defmodule Jellyfish.MixProject do
       {:telemetry_poller, "~> 1.0"},
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
-      {:uuid, "~> 1.1"},
+      {:elixir_uuid, "~> 1.2"},
       {:cors_plug, "~> 3.0"},
       {:open_api_spex, "~> 3.16"},
       {:ymlr, "~> 3.0"},
