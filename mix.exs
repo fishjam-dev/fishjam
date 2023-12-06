@@ -75,10 +75,7 @@ defmodule Jellyfish.MixProject do
       {:membrane_rtc_engine_hls, github: "jellyfish-dev/membrane_rtc_engine", sparse: "hls"},
       {:membrane_rtc_engine_rtsp, github: "jellyfish-dev/membrane_rtc_engine", sparse: "rtsp"},
       {:membrane_rtc_engine_file,
-       github: "jellyfish-dev/membrane_rtc_engine",
-       sparse: "file",
-       branch: "RTC-398-file-autoplay",
-       override: true},
+       github: "jellyfish-dev/membrane_rtc_engine", sparse: "file", override: true},
       {:membrane_ice_plugin, "~> 0.17.0"},
       {:membrane_telemetry_metrics, "~> 0.1.0"},
 

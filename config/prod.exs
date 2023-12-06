@@ -14,3 +14,5 @@ config :jellyfish, JellyfishWeb.Endpoint,
 
 # Runtime production configuration, including reading
 # of environment variables, is done on config/runtime.exs.
+
+config :bundlex, :disable_precompiled_os_deps, apps: [:membrane_h264_ffmpeg_plugin]
