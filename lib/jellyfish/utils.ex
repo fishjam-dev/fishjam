@@ -7,6 +7,29 @@ defmodule Jellyfish.Utils do
     Map.new(map, fn {k, v} -> {snake_case_to_camel_case(k), v} end)
   end
 
+  @doc """
+  Checks if a given path is contained within a provided directory.
+  Remember to use expanded paths.
+  ## Params:
+
+  - `path`: The path to the file or directory you want to check.
+  - `directory`: The base directory you want to ensure the path is contained within.
+
+  ## Example:
+
+      iex> is_inside_directory?("relative/path/to/file", "relative/path")
+      true
+
+      iex> is_inside_directory?("/absolute/path/to/file", "relative/path")
+      false
+
+  """
+  @spec inside_directory?(Path.t(), Path.t()) :: boolean()
+  def inside_directory?(path, directory) do
+    relative_path = Path.relative_to(path, directory)
+    relative_path != path and relative_path != "."
+  end
+
   # Macro.underscore/camelize:
   # Do not use it as a general mechanism for underscoring strings as it does
   # not support Unicode or characters that are not valid in Elixir identifiers.

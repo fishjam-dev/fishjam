@@ -9,6 +9,8 @@ defmodule JellyfishWeb.RecordingControllerTest do
   @recording_id "recording_id"
   @live_stream_id "live_stream_id"
   @for_deleting_id "for_deleting_id"
+  @outside_file "../outside_file"
+  @outside_manifest "../outside_manifest.m3u8"
 
   @segment_name "segment_name.m4s"
   @segment_content <<2>>
@@ -52,6 +54,15 @@ defmodule JellyfishWeb.RecordingControllerTest do
     |> assert_response_schema("Error", @schema)
   end
 
+  test "request manifest outside of media files directory", %{conn: conn} do
+    @outside_file |> Recording.directory() |> File.touch!()
+
+    conn
+    |> get(~p"/recording/#{@recording_id}/#{@outside_manifest}")
+    |> json_response(:not_found)
+    |> assert_response_schema("Error", @schema)
+  end
+
   test "list of recordings", %{conn: conn} do
     conn = get(conn, ~p"/recording")
     assert @recording_id in json_response(conn, :ok)["data"]
@@ -75,6 +86,25 @@ defmodule JellyfishWeb.RecordingControllerTest do
     |> delete(~p"/recording/#{@for_deleting_id}")
     |> json_response(:not_found)
     |> assert_response_schema("Error", @schema)
+  end
+
+  test "delete whole recording directory", %{conn: conn} do
+    conn
+    |> delete(~p"/recording/.")
+    |> json_response(:not_found)
+    |> assert_response_schema("Error", @schema)
+  end
+
+  test "delete file outside of media files directory", %{conn: conn} do
+    outside_path = Recording.directory(@outside_file)
+    File.touch!(outside_path)
+
+    conn
+    |> delete(~p"/recording/#{@outside_file}")
+    |> json_response(:not_found)
+    |> assert_response_schema("Error", @schema)
+
+    File.rm!(outside_path)
   end
 
   defp prepare_files(output_path) do
