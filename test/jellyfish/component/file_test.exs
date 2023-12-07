@@ -100,11 +100,13 @@ defmodule Jellyfish.Component.FileTest do
 
   test "file outside of media files directory", %{base_path: base_path} do
     filename = "../restricted_audio.opus"
-    base_path |> Path.join(filename) |> File.touch!()
+    outside_path = base_path |> Path.join(filename)
+    File.touch!(outside_path)
 
     options = Map.put(@jellyfish_opts, "filePath", filename)
 
     {:error, :invalid_file_path} = Component.File.config(options)
+    File.rm(outside_path)
   end
 
   test "missing filePath" do

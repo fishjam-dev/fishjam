@@ -51,8 +51,8 @@ defmodule Jellyfish.Component.File do
   end
 
   defp path_inside_directory?(path, directory) do
-    relative_to = Path.relative_to(path, directory)
-    String.first(relative_to) != "/"
+    relative_path = Path.relative_to(path, directory)
+    relative_path != path and relative_path != "."
   end
 
   defp expand_file_path(file_path) do
