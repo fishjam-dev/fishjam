@@ -38,7 +38,7 @@ defmodule Jellyfish.Component.HLS.ManagerTest do
     hls_dir: hls_dir,
     options: options
   } do
-    http_mock_expect(0)
+    http_mock_expect(0, status_code: 200)
     pid = start_mock_engine()
 
     {:ok, manager} = Manager.start(room_id, pid, hls_dir, options)
@@ -51,7 +51,7 @@ defmodule Jellyfish.Component.HLS.ManagerTest do
   end
 
   test "Spawn manager with credentials", %{room_id: room_id, hls_dir: hls_dir, options: options} do
-    http_mock_expect(4)
+    http_mock_expect(4, status_code: 200)
     pid = start_mock_engine()
 
     {:ok, manager} = Manager.start(room_id, pid, hls_dir, %{options | s3: @s3_credentials})
@@ -68,7 +68,7 @@ defmodule Jellyfish.Component.HLS.ManagerTest do
     hls_dir: hls_dir,
     options: options
   } do
-    http_mock_expect(0)
+    http_mock_expect(0, status_code: 200)
     pid = start_mock_engine()
 
     {:ok, manager} = Manager.start(room_id, pid, hls_dir, %{options | persistent: false})
@@ -80,17 +80,36 @@ defmodule Jellyfish.Component.HLS.ManagerTest do
     assert {:error, _} = File.ls(hls_dir)
   end
 
-  defp http_mock_expect(n) do
+  test "Removes stream correctly, when upload crashes", %{
+    room_id: room_id,
+    hls_dir: hls_dir,
+    options: options
+  } do
+    http_mock_expect(1, status_code: 400)
+    pid = start_mock_engine()
+
+    {:ok, manager} =
+      Manager.start(room_id, pid, hls_dir, %{options | s3: @s3_credentials, persistent: false})
+
+    ref = Process.monitor(manager)
+
+    kill_mock_engine(pid)
+
+    assert_receive {:DOWN, ^ref, :process, ^manager, :normal}
+    assert {:error, _} = File.ls(hls_dir)
+  end
+
+  def http_mock_expect(n, status_code: status_code) do
     expect(ExAws.Request.HttpMock, :request, n, fn _method,
                                                    _url,
                                                    _req_body,
                                                    _headers,
                                                    _http_opts ->
-      {:ok, %{status_code: 200, headers: %{}}}
+      {:ok, %{status_code: status_code, headers: %{}}}
     end)
   end
 
-  defp start_mock_engine(),
+  def start_mock_engine(),
     do:
       spawn(fn ->
         receive do
@@ -98,5 +117,5 @@ defmodule Jellyfish.Component.HLS.ManagerTest do
         end
       end)
 
-  defp kill_mock_engine(pid), do: send(pid, :stop)
+  def kill_mock_engine(pid), do: send(pid, :stop)
 end

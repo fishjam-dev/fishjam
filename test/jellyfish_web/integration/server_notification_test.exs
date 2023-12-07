@@ -1,8 +1,12 @@
 defmodule JellyfishWeb.Integration.ServerNotificationTest do
   use JellyfishWeb.ConnCase
 
+  import Mox
+
   alias __MODULE__.Endpoint
 
+  alias Jellyfish.Component.HLS
+  alias Jellyfish.Component.HLS.Manager
   alias Jellyfish.PeerMessage
   alias Jellyfish.RoomService
   alias Jellyfish.ServerMessage
@@ -11,6 +15,8 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     Authenticated,
     AuthRequest,
     HlsPlayable,
+    HlsUploadCrashed,
+    HlsUploaded,
     MetricsReport,
     PeerConnected,
     PeerDisconnected,
@@ -24,6 +30,8 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   alias JellyfishWeb.{PeerSocket, ServerSocket, WS}
   alias Phoenix.PubSub
 
+  alias Jellyfish.Component.HLS.ManagerTest
+
   @port 5907
   @webhook_port 2929
   @webhook_url "http://127.0.0.1:#{@webhook_port}/"
@@ -34,6 +42,15 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   @max_peers 1
 
   @source_uri "rtsp://placeholder-19inrifjbsjb.it:12345/afwefae"
+
+  @files ["manifest.m3u8", "header.mp4", "segment_1.m3u8", "segment_2.m3u8"]
+  @body <<1, 2, 3, 4>>
+  @s3_credentials %{
+    access_key_id: "access_key_id",
+    secret_access_key: "secret_access_key",
+    region: "region",
+    bucket: "bucket"
+  }
 
   Application.put_env(
     :jellyfish,
@@ -250,6 +267,47 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     delete(conn, ~p"/room/#{room_id}")
   end
 
+  describe "hls upload" do
+    setup :verify_on_exit!
+    setup :set_mox_from_context
+
+    test "sends a message when hls was uploaded", %{conn: conn} do
+      {room_id, _peer_id, _conn} = subscribe_on_notifications_and_connect_peer(conn)
+      {hls_dir, options} = setup_hls_manager(room_id)
+
+      ManagerTest.http_mock_expect(4, status_code: 200)
+      pid = ManagerTest.start_mock_engine()
+
+      {:ok, manager} = Manager.start(room_id, pid, hls_dir, options)
+      ref = Process.monitor(manager)
+
+      ManagerTest.kill_mock_engine(pid)
+
+      assert_receive {:DOWN, ^ref, :process, ^manager, :normal}
+      assert_receive %HlsUploaded{room_id: ^room_id}
+      assert_receive {:webhook_notification, %HlsUploaded{room_id: ^room_id}}
+      assert {:error, _} = File.ls(hls_dir)
+    end
+
+    test "sends a message when hls upload crashed", %{conn: conn} do
+      {room_id, _peer_id, _conn} = subscribe_on_notifications_and_connect_peer(conn)
+      {hls_dir, options} = setup_hls_manager(room_id)
+
+      ManagerTest.http_mock_expect(1, status_code: 400)
+      pid = ManagerTest.start_mock_engine()
+
+      {:ok, manager} = Manager.start(room_id, pid, hls_dir, options)
+      ref = Process.monitor(manager)
+
+      ManagerTest.kill_mock_engine(pid)
+
+      assert_receive {:DOWN, ^ref, :process, ^manager, :normal}
+      assert_receive %HlsUploadCrashed{room_id: ^room_id}
+      assert_receive {:webhook_notification, %HlsUploadCrashed{room_id: ^room_id}}
+      assert {:error, _} = File.ls(hls_dir)
+    end
+  end
+
   test "sends metrics", %{conn: conn} do
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
     ws = create_and_authenticate()
@@ -383,4 +441,14 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
 
   defp to_proto_event_type(:server_notification), do: :EVENT_TYPE_SERVER_NOTIFICATION
   defp to_proto_event_type(:metrics), do: :EVENT_TYPE_METRICS
+
+  defp setup_hls_manager(room_id) do
+    hls_dir = HLS.output_dir(room_id, persistent: false)
+    options = %{s3: @s3_credentials, persistent: false}
+
+    File.mkdir_p!(hls_dir)
+    for filename <- @files, do: :ok = hls_dir |> Path.join(filename) |> File.write(@body)
+
+    {hls_dir, options}
+  end
 end

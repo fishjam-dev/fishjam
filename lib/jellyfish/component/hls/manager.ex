@@ -11,6 +11,7 @@ defmodule Jellyfish.Component.HLS.Manager do
 
   require Logger
 
+  alias Jellyfish.Event
   alias Jellyfish.Room
 
   @hls_extensions [".m4s", ".m3u8", ".mp4"]
@@ -73,6 +74,7 @@ defmodule Jellyfish.Component.HLS.Manager do
         upload_file_to_s3(content, s3_path, opts, config, credentials)
       end)
 
+    broadcast_notification(result, room_id)
     Logger.info("Finished uploading to s3 with result: #{result}, room: #{room_id}")
   end
 
@@ -83,7 +85,8 @@ defmodule Jellyfish.Component.HLS.Manager do
       |> ExAws.request(config)
 
     case result do
-      {:ok, _value} -> :ok
+      {:ok, %{status_code: 200}} -> :ok
+      {:ok, response} -> {:error, response}
       error -> error
     end
   end
@@ -118,4 +121,10 @@ defmodule Jellyfish.Component.HLS.Manager do
     File.rm_rf!(hls_dir)
     Logger.info("Remove hls from a disk, room: #{room_id}")
   end
+
+  defp broadcast_notification(:ok, room_id),
+    do: Event.broadcast_server_notification({:hls_uploaded, room_id})
+
+  defp broadcast_notification({:error, _reason}, room_id),
+    do: Event.broadcast_server_notification({:hls_upload_crashed, room_id})
 end
