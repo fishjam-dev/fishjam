@@ -9,7 +9,7 @@ defmodule Jellyfish.Component.RTSP do
 
   alias JellyfishWeb.ApiSpec.Component.RTSP.Options
 
-  @type metadata :: %{}
+  @type properties :: %{}
 
   @impl true
   def config(%{engine_pid: engine} = options) do
@@ -26,7 +26,7 @@ defmodule Jellyfish.Component.RTSP do
         |> Map.put(:max_reconnect_attempts, :infinity)
         |> then(&struct(RTSP, &1))
 
-      {:ok, %{endpoint: endpoint_spec, metadata: %{}}}
+      {:ok, %{endpoint: endpoint_spec, properties: %{}}}
     else
       {:error, _reason} = error -> error
     end

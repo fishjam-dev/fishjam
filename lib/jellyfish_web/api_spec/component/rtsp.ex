@@ -4,14 +4,14 @@ defmodule JellyfishWeb.ApiSpec.Component.RTSP do
   require OpenApiSpex
   alias OpenApiSpex.Schema
 
-  defmodule Metadata do
+  defmodule Properties do
     @moduledoc false
 
     require OpenApiSpex
 
     OpenApiSpex.schema(%{
-      title: "ComponentMetadataRTSP",
-      description: "Metadata specific to the RTSP component",
+      title: "ComponentPropertiesRTSP",
+      description: "Properties specific to the RTSP component",
       type: :object,
       properties: %{}
     })
@@ -66,14 +66,14 @@ defmodule JellyfishWeb.ApiSpec.Component.RTSP do
 
   OpenApiSpex.schema(%{
     title: "ComponentRTSP",
-    description: "Describes RTSP component",
+    description: "Describes the RTSP component",
     type: :object,
     properties: %{
       id: %Schema{type: :string, description: "Assigned component ID", example: "component-1"},
       # FIXME: due to cyclic imports, we can't use ApiSpec.Component.Type here
       type: %Schema{type: :string, description: "Component type", example: "hls"},
-      metadata: Metadata
+      properties: Properties
     },
-    required: [:id, :type, :metadata]
+    required: [:id, :type, :properties]
   })
 end

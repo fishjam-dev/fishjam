@@ -346,7 +346,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   defp add_hls_component(conn, room_id) do
     conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
 
-    assert %{"id" => id, "metadata" => %{"playable" => false}, "type" => "hls"} =
+    assert %{"id" => id, "properties" => %{"playable" => false}, "type" => "hls"} =
              json_response(conn, :created)["data"]
 
     {conn, id}
@@ -356,7 +356,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     conn =
       post(conn, ~p"/room/#{room_id}/component", type: "rtsp", options: %{sourceUri: @source_uri})
 
-    assert %{"id" => id, "metadata" => %{}, "type" => "rtsp"} =
+    assert %{"id" => id, "properties" => %{}, "type" => "rtsp"} =
              json_response(conn, :created)["data"]
 
     {conn, id}

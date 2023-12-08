@@ -53,7 +53,7 @@ defmodule JellyfishWeb.ComponentControllerTest do
                  "data" => %{
                    "id" => id,
                    "type" => "hls",
-                   "metadata" => %{
+                   "properties" => %{
                      "playable" => false,
                      "lowLatency" => false,
                      "persistent" => false,
@@ -98,7 +98,7 @@ defmodule JellyfishWeb.ComponentControllerTest do
                %{
                  "data" => %{
                    "type" => "hls",
-                   "metadata" => %{
+                   "properties" => %{
                      "playable" => false,
                      "lowLatency" => false,
                      "persistent" => true,
@@ -143,7 +143,7 @@ defmodule JellyfishWeb.ComponentControllerTest do
                %{
                  "data" => %{
                    "type" => "hls",
-                   "metadata" => %{
+                   "properties" => %{
                      "playable" => false,
                      "lowLatency" => false,
                      "persistent" => false,
@@ -199,7 +199,7 @@ defmodule JellyfishWeb.ComponentControllerTest do
                %{
                  "data" => %{
                    "type" => "hls",
-                   "metadata" => %{
+                   "properties" => %{
                      "playable" => false,
                      "lowLatency" => false,
                      "persistent" => false,
@@ -230,7 +230,7 @@ defmodule JellyfishWeb.ComponentControllerTest do
                  "data" => %{
                    "id" => id,
                    "type" => "hls",
-                   "metadata" => %{"playable" => false, "lowLatency" => true}
+                   "properties" => %{"playable" => false, "lowLatency" => true}
                  }
                } =
                json_response(conn, :created)
@@ -294,7 +294,7 @@ defmodule JellyfishWeb.ComponentControllerTest do
                  "data" => %{
                    "id" => id,
                    "type" => "rtsp",
-                   "metadata" => %{}
+                   "properties" => %{}
                  }
                } =
                json_response(conn, :created)

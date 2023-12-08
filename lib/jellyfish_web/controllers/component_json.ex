@@ -18,7 +18,7 @@ defmodule JellyfishWeb.ComponentJSON do
     %{
       id: component.id,
       type: type,
-      metadata: component.metadata |> ParserJSON.camel_case_keys()
+      properties: component.properties |> ParserJSON.camel_case_keys()
     }
   end
 end

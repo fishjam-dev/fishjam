@@ -35,14 +35,14 @@ components:
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.ComponentDetailsResponse
     ComponentHLS:
-      description: Describes HLS component
+      description: Describes the HLS component
       properties:
         id:
           description: Assigned component ID
           example: component-1
           type: string
-        metadata:
-          $ref: '#/components/schemas/ComponentMetadataHLS'
+        properties:
+          $ref: '#/components/schemas/ComponentPropertiesHLS'
         type:
           description: Component type
           example: hls
@@ -50,47 +50,10 @@ components:
       required:
         - id
         - type
-        - metadata
+        - properties
       title: ComponentHLS
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS
-    ComponentMetadataHLS:
-      description: Metadata specific to the HLS component
-      properties:
-        lowLatency:
-          description: Whether the component uses LL-HLS
-          type: boolean
-        persistent:
-          description: Whether the video is stored after end of stream
-          type: boolean
-        playable:
-          description: Whether the generated HLS playlist is playable
-          type: boolean
-        subscribeMode:
-          description: Whether the HLS component should subscribe to tracks automatically or manually
-          enum:
-            - auto
-            - manual
-          type: string
-        targetWindowDuration:
-          description: Duration of stream available for viewer
-          nullable: true
-          type: integer
-      required:
-        - playable
-        - lowLatency
-        - persistent
-        - targetWindowDuration
-        - subscribeMode
-      title: ComponentMetadataHLS
-      type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS.Metadata
-    ComponentMetadataRTSP:
-      description: Metadata specific to the RTSP component
-      properties: {}
-      title: ComponentMetadataRTSP
-      type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.RTSP.Metadata
     ComponentOptions:
       description: Component-specific options
       oneOf:
@@ -162,15 +125,52 @@ components:
       title: ComponentOptionsRTSP
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.RTSP.Options
+    ComponentPropertiesHLS:
+      description: Properties specific to the HLS component
+      properties:
+        lowLatency:
+          description: Whether the component uses LL-HLS
+          type: boolean
+        persistent:
+          description: Whether the video is stored after end of stream
+          type: boolean
+        playable:
+          description: Whether the generated HLS playlist is playable
+          type: boolean
+        subscribeMode:
+          description: Whether the HLS component should subscribe to tracks automatically or manually
+          enum:
+            - auto
+            - manual
+          type: string
+        targetWindowDuration:
+          description: Duration of stream available for viewer
+          nullable: true
+          type: integer
+      required:
+        - playable
+        - lowLatency
+        - persistent
+        - targetWindowDuration
+        - subscribeMode
+      title: ComponentPropertiesHLS
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS.Properties
+    ComponentPropertiesRTSP:
+      description: Properties specific to the RTSP component
+      properties: {}
+      title: ComponentPropertiesRTSP
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.RTSP.Properties
     ComponentRTSP:
-      description: Describes RTSP component
+      description: Describes the RTSP component
       properties:
         id:
           description: Assigned component ID
           example: component-1
           type: string
-        metadata:
-          $ref: '#/components/schemas/ComponentMetadataRTSP'
+        properties:
+          $ref: '#/components/schemas/ComponentPropertiesRTSP'
         type:
           description: Component type
           example: hls
@@ -178,7 +178,7 @@ components:
       required:
         - id
         - type
-        - metadata
+        - properties
       title: ComponentRTSP
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.RTSP

@@ -16,26 +16,26 @@ defmodule Jellyfish.Component do
     :id,
     :type,
     :engine_endpoint,
-    :metadata
+    :properties
   ]
   defstruct @enforce_keys
 
   @type id :: String.t()
   @type component :: HLS | RTSP
-  @type metadata :: HLS.metadata() | RTSP.metadata()
+  @type properties :: HLS.properties() | RTSP.properties()
 
   @typedoc """
   This module contains:
   * `id` - component id
   * `type` - type of this component
   * `engine_endpoint` - engine endpoint for this component
-  * `metadata` - metadata of this component
+  * `properties` - properties of this component
   """
   @type t :: %__MODULE__{
           id: id(),
           type: component(),
           engine_endpoint: Membrane.ChildrenSpec.child_definition(),
-          metadata: metadata()
+          properties: properties()
         }
 
   @spec parse_type(String.t()) :: {:ok, component()} | {:error, :invalid_type}
@@ -49,13 +49,13 @@ defmodule Jellyfish.Component do
 
   @spec new(component(), map()) :: {:ok, t()} | {:error, term()}
   def new(type, options) do
-    with {:ok, %{endpoint: endpoint, metadata: metadata}} <- type.config(options) do
+    with {:ok, %{endpoint: endpoint, properties: properties}} <- type.config(options) do
       {:ok,
        %__MODULE__{
          id: UUID.uuid4(),
          type: type,
          engine_endpoint: endpoint,
-         metadata: metadata
+         properties: properties
        }}
     else
       {:error, _reason} = error -> error
