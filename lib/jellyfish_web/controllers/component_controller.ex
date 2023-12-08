@@ -90,7 +90,7 @@ defmodule JellyfishWeb.ComponentController do
         {:error, :not_found, "File not found"}
 
       {:error, :unsupported_file_type} ->
-        {:error, :not_found, "Unsupported file type"}
+        {:error, :bad_request, "Unsupported file type"}
 
       {:error, :reached_components_limit} ->
         {:error, :bad_request, "Reached components limit in room #{room_id}"}
