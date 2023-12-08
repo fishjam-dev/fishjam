@@ -39,8 +39,6 @@ defmodule JellyfishWeb.HLSControllerTest do
     prepare_request_handler()
 
     on_exit(fn -> :file.del_dir_r(output_path) end)
-
-    %{output_path: output_path}
   end
 
   defp custom_assert_error(conn) do
@@ -135,15 +133,11 @@ defmodule JellyfishWeb.HLSControllerTest do
     assert @delta_manifest_content == response(conn, 200)
   end
 
-  test "request manifest outside of hls folder", %{conn: conn, output_path: output_path} do
-    outside_path = Path.join(output_path, @outside_manifest)
-    File.touch!(outside_path)
-
+  test "request manifest outside of hls folder", %{conn: conn} do
     conn
     |> get(~p"/hls/#{@room_id}/#{@outside_manifest}")
-    |> custom_assert_error()
-
-    File.rm!(outside_path)
+    |> json_response(:bad_request)
+    |> assert_response_schema("Error", @schema)
   end
 
   defp prepare_files(output_path) do

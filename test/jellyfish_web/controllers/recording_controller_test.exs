@@ -3,6 +3,8 @@ defmodule JellyfishWeb.RecordingControllerTest do
 
   import OpenApiSpex.TestAssertions
 
+  doctest Jellyfish.Utils.PathValidation
+
   alias Jellyfish.Component.HLS
   alias Jellyfish.Component.HLS.{EtsHelper, Recording}
 
@@ -54,12 +56,17 @@ defmodule JellyfishWeb.RecordingControllerTest do
     |> assert_response_schema("Error", @schema)
   end
 
-  test "request manifest outside of media files directory", %{conn: conn} do
-    @outside_file |> Recording.directory() |> File.touch!()
-
+  test "request manifest with invalid filename", %{conn: conn} do
     conn
     |> get(~p"/recording/#{@recording_id}/#{@outside_manifest}")
-    |> json_response(:not_found)
+    |> json_response(:bad_request)
+    |> assert_response_schema("Error", @schema)
+  end
+
+  test "request manifest with invalid recording", %{conn: conn} do
+    conn
+    |> get(~p"/recording/#{@outside_file}/#{@manifest_name}")
+    |> json_response(:bad_request)
     |> assert_response_schema("Error", @schema)
   end
 
@@ -91,20 +98,15 @@ defmodule JellyfishWeb.RecordingControllerTest do
   test "delete whole recording directory", %{conn: conn} do
     conn
     |> delete(~p"/recording/.")
-    |> json_response(:not_found)
+    |> json_response(:bad_request)
     |> assert_response_schema("Error", @schema)
   end
 
-  test "delete file outside of media files directory", %{conn: conn} do
-    outside_path = Recording.directory(@outside_file)
-    File.touch!(outside_path)
-
+  test "delete using invalid filename", %{conn: conn} do
     conn
     |> delete(~p"/recording/#{@outside_file}")
-    |> json_response(:not_found)
+    |> json_response(:bad_request)
     |> assert_response_schema("Error", @schema)
-
-    File.rm!(outside_path)
   end
 
   defp prepare_files(output_path) do

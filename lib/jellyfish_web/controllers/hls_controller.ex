@@ -32,7 +32,8 @@ defmodule JellyfishWeb.HLSController do
     required: [:room_id, :filename],
     responses: [
       ok: ApiSpec.data("File was found", Response),
-      not_found: ApiSpec.error("File not found")
+      not_found: ApiSpec.error("File not found"),
+      bad_request: ApiSpec.error("Invalid filename")
     ]
 
   @playlist_content_type "application/vnd.apple.mpegurl"
@@ -95,6 +96,9 @@ defmodule JellyfishWeb.HLSController do
             else: conn
 
         Conn.send_resp(conn, 200, file)
+
+      {:error, :invalid_path} ->
+        {:error, :bad_request, "Invalid filename, got #{filename}"}
 
       {:error, _reason} ->
         {:error, :not_found, "File not found"}

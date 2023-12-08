@@ -3,17 +3,19 @@ defmodule Jellyfish.Component.HLS.Recording do
 
   alias Jellyfish.Component.HLS.EtsHelper
   alias Jellyfish.Room
-  alias Jellyfish.Utils
+  alias Jellyfish.Utils.PathValidation
 
   @recordings_folder "recordings"
 
-  @spec exists?(Room.id()) :: boolean()
-  def exists?(id) do
+  @spec validate_recording(Room.id()) :: :ok | {:error, :not_found} | {:error, :invalid_recording}
+  def validate_recording(id) do
     path = directory(id)
 
-    if Utils.inside_directory?(path, root_directory()),
-      do: File.exists?(path) and not live_stream?(id),
-      else: false
+    cond do
+      not PathValidation.inside_directory?(path, root_directory()) -> {:error, :invalid_recording}
+      exists?(id) -> :ok
+      true -> {:error, :not_found}
+    end
   end
 
   @spec list_all() :: {:ok, [Room.id()]} | :error
@@ -25,14 +27,21 @@ defmodule Jellyfish.Component.HLS.Recording do
     end
   end
 
-  @spec delete(Room.id()) :: :ok | :error
+  @spec delete(Room.id()) :: :ok | {:error, :not_found} | {:error, :invalid_recording}
   def delete(id) do
-    if exists?(id), do: do_delete(id), else: :error
+    with :ok <- validate_recording(id) do
+      do_delete(id)
+    end
   end
 
   @spec directory(Room.id()) :: String.t()
   def directory(id) do
     root_directory() |> Path.join(id) |> Path.expand()
+  end
+
+  defp exists?(id) do
+    path = directory(id)
+    File.exists?(path) and not live_stream?(id)
   end
 
   defp root_directory() do
