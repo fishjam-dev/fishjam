@@ -115,6 +115,10 @@ ENV JF_DIST_MAX_PORT=9000
 
 RUN mkdir ${JF_RESOURCES_BASE_PATH} && chown jellyfish:jellyfish ${JF_RESOURCES_BASE_PATH}
 
+# Create directory for File Component sources
+RUN mkdir ${JF_RESOURCES_BASE_PATH}/file_component_sources \
+ && chown jellyfish:jellyfish ${JF_RESOURCES_BASE_PATH}/file_component_sources
+
 COPY --from=build /app/_build/prod/rel/jellyfish ./
 
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
