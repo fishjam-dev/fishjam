@@ -42,7 +42,6 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   @source_uri "rtsp://placeholder-19inrifjbsjb.it:12345/afwefae"
 
   @files ["manifest.m3u8", "header.mp4", "segment_1.m3u8", "segment_2.m3u8"]
-  @body <<1, 2, 3, 4>>
   @s3_credentials %{
     access_key_id: "access_key_id",
     secret_access_key: "secret_access_key",
@@ -425,7 +424,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     options = %{s3: @s3_credentials, persistent: false}
 
     File.mkdir_p!(hls_dir)
-    for filename <- @files, do: :ok = hls_dir |> Path.join(filename) |> File.write(@body)
+    for filename <- @files, do: :ok = hls_dir |> Path.join(filename) |> File.touch!()
 
     MockManager.http_mock_expect(request_no, status_code: status_code)
     pid = MockManager.start_mock_engine()

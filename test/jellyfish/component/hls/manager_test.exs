@@ -9,7 +9,6 @@ defmodule Jellyfish.Component.HLS.ManagerTest do
   alias Jellyfish.Component.HLS.Manager
 
   @files ["manifest.m3u8", "header.mp4", "segment_1.m3u8", "segment_2.m3u8"]
-  @body <<1, 2, 3, 4>>
   @s3_credentials %{
     access_key_id: "access_key_id",
     secret_access_key: "secret_access_key",
@@ -23,7 +22,7 @@ defmodule Jellyfish.Component.HLS.ManagerTest do
     options = %{s3: nil, persistent: true}
 
     File.mkdir_p!(hls_dir)
-    for filename <- @files, do: :ok = hls_dir |> Path.join(filename) |> File.write(@body)
+    for filename <- @files, do: :ok = hls_dir |> Path.join(filename) |> File.touch!()
 
     on_exit(fn -> File.rm_rf!(hls_dir) end)
 
