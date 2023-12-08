@@ -55,8 +55,6 @@ defmodule JellyfishWeb.ComponentControllerTest do
   end
 
   describe "create hls component" do
-    @describetag :gpu
-
     test "renders component when data is valid, allows max 1 hls per room", %{conn: conn} do
       conn = post(conn, ~p"/room", videoCodec: "h264")
       assert %{"id" => room_id} = json_response(conn, :created)["data"]["room"]

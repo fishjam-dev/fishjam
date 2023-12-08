@@ -30,7 +30,7 @@ defmodule JellyfishWeb.ApiSpec.Component.File do
       properties: %{
         filePath: %Schema{
           type: :string,
-          description: "Path to track file. Must be either OPUS or h264",
+          description: "Path to track file. Must be either OPUS encapsulated in Ogg or raw h264",
           example: "/root/video.h264"
         }
       },
