@@ -12,6 +12,8 @@ config :jellyfish, JellyfishWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 8080],
   server: true
 
+config :bundlex, :disable_precompiled_os_deps, apps: [:membrane_h264_ffmpeg_plugin]
+
 # Runtime production configuration, including reading
 # of environment variables, is done on config/runtime.exs.
 

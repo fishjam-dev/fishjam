@@ -52,7 +52,7 @@ defmodule Jellyfish.Component.HLS.RequestHandlerTest do
     assert {:ok, @manifest_content} == RequestHandler.handle_file_request(room_id, @manifest)
 
     # Non persistent live streams and recordings resides in different folders
-    assert {:error, :recording_not_found} ==
+    assert {:error, :not_found} ==
              RequestHandler.handle_recording_request(room_id, @manifest)
 
     assert {:error, :enoent} == RequestHandler.handle_file_request(room_id, @wrong_manifest)
@@ -68,7 +68,7 @@ defmodule Jellyfish.Component.HLS.RequestHandlerTest do
 
     # Persistent live streams reside in the same directory as recordings.
     # Nevertheless, the `RequestHandler` is capable of differentiating between them
-    assert {:error, :recording_not_found} ==
+    assert {:error, :not_found} ==
              RequestHandler.handle_recording_request(room_id, @manifest)
 
     assert {:ok, @manifest_content} == RequestHandler.handle_file_request(room_id, @manifest)

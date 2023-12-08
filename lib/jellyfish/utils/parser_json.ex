@@ -1,7 +1,11 @@
-defmodule Jellyfish.Utils do
-  @moduledoc false
+defmodule Jellyfish.Utils.ParserJSON do
+  @moduledoc """
+  A utility module for converting controller responses into JSON format.
+  """
 
-  @doc "Convert all keys in map from snake_case to camelCase"
+  @doc """
+  Convert all keys in map from snake_case to camelCase
+  """
   @spec camel_case_keys(%{atom() => term()}) :: %{String.t() => term()}
   def camel_case_keys(map) do
     Map.new(map, fn {k, v} -> {snake_case_to_camel_case(k), v} end)
