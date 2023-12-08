@@ -434,7 +434,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
 
     MockManager.kill_mock_engine(pid)
 
-    assert_receive {:DOWN, ^ref, :process, ^manager, :normal}
+    assert_receive {:DOWN, ^ref, :process, ^manager, :normal}, 500
     assert {:error, _} = File.ls(hls_dir)
   end
 end
