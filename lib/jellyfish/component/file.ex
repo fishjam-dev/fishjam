@@ -6,8 +6,10 @@ defmodule Jellyfish.Component.File do
   @behaviour Jellyfish.Endpoint.Config
 
   alias ExSDP.Attribute.FMTP
-  alias JellyfishWeb.ApiSpec.Component.File.Options
   alias Membrane.RTC.Engine.Endpoint.File, as: FileEndpoint
+
+  alias Jellyfish.Utils.PathValidation
+  alias JellyfishWeb.ApiSpec.Component.File.Options
 
   @type properties :: %{}
 
@@ -44,15 +46,10 @@ defmodule Jellyfish.Component.File do
     file_path = expand_file_path(file_path)
 
     cond do
-      not path_inside_directory?(file_path, base_path) -> {:error, :invalid_file_path}
+      not PathValidation.inside_directory?(file_path, base_path) -> {:error, :invalid_file_path}
       not File.exists?(file_path) -> {:error, :file_does_not_exist}
       true -> :ok
     end
-  end
-
-  defp path_inside_directory?(path, directory) do
-    relative_path = Path.relative_to(path, directory)
-    relative_path != path and relative_path != "."
   end
 
   defp expand_file_path(file_path) do
