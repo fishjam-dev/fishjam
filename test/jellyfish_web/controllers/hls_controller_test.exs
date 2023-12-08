@@ -26,6 +26,8 @@ defmodule JellyfishWeb.HLSControllerTest do
   @partial_content <<6>>
   @partial_sn {0, 0}
 
+  @outside_manifest "../outside_manifest.m3u8"
+
   @schema JellyfishWeb.ApiSpec.spec()
 
   setup_all do
@@ -129,6 +131,13 @@ defmodule JellyfishWeb.HLSControllerTest do
       })
 
     assert @delta_manifest_content == response(conn, 200)
+  end
+
+  test "request manifest outside of hls folder", %{conn: conn} do
+    conn
+    |> get(~p"/hls/#{@room_id}/#{@outside_manifest}")
+    |> json_response(:bad_request)
+    |> assert_response_schema("Error", @schema)
   end
 
   defp prepare_files(output_path) do

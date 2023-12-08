@@ -2,7 +2,7 @@ defmodule JellyfishWeb.ComponentJSON do
   @moduledoc false
 
   alias Jellyfish.Component.{HLS, RTSP}
-  alias Jellyfish.Utils
+  alias Jellyfish.Utils.ParserJSON
 
   def show(%{component: component}) do
     %{data: data(component)}
@@ -18,7 +18,7 @@ defmodule JellyfishWeb.ComponentJSON do
     %{
       id: component.id,
       type: type,
-      properties: component.properties |> Utils.camel_case_keys()
+      properties: component.properties |> ParserJSON.camel_case_keys()
     }
   end
 end
