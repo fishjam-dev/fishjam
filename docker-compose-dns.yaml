@@ -10,7 +10,7 @@ x-jellyfish-template: &jellyfish-template
 
 services:
   test:
-    image: membraneframeworklabs/docker_membrane
+    image: membraneframeworklabs/docker_membrane:latest
     command:
       - sh
       - -c

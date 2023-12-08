@@ -3,7 +3,7 @@ defmodule JellyfishWeb.ApiSpec.Component do
 
   require OpenApiSpex
 
-  alias JellyfishWeb.ApiSpec.Component.{HLS, RTSP}
+  alias JellyfishWeb.ApiSpec.Component.{File, HLS, RTSP}
 
   defmodule Type do
     @moduledoc false
@@ -29,7 +29,8 @@ defmodule JellyfishWeb.ApiSpec.Component do
       type: :object,
       oneOf: [
         HLS.Options,
-        RTSP.Options
+        RTSP.Options,
+        File.Options
       ]
     })
   end
@@ -40,13 +41,15 @@ defmodule JellyfishWeb.ApiSpec.Component do
     type: :object,
     oneOf: [
       HLS,
-      RTSP
+      RTSP,
+      File
     ],
     discriminator: %OpenApiSpex.Discriminator{
       propertyName: "type",
       mapping: %{
         "hls" => HLS,
-        "rtsp" => RTSP
+        "rtsp" => RTSP,
+        "file" => File
       }
     }
   })

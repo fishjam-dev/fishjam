@@ -83,6 +83,15 @@ defmodule JellyfishWeb.ComponentController do
       {:error, :incompatible_codec} ->
         {:error, :bad_request, "Incompatible video codec enforced in room #{room_id}"}
 
+      {:error, :invalid_file_path} ->
+        {:error, :bad_request, "Invalid file path"}
+
+      {:error, :file_does_not_exist} ->
+        {:error, :not_found, "File not found"}
+
+      {:error, :unsupported_file_type} ->
+        {:error, :bad_request, "Unsupported file type"}
+
       {:error, :reached_components_limit} ->
         {:error, :bad_request, "Reached components limit in room #{room_id}"}
     end

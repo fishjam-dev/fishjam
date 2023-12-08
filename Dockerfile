@@ -101,8 +101,8 @@ RUN \
 
 WORKDIR /app
 
-# base path where jellyfish saves its artefacts
-ENV JF_OUTPUT_BASE_PATH=./jellyfish_output
+# base path where jellyfish media files are stored
+ENV JF_RESOURCES_BASE_PATH=./jellyfish_resources
 
 # override default (127, 0, 0, 1) IP by 0.0.0.0 
 # as docker doesn't allow for connections outside the
@@ -113,7 +113,11 @@ ENV JF_METRICS_IP=0.0.0.0
 ENV JF_DIST_MIN_PORT=9000
 ENV JF_DIST_MAX_PORT=9000
 
-RUN mkdir ${JF_OUTPUT_BASE_PATH} && chown jellyfish:jellyfish ${JF_OUTPUT_BASE_PATH}
+RUN mkdir ${JF_RESOURCES_BASE_PATH} && chown jellyfish:jellyfish ${JF_RESOURCES_BASE_PATH}
+
+# Create directory for File Component sources
+RUN mkdir ${JF_RESOURCES_BASE_PATH}/file_component_sources \
+ && chown jellyfish:jellyfish ${JF_RESOURCES_BASE_PATH}/file_component_sources
 
 COPY --from=build /app/_build/prod/rel/jellyfish ./
 
