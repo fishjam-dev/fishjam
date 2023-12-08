@@ -38,26 +38,26 @@ defmodule Jellyfish.Component.HLS.ManagerTest do
     hls_dir: hls_dir,
     options: options
   } do
-    http_mock_expect(0, status_code: 200)
-    pid = start_mock_engine()
+    MockManager.http_mock_expect(0, status_code: 200)
+    pid = MockManager.start_mock_engine()
 
     {:ok, manager} = Manager.start(room_id, pid, hls_dir, options)
     ref = Process.monitor(manager)
 
-    kill_mock_engine(pid)
+    MockManager.kill_mock_engine(pid)
 
     assert_receive {:DOWN, ^ref, :process, ^manager, :normal}
     assert length(File.ls!(hls_dir)) == 4
   end
 
   test "Spawn manager with credentials", %{room_id: room_id, hls_dir: hls_dir, options: options} do
-    http_mock_expect(4, status_code: 200)
-    pid = start_mock_engine()
+    MockManager.http_mock_expect(4, status_code: 200)
+    pid = MockManager.start_mock_engine()
 
     {:ok, manager} = Manager.start(room_id, pid, hls_dir, %{options | s3: @s3_credentials})
     ref = Process.monitor(manager)
 
-    kill_mock_engine(pid)
+    MockManager.kill_mock_engine(pid)
 
     assert_receive {:DOWN, ^ref, :process, ^manager, :normal}
     assert length(File.ls!(hls_dir)) == 4
@@ -68,13 +68,13 @@ defmodule Jellyfish.Component.HLS.ManagerTest do
     hls_dir: hls_dir,
     options: options
   } do
-    http_mock_expect(0, status_code: 200)
-    pid = start_mock_engine()
+    MockManager.http_mock_expect(0, status_code: 200)
+    pid = MockManager.start_mock_engine()
 
     {:ok, manager} = Manager.start(room_id, pid, hls_dir, %{options | persistent: false})
     ref = Process.monitor(manager)
 
-    kill_mock_engine(pid)
+    MockManager.kill_mock_engine(pid)
 
     assert_receive {:DOWN, ^ref, :process, ^manager, :normal}
     assert {:error, _} = File.ls(hls_dir)
@@ -85,37 +85,17 @@ defmodule Jellyfish.Component.HLS.ManagerTest do
     hls_dir: hls_dir,
     options: options
   } do
-    http_mock_expect(1, status_code: 400)
-    pid = start_mock_engine()
+    MockManager.http_mock_expect(1, status_code: 400)
+    pid = MockManager.start_mock_engine()
 
     {:ok, manager} =
       Manager.start(room_id, pid, hls_dir, %{options | s3: @s3_credentials, persistent: false})
 
     ref = Process.monitor(manager)
 
-    kill_mock_engine(pid)
+    MockManager.kill_mock_engine(pid)
 
     assert_receive {:DOWN, ^ref, :process, ^manager, :normal}
     assert {:error, _} = File.ls(hls_dir)
   end
-
-  def http_mock_expect(n, status_code: status_code) do
-    expect(ExAws.Request.HttpMock, :request, n, fn _method,
-                                                   _url,
-                                                   _req_body,
-                                                   _headers,
-                                                   _http_opts ->
-      {:ok, %{status_code: status_code, headers: %{}}}
-    end)
-  end
-
-  def start_mock_engine(),
-    do:
-      spawn(fn ->
-        receive do
-          :stop -> nil
-        end
-      end)
-
-  def kill_mock_engine(pid), do: send(pid, :stop)
 end

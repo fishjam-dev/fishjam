@@ -30,8 +30,6 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   alias JellyfishWeb.{PeerSocket, ServerSocket, WS}
   alias Phoenix.PubSub
 
-  alias Jellyfish.Component.HLS.ManagerTest
-
   @port 5907
   @webhook_port 2929
   @webhook_url "http://127.0.0.1:#{@webhook_port}/"
@@ -273,38 +271,18 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
 
     test "sends a message when hls was uploaded", %{conn: conn} do
       {room_id, _peer_id, _conn} = subscribe_on_notifications_and_connect_peer(conn)
-      {hls_dir, options} = setup_hls_manager(room_id)
+      test_hls_manager(room_id, request_no: 4, status_code: 200)
 
-      ManagerTest.http_mock_expect(4, status_code: 200)
-      pid = ManagerTest.start_mock_engine()
-
-      {:ok, manager} = Manager.start(room_id, pid, hls_dir, options)
-      ref = Process.monitor(manager)
-
-      ManagerTest.kill_mock_engine(pid)
-
-      assert_receive {:DOWN, ^ref, :process, ^manager, :normal}
       assert_receive %HlsUploaded{room_id: ^room_id}
       assert_receive {:webhook_notification, %HlsUploaded{room_id: ^room_id}}
-      assert {:error, _} = File.ls(hls_dir)
     end
 
     test "sends a message when hls upload crashed", %{conn: conn} do
       {room_id, _peer_id, _conn} = subscribe_on_notifications_and_connect_peer(conn)
-      {hls_dir, options} = setup_hls_manager(room_id)
+      test_hls_manager(room_id, request_no: 1, status_code: 400)
 
-      ManagerTest.http_mock_expect(1, status_code: 400)
-      pid = ManagerTest.start_mock_engine()
-
-      {:ok, manager} = Manager.start(room_id, pid, hls_dir, options)
-      ref = Process.monitor(manager)
-
-      ManagerTest.kill_mock_engine(pid)
-
-      assert_receive {:DOWN, ^ref, :process, ^manager, :normal}
       assert_receive %HlsUploadCrashed{room_id: ^room_id}
       assert_receive {:webhook_notification, %HlsUploadCrashed{room_id: ^room_id}}
-      assert {:error, _} = File.ls(hls_dir)
     end
   end
 
@@ -442,13 +420,22 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   defp to_proto_event_type(:server_notification), do: :EVENT_TYPE_SERVER_NOTIFICATION
   defp to_proto_event_type(:metrics), do: :EVENT_TYPE_METRICS
 
-  defp setup_hls_manager(room_id) do
+  defp test_hls_manager(room_id, request_no: request_no, status_code: status_code) do
     hls_dir = HLS.output_dir(room_id, persistent: false)
     options = %{s3: @s3_credentials, persistent: false}
 
     File.mkdir_p!(hls_dir)
     for filename <- @files, do: :ok = hls_dir |> Path.join(filename) |> File.write(@body)
 
-    {hls_dir, options}
+    MockManager.http_mock_expect(request_no, status_code: status_code)
+    pid = MockManager.start_mock_engine()
+
+    {:ok, manager} = Manager.start(room_id, pid, hls_dir, options)
+    ref = Process.monitor(manager)
+
+    MockManager.kill_mock_engine(pid)
+
+    assert_receive {:DOWN, ^ref, :process, ^manager, :normal}
+    assert {:error, _} = File.ls(hls_dir)
   end
 end
