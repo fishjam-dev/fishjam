@@ -3,12 +3,16 @@ defmodule JellyfishWeb.RecordingControllerTest do
 
   import OpenApiSpex.TestAssertions
 
+  doctest Jellyfish.Utils.PathValidation
+
   alias Jellyfish.Component.HLS
   alias Jellyfish.Component.HLS.{EtsHelper, Recording}
 
   @recording_id "recording_id"
   @live_stream_id "live_stream_id"
   @for_deleting_id "for_deleting_id"
+  @outside_file "../outside_file"
+  @outside_manifest "../outside_manifest.m3u8"
 
   @segment_name "segment_name.m4s"
   @segment_content <<2>>
@@ -52,6 +56,20 @@ defmodule JellyfishWeb.RecordingControllerTest do
     |> assert_response_schema("Error", @schema)
   end
 
+  test "request manifest with invalid filename", %{conn: conn} do
+    conn
+    |> get(~p"/recording/#{@recording_id}/#{@outside_manifest}")
+    |> json_response(:bad_request)
+    |> assert_response_schema("Error", @schema)
+  end
+
+  test "request manifest with invalid recording", %{conn: conn} do
+    conn
+    |> get(~p"/recording/#{@outside_file}/#{@manifest_name}")
+    |> json_response(:bad_request)
+    |> assert_response_schema("Error", @schema)
+  end
+
   test "list of recordings", %{conn: conn} do
     conn = get(conn, ~p"/recording")
     assert @recording_id in json_response(conn, :ok)["data"]
@@ -74,6 +92,20 @@ defmodule JellyfishWeb.RecordingControllerTest do
     conn
     |> delete(~p"/recording/#{@for_deleting_id}")
     |> json_response(:not_found)
+    |> assert_response_schema("Error", @schema)
+  end
+
+  test "delete whole recording directory", %{conn: conn} do
+    conn
+    |> delete(~p"/recording/.")
+    |> json_response(:bad_request)
+    |> assert_response_schema("Error", @schema)
+  end
+
+  test "delete using invalid filename", %{conn: conn} do
+    conn
+    |> delete(~p"/recording/#{@outside_file}")
+    |> json_response(:bad_request)
     |> assert_response_schema("Error", @schema)
   end
 

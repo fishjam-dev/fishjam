@@ -537,6 +537,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/HlsResponse'
           description: File was found
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Invalid filename
         '404':
           content:
             application/json:
@@ -581,6 +587,12 @@ paths:
       responses:
         '204':
           description: Successfully deleted recording
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Invalid recording
         '404':
           content:
             application/json:
@@ -614,6 +626,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/HlsResponse'
           description: File was found
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Invalid request
         '404':
           content:
             application/json:

@@ -4,6 +4,7 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   use GenServer
   use Bunch.Access
 
+  alias Jellyfish.Utils.PathValidation
   alias Jellyfish.Component.HLS.{EtsHelper, Recording}
   alias Jellyfish.Room
 
@@ -47,10 +48,12 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   """
   @spec handle_file_request(Room.id(), String.t()) :: {:ok, binary()} | {:error, atom()}
   def handle_file_request(room_id, filename) do
-    with {:ok, path} <- EtsHelper.get_hls_folder_path(room_id) do
-      path
-      |> Path.join(filename)
-      |> File.read()
+    with {:ok, room_path} <- EtsHelper.get_hls_folder_path(room_id) do
+      file_path = room_path |> Path.join(filename) |> Path.expand()
+
+      if PathValidation.inside_directory?(file_path, Path.expand(room_path)),
+        do: File.read(file_path),
+        else: {:error, :invalid_path}
     end
   end
 
@@ -59,13 +62,13 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   """
   @spec handle_recording_request(Room.id(), String.t()) :: {:ok, binary()} | {:error, atom()}
   def handle_recording_request(recording_id, filename) do
-    if Recording.exists?(recording_id) do
-      recording_id
-      |> Recording.directory()
-      |> Path.join(filename)
-      |> File.read()
-    else
-      {:error, :recording_not_found}
+    with :ok <- Recording.validate_recording(recording_id) do
+      recording_path = Recording.directory(recording_id)
+      file_path = Path.join(recording_path, filename) |> Path.expand()
+
+      if PathValidation.inside_directory?(file_path, recording_path),
+        do: File.read(file_path),
+        else: {:error, :invalid_path}
     end
   end
 
