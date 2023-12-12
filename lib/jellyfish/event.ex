@@ -4,6 +4,8 @@ defmodule Jellyfish.Event do
   alias Jellyfish.ServerMessage.{
     ComponentCrashed,
     HlsPlayable,
+    HlsUploadCrashed,
+    HlsUploaded,
     MetricsReport,
     PeerConnected,
     PeerCrashed,
@@ -59,4 +61,10 @@ defmodule Jellyfish.Event do
 
   defp to_proto_server_notification({:hls_playable, room_id, component_id}),
     do: {:hls_playable, %HlsPlayable{room_id: room_id, component_id: component_id}}
+
+  defp to_proto_server_notification({:hls_uploaded, room_id}),
+    do: {:hls_uploaded, %HlsUploaded{room_id: room_id}}
+
+  defp to_proto_server_notification({:hls_upload_crashed, room_id}),
+    do: {:hls_upload_crashed, %HlsUploadCrashed{room_id: room_id}}
 end

@@ -121,6 +121,22 @@ defmodule Jellyfish.ServerMessage.HlsPlayable do
   field :component_id, 2, type: :string, json_name: "componentId"
 end
 
+defmodule Jellyfish.ServerMessage.HlsUploaded do
+  @moduledoc false
+
+  use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
+
+  field :room_id, 1, type: :string, json_name: "roomId"
+end
+
+defmodule Jellyfish.ServerMessage.HlsUploadCrashed do
+  @moduledoc false
+
+  use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
+
+  field :room_id, 1, type: :string, json_name: "roomId"
+end
+
 defmodule Jellyfish.ServerMessage do
   @moduledoc false
 
@@ -188,5 +204,15 @@ defmodule Jellyfish.ServerMessage do
   field :hls_playable, 13,
     type: Jellyfish.ServerMessage.HlsPlayable,
     json_name: "hlsPlayable",
+    oneof: 0
+
+  field :hls_uploaded, 14,
+    type: Jellyfish.ServerMessage.HlsUploaded,
+    json_name: "hlsUploaded",
+    oneof: 0
+
+  field :hls_upload_crashed, 15,
+    type: Jellyfish.ServerMessage.HlsUploadCrashed,
+    json_name: "hlsUploadCrashed",
     oneof: 0
 end
