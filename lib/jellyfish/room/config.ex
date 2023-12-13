@@ -16,9 +16,12 @@ defmodule Jellyfish.Room.Config do
           webhook_url: URI.t()
         }
 
-  @spec new(max_peers(), video_codec(), webhook_url()) ::
-          {:ok, __MODULE__.t()} | {:error, atom()}
-  def new(max_peers, video_codec, webhook_url) do
+  @spec from_params(map()) :: {:ok, __MODULE__.t()} | {:error, atom()}
+  def from_params(params) do
+    max_peers = Map.get(params, "maxPeers")
+    video_codec = Map.get(params, "videoCodec")
+    webhook_url = Map.get(params, "webhookUrl")
+
     with :ok <- validate_max_peers(max_peers),
          {:ok, video_codec} <- codec_to_atom(video_codec),
          :ok <- validate_webhook_url(webhook_url) do

@@ -34,7 +34,7 @@ defmodule JellyfishWeb.ApiSpec.HLS do
       OpenApiSpex.schema(%{
         type: :string,
         example: "YES",
-        description: "Set to \"YES\" if delta manifest is requested",
+        description: "Set to \"YES\" if delta manifest should be requested",
         nullable: true
       })
     end
