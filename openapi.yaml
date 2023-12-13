@@ -159,8 +159,6 @@ components:
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS
     HlsSkip:
       description: Is delta manifest requested
-      enum:
-        - YES
       example: YES
       nullable: true
       title: HlsSkip
