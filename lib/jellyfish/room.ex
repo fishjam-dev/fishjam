@@ -12,6 +12,7 @@ defmodule Jellyfish.Room do
   alias Jellyfish.Component.{HLS, RTSP}
   alias Jellyfish.Event
   alias Jellyfish.Peer
+  alias Jellyfish.Room.Config
 
   alias Membrane.ICE.TURNManager
   alias Membrane.RTC.Engine
@@ -34,8 +35,6 @@ defmodule Jellyfish.Room do
   defstruct @enforce_keys ++ [components: %{}, peers: %{}]
 
   @type id :: String.t()
-  @type max_peers :: non_neg_integer() | nil
-  @type video_codec :: :h264 | :vp8 | nil
 
   @typedoc """
   This module contains:
@@ -47,11 +46,7 @@ defmodule Jellyfish.Room do
   """
   @type t :: %__MODULE__{
           id: id(),
-          config: %{
-            max_peers: max_peers(),
-            video_codec: video_codec(),
-            simulcast?: boolean()
-          },
+          config: Config.t(),
           components: %{Component.id() => Component.t()},
           peers: %{Peer.id() => Peer.t()},
           engine_pid: pid(),
@@ -63,13 +58,13 @@ defmodule Jellyfish.Room do
 
   def registry_id(room_id), do: {:via, Registry, {Jellyfish.RoomRegistry, room_id}}
 
-  @spec start(max_peers(), video_codec()) :: {:ok, pid(), id()}
-  def start(max_peers, video_codec) do
+  @spec start(Config.t()) :: {pid(), id()}
+  def start(config) do
     id = UUID.uuid4()
 
-    {:ok, pid} = GenServer.start(__MODULE__, [id, max_peers, video_codec], name: registry_id(id))
+    {:ok, pid} = GenServer.start(__MODULE__, [id, config], name: registry_id(id))
 
-    {:ok, pid, id}
+    {pid, id}
   end
 
   @spec get_state(id()) :: t() | nil
@@ -141,8 +136,8 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def init([id, max_peers, video_codec]) do
-    state = new(id, max_peers, video_codec)
+  def init([id, config]) do
+    state = new(id, config)
     Logger.metadata(room_id: id)
     Logger.info("Initialize room")
 
@@ -460,7 +455,7 @@ defmodule Jellyfish.Room do
     :ok
   end
 
-  defp new(id, max_peers, video_codec) do
+  defp new(id, config) do
     rtc_engine_options = [
       id: id
     ]
@@ -492,7 +487,7 @@ defmodule Jellyfish.Room do
 
     %__MODULE__{
       id: id,
-      config: %{max_peers: max_peers, video_codec: video_codec},
+      config: config,
       engine_pid: pid,
       network_options: [turn_options: turn_options]
     }

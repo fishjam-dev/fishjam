@@ -2,6 +2,7 @@ defmodule JellyfishWeb.RoomController do
   use JellyfishWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
+  alias Jellyfish.Room
   alias Jellyfish.RoomService
   alias JellyfishWeb.ApiSpec
   alias OpenApiSpex.Response
@@ -71,11 +72,9 @@ defmodule JellyfishWeb.RoomController do
   end
 
   def create(conn, params) do
-    with max_peers <- Map.get(params, "maxPeers"),
-         video_codec <- Map.get(params, "videoCodec"),
-         webhook_url <- Map.get(params, "webhookUrl"),
-         {:ok, room, jellyfish_address} <-
-           RoomService.create_room(max_peers, video_codec, webhook_url) do
+    with {:ok, config} <- Room.Config.from_params(params) do
+      {room, jellyfish_address} = RoomService.create_room(config)
+
       conn
       |> put_resp_content_type("application/json")
       |> put_status(:created)

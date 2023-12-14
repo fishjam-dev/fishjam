@@ -46,11 +46,13 @@ defmodule JellyfishWeb.ApiSpec.Room do
       config: Config,
       components: %Schema{
         type: :array,
-        items: Component
+        items: Component,
+        description: "List of all components"
       },
       peers: %Schema{
         type: :array,
-        items: Peer
+        items: Peer,
+        description: "List of all peers"
       }
     },
     required: [:id, :config, :components, :peers]

@@ -27,7 +27,7 @@ defmodule JellyfishWeb.RoomJSON do
   defp room_data(room) do
     %{
       id: room.id,
-      config: room.config |> ParserJSON.camel_case_keys(),
+      config: room.config |> Map.from_struct() |> ParserJSON.camel_case_keys(),
       components: room.components |> Enum.map(&ComponentJSON.data/1),
       peers: room.peers |> Enum.map(&PeerJSON.data/1)
     }

@@ -254,9 +254,7 @@ components:
       type: string
       x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Response
     HlsSkip:
-      description: Is delta manifest requested
-      enum:
-        - YES
+      description: Set to "YES" if delta manifest should be requested
       example: YES
       nullable: true
       title: HlsSkip
@@ -346,6 +344,7 @@ components:
       description: Description of the room state
       properties:
         components:
+          description: List of all components
           items:
             $ref: '#/components/schemas/Component'
           type: array
@@ -356,6 +355,7 @@ components:
           example: room-1
           type: string
         peers:
+          description: List of all peers
           items:
             $ref: '#/components/schemas/Peer'
           type: array
