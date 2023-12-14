@@ -112,6 +112,22 @@ defmodule Jellyfish.ConfigReaderTest do
     end
   end
 
+  test "read_ssl_config/0" do
+    with_env ["JF_SSL_KEY_PATH", "JF_SSL_CERT_PATH"] do
+      assert ConfigReader.read_ssl_config() == nil
+
+      System.put_env("JF_SSL_KEY_PATH", "/some/key/path")
+      assert_raise RuntimeError, fn -> ConfigReader.read_ssl_config() end
+      System.delete_env("JF_SSL_KEY_PATH")
+
+      System.put_env("JF_SSL_CERT_PATH", "/some/cert/path")
+      assert_raise RuntimeError, fn -> ConfigReader.read_ssl_config() end
+
+      System.put_env("JF_SSL_KEY_PATH", "/some/key/path")
+      assert ConfigReader.read_ssl_config() == {"/some/key/path", "/some/cert/path"}
+    end
+  end
+
   test "read_dist_config/0 NODES_LIST" do
     with_env ["JF_DIST_ENABLED", "JF_DIST_COOKIE", "JF_DIST_NODE_NAME", "JF_DIST_NODES"] do
       assert ConfigReader.read_dist_config() == [

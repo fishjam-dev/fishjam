@@ -78,6 +78,25 @@ defmodule Jellyfish.ConfigReader do
     end
   end
 
+  def read_ssl_config() do
+    ssl_key_path = System.get_env("JF_SSL_KEY_PATH")
+    ssl_cert_path = System.get_env("JF_SSL_CERT_PATH")
+
+    case {ssl_key_path, ssl_cert_path} do
+      {nil, nil} ->
+        nil
+
+      {nil, ssl_cert_path} when ssl_cert_path != nil ->
+        raise "JF_SSL_CERT_PATH has been set but JF_SSL_KEY_PATH remains unset"
+
+      {ssl_key_path, nil} when ssl_key_path != nil ->
+        raise "JF_SSL_KEY_PATH has been set but JF_SSL_CERT_PATH remains unset"
+
+      other ->
+        other
+    end
+  end
+
   def read_webrtc_config() do
     webrtc_used = read_boolean("JF_WEBRTC_USED")
 

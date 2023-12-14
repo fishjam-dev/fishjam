@@ -7,10 +7,12 @@ import Config
 # Do not print debug messages in production
 config :logger, level: :info
 
+config :jellyfish,
+  ip: {127, 0, 0, 1},
+  port: 8080
+
 # run the server automatically when using prod release
-config :jellyfish, JellyfishWeb.Endpoint,
-  http: [ip: {127, 0, 0, 1}, port: 8080],
-  server: true
+config :jellyfish, JellyfishWeb.Endpoint, server: true
 
 config :bundlex, :disable_precompiled_os_deps, apps: [:membrane_h264_ffmpeg_plugin]
 
