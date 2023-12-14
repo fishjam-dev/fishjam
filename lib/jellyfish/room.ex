@@ -16,7 +16,6 @@ defmodule Jellyfish.Room do
 
   alias Membrane.ICE.TURNManager
   alias Membrane.RTC.Engine
-  alias Membrane.RTC.Engine.Track
 
   alias Membrane.RTC.Engine.Message.{
     EndpointAdded,
@@ -125,10 +124,10 @@ defmodule Jellyfish.Room do
     GenServer.call(registry_id(room_id), {:remove_component, component_id})
   end
 
-  @spec hls_subscribe(id(), [Track.id()]) ::
+  @spec hls_subscribe(id(), [Peer.id() | Component.id()]) ::
           :ok | {:error, term()}
-  def hls_subscribe(room_id, tracks) do
-    GenServer.call(registry_id(room_id), {:hls_subscribe, tracks})
+  def hls_subscribe(room_id, origins) do
+    GenServer.call(registry_id(room_id), {:hls_subscribe, origins})
   end
 
   @spec receive_media_event(id(), Peer.id(), String.t()) :: :ok
@@ -300,13 +299,13 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def handle_call({:hls_subscribe, tracks}, _from, state) do
+  def handle_call({:hls_subscribe, origins}, _from, state) do
     hls_component = hls_component(state)
 
     reply =
       case validate_hls_subscription(hls_component) do
         :ok ->
-          Engine.message_endpoint(state.engine_pid, hls_component.id, {:subscribe, tracks})
+          Engine.message_endpoint(state.engine_pid, hls_component.id, {:subscribe, origins})
 
         {:error, _reason} = error ->
           error
