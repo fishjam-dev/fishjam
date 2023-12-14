@@ -262,12 +262,30 @@ components:
       title: HlsSkip
       type: string
       x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Params.HlsSkip
-    Peer:
-      description: Peer id
+    Origin:
+      description: Component or Peer id
       example: peer-id
-      title: Peer
+      title: Origin
       type: string
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Subscription.Peer
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Subscription.Origin
+    Peer:
+      description: Describes peer status
+      properties:
+        id:
+          description: Assigned peer id
+          example: peer-1
+          type: string
+        status:
+          $ref: '#/components/schemas/PeerStatus'
+        type:
+          $ref: '#/components/schemas/PeerType'
+      required:
+        - id
+        - type
+        - status
+      title: Peer
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer
     PeerDetailsResponse:
       description: Response containing peer details and their token
       properties:
@@ -303,6 +321,15 @@ components:
       title: PeerOptionsWebRTC
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.WebRTC
+    PeerStatus:
+      description: Informs about the peer status
+      enum:
+        - connected
+        - disconnected
+      example: disconnected
+      title: PeerStatus
+      type: string
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.Status
     PeerType:
       description: Peer type
       example: webrtc
@@ -450,7 +477,7 @@ paths:
   /hls/{room_id}/subscribe:
     post:
       callbacks: {}
-      operationId: subscribe_peers
+      operationId: subscribe_hls_to
       parameters:
         - description: Room ID
           in: path
@@ -462,12 +489,12 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Peer'
+              $ref: '#/components/schemas/Origin'
         description: Subscribe configuration
         required: false
       responses:
         '201':
-          description: Peers succesfully added.
+          description: Tracks succesfully added.
         '400':
           content:
             application/json:
@@ -480,7 +507,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Room doesn't exist
-      summary: Subscribe hls component for peers
+      summary: Subscribe the HLS component to the tracks of peers or components
       tags:
         - hls
   /hls/{room_id}/{filename}:
