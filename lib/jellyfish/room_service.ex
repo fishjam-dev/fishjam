@@ -53,7 +53,7 @@ defmodule Jellyfish.RoomService do
     |> Enum.reject(&(&1 == nil))
   end
 
-  @spec create_room(Room.Config.t()) :: :ok
+  @spec create_room(Room.Config.t()) :: {Room.t(), String.t()}
   def create_room(config) do
     {node_resources, failed_nodes} =
       :rpc.multicall(Jellyfish.RoomService, :get_resource_usage, [])
