@@ -5,25 +5,126 @@
 components:
   responses: {}
   schemas:
-    PeerStatus:
-      description: Informs about the peer status
-      enum:
-        - connected
-        - disconnected
-      example: disconnected
-      title: PeerStatus
+    AuthToken:
+      description: Token for authorizing websocket connection
+      example: 5cdac726-57a3-4ecb-b1d5-72a3d62ec242
+      title: AuthToken
       type: string
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.Status
-    RoomDetailsResponse:
-      description: Response containing room details
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.Token
+    Component:
+      description: Describes component
+      discriminator:
+        mapping:
+          file: '#/components/schemas/ComponentFile'
+          hls: '#/components/schemas/ComponentHLS'
+          rtsp: '#/components/schemas/ComponentRTSP'
+        propertyName: type
+      oneOf:
+        - $ref: '#/components/schemas/ComponentHLS'
+        - $ref: '#/components/schemas/ComponentRTSP'
+        - $ref: '#/components/schemas/ComponentFile'
+      title: Component
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component
+    ComponentDetailsResponse:
+      description: Response containing component details
       properties:
         data:
-          $ref: '#/components/schemas/Room'
+          $ref: '#/components/schemas/Component'
       required:
         - data
-      title: RoomDetailsResponse
+      title: ComponentDetailsResponse
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.RoomDetailsResponse
+      x-struct: Elixir.JellyfishWeb.ApiSpec.ComponentDetailsResponse
+    ComponentFile:
+      description: Describes the File component
+      properties:
+        id:
+          description: Assigned component ID
+          example: component-1
+          type: string
+        type:
+          description: Component type
+          example: file
+          type: string
+      required:
+        - id
+        - type
+      title: ComponentFile
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.File
+    ComponentHLS:
+      description: Describes the HLS component
+      properties:
+        id:
+          description: Assigned component ID
+          example: component-1
+          type: string
+        properties:
+          $ref: '#/components/schemas/ComponentPropertiesHLS'
+        type:
+          description: Component type
+          example: hls
+          type: string
+      required:
+        - id
+        - type
+        - properties
+      title: ComponentHLS
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS
+    ComponentOptions:
+      description: Component-specific options
+      oneOf:
+        - $ref: '#/components/schemas/ComponentOptionsHLS'
+        - $ref: '#/components/schemas/ComponentOptionsRTSP'
+        - $ref: '#/components/schemas/ComponentOptionsFile'
+      title: ComponentOptions
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Options
+    ComponentOptionsFile:
+      description: Options specific to the File component
+      properties:
+        filePath:
+          description: Path to track file. Must be either OPUS encapsulated in Ogg or raw h264
+          example: /root/video.h264
+          type: string
+      required:
+        - filePath
+      title: ComponentOptionsFile
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.File.Options
+    ComponentOptionsHLS:
+      description: Options specific to the HLS component
+      properties:
+        lowLatency:
+          default: false
+          description: Whether the component should use LL-HLS
+          type: boolean
+        persistent:
+          default: false
+          description: Whether the video is stored after end of stream
+          type: boolean
+        s3:
+          description: Credentials to AWS S3 bucket.
+          nullable: true
+          oneOf:
+            - $ref: '#/components/schemas/S3Credentials'
+          type: object
+        subscribeMode:
+          default: auto
+          description: Whether the HLS component should subscribe to tracks automatically or manually.
+          enum:
+            - auto
+            - manual
+          type: string
+        targetWindowDuration:
+          description: Duration of stream available for viewer
+          nullable: true
+          type: integer
+      title: ComponentOptionsHLS
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS.Options
     ComponentOptionsRTSP:
       description: Options specific to the RTSP component
       properties:
@@ -87,6 +188,139 @@ components:
       title: ComponentPropertiesHLS
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS.Properties
+    ComponentPropertiesRTSP:
+      description: Properties specific to the RTSP component
+      properties: {}
+      title: ComponentPropertiesRTSP
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.RTSP.Properties
+    ComponentRTSP:
+      description: Describes the RTSP component
+      properties:
+        id:
+          description: Assigned component ID
+          example: component-1
+          type: string
+        properties:
+          $ref: '#/components/schemas/ComponentPropertiesRTSP'
+        type:
+          description: Component type
+          example: hls
+          type: string
+      required:
+        - id
+        - type
+        - properties
+      title: ComponentRTSP
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.RTSP
+    ComponentType:
+      description: Component type
+      example: hls
+      title: ComponentType
+      type: string
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Type
+    Error:
+      description: Error message
+      properties:
+        errors:
+          description: Error details
+          example: Token has expired
+          type: string
+      required:
+        - errors
+      title: Error
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Error
+    HlsMsn:
+      description: Segment sequence number
+      example: 10
+      minimum: 0
+      nullable: true
+      title: HlsMsn
+      type: integer
+      x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Params.HlsMsn
+    HlsPart:
+      description: Partial segment sequence number
+      example: 10
+      minimum: 0
+      nullable: true
+      title: HlsPart
+      type: integer
+      x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Params.HlsPart
+    HlsResponse:
+      description: Requested file
+      title: HlsResponse
+      type: string
+      x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Response
+    HlsSkip:
+      description: Is delta manifest requested
+      enum:
+        - YES
+      example: YES
+      nullable: true
+      title: HlsSkip
+      type: string
+      x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Params.HlsSkip
+    Peer:
+      description: Peer id
+      example: peer-id
+      title: Peer
+      type: string
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Subscription.Peer
+    PeerDetailsResponse:
+      description: Response containing peer details and their token
+      properties:
+        data:
+          properties:
+            peer:
+              $ref: '#/components/schemas/Peer'
+            token:
+              $ref: '#/components/schemas/AuthToken'
+          required:
+            - peer
+            - token
+          type: object
+      required:
+        - data
+      title: PeerDetailsResponse
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.PeerDetailsResponse
+    PeerOptions:
+      description: Peer-specific options
+      oneOf:
+        - $ref: '#/components/schemas/PeerOptionsWebRTC'
+      title: PeerOptions
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.Options
+    PeerOptionsWebRTC:
+      description: Options specific to the WebRTC peer
+      properties:
+        enableSimulcast:
+          default: true
+          description: Enables the peer to use simulcast
+          type: boolean
+      title: PeerOptionsWebRTC
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.WebRTC
+    PeerType:
+      description: Peer type
+      example: webrtc
+      title: PeerType
+      type: string
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.Type
+    RecordingListResponse:
+      description: Response containing list of all recording
+      properties:
+        data:
+          items:
+            type: string
+          type: array
+      required:
+        - data
+      title: RecordingListResponse
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.RecordingListResponse
     Room:
       description: Description of the room state
       properties:
@@ -112,343 +346,6 @@ components:
       title: Room
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Room
-    Component:
-      description: Describes component
-      discriminator:
-        mapping:
-          file: '#/components/schemas/ComponentFile'
-          hls: '#/components/schemas/ComponentHLS'
-          rtsp: '#/components/schemas/ComponentRTSP'
-        propertyName: type
-      oneOf:
-        - $ref: '#/components/schemas/ComponentHLS'
-        - $ref: '#/components/schemas/ComponentRTSP'
-        - $ref: '#/components/schemas/ComponentFile'
-      title: Component
-      type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component
-    PeerOptionsWebRTC:
-      description: Options specific to the WebRTC peer
-      properties:
-        enableSimulcast:
-          default: true
-          description: Enables the peer to use simulcast
-          type: boolean
-      title: PeerOptionsWebRTC
-      type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.WebRTC
-    ComponentHLS:
-      description: Describes the HLS component
-      properties:
-        id:
-          description: Assigned component ID
-          example: component-1
-          type: string
-        properties:
-          $ref: '#/components/schemas/ComponentPropertiesHLS'
-        type:
-          description: Component type
-          example: hls
-          type: string
-      required:
-        - id
-        - type
-        - properties
-      title: ComponentHLS
-      type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS
-    HlsSkip:
-      description: Is delta manifest requested
-      enum:
-        - YES
-      example: YES
-      nullable: true
-      title: HlsSkip
-      type: string
-      x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Params.HlsSkip
-    ComponentFile:
-      description: Describes the File component
-      properties:
-        id:
-          description: Assigned component ID
-          example: component-1
-          type: string
-        type:
-          description: Component type
-          example: file
-          type: string
-      required:
-        - id
-        - type
-      title: ComponentFile
-      type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.File
-    SubscriptionConfig:
-      description: Subscription config
-      properties:
-        tracks:
-          description: List of tracks that hls endpoint will subscribe for
-          items:
-            $ref: '#/components/schemas/Track'
-          type: array
-      title: SubscriptionConfig
-      type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Subscription.Tracks
-    HlsMsn:
-      description: Segment sequence number
-      example: 10
-      minimum: 0
-      nullable: true
-      title: HlsMsn
-      type: integer
-      x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Params.HlsMsn
-    ComponentRTSP:
-      description: Describes the RTSP component
-      properties:
-        id:
-          description: Assigned component ID
-          example: component-1
-          type: string
-        properties:
-          $ref: '#/components/schemas/ComponentPropertiesRTSP'
-        type:
-          description: Component type
-          example: hls
-          type: string
-      required:
-        - id
-        - type
-        - properties
-      title: ComponentRTSP
-      type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.RTSP
-    HlsPart:
-      description: Partial segment sequence number
-      example: 10
-      minimum: 0
-      nullable: true
-      title: HlsPart
-      type: integer
-      x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Params.HlsPart
-    ComponentDetailsResponse:
-      description: Response containing component details
-      properties:
-        data:
-          $ref: '#/components/schemas/Component'
-      required:
-        - data
-      title: ComponentDetailsResponse
-      type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.ComponentDetailsResponse
-    ComponentOptionsHLS:
-      description: Options specific to the HLS component
-      properties:
-        lowLatency:
-          default: false
-          description: Whether the component should use LL-HLS
-          type: boolean
-        persistent:
-          default: false
-          description: Whether the video is stored after end of stream
-          type: boolean
-        s3:
-          description: Credentials to AWS S3 bucket.
-          nullable: true
-          oneOf:
-            - $ref: '#/components/schemas/S3Credentials'
-          type: object
-        subscribeMode:
-          default: auto
-          description: Whether the HLS component should subscribe to tracks automatically or manually.
-          enum:
-            - auto
-            - manual
-          type: string
-        targetWindowDuration:
-          description: Duration of stream available for viewer
-          nullable: true
-          type: integer
-      title: ComponentOptionsHLS
-      type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS.Options
-    S3Credentials:
-      description: An AWS S3 credential that will be used to send HLS stream. The stream will only be uploaded if credentials are provided
-      properties:
-        accessKeyId:
-          description: An AWS access key identifier, linked to your AWS account.
-          type: string
-        bucket:
-          description: The name of the S3 bucket where your data will be stored.
-          type: string
-        region:
-          description: The AWS region where your bucket is located.
-          type: string
-        secretAccessKey:
-          description: The secret key that is linked to the Access Key ID.
-          type: string
-      required:
-        - accessKeyId
-        - secretAccessKey
-        - region
-        - bucket
-      title: S3Credentials
-      type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS.S3
-    RecordingListResponse:
-      description: Response containing list of all recording
-      properties:
-        data:
-          items:
-            type: string
-          type: array
-      required:
-        - data
-      title: RecordingListResponse
-      type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.RecordingListResponse
-    ComponentOptions:
-      description: Component-specific options
-      oneOf:
-        - $ref: '#/components/schemas/ComponentOptionsHLS'
-        - $ref: '#/components/schemas/ComponentOptionsRTSP'
-        - $ref: '#/components/schemas/ComponentOptionsFile'
-      title: ComponentOptions
-      type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Options
-    Track:
-      description: Track id
-      example: track-1
-      title: Track
-      type: string
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Subscription.Track
-    ComponentPropertiesRTSP:
-      description: Properties specific to the RTSP component
-      properties: {}
-      title: ComponentPropertiesRTSP
-      type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.RTSP.Properties
-    PeerOptions:
-      description: Peer-specific options
-      oneOf:
-        - $ref: '#/components/schemas/PeerOptionsWebRTC'
-      title: PeerOptions
-      type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.Options
-    Peer:
-      description: Describes peer status
-      properties:
-        id:
-          description: Assigned peer id
-          example: peer-1
-          type: string
-        status:
-          $ref: '#/components/schemas/PeerStatus'
-        type:
-          $ref: '#/components/schemas/PeerType'
-      required:
-        - id
-        - type
-        - status
-      title: Peer
-      type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer
-    ComponentType:
-      description: Component type
-      example: hls
-      title: ComponentType
-      type: string
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Type
-    AuthToken:
-      description: Token for authorizing websocket connection
-      example: 5cdac726-57a3-4ecb-b1d5-72a3d62ec242
-      title: AuthToken
-      type: string
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.Token
-    RoomsListingResponse:
-      description: Response containing list of all rooms
-      properties:
-        data:
-          items:
-            $ref: '#/components/schemas/Room'
-          type: array
-      required:
-        - data
-      title: RoomsListingResponse
-      type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.RoomsListingResponse
-    PeerDetailsResponse:
-      description: Response containing peer details and their token
-      properties:
-        data:
-          properties:
-            peer:
-              $ref: '#/components/schemas/Peer'
-            token:
-              $ref: '#/components/schemas/AuthToken'
-          required:
-            - peer
-            - token
-          type: object
-      required:
-        - data
-      title: PeerDetailsResponse
-      type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.PeerDetailsResponse
-    HlsResponse:
-      description: Requested file
-      title: HlsResponse
-      type: string
-      x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Response
-    PeerType:
-      description: Peer type
-      example: webrtc
-      title: PeerType
-      type: string
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.Type
-    RoomCreateDetailsResponse:
-      description: Response containing room details
-      properties:
-        data:
-          properties:
-            jellyfish_address:
-              description: Jellyfish instance address where the room was created. This might be different than the address of Jellyfish where the request was sent only when running a cluster of Jellyfishes.
-              example: jellyfish1:5003
-              type: string
-            room:
-              $ref: '#/components/schemas/Room'
-          required:
-            - room
-            - jellyfish_address
-          type: object
-      required:
-        - data
-      title: RoomCreateDetailsResponse
-      type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.RoomCreateDetailsResponse
-    ComponentOptionsFile:
-      description: Options specific to the File component
-      properties:
-        filePath:
-          description: Path to track file. Must be either OPUS encapsulated in Ogg or raw h264
-          example: /root/video.h264
-          type: string
-      required:
-        - filePath
-      title: ComponentOptionsFile
-      type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.File.Options
-    Error:
-      description: Error message
-      properties:
-        errors:
-          description: Error details
-          example: Token has expired
-          type: string
-      required:
-        - errors
-      title: Error
-      type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Error
     RoomConfig:
       description: Room configuration
       properties:
@@ -473,6 +370,71 @@ components:
       title: RoomConfig
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Room.Config
+    RoomCreateDetailsResponse:
+      description: Response containing room details
+      properties:
+        data:
+          properties:
+            jellyfish_address:
+              description: Jellyfish instance address where the room was created. This might be different than the address of Jellyfish where the request was sent only when running a cluster of Jellyfishes.
+              example: jellyfish1:5003
+              type: string
+            room:
+              $ref: '#/components/schemas/Room'
+          required:
+            - room
+            - jellyfish_address
+          type: object
+      required:
+        - data
+      title: RoomCreateDetailsResponse
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.RoomCreateDetailsResponse
+    RoomDetailsResponse:
+      description: Response containing room details
+      properties:
+        data:
+          $ref: '#/components/schemas/Room'
+      required:
+        - data
+      title: RoomDetailsResponse
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.RoomDetailsResponse
+    RoomsListingResponse:
+      description: Response containing list of all rooms
+      properties:
+        data:
+          items:
+            $ref: '#/components/schemas/Room'
+          type: array
+      required:
+        - data
+      title: RoomsListingResponse
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.RoomsListingResponse
+    S3Credentials:
+      description: An AWS S3 credential that will be used to send HLS stream. The stream will only be uploaded if credentials are provided
+      properties:
+        accessKeyId:
+          description: An AWS access key identifier, linked to your AWS account.
+          type: string
+        bucket:
+          description: The name of the S3 bucket where your data will be stored.
+          type: string
+        region:
+          description: The AWS region where your bucket is located.
+          type: string
+        secretAccessKey:
+          description: The secret key that is linked to the Access Key ID.
+          type: string
+      required:
+        - accessKeyId
+        - secretAccessKey
+        - region
+        - bucket
+      title: S3Credentials
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS.S3
   securitySchemes:
     authorization:
       scheme: bearer
@@ -488,7 +450,7 @@ paths:
   /hls/{room_id}/subscribe:
     post:
       callbacks: {}
-      operationId: subscribe_tracks
+      operationId: subscribe_peers
       parameters:
         - description: Room ID
           in: path
@@ -500,12 +462,12 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SubscriptionConfig'
+              $ref: '#/components/schemas/Peer'
         description: Subscribe configuration
         required: false
       responses:
         '201':
-          description: Tracks succesfully added.
+          description: Peers succesfully added.
         '400':
           content:
             application/json:
@@ -518,7 +480,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Room doesn't exist
-      summary: Subscribe hls component for tracks
+      summary: Subscribe hls component for peers
       tags:
         - hls
   /hls/{room_id}/{filename}:

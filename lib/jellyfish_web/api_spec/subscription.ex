@@ -3,16 +3,16 @@ defmodule JellyfishWeb.ApiSpec.Subscription do
 
   alias OpenApiSpex.Schema
 
-  defmodule Track do
+  defmodule Origin do
     @moduledoc false
 
     require OpenApiSpex
 
     OpenApiSpex.schema(%{
-      title: "Track",
-      description: "Track id",
+      title: "Origin",
+      description: "Component or Peer id",
       type: :string,
-      example: "track-1"
+      example: "peer-id"
     })
   end
 
@@ -26,10 +26,11 @@ defmodule JellyfishWeb.ApiSpec.Subscription do
       description: "Subscription config",
       type: :object,
       properties: %{
-        tracks: %Schema{
+        origins: %Schema{
           type: :array,
-          description: "List of tracks that hls endpoint will subscribe for",
-          items: Track
+          description:
+            "List of peers and components whose tracks the HLS endpoint will subscribe to",
+          items: Origin
         }
       }
     })
