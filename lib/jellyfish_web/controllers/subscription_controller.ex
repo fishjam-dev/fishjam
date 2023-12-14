@@ -12,10 +12,10 @@ defmodule JellyfishWeb.SubscriptionController do
   tags [:hls]
 
   operation :create,
-    operation_id: "subscribe_tracks",
-    summary: "Subscribe hls component for tracks",
+    operation_id: "subscribe_hls_to",
+    summary: "Subscribe the HLS component to the tracks of peers or components",
     parameters: [room_id: [in: :path, description: "Room ID", type: :string]],
-    request_body: {"Subscribe configuration", "application/json", ApiSpec.Subscription.Tracks},
+    request_body: {"Subscribe configuration", "application/json", ApiSpec.Subscription.Origins},
     responses: [
       created: %Response{description: "Tracks succesfully added."},
       bad_request: ApiSpec.error("Invalid request structure"),
@@ -23,9 +23,9 @@ defmodule JellyfishWeb.SubscriptionController do
     ]
 
   def create(conn, %{"room_id" => room_id} = params) do
-    with tracks <- Map.get(params, "tracks", %{}),
+    with {:ok, origins} <- Map.fetch(params, "origins"),
          {:ok, _room_pid} <- RoomService.find_room(room_id),
-         :ok <- Room.hls_subscribe(room_id, tracks) do
+         :ok <- Room.hls_subscribe(room_id, origins) do
       send_resp(conn, :created, "Successfully subscribed for tracks")
     else
       :error ->
