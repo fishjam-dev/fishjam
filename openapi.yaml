@@ -262,12 +262,6 @@ components:
       title: HlsSkip
       type: string
       x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Params.HlsSkip
-    Origin:
-      description: Component or Peer id
-      example: peer-id
-      title: Origin
-      type: string
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Subscription.Origin
     Peer:
       description: Describes peer status
       properties:
@@ -462,6 +456,17 @@ components:
       title: S3Credentials
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS.S3
+    SubscriptionConfig:
+      description: Subscription config
+      properties:
+        origins:
+          description: List of peers and components whose tracks the HLS endpoint will subscribe to
+          items:
+            type: string
+          type: array
+      title: SubscriptionConfig
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Subscription.Origins
   securitySchemes:
     authorization:
       scheme: bearer
@@ -489,7 +494,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Origin'
+              $ref: '#/components/schemas/SubscriptionConfig'
         description: Subscribe configuration
         required: false
       responses:

@@ -24,7 +24,7 @@ defmodule JellyfishWeb.SubscriptionControllerTest do
     end
 
     test "returns error when hls component doesn't exist", %{conn: conn, room_id: room_id} do
-      conn = post(conn, ~p"/hls/#{room_id}/subscribe/", peers: ["peer-1", "file-2"])
+      conn = post(conn, ~p"/hls/#{room_id}/subscribe/", origins: ["peer-1", "file-2"])
       assert json_response(conn, :bad_request)["errors"] == "HLS component does not exist"
     end
 
@@ -43,7 +43,7 @@ defmodule JellyfishWeb.SubscriptionControllerTest do
              } =
                json_response(conn, :created)
 
-      conn = post(conn, ~p"/hls/#{room_id}/subscribe/", peers: ["peer-1", "rtsp-2"])
+      conn = post(conn, ~p"/hls/#{room_id}/subscribe/", origins: ["peer-1", "rtsp-2"])
 
       assert json_response(conn, :bad_request)["errors"] ==
                "HLS component option `subscribe_mode` is set to :auto"
@@ -64,7 +64,7 @@ defmodule JellyfishWeb.SubscriptionControllerTest do
              } =
                json_response(conn, :created)
 
-      conn = post(conn, ~p"/hls/#{room_id}/subscribe/", peers: ["peer-1", "file-2"])
+      conn = post(conn, ~p"/hls/#{room_id}/subscribe/", origins: ["peer-1", "file-2"])
 
       assert response(conn, :created) == "Successfully subscribed for tracks"
     end
