@@ -2,15 +2,17 @@ defmodule Jellyfish.Room.Config do
   @moduledoc """
   Room configuration
   """
-  @enforce_keys [:max_peers, :video_codec, :webhook_url]
+  @enforce_keys [:room_id, :max_peers, :video_codec, :webhook_url]
 
   defstruct @enforce_keys
 
+  @type room_id :: String.t() | nil
   @type max_peers :: non_neg_integer() | nil
   @type video_codec :: :h264 | :vp8 | nil
   @type webhook_url :: String.t()
 
   @type t :: %__MODULE__{
+          room_id: room_id(),
           max_peers: max_peers(),
           video_codec: video_codec(),
           webhook_url: URI.t()
@@ -18,15 +20,18 @@ defmodule Jellyfish.Room.Config do
 
   @spec from_params(map()) :: {:ok, __MODULE__.t()} | {:error, atom()}
   def from_params(params) do
+    room_id = Map.get(params, "roomID")
     max_peers = Map.get(params, "maxPeers")
     video_codec = Map.get(params, "videoCodec")
     webhook_url = Map.get(params, "webhookUrl")
 
-    with :ok <- validate_max_peers(max_peers),
+    with :ok <- validate_room_id(room_id),
+         :ok <- validate_max_peers(max_peers),
          {:ok, video_codec} <- codec_to_atom(video_codec),
          :ok <- validate_webhook_url(webhook_url) do
       {:ok,
        %__MODULE__{
+         room_id: room_id,
          max_peers: max_peers,
          video_codec: video_codec,
          webhook_url: webhook_url
@@ -35,6 +40,10 @@ defmodule Jellyfish.Room.Config do
       error -> error
     end
   end
+
+  defp validate_room_id(nil), do: :ok
+  defp validate_room_id(room_id) when is_binary(room_id), do: :ok
+  defp validate_room_id(_room_id), do: {:error, :invalid_room_id}
 
   defp validate_max_peers(nil), do: :ok
   defp validate_max_peers(max_peers) when is_integer(max_peers) and max_peers >= 0, do: :ok

@@ -88,6 +88,36 @@ defmodule JellyfishWeb.RoomControllerTest do
              } = response["data"]
     end
 
+    test "renders room when data is valid, custom room_id", %{conn: conn} do
+      room_id = "custom_room_id"
+
+      conn = post(conn, ~p"/room", roomID: room_id)
+      json_response(conn, :created)
+
+      conn = get(conn, ~p"/room/#{room_id}")
+      response = json_response(conn, :ok)
+      assert_response_schema(response, "RoomDetailsResponse", @schema)
+
+      assert %{
+               "id" => ^room_id,
+               "config" => %{"maxPeers" => nil},
+               "components" => [],
+               "peers" => []
+             } = response["data"]
+    end
+
+    test "cannot add two rooms with same room_id", %{conn: conn} do
+      room_id = "custom_room_id"
+
+      conn = post(conn, ~p"/room", roomID: room_id)
+      json_response(conn, :created)
+
+      conn = post(conn, ~p"/room", roomID: room_id)
+
+      assert json_response(conn, :bad_request)["errors"] ==
+               "Cannot add room with id \"#{room_id}\" - room already exists"
+    end
+
     test "renders room when max_peers isn't present", %{conn: conn} do
       conn = post(conn, ~p"/room")
       assert %{"id" => id} = json_response(conn, :created)["data"]["room"]

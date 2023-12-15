@@ -14,6 +14,12 @@ defmodule JellyfishWeb.ApiSpec.Room do
       description: "Room configuration",
       type: :object,
       properties: %{
+        roomID: %Schema{
+          type: :string,
+          description:
+            "Custom id used for identifying room within Jellyfish. Must be unique across all rooms. If not provided, random UUID is generated.",
+          nullable: true
+        },
         maxPeers: %Schema{
           type: :integer,
           minimum: 1,
