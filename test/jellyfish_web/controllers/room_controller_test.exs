@@ -89,7 +89,7 @@ defmodule JellyfishWeb.RoomControllerTest do
     end
 
     test "renders room when data is valid, custom room_id", %{conn: conn} do
-      room_id = "custom_room_id"
+      room_id = UUID.uuid4()
 
       conn = post(conn, ~p"/room", roomID: room_id)
       json_response(conn, :created)
@@ -107,7 +107,7 @@ defmodule JellyfishWeb.RoomControllerTest do
     end
 
     test "cannot add two rooms with same room_id", %{conn: conn} do
-      room_id = "custom_room_id"
+      room_id = UUID.uuid4()
 
       conn = post(conn, ~p"/room", roomID: room_id)
       json_response(conn, :created)
