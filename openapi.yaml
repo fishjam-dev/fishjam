@@ -376,7 +376,7 @@ components:
           minimum: 1
           nullable: true
           type: integer
-        roomID:
+        roomId:
           description: Custom id used for identifying room within Jellyfish. Must be unique across all rooms. If not provided, random UUID is generated.
           nullable: true
           type: string
