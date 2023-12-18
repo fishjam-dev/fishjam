@@ -53,7 +53,7 @@ defmodule Jellyfish.RoomService do
     |> Enum.reject(&(&1 == nil))
   end
 
-  @spec create_room(Room.Config.t()) :: {Room.t(), String.t()}
+  @spec create_room(Room.Config.t()) :: {:ok, Room.t(), String.t()} | {:error, atom()}
   def create_room(config) do
     {node_resources, failed_nodes} =
       :rpc.multicall(Jellyfish.RoomService, :get_resource_usage, [])
@@ -130,20 +130,23 @@ defmodule Jellyfish.RoomService do
 
   @impl true
   def handle_call({:create_room, config}, _from, state) do
-    {room_pid, room_id} = Room.start(config)
+    with {:ok, room_pid, room_id} <- Room.start(config) do
+      room = Room.get_state(room_id)
+      Process.monitor(room_pid)
 
-    room = Room.get_state(room_id)
-    Process.monitor(room_pid)
+      state = put_in(state, [:rooms, room_pid], room_id)
 
-    state = put_in(state, [:rooms, room_pid], room_id)
+      WebhookNotifier.add_webhook(room_id, config.webhook_url)
 
-    WebhookNotifier.add_webhook(room_id, config.webhook_url)
+      Logger.info("Created room #{inspect(room.id)}")
 
-    Logger.info("Created room #{inspect(room.id)}")
+      Event.broadcast_server_notification({:room_created, room_id})
 
-    Event.broadcast_server_notification({:room_created, room_id})
-
-    {:reply, {room, Application.fetch_env!(:jellyfish, :address)}, state}
+      {:reply, {:ok, room, Application.fetch_env!(:jellyfish, :address)}, state}
+    else
+      {:error, :room_already_exists} = error ->
+        {:reply, error, state}
+    end
   end
 
   @impl true

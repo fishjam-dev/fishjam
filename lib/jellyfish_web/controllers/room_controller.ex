@@ -72,9 +72,8 @@ defmodule JellyfishWeb.RoomController do
   end
 
   def create(conn, params) do
-    with {:ok, config} <- Room.Config.from_params(params) do
-      {room, jellyfish_address} = RoomService.create_room(config)
-
+    with {:ok, config} <- Room.Config.from_params(params),
+         {:ok, room, jellyfish_address} <- RoomService.create_room(config) do
       conn
       |> put_resp_content_type("application/json")
       |> put_status(:created)
@@ -93,6 +92,10 @@ defmodule JellyfishWeb.RoomController do
       {:error, :invalid_webhook_url} ->
         webhook_url = Map.get(params, "webhookUrl")
         {:error, :bad_request, "Expected webhookUrl to be valid URL, got: #{webhook_url}"}
+
+      {:error, :room_already_exists} ->
+        room_id = Map.get(params, "roomId")
+        {:error, :bad_request, "Cannot add room with id \"#{room_id}\" - room already exists"}
     end
   end
 
