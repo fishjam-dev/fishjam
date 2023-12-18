@@ -59,9 +59,7 @@ defmodule Jellyfish.Room do
   def registry_id(room_id), do: {:via, Registry, {Jellyfish.RoomRegistry, room_id}}
 
   @spec start(Config.t()) :: {:ok, pid(), id()}
-  def start(config) do
-    id = config.room_id || UUID.uuid4()
-
+  def start(%Config{room_id: id} = config) do
     with {:ok, pid} <- GenServer.start(__MODULE__, [id, config], name: registry_id(id)) do
       {:ok, pid, id}
     else

@@ -94,7 +94,7 @@ defmodule JellyfishWeb.RoomController do
         {:error, :bad_request, "Expected webhookUrl to be valid URL, got: #{webhook_url}"}
 
       {:error, :room_already_exists} ->
-        room_id = Map.get(params, "roomID")
+        room_id = Map.get(params, "roomId")
         {:error, :bad_request, "Cannot add room with id \"#{room_id}\" - room already exists"}
     end
   end

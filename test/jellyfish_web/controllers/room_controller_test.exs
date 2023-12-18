@@ -91,7 +91,7 @@ defmodule JellyfishWeb.RoomControllerTest do
     test "renders room when data is valid, custom room_id", %{conn: conn} do
       room_id = UUID.uuid4()
 
-      conn = post(conn, ~p"/room", roomID: room_id)
+      conn = post(conn, ~p"/room", roomId: room_id)
       json_response(conn, :created)
 
       conn = get(conn, ~p"/room/#{room_id}")
@@ -106,13 +106,13 @@ defmodule JellyfishWeb.RoomControllerTest do
              } = response["data"]
     end
 
-    test "cannot add two rooms with same room_id", %{conn: conn} do
+    test "renders error when adding two rooms with same room_id", %{conn: conn} do
       room_id = UUID.uuid4()
 
-      conn = post(conn, ~p"/room", roomID: room_id)
+      conn = post(conn, ~p"/room", roomId: room_id)
       json_response(conn, :created)
 
-      conn = post(conn, ~p"/room", roomID: room_id)
+      conn = post(conn, ~p"/room", roomId: room_id)
 
       assert json_response(conn, :bad_request)["errors"] ==
                "Cannot add room with id \"#{room_id}\" - room already exists"
