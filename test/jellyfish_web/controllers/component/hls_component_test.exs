@@ -12,75 +12,61 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
   @body <<1, 2, 3, 4>>
 
   describe "create hls component" do
-    test "renders component when data is valid, allows max 1 hls per room",
-         %{conn: conn} do
-      conn = post(conn, ~p"/room", videoCodec: "h264")
-      assert %{"id" => room_id} = json_response(conn, :created)["data"]["room"]
+    setup [:create_h264_room]
 
+    test "renders component when data is valid, allows max 1 hls per room", %{
+      conn: conn,
+      room_id: room_id
+    } do
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
 
-      assert response =
-               %{
-                 "data" => %{
-                   "id" => id,
-                   "type" => "hls",
-                   "properties" => %{
-                     "playable" => false,
-                     "lowLatency" => false,
-                     "persistent" => false,
-                     "targetWindowDuration" => nil,
-                     "subscribeMode" => "auto"
-                   }
+      assert %{
+               "data" => %{
+                 "id" => id,
+                 "type" => "hls",
+                 "properties" => %{
+                   "playable" => false,
+                   "lowLatency" => false,
+                   "persistent" => false,
+                   "targetWindowDuration" => nil,
+                   "subscribeMode" => "auto"
                  }
-               } =
-               json_response(conn, :created)
-
-      assert_response_schema(response, "ComponentDetailsResponse")
+               }
+             } =
+               model_response(conn, :created, "ComponentDetailsResponse")
 
       assert_hls_path(room_id, persistent: false)
 
-      conn = get(conn, ~p"/room/#{room_id}")
-
-      assert %{
-               "id" => ^room_id,
-               "components" => [
-                 %{"id" => ^id, "type" => "hls"}
-               ]
-             } = json_response(conn, :ok)["data"]
+      assert_component_created(conn, room_id, id, "hls")
 
       # Try to add another hls component
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
 
-      assert json_response(conn, :bad_request)["errors"] ==
-               "Reached components limit in room #{room_id}"
+      assert model_response(conn, :bad_request, "Error")["errors"] ==
+               "Reached components limit for component HLS in room #{room_id}"
 
       conn = delete(conn, ~p"/room/#{room_id}")
       assert response(conn, :no_content)
       assert_no_hls_path(room_id)
     end
 
-    test "renders component with peristent enabled", %{conn: conn} do
-      conn = post(conn, ~p"/room", videoCodec: "h264")
-      assert %{"id" => room_id} = json_response(conn, :created)["data"]["room"]
-
+    test "renders component with peristent enabled", %{conn: conn, room_id: room_id} do
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls", options: %{persistent: true})
 
-      assert response =
-               %{
-                 "data" => %{
-                   "type" => "hls",
-                   "properties" => %{
-                     "playable" => false,
-                     "lowLatency" => false,
-                     "persistent" => true,
-                     "targetWindowDuration" => nil,
-                     "subscribeMode" => "auto"
-                   }
+      assert %{
+               "data" => %{
+                 "type" => "hls",
+                 "properties" => %{
+                   "playable" => false,
+                   "lowLatency" => false,
+                   "persistent" => true,
+                   "targetWindowDuration" => nil,
+                   "subscribeMode" => "auto"
                  }
-               } =
-               json_response(conn, :created)
+               }
+             } =
+               model_response(conn, :created, "ComponentDetailsResponse")
 
-      assert_response_schema(response, "ComponentDetailsResponse")
       assert_hls_path(room_id, persistent: true)
 
       # It is persistent stream so we have to remove it manually
@@ -90,10 +76,7 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
     setup :set_mox_from_context
     setup :verify_on_exit!
 
-    test "renders component with s3 credentials", %{conn: conn} do
-      conn = post(conn, ~p"/room", videoCodec: "h264")
-      assert %{"id" => room_id} = json_response(conn, :created)["data"]["room"]
-
+    test "renders component with s3 credentials", %{conn: conn, room_id: room_id} do
       bucket = "bucket"
 
       conn =
@@ -110,20 +93,19 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
           }
         )
 
-      assert response =
-               %{
-                 "data" => %{
-                   "type" => "hls",
-                   "properties" => %{
-                     "playable" => false,
-                     "lowLatency" => false,
-                     "persistent" => false,
-                     "targetWindowDuration" => nil,
-                     "subscribeMode" => "auto"
-                   }
+      assert %{
+               "data" => %{
+                 "type" => "hls",
+                 "properties" => %{
+                   "playable" => false,
+                   "lowLatency" => false,
+                   "persistent" => false,
+                   "targetWindowDuration" => nil,
+                   "subscribeMode" => "auto"
                  }
-               } =
-               json_response(conn, :created)
+               }
+             } =
+               model_response(conn, :created, "ComponentDetailsResponse")
 
       parent = self()
       ref = make_ref()
@@ -141,7 +123,6 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
         {:ok, %{status_code: 200, headers: %{}}}
       end)
 
-      assert_response_schema(response, "ComponentDetailsResponse")
       assert_hls_path(room_id, persistent: false)
 
       # waits for directory to be created
@@ -156,66 +137,47 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
       for _ <- 1..4, do: assert_receive({^ref, :request}, 10_000)
     end
 
-    test "renders component with targetWindowDuration set", %{conn: conn} do
-      conn = post(conn, ~p"/room", videoCodec: "h264")
-      assert %{"id" => room_id} = json_response(conn, :created)["data"]["room"]
-
+    test "renders component with targetWindowDuration set", %{conn: conn, room_id: room_id} do
       conn =
         post(conn, ~p"/room/#{room_id}/component",
           type: "hls",
           options: %{targetWindowDuration: 10}
         )
 
-      assert response =
-               %{
-                 "data" => %{
-                   "type" => "hls",
-                   "properties" => %{
-                     "playable" => false,
-                     "lowLatency" => false,
-                     "persistent" => false,
-                     "targetWindowDuration" => 10,
-                     "subscribeMode" => "auto"
-                   }
+      assert %{
+               "data" => %{
+                 "type" => "hls",
+                 "properties" => %{
+                   "playable" => false,
+                   "lowLatency" => false,
+                   "persistent" => false,
+                   "targetWindowDuration" => 10,
+                   "subscribeMode" => "auto"
                  }
-               } =
-               json_response(conn, :created)
-
-      assert_response_schema(response, "ComponentDetailsResponse")
+               }
+             } =
+               model_response(conn, :created, "ComponentDetailsResponse")
 
       conn = delete(conn, ~p"/room/#{room_id}")
       assert response(conn, :no_content)
       assert_no_hls_path(room_id)
     end
 
-    test "renders component with ll-hls enabled", %{conn: conn} do
-      conn = post(conn, ~p"/room", videoCodec: "h264")
-      assert %{"id" => room_id} = json_response(conn, :created)["data"]["room"]
-
+    test "renders component with ll-hls enabled", %{conn: conn, room_id: room_id} do
       assert Registry.lookup(Jellyfish.RequestHandlerRegistry, room_id) |> Enum.empty?()
 
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls", options: %{lowLatency: true})
 
-      assert response =
-               %{
-                 "data" => %{
-                   "id" => id,
-                   "type" => "hls",
-                   "properties" => %{"playable" => false, "lowLatency" => true}
-                 }
-               } =
-               json_response(conn, :created)
-
-      assert_response_schema(response, "ComponentDetailsResponse")
-
-      conn = get(conn, ~p"/room/#{room_id}")
-
       assert %{
-               "id" => ^room_id,
-               "components" => [
-                 %{"id" => ^id, "type" => "hls"}
-               ]
-             } = json_response(conn, :ok)["data"]
+               "data" => %{
+                 "id" => id,
+                 "type" => "hls",
+                 "properties" => %{"playable" => false, "lowLatency" => true}
+               }
+             } =
+               model_response(conn, :created, "ComponentDetailsResponse")
+
+      assert_component_created(conn, room_id, id, "hls")
 
       [{request_handler, _value}] = Registry.lookup(Jellyfish.RequestHandlerRegistry, room_id)
       assert Process.alive?(request_handler)
@@ -241,15 +203,42 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
     test "renders errors when request body structure is invalid", %{conn: conn, room_id: room_id} do
       conn = post(conn, ~p"/room/#{room_id}/component", invalid_parameter: "hls")
 
-      assert json_response(conn, :bad_request)["errors"] == "Invalid request body structure"
+      assert model_response(conn, :bad_request, "Error")["errors"] ==
+               "Invalid request body structure"
     end
 
-    test "renders errors when video codec is different than h264", %{conn: conn, room_id: room_id} do
+    test "renders errors when video codec is different than h264 - vp8", %{conn: conn} do
+      conn = post(conn, ~p"/room", videoCodec: "vp8")
+
+      assert %{"id" => room_id} =
+               model_response(conn, :created, "RoomCreateDetailsResponse")["data"]["room"]
+
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
 
-      assert json_response(conn, :bad_request)["errors"] ==
+      assert model_response(conn, :bad_request, "Error")["errors"] ==
                "Incompatible video codec enforced in room #{room_id}"
     end
+
+    test "renders errors when video codec is different than h264 - nil", %{conn: conn} do
+      conn = post(conn, ~p"/room")
+
+      assert %{"id" => room_id} =
+               model_response(conn, :created, "RoomCreateDetailsResponse")["data"]["room"]
+
+      conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
+
+      assert model_response(conn, :bad_request, "Error")["errors"] ==
+               "Incompatible video codec enforced in room #{room_id}"
+    end
+  end
+
+  defp create_h264_room(%{conn: conn}) do
+    conn = post(conn, ~p"/room", videoCodec: "h264")
+
+    assert %{"id" => room_id} =
+             model_response(conn, :created, "RoomCreateDetailsResponse")["data"]["room"]
+
+    %{room_id: room_id}
   end
 
   defp assert_hls_path(room_id, persistent: persistent) do

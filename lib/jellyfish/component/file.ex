@@ -33,7 +33,8 @@ defmodule Jellyfish.Component.File do
 
       {:ok, %{endpoint: endpoint_spec, properties: %{}}}
     else
-      {:error, _reason} = error -> error
+      {:error, _reason} = error ->
+        error
     end
   end
 

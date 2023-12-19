@@ -12,36 +12,26 @@ defmodule JellyfishWeb.Component.RTSPComponentTest do
           options: %{sourceUri: @source_uri}
         )
 
-      assert response =
-               %{
-                 "data" => %{
-                   "id" => id,
-                   "type" => "rtsp",
-                   "properties" => %{}
-                 }
-               } =
-               json_response(conn, :created)
-
-      assert_response_schema(response, "ComponentDetailsResponse")
-
-      conn = get(conn, ~p"/room/#{room_id}")
-
       assert %{
-               "id" => ^room_id,
-               "components" => [
-                 %{"id" => ^id, "type" => "rtsp"}
-               ]
-             } = json_response(conn, :ok)["data"]
+               "data" => %{
+                 "id" => id,
+                 "type" => "rtsp",
+                 "properties" => %{}
+               }
+             } =
+               model_response(conn, :created, "ComponentDetailsResponse")
+
+      assert_component_created(conn, room_id, id, "rtsp")
     end
 
-    test "renders errors when component requires options not present in request", %{
+    test "renders errors when required options are missing", %{
       conn: conn,
       room_id: room_id
     } do
       conn = post(conn, ~p"/room/#{room_id}/component", type: "rtsp")
 
-      assert json_response(conn, :bad_request)["errors"] == "Invalid request body structure"
+      assert model_response(conn, :bad_request, "Error")["errors"] ==
+               "Invalid request body structure"
     end
   end
-
 end

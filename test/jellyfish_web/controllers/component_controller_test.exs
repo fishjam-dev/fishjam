@@ -8,18 +8,16 @@ defmodule JellyfishWeb.ComponentControllerTest do
     test "renders errors when component type is invalid", %{conn: conn, room_id: room_id} do
       conn = post(conn, ~p"/room/#{room_id}/component", type: "invalid_type")
 
-      response = json_response(conn, :bad_request)
+      response = model_response(conn, :bad_request, "Error")
       assert response["errors"] == "Invalid component type"
-      assert_response_schema(response, "Error")
     end
 
     test "renders errors when room doesn't exists", %{conn: conn} do
       room_id = "abc"
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
 
-      response = json_response(conn, :not_found)
+      response = model_response(conn, :not_found, "Error")
       assert response["errors"] == "Room #{room_id} does not exist"
-      assert_response_schema(response, "Error")
     end
   end
 
@@ -31,26 +29,27 @@ defmodule JellyfishWeb.ComponentControllerTest do
       assert response(conn, :no_content)
 
       conn = get(conn, ~p"/room/#{room_id}")
-      response = json_response(conn, :ok)
+
       assert %{
                "id" => ^room_id,
                "components" => []
-             } = response["data"]
-      assert_response_schema(response, "RoomDetailsResponse")
+             } = model_response(conn, :ok, "RoomDetailsResponse")["data"]
     end
 
     test "deletes not existing component", %{conn: conn, room_id: room_id} do
       component_id = "test123"
       conn = delete(conn, ~p"/room/#{room_id}/component/#{component_id}")
 
-      assert json_response(conn, :not_found)["errors"] ==
+      assert model_response(conn, :not_found, "Error")["errors"] ==
                "Component #{component_id} does not exist"
     end
 
     test "deletes component from not exisiting room", %{conn: conn, component_id: component_id} do
       room_id = "abc"
       conn = delete(conn, ~p"/room/#{room_id}/component/#{component_id}")
-      assert json_response(conn, :not_found)["errors"] == "Room #{room_id} does not exist"
+
+      assert model_response(conn, :not_found, "Error")["errors"] ==
+               "Room #{room_id} does not exist"
     end
   end
 
@@ -61,7 +60,7 @@ defmodule JellyfishWeb.ComponentControllerTest do
         options: %{sourceUri: @source_uri}
       )
 
-    assert %{"id" => id} = json_response(conn, :created)["data"]
+    assert %{"id" => id} = model_response(conn, :created, "ComponentDetailsResponse")["data"]
 
     %{component_id: id}
   end

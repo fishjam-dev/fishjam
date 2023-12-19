@@ -115,7 +115,7 @@ defmodule Jellyfish.Room do
   @spec add_component(id(), Component.component(), map()) ::
           {:ok, Component.t()}
           | :error
-          | {:error, :incompatible_codec | :reached_components_limit}
+          | {:error, :incompatible_codec | :reached_components_limit_hls}
   def add_component(room_id, component_type, options \\ %{}) do
     GenServer.call(registry_id(room_id), {:add_component, component_type, options})
   end
@@ -270,9 +270,21 @@ defmodule Jellyfish.Room do
         Logger.warning("Unable to add component: incompatible codec")
         {:reply, {:error, :incompatible_codec}, state}
 
-      {:error, :reached_components_limit} ->
+      {:error, :reached_components_limit_hls} ->
         Logger.warning("Unable to add component: reached components limit")
-        {:reply, {:error, :reached_components_limit}, state}
+        {:reply, {:error, :reached_components_limit_hls}, state}
+
+      {:error, :file_does_not_exist} ->
+        Logger.warning("Unable to add component: file does not exist")
+        {:reply, {:error, :file_does_not_exist}, state}
+
+      {:error, :invalid_file_path} ->
+        Logger.warning("Unable to add component: invalid file path")
+        {:reply, {:error, :invalid_file_path}, state}
+
+      {:error, :unsupported_file_type} ->
+        Logger.warning("Unable to add component: unsupported file path")
+        {:reply, {:error, :unsupported_file_type}, state}
 
       {:error, reason} ->
         Logger.warning("Unable to add component: #{inspect(reason)}")
@@ -529,7 +541,7 @@ defmodule Jellyfish.Room do
         {:error, :incompatible_codec}
 
       hls_component_already_present?(components) ->
-        {:error, :reached_components_limit}
+        {:error, :reached_components_limit_hls}
 
       true ->
         :ok

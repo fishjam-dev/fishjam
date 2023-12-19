@@ -28,35 +28,26 @@ defmodule JellyfishWeb.Component.FileComponentTest do
           options: %{filePath: @file_component_source}
         )
 
-      assert response =
-               %{
-                 "data" => %{
-                   "id" => id,
-                   "type" => "file",
-                   "properties" => %{}
-                 }
-               } =
-               json_response(conn, :created)
-
-      assert_response_schema(response, "ComponentDetailsResponse")
-
-      conn = get(conn, ~p"/room/#{room_id}")
-
       assert %{
-               "id" => ^room_id,
-               "components" => [
-                 %{"id" => ^id, "type" => "file"}
-               ]
-             } = json_response(conn, :ok)["data"]
+               "data" => %{
+                 "id" => id,
+                 "type" => "file",
+                 "properties" => %{}
+               }
+             } =
+               model_response(conn, :created, "ComponentDetailsResponse")
+
+      assert_component_created(conn, room_id, id, "file")
     end
 
-    test "renders error when component requires options not present in request", %{
+    test "renders error when required options are missing", %{
       conn: conn,
       room_id: room_id
     } do
       conn = post(conn, ~p"/room/#{room_id}/component", type: "file")
 
-      assert json_response(conn, :bad_request)["errors"] == "Invalid request body structure"
+      assert model_response(conn, :bad_request, "Error")["errors"] ==
+               "Invalid request body structure"
     end
 
     test "renders error when filePath is invalid", %{
@@ -69,8 +60,8 @@ defmodule JellyfishWeb.Component.FileComponentTest do
           options: %{filePath: "some/fake/path.h264"}
         )
 
-      assert json_response(conn, :bad_request)["errors"] == "Invalid request body structure"
+      assert model_response(conn, :not_found, "Error")["errors"] ==
+               "File not found"
     end
   end
-
 end
