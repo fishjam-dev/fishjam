@@ -46,8 +46,10 @@ defmodule JellyfishWeb.Component.FileComponentTest do
     } do
       conn = post(conn, ~p"/room/#{room_id}/component", type: "file")
 
+      # assert model_response(conn, :bad_request, "Error")["errors"] ==
+      #          "Invalid request body structure"
       assert model_response(conn, :bad_request, "Error")["errors"] ==
-               "Invalid request body structure"
+               "Required field \"filePath\" missing"
     end
 
     test "renders error when filePath is invalid", %{

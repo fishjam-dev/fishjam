@@ -74,6 +74,9 @@ defmodule JellyfishWeb.ComponentController do
       :error ->
         {:error, :bad_request, "Invalid request body structure"}
 
+      {:error, {:missing_field, name}} ->
+        {:error, :bad_request, "Required field \"#{Atom.to_string(name)}\" missing"}
+
       {:error, :invalid_type} ->
         {:error, :bad_request, "Invalid component type"}
 
