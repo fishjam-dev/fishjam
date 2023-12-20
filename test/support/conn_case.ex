@@ -19,9 +19,6 @@ defmodule JellyfishWeb.ConnCase do
 
   using do
     quote do
-      # The default endpoint for testing
-      @endpoint JellyfishWeb.Endpoint
-
       use JellyfishWeb, :verified_routes
 
       # Import conveniences for testing with connections

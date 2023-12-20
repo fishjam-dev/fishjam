@@ -110,20 +110,7 @@ defmodule Jellyfish.Component.FileTest do
   end
 
   test "missing filePath" do
-    reason = [
-      %OpenApiSpex.Cast.Error{
-        reason: :missing_field,
-        value: %{},
-        format: nil,
-        type: nil,
-        name: :filePath,
-        path: [:filePath],
-        length: 0,
-        meta: %{}
-      }
-    ]
-
-    {:error, ^reason} = Component.File.config(@jellyfish_opts)
+    {:error, {:missing_parameter, :filePath}} = Component.File.config(@jellyfish_opts)
   end
 
   defp get_audio_endpoint(audio_path) do

@@ -28,7 +28,11 @@ defmodule Jellyfish.Component.RTSP do
 
       {:ok, %{endpoint: endpoint_spec, properties: %{}}}
     else
-      {:error, _reason} = error -> error
+      {:error, [%OpenApiSpex.Cast.Error{reason: :missing_field, name: name}]} ->
+        {:error, {:missing_parameter, name}}
+
+      {:error, _reason} = error ->
+        error
     end
   end
 end

@@ -74,6 +74,9 @@ defmodule JellyfishWeb.ComponentController do
       :error ->
         {:error, :bad_request, "Invalid request body structure"}
 
+      {:error, {:missing_parameter, name}} ->
+        {:error, :bad_request, "Required field \"#{Atom.to_string(name)}\" missing"}
+
       {:error, :invalid_type} ->
         {:error, :bad_request, "Invalid component type"}
 
@@ -92,8 +95,8 @@ defmodule JellyfishWeb.ComponentController do
       {:error, :unsupported_file_type} ->
         {:error, :bad_request, "Unsupported file type"}
 
-      {:error, :reached_components_limit} ->
-        {:error, :bad_request, "Reached components limit in room #{room_id}"}
+      {:error, :reached_components_limit_hls} ->
+        {:error, :bad_request, "Reached components limit for component HLS in room #{room_id}"}
     end
   end
 
