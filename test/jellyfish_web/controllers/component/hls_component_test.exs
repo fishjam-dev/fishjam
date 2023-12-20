@@ -35,9 +35,9 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
              } =
                model_response(conn, :created, "ComponentDetailsResponse")
 
-      assert_hls_path(room_id, persistent: false)
-
       assert_component_created(conn, room_id, id, "hls")
+
+      assert_hls_path(room_id, persistent: false)
 
       # Try to add another hls component
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
@@ -198,13 +198,6 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
       assert_receive {:DOWN, _ref, :process, ^request_handler, :normal}
 
       assert Registry.lookup(Jellyfish.RequestHandlerRegistry, room_id) |> Enum.empty?()
-    end
-
-    test "renders errors when request body structure is invalid", %{conn: conn, room_id: room_id} do
-      conn = post(conn, ~p"/room/#{room_id}/component", invalid_parameter: "hls")
-
-      assert model_response(conn, :bad_request, "Error")["errors"] ==
-               "Invalid request body structure"
     end
 
     test "renders errors when video codec is different than h264 - vp8", %{conn: conn} do

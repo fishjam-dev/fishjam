@@ -286,6 +286,10 @@ defmodule Jellyfish.Room do
         Logger.warning("Unable to add component: unsupported file path")
         {:reply, {:error, :unsupported_file_type}, state}
 
+      {:error, {:missing_parameter, name}} ->
+        Logger.warning("Unable to add component: missing parameter #{inspect(name)}")
+        {:reply, {:error, {:missing_parameter, name}}, state}
+
       {:error, reason} ->
         Logger.warning("Unable to add component: #{inspect(reason)}")
         {:reply, :error, state}

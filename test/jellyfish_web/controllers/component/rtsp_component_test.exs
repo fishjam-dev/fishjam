@@ -31,7 +31,7 @@ defmodule JellyfishWeb.Component.RTSPComponentTest do
       conn = post(conn, ~p"/room/#{room_id}/component", type: "rtsp")
 
       assert model_response(conn, :bad_request, "Error")["errors"] ==
-               "Invalid request body structure"
+               "Required field \"sourceUri\" missing"
     end
   end
 end

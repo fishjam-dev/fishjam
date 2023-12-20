@@ -44,19 +44,6 @@ defmodule Jellyfish.Component.RTSPTest do
   end
 
   test "missing required sourceUri" do
-    expected_reason = [
-      %OpenApiSpex.Cast.Error{
-        reason: :missing_field,
-        value: %{},
-        format: nil,
-        type: nil,
-        name: :sourceUri,
-        path: [:sourceUri],
-        length: 0,
-        meta: %{}
-      }
-    ]
-
-    {:error, ^expected_reason} = Component.RTSP.config(@jellyfish_opts)
+    {:error, {:missing_parameter, :sourceUri}} = Component.RTSP.config(@jellyfish_opts)
   end
 end

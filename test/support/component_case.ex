@@ -21,7 +21,9 @@ defmodule JellyfishWeb.ComponentCase do
     conn = put_req_header(conn, "accept", "application/json")
 
     conn = post(conn, ~p"/room")
-    assert %{"id" => id} = json_response(conn, :created)["data"]["room"]
+
+    assert %{"id" => id} =
+             model_response(conn, :created, "RoomCreateDetailsResponse")["data"]["room"]
 
     on_exit(fn ->
       conn = delete(conn, ~p"/room/#{id}")
