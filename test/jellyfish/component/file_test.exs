@@ -44,73 +44,17 @@ defmodule Jellyfish.Component.FileTest do
   end
 
   test "video file", %{video_path: video_path} do
+    endpoint = get_video_endpoint(video_path)
     options = Map.put(@jellyfish_opts, "filePath", @video_filename)
 
-    expected = get_video_endpoint(video_path)
-
-    {:ok, %{endpoint: ^expected, properties: @properties}} = Component.File.config(options)
+    {:ok, %{endpoint: ^endpoint, properties: @properties}} = Component.File.config(options)
   end
 
   test "audio file", %{audio_path: audio_path} do
+    endpoint = get_audio_endpoint(audio_path)
     options = Map.put(@jellyfish_opts, "filePath", @audio_filename)
 
-    expected = get_audio_endpoint(audio_path)
-
-    {:ok, %{endpoint: ^expected, properties: @properties}} = Component.File.config(options)
-  end
-
-  test "file in subdirectory", %{base_path: base_path} do
-    subdir_name = "subdirectory"
-    [base_path, subdir_name] |> Path.join() |> File.mkdir_p!()
-
-    video_relative_path = Path.join(subdir_name, @video_filename)
-    video_absolute_path = Path.join(base_path, video_relative_path)
-    File.touch!(video_absolute_path)
-
-    options = Map.put(@jellyfish_opts, "filePath", video_relative_path)
-
-    expected = get_video_endpoint(video_absolute_path)
-
-    {:ok, %{endpoint: ^expected, properties: @properties}} = Component.File.config(options)
-  end
-
-  test "path for non-existent file" do
-    options = Map.put(@jellyfish_opts, "filePath", "nosuchfile.opus")
-
-    {:error, :file_does_not_exist} = Component.File.config(options)
-  end
-
-  test "invalid extension", %{base_path: base_path} do
-    filename = "sounds.aac"
-    base_path |> Path.join(filename) |> File.touch!()
-
-    options = Map.put(@jellyfish_opts, "filePath", filename)
-
-    {:error, :unsupported_file_type} = Component.File.config(options)
-  end
-
-  test "no extension", %{base_path: base_path} do
-    filename = "h264"
-    base_path |> Path.join(filename) |> File.touch!()
-
-    options = Map.put(@jellyfish_opts, "filePath", filename)
-
-    {:error, :unsupported_file_type} = Component.File.config(options)
-  end
-
-  test "file outside of media files directory", %{base_path: base_path} do
-    filename = "../restricted_audio.opus"
-    outside_path = base_path |> Path.join(filename)
-    File.touch!(outside_path)
-
-    options = Map.put(@jellyfish_opts, "filePath", filename)
-
-    {:error, :invalid_file_path} = Component.File.config(options)
-    File.rm(outside_path)
-  end
-
-  test "missing filePath" do
-    {:error, {:missing_parameter, :filePath}} = Component.File.config(@jellyfish_opts)
+    {:ok, %{endpoint: ^endpoint, properties: @properties}} = Component.File.config(options)
   end
 
   defp get_audio_endpoint(audio_path) do

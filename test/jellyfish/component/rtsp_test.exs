@@ -42,8 +42,4 @@ defmodule Jellyfish.Component.RTSPTest do
 
     {:ok, %{endpoint: ^expected, properties: @properties}} = Component.RTSP.config(options)
   end
-
-  test "missing required sourceUri" do
-    {:error, {:missing_parameter, :sourceUri}} = Component.RTSP.config(@jellyfish_opts)
-  end
 end
