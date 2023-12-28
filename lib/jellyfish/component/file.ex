@@ -11,7 +11,9 @@ defmodule Jellyfish.Component.File do
   alias Jellyfish.Utils.PathValidation
   alias JellyfishWeb.ApiSpec.Component.File.Options
 
-  @type properties :: %{}
+  @type properties :: %{
+          file_path: Path.t()
+        }
 
   @files_location "file_component_sources"
 
@@ -31,7 +33,9 @@ defmodule Jellyfish.Component.File do
           payload_type: track_config.fmtp.pt
         }
 
-      {:ok, %{endpoint: endpoint_spec, properties: %{}}}
+      properties = valid_opts |> Map.from_struct()
+
+      {:ok, %{endpoint: endpoint_spec, properties: properties}}
     else
       {:error, [%OpenApiSpex.Cast.Error{reason: :missing_field, name: name}]} ->
         {:error, {:missing_parameter, name}}

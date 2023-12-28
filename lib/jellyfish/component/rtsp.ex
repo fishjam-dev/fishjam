@@ -9,7 +9,13 @@ defmodule Jellyfish.Component.RTSP do
 
   alias JellyfishWeb.ApiSpec.Component.RTSP.Options
 
-  @type properties :: %{}
+  @type properties :: %{
+          sourceUri: String.t(),
+          rtpPort: port(),
+          reconnectDelay: non_neg_integer(),
+          keepAliveInterval: non_neg_integer(),
+          pierceNat: boolean()
+        }
 
   @impl true
   def config(%{engine_pid: engine} = options) do
@@ -26,7 +32,9 @@ defmodule Jellyfish.Component.RTSP do
         |> Map.put(:max_reconnect_attempts, :infinity)
         |> then(&struct(RTSP, &1))
 
-      {:ok, %{endpoint: endpoint_spec, properties: %{}}}
+      properties = valid_opts |> Map.from_struct()
+
+      {:ok, %{endpoint: endpoint_spec, properties: properties}}
     else
       {:error, [%OpenApiSpex.Cast.Error{reason: :missing_field, name: name}]} ->
         {:error, {:missing_parameter, name}}
