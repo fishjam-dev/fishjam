@@ -37,7 +37,8 @@ defmodule JellyfishWeb.ApiSpec.Component.RTSP do
           description:
             "Whether to attempt to create client-side NAT binding by sending an empty datagram from client to source, after the completion of RTSP setup"
         }
-      }
+      },
+      required: [:sourceUri, :rtpPort, :reconnectDelay, :keepAliveInterval, :pierceNat]
     })
   end
 

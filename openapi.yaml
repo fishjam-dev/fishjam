@@ -173,6 +173,8 @@ components:
           description: Path to track file. Must be either OPUS encapsulated in Ogg or raw h264
           example: /root/video.h264
           type: string
+      required:
+        - filePath
       title: ComponentPropertiesFile
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.File.Properties
@@ -346,6 +348,12 @@ components:
           description: URI of RTSP source stream
           example: rtsp://localhost:554/stream
           type: string
+      required:
+        - sourceUri
+        - rtpPort
+        - reconnectDelay
+        - keepAliveInterval
+        - pierceNat
       title: ComponentPropertiesRTSP
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.RTSP.Properties
