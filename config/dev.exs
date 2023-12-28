@@ -20,9 +20,6 @@ config :jellyfish, JellyfishWeb.Endpoint,
   debug_errors: true,
   watchers: []
 
-# Do not include metadata nor timestamps in development logs
-config :logger, :console, level: :info, format: "[$level] $message\n"
-
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
 config :phoenix, :stacktrace_depth, 20

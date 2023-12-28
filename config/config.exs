@@ -35,4 +35,6 @@ config :jellyfish,
 
 config :ex_aws, :http_client, Jellyfish.Component.HLS.HTTPoison
 
+config :bundlex, :disable_precompiled_os_deps, apps: [:membrane_h264_ffmpeg_plugin, :ex_libsrtp]
+
 import_config "#{config_env()}.exs"

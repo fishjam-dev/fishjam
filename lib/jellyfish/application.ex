@@ -66,11 +66,11 @@ defmodule Jellyfish.Application do
   defp config_distribution(dist_config) do
     ensure_epmd_started!()
 
-    # Release always starts in a distributed mode
-    # so we have to start a node only in development.
-    # See env.sh.eex for more information.
+    # When running JF not in a cluster and using
+    # mix release, it starts in the distributed mode
+    # automatically
     unless Node.alive?() do
-      case Node.start(dist_config[:node_name]) do
+      case Node.start(dist_config[:node_name], dist_config[:mode]) do
         {:ok, _} ->
           :ok
 
