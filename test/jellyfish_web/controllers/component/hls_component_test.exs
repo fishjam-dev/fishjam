@@ -12,13 +12,14 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
   @body <<1, 2, 3, 4>>
 
   @hls_properties %{
-    playable: false,
-    lowLatency: false,
-    persistent: false,
-    targetWindowDuration: nil,
-    subscribeMode: "auto",
-    s3: nil
-  } |> map_keys_to_string()
+                    playable: false,
+                    lowLatency: false,
+                    persistent: false,
+                    targetWindowDuration: nil,
+                    subscribeMode: "auto",
+                    s3: nil
+                  }
+                  |> map_keys_to_string()
 
   describe "create hls component" do
     setup [:create_h264_room]

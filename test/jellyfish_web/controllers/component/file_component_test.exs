@@ -40,7 +40,7 @@ defmodule JellyfishWeb.Component.FileComponentTest do
                  "id" => id,
                  "type" => "file",
                  "properties" => %{
-                  "filePath" => @video_source
+                   "filePath" => @video_source
                  }
                }
              } =
@@ -61,7 +61,7 @@ defmodule JellyfishWeb.Component.FileComponentTest do
                  "id" => id,
                  "type" => "file",
                  "properties" => %{
-                  "filePath" => @audio_source
+                   "filePath" => @audio_source
                  }
                }
              } =
@@ -91,7 +91,7 @@ defmodule JellyfishWeb.Component.FileComponentTest do
                  "id" => id,
                  "type" => "file",
                  "properties" => %{
-                  "filePath" => ^video_relative_path
+                   "filePath" => ^video_relative_path
                  }
                }
              } =

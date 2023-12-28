@@ -5,12 +5,13 @@ defmodule JellyfishWeb.Component.RTSPComponentTest do
   @source_uri "rtsp://placeholder-19inrifjbsjb.it:12345/afwefae"
 
   @rtsp_default_properties %{
-    sourceUri: @source_uri,
-    rtpPort: 20_000,
-    reconnectDelay: 15_000,
-    keepAliveInterval: 15_000,
-    pierceNat: true
-  } |> map_keys_to_string()
+                             sourceUri: @source_uri,
+                             rtpPort: 20_000,
+                             reconnectDelay: 15_000,
+                             keepAliveInterval: 15_000,
+                             pierceNat: true
+                           }
+                           |> map_keys_to_string()
 
   @rtsp_custom_options %{
     sourceUri: @source_uri,

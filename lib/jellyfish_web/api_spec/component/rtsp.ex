@@ -16,8 +16,7 @@ defmodule JellyfishWeb.ApiSpec.Component.RTSP do
       properties: %{
         sourceUri: %Schema{
           type: :string,
-          description: "URI of RTSP source stream",
-          example: "rtsp://localhost:554/stream"
+          description: "URI of RTSP source stream"
         },
         rtpPort: %Schema{
           type: :integer,

@@ -170,8 +170,7 @@ components:
       description: Properties specific to the File component
       properties:
         filePath:
-          description: Path to track file. Must be either OPUS encapsulated in Ogg or raw h264
-          example: /root/video.h264
+          description: Relative path to track file. Must be either OPUS encapsulated in Ogg or raw h264
           type: string
       required:
         - filePath
@@ -346,7 +345,6 @@ components:
           type: integer
         sourceUri:
           description: URI of RTSP source stream
-          example: rtsp://localhost:554/stream
           type: string
       required:
         - sourceUri
