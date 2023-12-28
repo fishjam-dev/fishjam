@@ -13,7 +13,31 @@ defmodule JellyfishWeb.ApiSpec.Component.RTSP do
       title: "ComponentPropertiesRTSP",
       description: "Properties specific to the RTSP component",
       type: :object,
-      properties: %{}
+      properties: %{
+        sourceUri: %Schema{
+          type: :string,
+          description: "URI of RTSP source stream"
+        },
+        rtpPort: %Schema{
+          type: :integer,
+          description: "Local port RTP stream will be received at"
+        },
+        reconnectDelay: %Schema{
+          type: :integer,
+          description: "Delay (in ms) between successive reconnect attempts"
+        },
+        keepAliveInterval: %Schema{
+          type: :integer,
+          description:
+            "Interval (in ms) in which keep-alive RTSP messages will be sent to the remote stream source"
+        },
+        pierceNat: %Schema{
+          type: :boolean,
+          description:
+            "Whether to attempt to create client-side NAT binding by sending an empty datagram from client to source, after the completion of RTSP setup"
+        }
+      },
+      required: [:sourceUri, :rtpPort, :reconnectDelay, :keepAliveInterval, :pierceNat]
     })
   end
 

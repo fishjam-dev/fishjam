@@ -39,7 +39,9 @@ defmodule JellyfishWeb.Component.FileComponentTest do
                "data" => %{
                  "id" => id,
                  "type" => "file",
-                 "properties" => %{}
+                 "properties" => %{
+                   "filePath" => @video_source
+                 }
                }
              } =
                model_response(conn, :created, "ComponentDetailsResponse")
@@ -58,7 +60,9 @@ defmodule JellyfishWeb.Component.FileComponentTest do
                "data" => %{
                  "id" => id,
                  "type" => "file",
-                 "properties" => %{}
+                 "properties" => %{
+                   "filePath" => @audio_source
+                 }
                }
              } =
                model_response(conn, :created, "ComponentDetailsResponse")
@@ -86,7 +90,9 @@ defmodule JellyfishWeb.Component.FileComponentTest do
                "data" => %{
                  "id" => id,
                  "type" => "file",
-                 "properties" => %{}
+                 "properties" => %{
+                   "filePath" => ^video_relative_path
+                 }
                }
              } =
                model_response(conn, :created, "ComponentDetailsResponse")

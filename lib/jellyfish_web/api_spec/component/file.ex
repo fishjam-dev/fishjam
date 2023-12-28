@@ -13,7 +13,14 @@ defmodule JellyfishWeb.ApiSpec.Component.File do
       title: "ComponentPropertiesFile",
       description: "Properties specific to the File component",
       type: :object,
-      properties: %{}
+      properties: %{
+        filePath: %Schema{
+          type: :string,
+          description:
+            "Relative path to track file. Must be either OPUS encapsulated in Ogg or raw h264"
+        }
+      },
+      required: [:filePath]
     })
   end
 
@@ -45,7 +52,8 @@ defmodule JellyfishWeb.ApiSpec.Component.File do
     properties: %{
       id: %Schema{type: :string, description: "Assigned component ID", example: "component-1"},
       # FIXME: due to cyclic imports, we can't use ApiSpec.Component.Type here
-      type: %Schema{type: :string, description: "Component type", example: "file"}
+      type: %Schema{type: :string, description: "Component type", example: "file"},
+      properties: Properties
     },
     required: [:id, :type]
   })

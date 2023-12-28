@@ -7,8 +7,6 @@ defmodule JellyfishWeb.ComponentCase do
   use ExUnit.CaseTemplate
   use JellyfishWeb.ConnCase
 
-  @schema JellyfishWeb.ApiSpec.spec()
-
   using do
     quote do
       import JellyfishWeb.ComponentCase
@@ -61,7 +59,16 @@ defmodule JellyfishWeb.ComponentCase do
     conn
   end
 
+  @spec map_keys_to_string(map()) :: map()
+  def map_keys_to_string(map) do
+    Map.new(map, fn {k, v} -> {Atom.to_string(k), v} end)
+  end
+
   defp assert_response_schema(response, model) do
-    OpenApiSpex.TestAssertions.assert_response_schema(response, model, @schema)
+    OpenApiSpex.TestAssertions.assert_response_schema(
+      response,
+      model,
+      JellyfishWeb.ApiSpec.spec()
+    )
   end
 end

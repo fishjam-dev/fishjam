@@ -11,6 +11,16 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
   @files ["manifest.m3u8", "header.mp4", "segment_1.m3u8", "segment_2.m3u8"]
   @body <<1, 2, 3, 4>>
 
+  @hls_properties %{
+                    playable: false,
+                    lowLatency: false,
+                    persistent: false,
+                    targetWindowDuration: nil,
+                    subscribeMode: "auto",
+                    s3: nil
+                  }
+                  |> map_keys_to_string()
+
   describe "create hls component" do
     setup [:create_h264_room]
 
@@ -24,13 +34,7 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
                "data" => %{
                  "id" => id,
                  "type" => "hls",
-                 "properties" => %{
-                   "playable" => false,
-                   "lowLatency" => false,
-                   "persistent" => false,
-                   "targetWindowDuration" => nil,
-                   "subscribeMode" => "auto"
-                 }
+                 "properties" => @hls_properties
                }
              } =
                model_response(conn, :created, "ComponentDetailsResponse")
@@ -53,18 +57,9 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
     test "renders component with peristent enabled", %{conn: conn, room_id: room_id} do
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls", options: %{persistent: true})
 
-      assert %{
-               "data" => %{
-                 "type" => "hls",
-                 "properties" => %{
-                   "playable" => false,
-                   "lowLatency" => false,
-                   "persistent" => true,
-                   "targetWindowDuration" => nil,
-                   "subscribeMode" => "auto"
-                 }
-               }
-             } =
+      properties = @hls_properties |> Map.put("persistent", true)
+
+      assert %{"data" => %{"type" => "hls", "properties" => ^properties}} =
                model_response(conn, :created, "ComponentDetailsResponse")
 
       assert_hls_path(room_id, persistent: true)
@@ -96,13 +91,7 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
       assert %{
                "data" => %{
                  "type" => "hls",
-                 "properties" => %{
-                   "playable" => false,
-                   "lowLatency" => false,
-                   "persistent" => false,
-                   "targetWindowDuration" => nil,
-                   "subscribeMode" => "auto"
-                 }
+                 "properties" => @hls_properties
                }
              } =
                model_response(conn, :created, "ComponentDetailsResponse")
@@ -138,24 +127,17 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
     end
 
     test "renders component with targetWindowDuration set", %{conn: conn, room_id: room_id} do
+      target_window_duration = 10
+
       conn =
         post(conn, ~p"/room/#{room_id}/component",
           type: "hls",
-          options: %{targetWindowDuration: 10}
+          options: %{targetWindowDuration: target_window_duration}
         )
 
-      assert %{
-               "data" => %{
-                 "type" => "hls",
-                 "properties" => %{
-                   "playable" => false,
-                   "lowLatency" => false,
-                   "persistent" => false,
-                   "targetWindowDuration" => 10,
-                   "subscribeMode" => "auto"
-                 }
-               }
-             } =
+      properties = @hls_properties |> Map.put("targetWindowDuration", target_window_duration)
+
+      assert %{"data" => %{"type" => "hls", "properties" => ^properties}} =
                model_response(conn, :created, "ComponentDetailsResponse")
 
       conn = delete(conn, ~p"/room/#{room_id}")
@@ -168,13 +150,9 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
 
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls", options: %{lowLatency: true})
 
-      assert %{
-               "data" => %{
-                 "id" => id,
-                 "type" => "hls",
-                 "properties" => %{"playable" => false, "lowLatency" => true}
-               }
-             } =
+      properties = @hls_properties |> Map.put("lowLatency", true)
+
+      assert %{"data" => %{"id" => id, "type" => "hls", "properties" => ^properties}} =
                model_response(conn, :created, "ComponentDetailsResponse")
 
       assert_component_created(conn, room_id, id, "hls")
