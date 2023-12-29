@@ -151,23 +151,10 @@ defmodule Jellyfish.ConfigReaderTest do
 
       assert ConfigReader.read_dist_config() == [
                enabled: true,
-               mode: :longnames,
+               mode: :shortnames,
                strategy: Cluster.Strategy.Epmd,
                node_name: :"jellyfish@#{hostname}",
                cookie: :jellyfish_cookie,
-               strategy_config: [hosts: []]
-             ]
-
-      System.put_env("JF_DIST_MODE", "sname")
-      System.put_env("JF_DIST_COOKIE", "testcookie")
-      System.put_env("JF_DIST_NODE_NAME", "testnodename@test")
-
-      assert ConfigReader.read_dist_config() == [
-               enabled: true,
-               mode: :shortnames,
-               strategy: Cluster.Strategy.Epmd,
-               node_name: :testnodename@test,
-               cookie: :testcookie,
                strategy_config: [hosts: []]
              ]
 
@@ -181,6 +168,7 @@ defmodule Jellyfish.ConfigReaderTest do
       assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
 
       System.put_env("JF_DIST_MODE", "name")
+      System.put_env("JF_DIST_COOKIE", "testcookie")
       System.put_env("JF_DIST_NODE_NAME", "testnodename@127.0.0.1")
       System.put_env("JF_DIST_NODES", "testnodename1@127.0.0.1 testnodename2@127.0.0.1")
 
@@ -198,6 +186,7 @@ defmodule Jellyfish.ConfigReaderTest do
   test "read_dist_config/0 DNS" do
     with_env [
       "JF_DIST_ENABLED",
+      "JF_DIST_MODE",
       "JF_DIST_COOKIE",
       "JF_DIST_NODE_NAME",
       "JF_DIST_NODES",
@@ -213,6 +202,7 @@ defmodule Jellyfish.ConfigReaderTest do
              ]
 
       System.put_env("JF_DIST_ENABLED", "true")
+      System.put_env("JF_DIST_MODE", "name")
       System.put_env("JF_DIST_STRATEGY_NAME", "DNS")
       assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
       System.put_env("JF_DIST_QUERY", "my-app.example.com")

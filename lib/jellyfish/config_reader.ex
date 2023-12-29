@@ -122,7 +122,7 @@ defmodule Jellyfish.ConfigReader do
   def read_dist_config() do
     dist_enabled? = read_boolean("JF_DIST_ENABLED")
     dist_strategy = System.get_env("JF_DIST_STRATEGY_NAME")
-    mode_value = System.get_env("JF_DIST_MODE", "name")
+    mode_value = System.get_env("JF_DIST_MODE", "sname")
     cookie_value = System.get_env("JF_DIST_COOKIE", "jellyfish_cookie")
 
     {:ok, hostname} = :inet.gethostname()
@@ -177,6 +177,10 @@ defmodule Jellyfish.ConfigReader do
       cookie: cookie,
       strategy_config: [hosts: nodes]
     ]
+  end
+
+  defp do_read_dns_config(_node_name_value, _cookie, :shortnames) do
+    raise "DNS strategy requires `JF_DIST_MODE` to be `name`"
   end
 
   defp do_read_dns_config(node_name_value, cookie, mode) do
