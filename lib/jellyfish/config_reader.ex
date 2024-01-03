@@ -202,11 +202,11 @@ defmodule Jellyfish.ConfigReader do
           "Resolving hostname part of JF node name as DNS cluster strategy requires IP address."
         )
 
-        r_hostname = resolve_hostname(hostname)
+        resolved_hostname = resolve_hostname(hostname)
 
-        Logger.info("Resolved #{hostname} as #{r_hostname}")
+        Logger.info("Resolved #{hostname} as #{resolved_hostname}")
 
-        String.to_atom("#{node_basename}@#{r_hostname}")
+        String.to_atom("#{node_basename}@#{resolved_hostname}")
       end
 
     polling_interval = parse_polling_interval()
