@@ -122,18 +122,31 @@ defmodule Jellyfish.ConfigReader do
   def read_dist_config() do
     dist_enabled? = read_boolean("JF_DIST_ENABLED")
     dist_strategy = System.get_env("JF_DIST_STRATEGY_NAME")
-    node_name_value = System.get_env("JF_DIST_NODE_NAME")
+    mode_value = System.get_env("JF_DIST_MODE", "sname")
     cookie_value = System.get_env("JF_DIST_COOKIE", "jellyfish_cookie")
+
+    {:ok, hostname} = :inet.gethostname()
+    node_name_value = System.get_env("JF_DIST_NODE_NAME", "jellyfish@#{hostname}")
+
+    cookie = parse_cookie(cookie_value)
+    mode = parse_mode(mode_value)
 
     cond do
       is_nil(dist_enabled?) or not dist_enabled? ->
-        [enabled: false, strategy: nil, node_name: nil, cookie: nil, strategy_config: nil]
+        [
+          enabled: false,
+          mode: nil,
+          strategy: nil,
+          node_name: nil,
+          cookie: nil,
+          strategy_config: nil
+        ]
 
       dist_strategy == "NODES_LIST" or is_nil(dist_strategy) ->
-        do_read_nodes_list_config(node_name_value, cookie_value)
+        do_read_nodes_list_config(node_name_value, cookie, mode)
 
       dist_strategy == "DNS" ->
-        do_read_dns_config(node_name_value, cookie_value)
+        do_read_dns_config(node_name_value, cookie, mode)
 
       true ->
         raise """
@@ -143,15 +156,10 @@ defmodule Jellyfish.ConfigReader do
     end
   end
 
-  defp do_read_nodes_list_config(node_name_value, cookie_value) do
+  defp do_read_nodes_list_config(node_name_value, cookie, mode) do
     nodes_value = System.get_env("JF_DIST_NODES", "")
 
-    unless node_name_value do
-      raise "JF_DIST_ENABLED has been set but JF_DIST_NODE_NAME remains unset."
-    end
-
     node_name = parse_node_name(node_name_value)
-    cookie = parse_cookie(cookie_value)
     nodes = parse_nodes(nodes_value)
 
     if nodes == [] do
@@ -163,6 +171,7 @@ defmodule Jellyfish.ConfigReader do
 
     [
       enabled: true,
+      mode: mode,
       strategy: Cluster.Strategy.Epmd,
       node_name: node_name,
       cookie: cookie,
@@ -170,13 +179,12 @@ defmodule Jellyfish.ConfigReader do
     ]
   end
 
-  defp do_read_dns_config(node_name_value, cookie_value) do
-    unless node_name_value do
-      raise "JF_DIST_ENABLED has been set but JF_DIST_NODE_NAME remains unset."
-    end
+  defp do_read_dns_config(_node_name_value, _cookie, :shortnames) do
+    raise "DNS strategy requires `JF_DIST_MODE` to be `name`"
+  end
 
+  defp do_read_dns_config(node_name_value, cookie, mode) do
     node_name = parse_node_name(node_name_value)
-    cookie = parse_cookie(cookie_value)
 
     query_value = System.get_env("JF_DIST_QUERY")
 
@@ -184,12 +192,28 @@ defmodule Jellyfish.ConfigReader do
       raise "JF_DIST_QUERY is required by DNS strategy"
     end
 
-    [node_basename, _ip_addres_or_fqdn | []] = String.split(node_name_value, "@")
+    [node_basename, hostname | []] = String.split(node_name_value, "@")
+
+    node_name =
+      if is_ip_address(hostname) do
+        node_name
+      else
+        Logger.info(
+          "Resolving hostname part of JF node name as DNS cluster strategy requires IP address."
+        )
+
+        resolved_hostname = resolve_hostname(hostname)
+
+        Logger.info("Resolved #{hostname} as #{resolved_hostname}")
+
+        String.to_atom("#{node_basename}@#{resolved_hostname}")
+      end
 
     polling_interval = parse_polling_interval()
 
     [
       enabled: true,
+      mode: mode,
       strategy: Cluster.Strategy.DNSPoll,
       node_name: node_name,
       cookie: cookie,
@@ -228,6 +252,32 @@ defmodule Jellyfish.ConfigReader do
 
       _other ->
         raise "`JF_DIST_POLLING_INTERVAL` must be a positivie integer. Got: #{env_value}"
+    end
+  end
+
+  defp parse_mode("name"), do: :longnames
+  defp parse_mode("sname"), do: :shortnames
+  defp parse_mode(other), do: raise("Invalid JF_DIST_MODE. Expected sname or name, got: #{other}")
+
+  defp is_ip_address(hostname) do
+    case :inet.parse_address(String.to_charlist(hostname)) do
+      {:ok, _} -> true
+      {:error, _} -> false
+    end
+  end
+
+  defp resolve_hostname(hostname) do
+    case :inet.gethostbyname(String.to_charlist(hostname)) do
+      {:ok, {:hostent, _, _, _, _, h_addr_list}} ->
+        # Assert there is at least one ip address.
+        # In other case, this is fatal error
+        [h | _] = h_addr_list
+        "#{:inet.ntoa(h)}"
+
+      {:error, reason} ->
+        raise """
+        Couldn't resolve #{hostname}, reason: #{reason}.        
+        """
     end
   end
 end
