@@ -180,7 +180,7 @@ defmodule Jellyfish.RoomService do
     )
 
     for room <- rooms do
-      peer_count = room.peers |> Map.keys() |> Enum.count()
+      peer_count = room.peers |> Enum.count()
 
       :telemetry.execute(
         [:jellyfish, :room],
