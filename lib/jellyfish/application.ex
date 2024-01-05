@@ -52,7 +52,13 @@ defmodule Jellyfish.Application do
     Logger.info("Distribution config: #{inspect(Keyword.delete(dist_config, :cookie))}")
     Logger.info("WebRTC config: #{inspect(webrtc_config)}")
 
-    Supervisor.start_link(children, opts)
+    result = Supervisor.start_link(children, opts)
+
+    # If we do not set a default value for WebRTC metrics,
+    # the metrics will be sent from the moment the first peer joins a room.
+    JellyfishWeb.Telemetry.default_webrtc_metrics()
+
+    result
   end
 
   # Tell Phoenix to update the endpoint configuration
