@@ -293,7 +293,7 @@
                                 "uid": "${ds}"
                             },
                             "editorMode": "code",
-                            "expr": "irate(jellyfish_traffic_ingress_total_bytes{instance=~\"$instance\"}[$__rate_interval])*8",
+                            "expr": "irate(jellyfish_traffic_ingress_webrtc_total_bytes{instance=~\"$instance\"}[$__rate_interval])*8\n+ \nirate(jellyfish_traffic_ingress_http_total_bytes{instance=~\"$instance\"}[$__rate_interval])*8",
                             "instant": false,
                             "legendFormat": "{{instance}}",
                             "range": true,
@@ -390,7 +390,7 @@
                                 "uid": "${ds}"
                             },
                             "editorMode": "code",
-                            "expr": "irate(jellyfish_traffic_egress_total_bytes{instance=~\"$instance\"}[$__rate_interval])*8",
+                            "expr": "irate(jellyfish_traffic_egress_webrtc_total_bytes{instance=~\"$instance\"}[$__rate_interval])*8\n+\nirate(jellyfish_traffic_egress_http_total_bytes{instance=~\"$instance\"}[$__rate_interval])*8",
                             "instant": false,
                             "legendFormat": "{{instance}}",
                             "range": true,
@@ -503,7 +503,7 @@
                                 "uid": "${ds}"
                             },
                             "editorMode": "code",
-                            "expr": "irate(jellyfish_traffic_ingress_total_bytes{instance=~\"$instance\"}[$__rate_interval])*8",
+                            "expr": "irate(jellyfish_traffic_ingress_webrtc_total_bytes{instance=~\"$instance\"}[$__rate_interval])*8\n+\nirate(jellyfish_traffic_ingress_http_total_bytes{instance=~\"$instance\"}[$__rate_interval])*8",
                             "instant": false,
                             "legendFormat": "{{instance}} ingress",
                             "range": true,
@@ -515,7 +515,7 @@
                                 "uid": "${ds}"
                             },
                             "editorMode": "code",
-                            "expr": "irate(jellyfish_traffic_egress_total_bytes{instance=~\"$instance\"}[$__rate_interval])*8",
+                            "expr": "irate(jellyfish_traffic_egress_webrtc_total_bytes{instance=~\"$instance\"}[$__rate_interval])*8\n+\nirate(jellyfish_traffic_egress_http_total_bytes{instance=~\"$instance\"}[$__rate_interval])*8",
                             "hide": false,
                             "instant": false,
                             "legendFormat": "{{instance}} egress",
