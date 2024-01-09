@@ -137,11 +137,12 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
   test "media event", %{token: token} do
     ws = create_and_authenticate(token)
 
-    data = Jason.encode!(%{"type" => "custom", "data" => %{"type" => "renegotiateTracks"}})
+    data = Jason.encode!(%{"type" => "connect", "data" => %{"metadata" => nil}})
     msg = PeerMessage.encode(%PeerMessage{content: {:media_event, %MediaEvent{data: data}}})
     :ok = WS.send_binary_frame(ws, msg)
 
-    assert_receive %MediaEvent{data: _data}, 1000
+    assert_receive %MediaEvent{data: data}, 1000
+    assert %{"type" => "connected"} = Jason.decode!(data)
   end
 
   test "peer removal", %{room_id: room_id, peer_id: peer_id, token: token, conn: conn} do
