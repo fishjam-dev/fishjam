@@ -148,7 +148,10 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_call(:get_state, _from, state) do
-    {:reply, state, state}
+    all_tracks = Engine.get_tracks(state.engine_pid)
+    response = update_with_track_metadata(state, all_tracks)
+
+    {:reply, response, state}
   end
 
   @impl true
@@ -368,8 +371,8 @@ defmodule Jellyfish.Room do
   def handle_info(%EndpointCrashed{endpoint_id: endpoint_id}, state) do
     Logger.error("RTC Engine endpoint #{inspect(endpoint_id)} crashed")
 
-    case get_endpoint_type(state, endpoint_id) do
-      :peer ->
+    case get_endpoint_group(state, endpoint_id) do
+      :peers ->
         Event.broadcast_server_notification({:peer_crashed, state.id, endpoint_id})
 
         peer = Map.fetch!(state.peers, endpoint_id)
@@ -378,7 +381,7 @@ defmodule Jellyfish.Room do
           send(peer.socket_pid, {:stop_connection, :endpoint_crashed})
         end
 
-      :component ->
+      :components ->
         Event.broadcast_server_notification({:component_crashed, state.id, endpoint_id})
 
         component = Map.get(state.components, endpoint_id)
@@ -587,11 +590,21 @@ defmodule Jellyfish.Room do
 
   defp validate_hls_subscription(%{properties: %{subscribe_mode: :manual}}), do: :ok
 
-  defp get_endpoint_type(state, endpoint_id) when is_map_key(state.components, endpoint_id),
-    do: :component
+  defp update_with_track_metadata(state, tracks) do
+    Enum.reduce(tracks, state, fn engine_track, state ->
+      track = Track.from_engine_track(engine_track)
+      endpoint_id = engine_track.origin
+      endpoint_group = get_endpoint_group(state, endpoint_id)
 
-  defp get_endpoint_type(state, endpoint_id) when is_map_key(state.peers, endpoint_id),
-    do: :peer
+      put_in(state, [endpoint_group, endpoint_id, :tracks, track.id], track)
+    end)
+  end
+
+  defp get_endpoint_group(state, endpoint_id) when is_map_key(state.components, endpoint_id),
+    do: :components
+
+  defp get_endpoint_group(state, endpoint_id) when is_map_key(state.peers, endpoint_id),
+    do: :peers
 
   defp add_track(state, track_info) do
     track = Track.from_track_added_message(track_info)
@@ -604,12 +617,7 @@ defmodule Jellyfish.Room do
   end
 
   defp get_track_keys(state, track_info) do
-    endpoints_type =
-      case get_endpoint_type(state, track_info.endpoint_id) do
-        :component -> :components
-        :peer -> :peers
-      end
-
-    [endpoints_type, track_info.endpoint_id, :tracks, track_info.track_id]
+    endpoint_group = get_endpoint_group(state, track_info.endpoint_id)
+    [endpoint_group, track_info.endpoint_id, :tracks, track_info.track_id]
   end
 end

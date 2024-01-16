@@ -6,6 +6,7 @@ defmodule Jellyfish.Track do
   use Bunch.Access
 
   alias Membrane.RTC.Engine.Message.TrackAdded
+  alias Membrane.RTC.Engine.Track
 
   @enforce_keys [:id, :type, :encoding]
   defstruct @enforce_keys ++ [:metadata]
@@ -25,6 +26,16 @@ defmodule Jellyfish.Track do
       id: message.track_id,
       type: message.track_type,
       encoding: message.track_encoding
+    }
+  end
+
+  @spec from_engine_track(Track.t()) :: t()
+  def from_engine_track(engine_track) do
+    %__MODULE__{
+      id: engine_track.id,
+      type: engine_track.type,
+      encoding: engine_track.encoding,
+      metadata: engine_track.metadata
     }
   end
 end
