@@ -19,7 +19,8 @@ defmodule JellyfishWeb.PeerJSON do
     %{
       id: peer.id,
       type: type,
-      status: "#{peer.status}"
+      status: "#{peer.status}",
+      tracks: peer.tracks |> Map.values() |> Enum.map(&Map.from_struct/1)
     }
   end
 end

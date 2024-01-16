@@ -13,6 +13,7 @@ defmodule Jellyfish.Room do
   alias Jellyfish.Event
   alias Jellyfish.Peer
   alias Jellyfish.Room.Config
+  alias Jellyfish.Track
 
   alias Membrane.ICE.TURNManager
   alias Membrane.RTC.Engine
@@ -367,19 +368,21 @@ defmodule Jellyfish.Room do
   def handle_info(%EndpointCrashed{endpoint_id: endpoint_id}, state) do
     Logger.error("RTC Engine endpoint #{inspect(endpoint_id)} crashed")
 
-    if Map.has_key?(state.peers, endpoint_id) do
-      Event.broadcast_server_notification({:peer_crashed, state.id, endpoint_id})
+    case get_endpoint_type(state, endpoint_id) do
+      :peer ->
+        Event.broadcast_server_notification({:peer_crashed, state.id, endpoint_id})
 
-      peer = Map.fetch!(state.peers, endpoint_id)
+        peer = Map.fetch!(state.peers, endpoint_id)
 
-      if peer.socket_pid != nil do
-        send(peer.socket_pid, {:stop_connection, :endpoint_crashed})
-      end
-    else
-      Event.broadcast_server_notification({:component_crashed, state.id, endpoint_id})
+        if peer.socket_pid != nil do
+          send(peer.socket_pid, {:stop_connection, :endpoint_crashed})
+        end
 
-      component = Map.get(state.components, endpoint_id)
-      if component.type == HLS, do: on_hls_removal(state.id, component.properties)
+      :component ->
+        Event.broadcast_server_notification({:component_crashed, state.id, endpoint_id})
+
+        component = Map.get(state.components, endpoint_id)
+        if component.type == HLS, do: on_hls_removal(state.id, component.properties)
     end
 
     {:noreply, state}
@@ -436,23 +439,28 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def handle_info(
-        %EndpointAdded{endpoint_id: endpoint_id},
-        state
-      )
+  def handle_info(%EndpointAdded{endpoint_id: endpoint_id}, state)
       when endpoint_exists?(state, endpoint_id) do
     {:noreply, state}
   end
 
   @impl true
-  def handle_info(%TrackAdded{} = track_info, state) do
-    Logger.info("Endpoint #{track_info.endpoint_id} added track #{inspect(track_info)}")
+  def handle_info(%TrackAdded{endpoint_id: endpoint_id} = track_info, state)
+      when endpoint_exists?(state, endpoint_id) do
+    Logger.info("Endpoint #{endpoint_id} added track #{inspect(track_info)}")
+
+    state = add_track(state, track_info)
+
     {:noreply, state}
   end
 
   @impl true
-  def handle_info(%TrackRemoved{} = track_info, state) do
-    Logger.info("Endpoint #{track_info.endpoint_id} removed track #{inspect(track_info)}")
+  def handle_info(%TrackRemoved{endpoint_id: endpoint_id} = track_info, state)
+      when endpoint_exists?(state, endpoint_id) do
+    Logger.info("Endpoint #{endpoint_id} removed track #{inspect(track_info)}")
+
+    state = remove_track(state, track_info)
+
     {:noreply, state}
   end
 
@@ -578,4 +586,30 @@ defmodule Jellyfish.Room do
     do: {:error, :invalid_subscribe_mode}
 
   defp validate_hls_subscription(%{properties: %{subscribe_mode: :manual}}), do: :ok
+
+  defp get_endpoint_type(state, endpoint_id) when is_map_key(state.components, endpoint_id),
+    do: :component
+
+  defp get_endpoint_type(state, endpoint_id) when is_map_key(state.peers, endpoint_id),
+    do: :peer
+
+  defp add_track(state, track_info) do
+    track = Track.from_track_added_message(track_info)
+    put_in(state, get_track_keys(state, track_info), track)
+  end
+
+  defp remove_track(state, track_info) do
+    {_track, state} = pop_in(state, get_track_keys(state, track_info))
+    state
+  end
+
+  defp get_track_keys(state, track_info) do
+    endpoints_type =
+      case get_endpoint_type(state, track_info.endpoint_id) do
+        :component -> :components
+        :peer -> :peers
+      end
+
+    [endpoints_type, track_info.endpoint_id, :tracks, track_info.track_id]
+  end
 end

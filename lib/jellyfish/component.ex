@@ -11,6 +11,7 @@ defmodule Jellyfish.Component do
   use Bunch.Access
 
   alias Jellyfish.Component.{File, HLS, RTSP}
+  alias Jellyfish.Track
 
   @enforce_keys [
     :id,
@@ -18,7 +19,7 @@ defmodule Jellyfish.Component do
     :engine_endpoint,
     :properties
   ]
-  defstruct @enforce_keys
+  defstruct @enforce_keys ++ [tracks: %{}]
 
   @type id :: String.t()
   @type component :: HLS | RTSP | File
@@ -35,7 +36,8 @@ defmodule Jellyfish.Component do
           id: id(),
           type: component(),
           engine_endpoint: Membrane.ChildrenSpec.child_definition(),
-          properties: properties()
+          properties: properties(),
+          tracks: %{Track.id() => Track.t()}
         }
 
   @spec parse_type(String.t()) :: {:ok, component()} | {:error, :invalid_type}

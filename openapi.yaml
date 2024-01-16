@@ -148,6 +148,11 @@ components:
           type: string
         properties:
           $ref: '#/components/schemas/ComponentPropertiesHLS'
+        tracks:
+          description: List of all component's tracks
+          items:
+            $ref: '#/components/schemas/Track'
+          type: array
         type:
           description: Component type
           example: hls
@@ -156,6 +161,7 @@ components:
         - id
         - type
         - properties
+        - tracks
       title: ComponentHLS
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS
@@ -186,6 +192,11 @@ components:
           type: string
         properties:
           $ref: '#/components/schemas/ComponentPropertiesFile'
+        tracks:
+          description: List of all component's tracks
+          items:
+            $ref: '#/components/schemas/Track'
+          type: array
         type:
           description: Component type
           example: file
@@ -193,6 +204,7 @@ components:
       required:
         - id
         - type
+        - tracks
       title: ComponentFile
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.File
@@ -224,6 +236,11 @@ components:
           type: string
         properties:
           $ref: '#/components/schemas/ComponentPropertiesRTSP'
+        tracks:
+          description: List of all component's tracks
+          items:
+            $ref: '#/components/schemas/Track'
+          type: array
         type:
           description: Component type
           example: hls
@@ -232,6 +249,7 @@ components:
         - id
         - type
         - properties
+        - tracks
       title: ComponentRTSP
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.RTSP
@@ -328,6 +346,28 @@ components:
       title: ComponentOptions
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Options
+    Track:
+      description: Describes media track of a Peer or Component
+      properties:
+        encoding:
+          enum:
+            - H264
+            - VP8
+            - OPUS
+          type: string
+        id:
+          type: string
+        metadata:
+          nullable: true
+          type: string
+        type:
+          enum:
+            - audio
+            - video
+          type: string
+      title: Track
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Track
     ComponentPropertiesRTSP:
       description: Properties specific to the RTSP component
       properties:
@@ -371,12 +411,18 @@ components:
           type: string
         status:
           $ref: '#/components/schemas/PeerStatus'
+        tracks:
+          description: List of all peer's tracks
+          items:
+            $ref: '#/components/schemas/Track'
+          type: array
         type:
           $ref: '#/components/schemas/PeerType'
       required:
         - id
         - type
         - status
+        - tracks
       title: Peer
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Peer

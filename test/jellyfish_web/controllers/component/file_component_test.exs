@@ -49,7 +49,7 @@ defmodule JellyfishWeb.Component.FileComponentTest do
       assert_component_created(conn, room_id, id, "file")
     end
 
-    test "renders component wiht audio as source", %{conn: conn, room_id: room_id} do
+    test "renders component with audio as source", %{conn: conn, room_id: room_id} do
       conn =
         post(conn, ~p"/room/#{room_id}/component",
           type: "file",

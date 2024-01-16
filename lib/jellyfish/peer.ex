@@ -3,15 +3,17 @@ defmodule Jellyfish.Peer do
   Peer is an entity that connects to the server to publish, subscribe or publish and subscribe to tracks published by
   producers or other peers. Peer process is spawned after peer connects to the server.
   """
+  use Bunch.Access
 
   alias Jellyfish.Peer.WebRTC
+  alias Jellyfish.Track
 
   @enforce_keys [
     :id,
     :type,
     :engine_endpoint
   ]
-  defstruct @enforce_keys ++ [status: :disconnected, socket_pid: nil]
+  defstruct @enforce_keys ++ [status: :disconnected, socket_pid: nil, tracks: %{}]
 
   @type id :: String.t()
   @type peer :: WebRTC
@@ -28,7 +30,8 @@ defmodule Jellyfish.Peer do
           type: peer(),
           status: status(),
           socket_pid: pid() | nil,
-          engine_endpoint: Membrane.ChildrenSpec.child_definition()
+          engine_endpoint: Membrane.ChildrenSpec.child_definition(),
+          tracks: %{Track.id() => Track.t()}
         }
 
   @spec parse_type(String.t()) :: {:ok, peer()} | {:error, :invalid_type}
