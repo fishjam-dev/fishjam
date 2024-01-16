@@ -149,7 +149,7 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
     create_and_authenticate(token)
 
     _conn = delete(conn, ~p"/room/#{room_id}/peer/#{peer_id}")
-    assert_receive {:disconnected, {:remote, 1000, "peer_removed"}}, 1000
+    assert_receive {:disconnected, {:remote, 1000, "Peer removed"}}, 1000
   end
 
   test "room crash", %{room_pid: room_pid, token: token} do
@@ -159,8 +159,8 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
 
     Process.exit(room_pid, :error)
 
-    assert_receive {:disconnected, {:remote, 1011, "internal_server_error"}}, 1000
-    assert_receive {:DOWN, ^ref, :process, ^ws, {:remote, 1011, "internal_server_error"}}
+    assert_receive {:disconnected, {:remote, 1011, "Internal server error"}}, 1000
+    assert_receive {:DOWN, ^ref, :process, ^ws, {:remote, 1011, "Internal server error"}}
   end
 
   test "room close", %{room_id: room_id, token: token, conn: conn} do
@@ -168,7 +168,7 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
     conn = delete(conn, ~p"/room/#{room_id}/")
     response(conn, :no_content)
 
-    assert_receive {:disconnected, {:remote, 1000, "room_stopped"}}, 1000
+    assert_receive {:disconnected, {:remote, 1000, "Room stopped"}}, 1000
   end
 
   def create_and_authenticate(token) do
