@@ -115,22 +115,22 @@ defmodule JellyfishWeb.PeerSocket do
 
   @impl true
   def handle_info({:stop_connection, :peer_removed}, state) do
-    {:stop, :closed, {1000, "peer_removed"}, state}
+    {:stop, :closed, {1000, "Peer removed"}, state}
   end
 
   @impl true
   def handle_info({:stop_connection, _reason}, state) do
-    {:stop, :closed, {1011, "internal_server_error"}, state}
+    {:stop, :closed, {1011, "Internal server error"}, state}
   end
 
   @impl true
   def handle_info(:room_crashed, state) do
-    {:stop, :closed, {1011, "internal_server_error"}, state}
+    {:stop, :closed, {1011, "Internal server error"}, state}
   end
 
   @impl true
   def handle_info(:room_stopped, state) do
-    {:stop, :closed, {1000, "room_stopped"}, state}
+    {:stop, :closed, {1000, "Room stopped"}, state}
   end
 
   @impl true
