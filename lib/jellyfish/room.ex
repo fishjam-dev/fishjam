@@ -602,19 +602,21 @@ defmodule Jellyfish.Room do
 
   defp update_with_track_metadata(state, tracks) do
     Enum.reduce(tracks, state, fn engine_track, state ->
-      endpoint_id = engine_track.origin
-      track_id = engine_track.id
-      endpoint_group = get_endpoint_group(state, endpoint_id)
+      endpoint_group = get_endpoint_group(state, engine_track.origin)
+      access_path = [endpoint_group, engine_track.origin, :tracks, engine_track.id]
 
-      update_in(state, [endpoint_group, endpoint_id, :tracks, track_id], fn
+      case get_in(state, access_path) do
         nil ->
           Logger.warning(
-            "Unable to update track's metadata - track #{inspect(track_id)} doesn't exist"
+            "Unable to update track's metadata - track #{inspect(engine_track.id)} doesn't exist"
           )
 
+          state
+
         track ->
-          %Track{track | metadata: engine_track.metadata}
-      end)
+          track = %Track{track | metadata: engine_track.metadata}
+          put_in(state, access_path, track)
+      end
     end)
   end
 

@@ -3,3 +3,5 @@
 openapi.yaml:
   no-empty-servers:
     - '#/servers'
+  spec:
+    - '#/components/schemas/Track/properties/metadata/nullable'
