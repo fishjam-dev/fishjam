@@ -359,7 +359,6 @@ components:
           type: string
         metadata:
           nullable: true
-          type: string
         type:
           enum:
             - audio

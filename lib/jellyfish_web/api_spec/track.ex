@@ -21,7 +21,6 @@ defmodule JellyfishWeb.ApiSpec.Track do
         enum: ["H264", "VP8", "OPUS"]
       },
       metadata: %Schema{
-        type: :string,
         nullable: true
       }
     }

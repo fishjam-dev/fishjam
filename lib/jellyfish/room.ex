@@ -371,21 +371,19 @@ defmodule Jellyfish.Room do
   def handle_info(%EndpointCrashed{endpoint_id: endpoint_id}, state) do
     Logger.error("RTC Engine endpoint #{inspect(endpoint_id)} crashed")
 
-    case get_endpoint_group(state, endpoint_id) do
-      :peers ->
-        Event.broadcast_server_notification({:peer_crashed, state.id, endpoint_id})
+    if Map.has_key?(state.peers, endpoint_id) do
+      Event.broadcast_server_notification({:peer_crashed, state.id, endpoint_id})
 
-        peer = Map.fetch!(state.peers, endpoint_id)
+      peer = Map.fetch!(state.peers, endpoint_id)
 
-        if peer.socket_pid != nil do
-          send(peer.socket_pid, {:stop_connection, :endpoint_crashed})
-        end
+      if peer.socket_pid != nil do
+        send(peer.socket_pid, {:stop_connection, :endpoint_crashed})
+      end
+    else
+      Event.broadcast_server_notification({:component_crashed, state.id, endpoint_id})
 
-      :components ->
-        Event.broadcast_server_notification({:component_crashed, state.id, endpoint_id})
-
-        component = Map.get(state.components, endpoint_id)
-        if component.type == HLS, do: on_hls_removal(state.id, component.properties)
+      component = Map.get(state.components, endpoint_id)
+      if component.type == HLS, do: on_hls_removal(state.id, component.properties)
     end
 
     {:noreply, state}
@@ -458,12 +456,24 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
+  def handle_info(%TrackAdded{endpoint_id: endpoint_id} = track_info, state) do
+    Logger.error("Unknown endpoint #{endpoint_id} added track #{inspect(track_info)}")
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_info(%TrackRemoved{endpoint_id: endpoint_id} = track_info, state)
       when endpoint_exists?(state, endpoint_id) do
     Logger.info("Endpoint #{endpoint_id} removed track #{inspect(track_info)}")
 
     state = remove_track(state, track_info)
 
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(%TrackRemoved{endpoint_id: endpoint_id} = track_info, state) do
+    Logger.error("Unknown endpoint #{endpoint_id} removed track #{inspect(track_info)}")
     {:noreply, state}
   end
 
@@ -592,11 +602,19 @@ defmodule Jellyfish.Room do
 
   defp update_with_track_metadata(state, tracks) do
     Enum.reduce(tracks, state, fn engine_track, state ->
-      track = Track.from_engine_track(engine_track)
       endpoint_id = engine_track.origin
+      track_id = engine_track.id
       endpoint_group = get_endpoint_group(state, endpoint_id)
 
-      put_in(state, [endpoint_group, endpoint_id, :tracks, track.id], track)
+      update_in(state, [endpoint_group, endpoint_id, :tracks, track_id], fn
+        nil ->
+          Logger.warning(
+            "Unable to update track's metadata - track #{inspect(track_id)} doesn't exist"
+          )
+
+        track ->
+          %Track{track | metadata: engine_track.metadata}
+      end)
     end)
   end
 
