@@ -24,7 +24,8 @@ defmodule Jellyfish.Track do
     %__MODULE__{
       id: message.track_id,
       type: message.track_type,
-      encoding: message.track_encoding
+      encoding: message.track_encoding,
+      metadata: message.track_metadata
     }
   end
 end

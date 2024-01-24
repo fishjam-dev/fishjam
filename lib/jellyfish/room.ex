@@ -20,10 +20,12 @@ defmodule Jellyfish.Room do
 
   alias Membrane.RTC.Engine.Message.{
     EndpointAdded,
+    EndpointMetadataUpdated,
     EndpointCrashed,
     EndpointMessage,
     EndpointRemoved,
     TrackAdded,
+    TrackMetadataUpdated,
     TrackRemoved
   }
 
@@ -148,10 +150,7 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_call(:get_state, _from, state) do
-    all_tracks = Engine.get_tracks(state.engine_pid)
-    response = update_with_track_metadata(state, all_tracks)
-
-    {:reply, response, state}
+    {:reply, state, state}
   end
 
   @impl true
@@ -446,6 +445,18 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
+  def handle_info(
+        %EndpointMetadataUpdated{endpoint_id: endpoint_id, endpoint_metadata: metadata},
+        state
+      )
+      when endpoint_exists?(state, endpoint_id) do
+    endpoint_group = get_endpoint_group(state, endpoint_id)
+
+    state = put_in(state, [endpoint_group, endpoint_id, :metadata], metadata)
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_info(%TrackAdded{endpoint_id: endpoint_id} = track_info, state)
       when endpoint_exists?(state, endpoint_id) do
     Logger.info("Endpoint #{endpoint_id} added track #{inspect(track_info)}")
@@ -458,6 +469,29 @@ defmodule Jellyfish.Room do
   @impl true
   def handle_info(%TrackAdded{endpoint_id: endpoint_id} = track_info, state) do
     Logger.error("Unknown endpoint #{endpoint_id} added track #{inspect(track_info)}")
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(%TrackMetadataUpdated{endpoint_id: endpoint_id} = track_info, state)
+      when endpoint_exists?(state, endpoint_id) do
+    endpoint_group = get_endpoint_group(state, endpoint_id)
+    access_path = [endpoint_group, endpoint_id, :tracks, track_info.track_id]
+
+    state =
+      case get_in(state, access_path) do
+        nil ->
+          Logger.warning(
+            "Unable to update track's metadata - track #{inspect(track_info.track_id)} doesn't exist"
+          )
+
+          state
+
+        track ->
+          track = %Track{track | metadata: track_info.track_metadata}
+          put_in(state, access_path, track)
+      end
+
     {:noreply, state}
   end
 

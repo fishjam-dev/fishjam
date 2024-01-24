@@ -68,7 +68,7 @@ defmodule Jellyfish.MixProject do
       {:protobuf, "~> 0.12.0"},
 
       # Membrane deps
-      {:membrane_rtc_engine, "~> 0.19.0"},
+      {:membrane_rtc_engine, path: "../membrane_rtc_engine/engine", override: true},
       {:membrane_rtc_engine_webrtc, "~> 0.5.0"},
       {:membrane_rtc_engine_hls, "~> 0.4.0"},
       {:membrane_rtc_engine_rtsp, "~> 0.4.0"},
