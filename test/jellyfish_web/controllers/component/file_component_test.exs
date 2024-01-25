@@ -49,6 +49,31 @@ defmodule JellyfishWeb.Component.FileComponentTest do
       assert_component_created(conn, room_id, id, "file")
     end
 
+    test "renders component with video as source with framerate set", %{
+      conn: conn,
+      room_id: room_id
+    } do
+      conn =
+        post(conn, ~p"/room/#{room_id}/component",
+          type: "file",
+          options: %{filePath: @video_source, framerate: 60}
+        )
+
+      assert %{
+               "data" => %{
+                 "id" => id,
+                 "type" => "file",
+                 "properties" => %{
+                   "filePath" => @video_source,
+                   "framerate" => 60
+                 }
+               }
+             } =
+               model_response(conn, :created, "ComponentDetailsResponse")
+
+      assert_component_created(conn, room_id, id, "file")
+    end
+
     test "renders component wiht audio as source", %{conn: conn, room_id: room_id} do
       conn =
         post(conn, ~p"/room/#{room_id}/component",
@@ -122,6 +147,34 @@ defmodule JellyfishWeb.Component.FileComponentTest do
 
       assert model_response(conn, :not_found, "Error")["errors"] ==
                "File not found"
+    end
+
+    test "renders error when framerate is invalid (not a number)", %{
+      conn: conn,
+      room_id: room_id
+    } do
+      conn =
+        post(conn, ~p"/room/#{room_id}/component",
+          type: "file",
+          options: %{filePath: @video_source, framerate: "abc"}
+        )
+
+      assert model_response(conn, :bad_request, "Error")["errors"] ==
+               "Invalid request body structure"
+    end
+
+    test "renders error when framerate is invalid (negative integer)", %{
+      conn: conn,
+      room_id: room_id
+    } do
+      conn =
+        post(conn, ~p"/room/#{room_id}/component",
+          type: "file",
+          options: %{filePath: @video_source, framerate: -123}
+        )
+
+      assert model_response(conn, :bad_request, "Error")["errors"] ==
+               "Invalid framerate passed"
     end
 
     test "renders error when file path is outside of media files directory", %{

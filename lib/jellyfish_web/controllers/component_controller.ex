@@ -86,6 +86,9 @@ defmodule JellyfishWeb.ComponentController do
       {:error, :incompatible_codec} ->
         {:error, :bad_request, "Incompatible video codec enforced in room #{room_id}"}
 
+      {:error, :invalid_framerate} ->
+        {:error, :bad_request, "Invalid framerate passed"}
+
       {:error, :invalid_file_path} ->
         {:error, :bad_request, "Invalid file path"}
 

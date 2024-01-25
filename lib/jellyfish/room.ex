@@ -280,6 +280,13 @@ defmodule Jellyfish.Room do
         Logger.warning("Unable to add component: file does not exist")
         {:reply, {:error, :file_does_not_exist}, state}
 
+      {:error, {:invalid_framerate, passed_framerate}} ->
+        Logger.warning(
+          "Pass not valid framerate value it has to be an positivie integer, passed value: #{passed_framerate}"
+        )
+
+        {:reply, {:error, :invalid_framerate}, state}
+
       {:error, :invalid_file_path} ->
         Logger.warning("Unable to add component: invalid file path")
         {:reply, {:error, :invalid_file_path}, state}

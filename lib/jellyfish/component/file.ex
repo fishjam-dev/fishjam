@@ -12,7 +12,8 @@ defmodule Jellyfish.Component.File do
   alias JellyfishWeb.ApiSpec.Component.File.Options
 
   @type properties :: %{
-          file_path: Path.t()
+          file_path: Path.t(),
+          framerate: non_neg_integer()
         }
 
   @files_location "file_component_sources"
@@ -24,7 +25,9 @@ defmodule Jellyfish.Component.File do
     with {:ok, valid_opts} <- OpenApiSpex.cast_value(options, Options.schema()),
          :ok <- validate_file_path(valid_opts.filePath),
          path = expand_file_path(valid_opts.filePath),
-         {:ok, track_config} <- get_track_config(path) do
+         {:ok, framerate} <- validate_framerate(valid_opts.framerate),
+         {:ok, track_config} <-
+           get_track_config(path, framerate) do
       endpoint_spec =
         %FileEndpoint{
           rtc_engine: engine,
@@ -39,6 +42,9 @@ defmodule Jellyfish.Component.File do
     else
       {:error, [%OpenApiSpex.Cast.Error{reason: :missing_field, name: name}]} ->
         {:error, {:missing_parameter, name}}
+
+      {:error, _reason} = error ->
+        error
 
       {:error, _reason} = error ->
         error
@@ -65,22 +71,22 @@ defmodule Jellyfish.Component.File do
     [media_files_path, @files_location, file_path] |> Path.join() |> Path.expand()
   end
 
-  defp get_track_config(file_path) do
-    file_path |> Path.extname() |> do_get_track_config()
+  defp get_track_config(file_path, framerate) do
+    file_path |> Path.extname() |> do_get_track_config(framerate)
   end
 
-  defp do_get_track_config(".h264") do
+  defp do_get_track_config(".h264", framerate) do
     {:ok,
      %FileEndpoint.TrackConfig{
        type: :video,
        encoding: :H264,
        clock_rate: 90_000,
        fmtp: %FMTP{pt: 96},
-       opts: [framerate: {30, 1}]
+       opts: [framerate: {framerate || 30, 1}]
      }}
   end
 
-  defp do_get_track_config(".ogg") do
+  defp do_get_track_config(".ogg", _framerate) do
     {:ok,
      %FileEndpoint.TrackConfig{
        type: :audio,
@@ -90,5 +96,9 @@ defmodule Jellyfish.Component.File do
      }}
   end
 
-  defp do_get_track_config(_extension), do: {:error, :unsupported_file_type}
+  defp do_get_track_config(_extension, _framerate), do: {:error, :unsupported_file_type}
+
+  defp validate_framerate(nil), do: {:ok, nil}
+  defp validate_framerate(num) when is_number(num) and num > 0, do: {:ok, num}
+  defp validate_framerate(other), do: {:error, {:invalid_framerate, other}}
 end

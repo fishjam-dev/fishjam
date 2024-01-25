@@ -39,6 +39,12 @@ defmodule JellyfishWeb.ApiSpec.Component.File do
           type: :string,
           description: "Path to track file. Must be either OPUS encapsulated in Ogg or raw h264",
           example: "/root/video.h264"
+        },
+        framerate: %Schema{
+          type: :integer,
+          description: "Framerate of video in a file. It is only valid for video track",
+          nullable: true,
+          example: 30
         }
       },
       required: [:filePath]
