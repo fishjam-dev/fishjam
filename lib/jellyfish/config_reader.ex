@@ -119,6 +119,22 @@ defmodule Jellyfish.ConfigReader do
     end
   end
 
+  def read_sip_config() do
+    sip_used = read_boolean("JF_SIP_USED")
+
+    if sip_used != false do
+      [
+        sip_used: true,
+        sip_external_ip: read_ip("JF_SIP_IP")
+      ]
+    else
+      [
+        sip_used: false,
+        sip_external_ip: nil
+      ]
+    end
+  end
+
   def read_dist_config() do
     dist_enabled? = read_boolean("JF_DIST_ENABLED")
     dist_strategy = System.get_env("JF_DIST_STRATEGY_NAME")

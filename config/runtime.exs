@@ -30,7 +30,8 @@ config :jellyfish,
   metrics_ip: ConfigReader.read_ip("JF_METRICS_IP") || {127, 0, 0, 1},
   metrics_port: ConfigReader.read_port("JF_METRICS_PORT") || 9568,
   dist_config: ConfigReader.read_dist_config(),
-  webrtc_config: ConfigReader.read_webrtc_config()
+  webrtc_config: ConfigReader.read_webrtc_config(),
+  sip_config: ConfigReader.read_sip_config()
 
 case System.get_env("JF_SERVER_API_TOKEN") do
   nil when prod? == true ->

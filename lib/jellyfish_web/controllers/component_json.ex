@@ -1,7 +1,7 @@
 defmodule JellyfishWeb.ComponentJSON do
   @moduledoc false
 
-  alias Jellyfish.Component.{File, HLS, RTSP}
+  alias Jellyfish.Component.{File, HLS, RTSP, SIP}
   alias Jellyfish.Utils.ParserJSON
 
   def show(%{component: component}) do
@@ -14,12 +14,13 @@ defmodule JellyfishWeb.ComponentJSON do
         HLS -> "hls"
         RTSP -> "rtsp"
         File -> "file"
+        SIP -> "sip"
       end
 
     %{
       id: component.id,
       type: type,
-      properties: component.properties |> ParserJSON.camel_case_keys(),
+      properties: component.type.parse_properties(component) |> ParserJSON.camel_case_keys(),
       tracks: component.tracks |> Map.values() |> Enum.map(&Map.from_struct/1)
     }
   end

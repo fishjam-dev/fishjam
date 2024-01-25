@@ -4,6 +4,7 @@ defmodule Jellyfish.Component.File do
   """
 
   @behaviour Jellyfish.Endpoint.Config
+  @behaviour Jellyfish.Component
 
   alias ExSDP.Attribute.FMTP
   alias Membrane.RTC.Engine.Endpoint.File, as: FileEndpoint
@@ -57,6 +58,15 @@ defmodule Jellyfish.Component.File do
         error
     end
   end
+
+  @impl true
+  def after_init(_room_state, _component, _component_options), do: :ok
+
+  @impl true
+  def on_remove(_room_state, _component), do: :ok
+
+  @impl true
+  def parse_properties(component), do: component.properties
 
   defp validate_file_path(file_path) do
     base_path =

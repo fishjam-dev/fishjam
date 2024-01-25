@@ -1,26 +1,32 @@
-defmodule Jellyfish.Component.RTSP do
+defmodule Jellyfish.Component.SIP do
   @moduledoc """
-  Module representing the RTSP component.
+  Module representing the SIP component.
   """
 
   @behaviour Jellyfish.Endpoint.Config
   @behaviour Jellyfish.Component
 
-  alias Membrane.RTC.Engine.Endpoint.RTSP
+  alias Membrane.RTC.Engine.Endpoint.SIP
 
-  alias JellyfishWeb.ApiSpec.Component.RTSP.Options
+  alias JellyfishWeb.ApiSpec.Component.SIP.Options
 
   @type properties :: %{
-          sourceUri: String.t(),
-          rtpPort: port(),
-          reconnectDelay: non_neg_integer(),
-          keepAliveInterval: non_neg_integer(),
-          pierceNat: boolean()
+          credentials: %{
+            address: String.t(),
+            username: String.t(),
+            password: String.t()
+          }
         }
 
   @impl true
   def config(%{engine_pid: engine} = options) do
-    options = Map.drop(options, [:engine_pid, :room_id])
+    if not Application.fetch_env!(:jellyfish, :sip_config)[:sip_used] do
+      raise(
+        "SIP components can only be used if JF_SIP_USED environmental variable is not set to \"false\""
+      )
+    end
+
+    external_ip = Application.fetch_env!(:jellyfish, :sip_config)[:sip_external_ip]
 
     with {:ok, valid_opts} <- OpenApiSpex.cast_value(options, Options.schema()) do
       endpoint_spec =
@@ -30,8 +36,8 @@ defmodule Jellyfish.Component.RTSP do
           {Atom.to_string(k) |> Macro.underscore() |> String.to_atom(), v}
         end)
         |> Map.put(:rtc_engine, engine)
-        |> Map.put(:max_reconnect_attempts, :infinity)
-        |> then(&struct(RTSP, &1))
+        |> Map.put(:external_ip, external_ip)
+        |> then(&struct(SIP, &1))
 
       properties = valid_opts |> Map.from_struct()
 
@@ -52,5 +58,7 @@ defmodule Jellyfish.Component.RTSP do
   def on_remove(_room_state, _component), do: :ok
 
   @impl true
-  def parse_properties(component), do: component.properties
+  def parse_properties(component) do
+    component.properties
+  end
 end

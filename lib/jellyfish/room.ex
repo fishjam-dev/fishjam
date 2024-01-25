@@ -250,17 +250,11 @@ defmodule Jellyfish.Room do
         options
       )
 
-    component_options = Map.delete(options, "s3")
-
     with :ok <- check_component_allowed(component_type, state),
-         {:ok, component} <-
-           Component.new(component_type, component_options) do
+         {:ok, component} <- Component.new(component_type, options) do
       state = put_in(state, [:components, component.id], component)
 
-      if component_type == HLS do
-        on_hls_startup(state.id, component.properties)
-        spawn_hls_manager(options)
-      end
+      component_type.after_init(state, component, options)
 
       :ok = Engine.add_endpoint(state.engine_pid, component.engine_endpoint, id: component.id)
 
@@ -575,8 +569,8 @@ defmodule Jellyfish.Room do
   def terminate(_reason, %{engine_pid: engine_pid} = state) do
     Engine.terminate(engine_pid, asynchronous?: true, timeout: 10_000)
 
-    hls_component = get_hls_component(state)
-    unless is_nil(hls_component), do: on_hls_removal(state.id, hls_component.properties)
+    hls_component = hls_component(state)
+    unless is_nil(hls_component), do: HLS.on_remove(state, hls_component)
 
     state.peers
     |> Map.values()
@@ -664,7 +658,7 @@ defmodule Jellyfish.Room do
 
     Logger.info("Removed component #{inspect(component_id)}")
 
-    if component.type == HLS, do: on_hls_removal(state.id, component.properties)
+    component.type.on_remove(state, component)
 
     if reason == :component_crashed,
       do: Event.broadcast_server_notification({:component_crashed, state.id, component_id})
@@ -702,26 +696,6 @@ defmodule Jellyfish.Room do
         if component.type == HLS, do: component
       end)
 
-  defp on_hls_startup(room_id, %{low_latency: low_latency, persistent: persistent}) do
-    room_id
-    |> HLS.output_dir(persistent: persistent)
-    |> then(&HLS.EtsHelper.add_hls_folder_path(room_id, &1))
-
-    if low_latency, do: spawn_request_handler(room_id)
-  end
-
-  defp spawn_request_handler(room_id),
-    do: HLS.RequestHandler.start(room_id)
-
-  defp on_hls_removal(room_id, %{low_latency: low_latency}) do
-    HLS.EtsHelper.delete_hls_folder_path(room_id)
-
-    if low_latency, do: remove_request_handler(room_id)
-  end
-
-  defp remove_request_handler(room_id),
-    do: HLS.RequestHandler.stop(room_id)
-
   defp check_component_allowed(HLS, %{
          config: %{video_codec: video_codec},
          components: components
@@ -750,13 +724,6 @@ defmodule Jellyfish.Room do
 
   defp hls_component_already_present?(components),
     do: components |> Map.values() |> Enum.any?(&(&1.type == HLS))
-
-  defp spawn_hls_manager(%{engine_pid: engine_pid, room_id: room_id} = options) do
-    {:ok, hls_dir} = HLS.EtsHelper.get_hls_folder_path(room_id)
-    {:ok, valid_opts} = HLS.serialize_options(options)
-
-    {:ok, _pid} = HLS.Manager.start(room_id, engine_pid, hls_dir, valid_opts)
-  end
 
   defp validate_hls_subscription(nil), do: {:error, :hls_component_not_exists}
 

@@ -10,7 +10,8 @@ defmodule Jellyfish.Component do
 
   use Bunch.Access
 
-  alias Jellyfish.Component.{File, HLS, RTSP}
+  alias Jellyfish.Room
+  alias Jellyfish.Component.{File, HLS, RTSP, SIP}
   alias Jellyfish.Track
 
   @enforce_keys [
@@ -40,12 +41,26 @@ defmodule Jellyfish.Component do
           tracks: %{Track.id() => Track.t()}
         }
 
+  @callback after_init(
+              room_state :: Room.t(),
+              component :: __MODULE__.t(),
+              component_options :: map()
+            ) :: :ok
+
+  @callback on_remove(
+              room_state :: Room.t(),
+              component :: __MODULE__.t()
+            ) :: :ok
+
+  @callback parse_properties(component :: __MODULE__.t()) :: any()
+
   @spec parse_type(String.t()) :: {:ok, component()} | {:error, :invalid_type}
   def parse_type(type) do
     case type do
       "hls" -> {:ok, HLS}
       "rtsp" -> {:ok, RTSP}
       "file" -> {:ok, File}
+      "sip" -> {:ok, SIP}
       _other -> {:error, :invalid_type}
     end
   end
