@@ -195,7 +195,7 @@ defmodule Jellyfish.ConfigReader do
     [node_basename, hostname | []] = String.split(node_name_value, "@")
 
     node_name =
-      if is_ip_address(hostname) do
+      if ip_address?(hostname) do
         node_name
       else
         Logger.info(
@@ -259,7 +259,7 @@ defmodule Jellyfish.ConfigReader do
   defp parse_mode("sname"), do: :shortnames
   defp parse_mode(other), do: raise("Invalid JF_DIST_MODE. Expected sname or name, got: #{other}")
 
-  defp is_ip_address(hostname) do
+  defp ip_address?(hostname) do
     case :inet.parse_address(String.to_charlist(hostname)) do
       {:ok, _} -> true
       {:error, _} -> false
