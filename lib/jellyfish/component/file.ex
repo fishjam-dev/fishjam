@@ -13,7 +13,7 @@ defmodule Jellyfish.Component.File do
 
   @type properties :: %{
           file_path: Path.t(),
-          framerate: non_neg_integer()
+          framerate: non_neg_integer() | nil
         }
 
   @files_location "file_component_sources"
@@ -38,13 +38,17 @@ defmodule Jellyfish.Component.File do
 
       properties = valid_opts |> Map.from_struct()
 
-      {:ok, %{endpoint: endpoint_spec, properties: properties}}
+      new_framerate =
+        if track_config.type == :video do
+          properties.framerate || 30
+        else
+          properties.framerate
+        end
+
+      {:ok, %{endpoint: endpoint_spec, properties: %{properties | framerate: new_framerate}}}
     else
       {:error, [%OpenApiSpex.Cast.Error{reason: :missing_field, name: name}]} ->
         {:error, {:missing_parameter, name}}
-
-      {:error, _reason} = error ->
-        error
 
       {:error, _reason} = error ->
         error
