@@ -3,6 +3,7 @@ defmodule JellyfishWeb.Component.FileComponentTest do
   use JellyfishWeb.ComponentCase
 
   @file_component_directory "file_component_sources"
+  @fixtures_directory "test/fixtures"
   @video_source "video.h264"
   @audio_source "audio.ogg"
 
@@ -14,13 +15,7 @@ defmodule JellyfishWeb.Component.FileComponentTest do
 
     File.mkdir_p!(media_sources_directory)
 
-    media_sources_directory
-    |> Path.join(@video_source)
-    |> File.touch!()
-
-    media_sources_directory
-    |> Path.join(@audio_source)
-    |> File.touch!()
+    File.cp_r!(@fixtures_directory, media_sources_directory)
 
     on_exit(fn -> :file.del_dir_r(media_sources_directory) end)
 

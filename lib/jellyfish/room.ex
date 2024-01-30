@@ -20,9 +20,9 @@ defmodule Jellyfish.Room do
 
   alias Membrane.RTC.Engine.Message.{
     EndpointAdded,
-    EndpointMetadataUpdated,
     EndpointCrashed,
     EndpointMessage,
+    EndpointMetadataUpdated,
     EndpointRemoved,
     TrackAdded,
     TrackMetadataUpdated,
@@ -306,6 +306,14 @@ defmodule Jellyfish.Room do
         {component, state} = pop_in(state, [:components, component_id])
         :ok = Engine.remove_endpoint(state.engine_pid, component_id)
 
+        component.tracks
+        |> Map.values()
+        |> Enum.each(
+          &Event.broadcast_server_notification(
+            {:track_removed, state.id, {:component_id, component_id}, &1}
+          )
+        )
+
         Logger.info("Removed component #{inspect(component_id)}")
 
         if component.type == HLS, do: on_hls_removal(state.id, component.properties)
@@ -449,10 +457,16 @@ defmodule Jellyfish.Room do
         %EndpointMetadataUpdated{endpoint_id: endpoint_id, endpoint_metadata: metadata},
         state
       )
-      when endpoint_exists?(state, endpoint_id) do
-    endpoint_group = get_endpoint_group(state, endpoint_id)
+      when is_map_key(state.peers, endpoint_id) do
+    Logger.debug("Peer #{endpoint_id} metadata updated: #{metadata}")
+    Event.broadcast_server_notification({:peer_metadata_updated, state.id, endpoint_id, metadata})
 
-    state = put_in(state, [endpoint_group, endpoint_id, :metadata], metadata)
+    state = put_in(state, [:peers, endpoint_id, :metadata], metadata)
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(%EndpointMetadataUpdated{}, state) do
     {:noreply, state}
   end
 
@@ -460,6 +474,12 @@ defmodule Jellyfish.Room do
   def handle_info(%TrackAdded{endpoint_id: endpoint_id} = track_info, state)
       when endpoint_exists?(state, endpoint_id) do
     Logger.info("Endpoint #{endpoint_id} added track #{inspect(track_info)}")
+
+    endpoint_id_type = get_endpoint_id_type(state, endpoint_id)
+
+    Event.broadcast_server_notification(
+      {:track_added, state.id, {endpoint_id_type, endpoint_id}, track_info}
+    )
 
     state = add_track(state, track_info)
 
@@ -488,6 +508,12 @@ defmodule Jellyfish.Room do
           state
 
         track ->
+          endpoint_id_type = get_endpoint_id_type(state, endpoint_id)
+
+          Event.broadcast_server_notification(
+            {:track_metadata_updated, state.id, {endpoint_id_type, endpoint_id}, track_info}
+          )
+
           track = %Track{track | metadata: track_info.track_metadata}
           put_in(state, access_path, track)
       end
@@ -500,6 +526,12 @@ defmodule Jellyfish.Room do
       when endpoint_exists?(state, endpoint_id) do
     Logger.info("Endpoint #{endpoint_id} removed track #{inspect(track_info)}")
 
+    endpoint_id_type = get_endpoint_id_type(state, endpoint_id)
+
+    Event.broadcast_server_notification(
+      {:track_added, state.id, {endpoint_id_type, endpoint_id}, track_info}
+    )
+
     state = remove_track(state, track_info)
 
     {:noreply, state}
@@ -508,6 +540,11 @@ defmodule Jellyfish.Room do
   @impl true
   def handle_info(%TrackRemoved{endpoint_id: endpoint_id} = track_info, state) do
     Logger.error("Unknown endpoint #{endpoint_id} removed track #{inspect(track_info)}")
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(%EndpointRemoved{}, state) do
     {:noreply, state}
   end
 
@@ -634,26 +671,6 @@ defmodule Jellyfish.Room do
 
   defp validate_hls_subscription(%{properties: %{subscribe_mode: :manual}}), do: :ok
 
-  defp update_with_track_metadata(state, tracks) do
-    Enum.reduce(tracks, state, fn engine_track, state ->
-      endpoint_group = get_endpoint_group(state, engine_track.origin)
-      access_path = [endpoint_group, engine_track.origin, :tracks, engine_track.id]
-
-      case get_in(state, access_path) do
-        nil ->
-          Logger.warning(
-            "Unable to update track's metadata - track #{inspect(engine_track.id)} doesn't exist"
-          )
-
-          state
-
-        track ->
-          track = %Track{track | metadata: engine_track.metadata}
-          put_in(state, access_path, track)
-      end
-    end)
-  end
-
   defp get_endpoint_group(state, endpoint_id) when is_map_key(state.components, endpoint_id),
     do: :components
 
@@ -673,5 +690,12 @@ defmodule Jellyfish.Room do
   defp get_track_keys(state, track_info) do
     endpoint_group = get_endpoint_group(state, track_info.endpoint_id)
     [endpoint_group, track_info.endpoint_id, :tracks, track_info.track_id]
+  end
+
+  defp get_endpoint_id_type(state, endpoint_id) do
+    case get_endpoint_group(state, endpoint_id) do
+      :peers -> :peer_id
+      :components -> :component_id
+    end
   end
 end

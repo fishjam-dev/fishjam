@@ -53,7 +53,6 @@ defmodule Jellyfish.Peer.WebRTC do
            handshake_opts: handshake_options,
            filter_codecs: filter_codecs,
            log_metadata: [peer_id: options.peer_id],
-           trace_context: nil,
            extensions: %{opus: Membrane.RTP.VAD},
            webrtc_extensions: webrtc_extensions,
            simulcast_config: %SimulcastConfig{

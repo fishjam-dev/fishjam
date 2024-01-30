@@ -69,12 +69,13 @@ defmodule Jellyfish.MixProject do
 
       # Membrane deps
       {:membrane_rtc_engine, path: "../membrane_rtc_engine/engine", override: true},
-      {:membrane_rtc_engine_webrtc, "~> 0.5.0"},
+      {:membrane_rtc_engine_webrtc, path: "../membrane_rtc_engine/webrtc", override: true},
       {:membrane_rtc_engine_hls, "~> 0.4.0"},
       {:membrane_rtc_engine_rtsp, "~> 0.4.0"},
-      {:membrane_rtc_engine_file, "~> 0.2.0"},
-      {:membrane_ice_plugin, "~> 0.17.0"},
+      {:membrane_rtc_engine_file, path: "../membrane_rtc_engine/file", override: true},
+      {:membrane_ice_plugin, "~> 0.18.0", override: true},
       {:membrane_telemetry_metrics, "~> 0.1.0"},
+      {:opentelemetry, "~> 1.3"},
 
       # HLS endpoints deps
       {:membrane_audio_mix_plugin, "~> 0.16.0"},
