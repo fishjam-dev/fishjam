@@ -282,7 +282,7 @@ defmodule Jellyfish.Room do
 
       {:error, {:invalid_framerate, passed_framerate}} ->
         Logger.warning(
-          "Pass not valid framerate value it has to be an positivie integer, passed value: #{passed_framerate}"
+          "Invalid framerate value: #{passed_framerate}.  It has to be a positivie integer."
         )
 
         {:reply, {:error, :invalid_framerate}, state}
