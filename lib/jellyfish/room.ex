@@ -254,7 +254,8 @@ defmodule Jellyfish.Room do
     component_options = Map.delete(options, "s3")
 
     with :ok <- check_component_allowed(component_type, state),
-         {:ok, component} <- Component.new(component_type, component_options) do
+         {:ok, component} <-
+           Component.new(component_type, component_options) do
       state = put_in(state, [:components, component.id], component)
 
       if component_type == HLS do
@@ -279,6 +280,11 @@ defmodule Jellyfish.Room do
       {:error, :file_does_not_exist} ->
         Logger.warning("Unable to add component: file does not exist")
         {:reply, {:error, :file_does_not_exist}, state}
+
+      {:error, :bad_parameter_framerate_for_audio} ->
+        Logger.warning("Attempted to set framerate for audio component which is not supported.")
+
+        {:reply, {:error, :bad_parameter_framerate_for_audio}, state}
 
       {:error, {:invalid_framerate, passed_framerate}} ->
         Logger.warning(

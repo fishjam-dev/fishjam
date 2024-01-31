@@ -63,9 +63,11 @@ defmodule JellyfishWeb.ComponentController do
   def create(conn, %{"room_id" => room_id} = params) do
     with component_options <- Map.get(params, "options", %{}),
          {:ok, component_type_string} <- Map.fetch(params, "type"),
-         {:ok, component_type} <- Component.parse_type(component_type_string),
+         {:ok, component_type} <-
+           Component.parse_type(component_type_string),
          {:ok, _room_pid} <- RoomService.find_room(room_id),
-         {:ok, component} <- Room.add_component(room_id, component_type, component_options) do
+         {:ok, component} <-
+           Room.add_component(room_id, component_type, component_options) do
       conn
       |> put_resp_content_type("application/json")
       |> put_status(:created)
@@ -88,6 +90,10 @@ defmodule JellyfishWeb.ComponentController do
 
       {:error, :invalid_framerate} ->
         {:error, :bad_request, "Invalid framerate passed"}
+
+      {:error, :bad_parameter_framerate_for_audio} ->
+        {:error, :bad_request,
+         "Attempted to set framerate for audio component which is not supported."}
 
       {:error, :invalid_file_path} ->
         {:error, :bad_request, "Invalid file path"}

@@ -160,7 +160,7 @@ defmodule JellyfishWeb.Component.FileComponentTest do
         )
 
       assert model_response(conn, :bad_request, "Error")["errors"] ==
-               "Invalid request body structure"
+               "Invalid framerate passed"
     end
 
     test "renders error when framerate is invalid (negative integer)", %{
@@ -175,6 +175,20 @@ defmodule JellyfishWeb.Component.FileComponentTest do
 
       assert model_response(conn, :bad_request, "Error")["errors"] ==
                "Invalid framerate passed"
+    end
+
+    test "renders error when framerate is set for audio", %{
+      conn: conn,
+      room_id: room_id
+    } do
+      conn =
+        post(conn, ~p"/room/#{room_id}/component",
+          type: "file",
+          options: %{filePath: @audio_source, framerate: 30}
+        )
+
+      assert model_response(conn, :bad_request, "Error")["errors"] ==
+               "Attempted to set framerate for audio component which is not supported."
     end
 
     test "renders error when file path is outside of media files directory", %{

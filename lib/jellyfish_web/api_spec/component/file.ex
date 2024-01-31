@@ -22,11 +22,11 @@ defmodule JellyfishWeb.ApiSpec.Component.File do
         framerate: %Schema{
           type: :integer,
           description: "Framerate of video in a file. It is only valid for video track",
-          nullable: true,
-          example: 30
+          example: 30,
+          nullable: true
         }
       },
-      required: [:filePath]
+      required: [:filePath, :framerate]
     })
   end
 

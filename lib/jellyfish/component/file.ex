@@ -40,7 +40,8 @@ defmodule Jellyfish.Component.File do
 
       new_framerate =
         if track_config.type == :video do
-          track_config.framerate
+          {framerate, 1} = track_config.opts[:framerate]
+          framerate
         else
           nil
         end
@@ -49,6 +50,9 @@ defmodule Jellyfish.Component.File do
     else
       {:error, [%OpenApiSpex.Cast.Error{reason: :missing_field, name: name}]} ->
         {:error, {:missing_parameter, name}}
+
+      {:error, [%OpenApiSpex.Cast.Error{reason: :invalid_type, value: value, path: [:framerate]}]} ->
+        {:error, {:invalid_framerate, value}}
 
       {:error, _reason} = error ->
         error
@@ -90,7 +94,7 @@ defmodule Jellyfish.Component.File do
      }}
   end
 
-  defp do_get_track_config(".ogg", _framerate) do
+  defp do_get_track_config(".ogg", nil) do
     {:ok,
      %FileEndpoint.TrackConfig{
        type: :audio,
@@ -98,6 +102,10 @@ defmodule Jellyfish.Component.File do
        clock_rate: 48_000,
        fmtp: %FMTP{pt: 108}
      }}
+  end
+
+  defp do_get_track_config(".ogg", _not_nil) do
+    {:error, :bad_parameter_framerate_for_audio}
   end
 
   defp do_get_track_config(_extension, _framerate), do: {:error, :unsupported_file_type}
