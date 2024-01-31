@@ -172,6 +172,13 @@ components:
       title: HlsSkip
       type: string
       x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Params.HlsSkip
+    PeerMetadata:
+      description: Custom metadata set by the peer
+      example:
+        name: JellyfishUser
+      nullable: true
+      title: PeerMetadata
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.PeerMetadata
     ComponentPropertiesFile:
       description: Properties specific to the File component
       properties:
@@ -408,6 +415,8 @@ components:
           description: Assigned peer id
           example: peer-1
           type: string
+        metadata:
+          $ref: '#/components/schemas/PeerMetadata'
         status:
           $ref: '#/components/schemas/PeerStatus'
         tracks:
@@ -422,6 +431,7 @@ components:
         - type
         - status
         - tracks
+        - metadata
       title: Peer
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Peer

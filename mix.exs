@@ -68,14 +68,20 @@ defmodule Jellyfish.MixProject do
       {:protobuf, "~> 0.12.0"},
 
       # Membrane deps
-      {:membrane_rtc_engine, path: "../membrane_rtc_engine/engine", override: true},
-      {:membrane_rtc_engine_webrtc, path: "../membrane_rtc_engine/webrtc", override: true},
-      {:membrane_rtc_engine_hls, "~> 0.4.0"},
+      {:membrane_rtc_engine,
+       github: "jellyfish-dev/membrane_rtc_engine",
+       branch: "RTC-435-track-metadata",
+       sparse: "engine",
+       override: true},
+      {:membrane_rtc_engine_webrtc,
+       github: "jellyfish-dev/membrane_rtc_engine", sparse: "webrtc", override: true},
+      {:membrane_rtc_engine_hls,
+       github: "jellyfish-dev/membrane_rtc_engine", sparse: "hls", override: true},
       {:membrane_rtc_engine_rtsp, "~> 0.4.0"},
-      {:membrane_rtc_engine_file, path: "../membrane_rtc_engine/file", override: true},
-      {:membrane_ice_plugin, "~> 0.18.0", override: true},
+      {:membrane_rtc_engine_file,
+       github: "jellyfish-dev/membrane_rtc_engine", sparse: "file", override: true},
+      {:membrane_ice_plugin, "~> 0.18.0"},
       {:membrane_telemetry_metrics, "~> 0.1.0"},
-      {:opentelemetry, "~> 1.3"},
 
       # HLS endpoints deps
       {:membrane_audio_mix_plugin, "~> 0.16.0"},

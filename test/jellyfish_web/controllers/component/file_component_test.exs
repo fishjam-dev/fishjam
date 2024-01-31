@@ -2,10 +2,21 @@ defmodule JellyfishWeb.Component.FileComponentTest do
   use JellyfishWeb.ConnCase
   use JellyfishWeb.ComponentCase
 
+  alias JellyfishWeb.WS
+
+  alias Jellyfish.ServerMessage.{
+    Authenticated,
+    Track,
+    TrackAdded
+  }
+
   @file_component_directory "file_component_sources"
   @fixtures_directory "test/fixtures"
   @video_source "video.h264"
   @audio_source "audio.ogg"
+
+  @ws_url "ws://127.0.0.1:4002/socket/server/websocket"
+  @auth_response %Authenticated{}
 
   setup_all _tags do
     media_sources_directory =
@@ -24,6 +35,8 @@ defmodule JellyfishWeb.Component.FileComponentTest do
 
   describe "Create File Component" do
     test "renders component with video as source", %{conn: conn, room_id: room_id} do
+      start_notifier()
+
       conn =
         post(conn, ~p"/room/#{room_id}/component",
           type: "file",
@@ -42,9 +55,23 @@ defmodule JellyfishWeb.Component.FileComponentTest do
                model_response(conn, :created, "ComponentDetailsResponse")
 
       assert_component_created(conn, room_id, id, "file")
+
+      assert_receive %TrackAdded{
+        room_id: ^room_id,
+        endpoint_info: {:component_id, ^id},
+        track: %Track{} = track
+      }
+
+      assert %{
+               type: :TRACK_TYPE_VIDEO,
+               encoding: :ENCODING_H264,
+               metadata: "null"
+             } = track
     end
 
     test "renders component with audio as source", %{conn: conn, room_id: room_id} do
+      start_notifier()
+
       conn =
         post(conn, ~p"/room/#{room_id}/component",
           type: "file",
@@ -63,6 +90,18 @@ defmodule JellyfishWeb.Component.FileComponentTest do
                model_response(conn, :created, "ComponentDetailsResponse")
 
       assert_component_created(conn, room_id, id, "file")
+
+      assert_receive %TrackAdded{
+        room_id: ^room_id,
+        endpoint_info: {:component_id, ^id},
+        track: %Track{} = track
+      }
+
+      assert %{
+               type: :TRACK_TYPE_AUDIO,
+               encoding: :ENCODING_OPUS,
+               metadata: "null"
+             } = track
     end
 
     test "file in subdirectory", %{
@@ -161,5 +200,16 @@ defmodule JellyfishWeb.Component.FileComponentTest do
       assert model_response(conn, :bad_request, "Error")["errors"] ==
                "Unsupported file type"
     end
+  end
+
+  defp start_notifier() do
+    token = Application.fetch_env!(:jellyfish, :server_api_token)
+
+    {:ok, ws} = WS.start_link(@ws_url, :server)
+    WS.send_auth_request(ws, token)
+    assert_receive @auth_response, 1000
+    WS.subscribe(ws, :server_notification)
+
+    ws
   end
 end

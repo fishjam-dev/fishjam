@@ -3,6 +3,8 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
 
   import Mox
 
+  import JellyfishWeb.WS, only: [subscribe: 2]
+
   alias __MODULE__.Endpoint
 
   alias Jellyfish.Component.HLS
@@ -13,7 +15,6 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
 
   alias Jellyfish.ServerMessage.{
     Authenticated,
-    AuthRequest,
     HlsPlayable,
     HlsUploadCrashed,
     HlsUploaded,
@@ -24,8 +25,6 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     RoomCrashed,
     RoomCreated,
     RoomDeleted,
-    SubscribeRequest,
-    SubscribeResponse,
     Track,
     TrackAdded,
     TrackRemoved
@@ -115,9 +114,8 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   test "invalid token" do
     {:ok, ws} = WS.start_link(@path, :server)
     server_api_token = "invalid" <> Application.fetch_env!(:jellyfish, :server_api_token)
-    auth_request = auth_request(server_api_token)
+    WS.send_auth_request(ws, server_api_token)
 
-    :ok = WS.send_binary_frame(ws, auth_request)
     assert_receive {:disconnected, {:remote, 1000, "invalid token"}}, 1000
   end
 
@@ -368,8 +366,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     {room_id, peer_id, peer_token, _conn} = add_room_and_peer(conn, server_api_token)
 
     {:ok, peer_ws} = WS.start_link("ws://127.0.0.1:#{@port}/socket/peer/websocket", :peer)
-    auth_request = peer_auth_request(peer_token)
-    :ok = WS.send_binary_frame(peer_ws, auth_request)
+    WS.send_auth_request(peer_ws, peer_token)
 
     assert_receive %PeerConnected{peer_id: ^peer_id, room_id: ^room_id}
 
@@ -393,8 +390,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
       add_room_and_peer(conn, server_api_token)
 
     {:ok, peer_ws} = WS.start("ws://127.0.0.1:#{@port}/socket/peer/websocket", :peer)
-    auth_request = peer_auth_request(peer_token)
-    :ok = WS.send_binary_frame(peer_ws, auth_request)
+    WS.send_auth_request(peer_ws, peer_token)
 
     assert_receive %PeerConnected{peer_id: ^peer_id, room_id: ^room_id}
 
@@ -406,30 +402,12 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
 
   def create_and_authenticate() do
     token = Application.fetch_env!(:jellyfish, :server_api_token)
-    auth_request = auth_request(token)
 
     {:ok, ws} = WS.start_link(@path, :server)
-    :ok = WS.send_binary_frame(ws, auth_request)
+    WS.send_auth_request(ws, token)
     assert_receive @auth_response, 1000
 
     ws
-  end
-
-  def subscribe(ws, event_type) do
-    proto_event_type = to_proto_event_type(event_type)
-
-    msg = %ServerMessage{
-      content:
-        {:subscribe_request,
-         %SubscribeRequest{
-           event_type: proto_event_type
-         }}
-    }
-
-    :ok = WS.send_binary_frame(ws, ServerMessage.encode(msg))
-
-    assert_receive %SubscribeResponse{event_type: ^proto_event_type} = response
-    response
   end
 
   defp add_room_and_peer(conn, server_api_token) do
@@ -484,27 +462,13 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     {conn, id}
   end
 
-  defp auth_request(token) do
-    ServerMessage.encode(%ServerMessage{content: {:auth_request, %AuthRequest{token: token}}})
-  end
-
-  defp peer_auth_request(token) do
-    PeerMessage.encode(%PeerMessage{
-      content: {:auth_request, %PeerMessage.AuthRequest{token: token}}
-    })
-  end
-
   defp trigger_notification(conn) do
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
     {_room_id, _peer_id, peer_token, _conn} = add_room_and_peer(conn, server_api_token)
 
     {:ok, peer_ws} = WS.start_link("ws://127.0.0.1:#{@port}/socket/peer/websocket", :peer)
-    auth_request = peer_auth_request(peer_token)
-    :ok = WS.send_binary_frame(peer_ws, auth_request)
+    WS.send_auth_request(peer_ws, peer_token)
   end
-
-  defp to_proto_event_type(:server_notification), do: :EVENT_TYPE_SERVER_NOTIFICATION
-  defp to_proto_event_type(:metrics), do: :EVENT_TYPE_METRICS
 
   defp test_hls_manager(room_id, request_no: request_no, status_code: status_code) do
     hls_dir = HLS.output_dir(room_id, persistent: false)

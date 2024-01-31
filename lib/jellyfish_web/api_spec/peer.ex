@@ -61,6 +61,19 @@ defmodule JellyfishWeb.ApiSpec.Peer do
     })
   end
 
+  defmodule PeerMetadata do
+    @moduledoc false
+
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "PeerMetadata",
+      description: "Custom metadata set by the peer",
+      example: %{name: "JellyfishUser"},
+      nullable: true
+    })
+  end
+
   OpenApiSpex.schema(%{
     title: "Peer",
     description: "Describes peer status",
@@ -73,8 +86,9 @@ defmodule JellyfishWeb.ApiSpec.Peer do
         type: :array,
         items: JellyfishWeb.ApiSpec.Track,
         description: "List of all peer's tracks"
-      }
+      },
+      metadata: PeerMetadata
     },
-    required: [:id, :type, :status, :tracks]
+    required: [:id, :type, :status, :tracks, :metadata]
   })
 end
