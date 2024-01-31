@@ -48,6 +48,8 @@ defmodule Jellyfish.Application do
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Jellyfish.Supervisor]
 
+    Application.put_env(:jellyfish, :start_time, System.monotonic_time(:second))
+
     Logger.info("Starting Jellyfish v#{@version}")
     Logger.info("Distribution config: #{inspect(Keyword.delete(dist_config, :cookie))}")
     Logger.info("WebRTC config: #{inspect(webrtc_config)}")

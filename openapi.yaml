@@ -15,7 +15,7 @@ components:
       type: string
       x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.Status
     HealthReportStatus:
-      description: Informs about the status of Jellyfish
+      description: Informs about the status of Jellyfish or a specific service
       enum:
         - UP
         - DOWN
@@ -347,6 +347,23 @@ components:
       title: ComponentOptions
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Options
+    HealthReportDistribution:
+      description: Informs about the status of Jellyfish distribution
+      properties:
+        enabled:
+          description: Whether distribution is enabled on this Jellyfish
+          type: boolean
+        nodeStatus:
+          $ref: '#/components/schemas/HealthReportStatus'
+        nodesInCluster:
+          description: Amount of nodes (including this Jellyfish's node) in the distribution cluster
+          type: integer
+      required:
+        - nodeStatus
+        - nodesInCluster
+      title: HealthReportDistribution
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.HealthReport.Distribution
     ComponentPropertiesRTSP:
       description: Properties specific to the RTSP component
       properties:
@@ -384,10 +401,17 @@ components:
     HealthReport:
       description: Describes overall Jellyfish health
       properties:
+        distribution:
+          $ref: '#/components/schemas/HealthReportDistribution'
         status:
           $ref: '#/components/schemas/HealthReportStatus'
+        uptime:
+          description: Uptime of Jellyfish (in seconds)
+          type: integer
       required:
         - status
+        - uptime
+        - distribution
       title: HealthReport
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.HealthReport
