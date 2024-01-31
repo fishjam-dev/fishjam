@@ -179,6 +179,7 @@ components:
           type: integer
       required:
         - filePath
+        - framerate
       title: ComponentPropertiesFile
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.File.Properties
