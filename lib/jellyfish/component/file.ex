@@ -40,9 +40,9 @@ defmodule Jellyfish.Component.File do
 
       new_framerate =
         if track_config.type == :video do
-          properties.framerate || 30
+          track_config.framerate
         else
-          properties.framerate
+          nil
         end
 
       {:ok, %{endpoint: endpoint_spec, properties: %{properties | framerate: new_framerate}}}
