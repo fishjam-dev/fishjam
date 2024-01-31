@@ -481,7 +481,11 @@ defmodule Jellyfish.Room do
       {:track_added, state.id, {endpoint_id_type, endpoint_id}, track_info}
     )
 
-    state = add_track(state, track_info)
+    endpoint_group = get_endpoint_group(state, track_info.endpoint_id)
+    access_path = [endpoint_group, track_info.endpoint_id, :tracks, track_info.track_id]
+
+    track = Track.from_track_added_message(track_info)
+    state = put_in(state, access_path, track)
 
     {:noreply, state}
   end
@@ -498,43 +502,54 @@ defmodule Jellyfish.Room do
     endpoint_group = get_endpoint_group(state, endpoint_id)
     access_path = [endpoint_group, endpoint_id, :tracks, track_info.track_id]
 
-    state =
-      case get_in(state, access_path) do
-        nil ->
-          Logger.warning(
-            "Unable to update track's metadata - track #{inspect(track_info.track_id)} doesn't exist"
-          )
+    case get_in(state, access_path) do
+      nil ->
+        Logger.warning(
+          "Unable to update track's metadata - track #{inspect(track_info.track_id)} doesn't exist"
+        )
 
-          state
+        {:noreply, state}
 
-        track ->
-          endpoint_id_type = get_endpoint_id_type(state, endpoint_id)
+      track ->
+        endpoint_id_type = get_endpoint_id_type(state, endpoint_id)
+        updated_track = %Track{track | metadata: track_info.track_metadata}
 
-          Event.broadcast_server_notification(
-            {:track_metadata_updated, state.id, {endpoint_id_type, endpoint_id}, track_info}
-          )
+        Logger.debug(
+          "Track #{updated_track.id}, #{endpoint_id_type}: #{endpoint_id} - metadata updated: #{updated_track.metadata}"
+        )
 
-          track = %Track{track | metadata: track_info.track_metadata}
-          put_in(state, access_path, track)
-      end
+        Event.broadcast_server_notification(
+          {:track_metadata_updated, state.id, {endpoint_id_type, endpoint_id}, updated_track}
+        )
 
-    {:noreply, state}
+        {:noreply, put_in(state, access_path, updated_track)}
+    end
   end
 
   @impl true
   def handle_info(%TrackRemoved{endpoint_id: endpoint_id} = track_info, state)
       when endpoint_exists?(state, endpoint_id) do
-    Logger.info("Endpoint #{endpoint_id} removed track #{inspect(track_info)}")
+    endpoint_group = get_endpoint_group(state, endpoint_id)
+    access_path = [endpoint_group, endpoint_id, :tracks, track_info.track_id]
 
-    endpoint_id_type = get_endpoint_id_type(state, endpoint_id)
+    case get_in(state, access_path) do
+      nil ->
+        Logger.warning(
+          "Unable to remove track - track #{inspect(track_info.track_id)} doesn't exist"
+        )
 
-    Event.broadcast_server_notification(
-      {:track_added, state.id, {endpoint_id_type, endpoint_id}, track_info}
-    )
+        {:noreply, state}
 
-    state = remove_track(state, track_info)
+      track ->
+        endpoint_id_type = get_endpoint_id_type(state, endpoint_id)
+        Logger.debug("Track removed: #{track.id}, #{endpoint_id_type}: #{endpoint_id}")
 
-    {:noreply, state}
+        Event.broadcast_server_notification(
+          {:track_removed, state.id, {endpoint_id_type, endpoint_id}, track}
+        )
+
+        {:noreply, pop_in(state, access_path)}
+    end
   end
 
   @impl true
@@ -676,21 +691,6 @@ defmodule Jellyfish.Room do
 
   defp get_endpoint_group(state, endpoint_id) when is_map_key(state.peers, endpoint_id),
     do: :peers
-
-  defp add_track(state, track_info) do
-    track = Track.from_track_added_message(track_info)
-    put_in(state, get_track_keys(state, track_info), track)
-  end
-
-  defp remove_track(state, track_info) do
-    {_track, state} = pop_in(state, get_track_keys(state, track_info))
-    state
-  end
-
-  defp get_track_keys(state, track_info) do
-    endpoint_group = get_endpoint_group(state, track_info.endpoint_id)
-    [endpoint_group, track_info.endpoint_id, :tracks, track_info.track_id]
-  end
 
   defp get_endpoint_id_type(state, endpoint_id) do
     case get_endpoint_group(state, endpoint_id) do

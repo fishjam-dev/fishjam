@@ -7,7 +7,8 @@ defmodule JellyfishWeb.Component.FileComponentTest do
   alias Jellyfish.ServerMessage.{
     Authenticated,
     Track,
-    TrackAdded
+    TrackAdded,
+    TrackRemoved
   }
 
   @file_component_directory "file_component_sources"
@@ -67,6 +68,15 @@ defmodule JellyfishWeb.Component.FileComponentTest do
                encoding: :ENCODING_H264,
                metadata: "null"
              } = track
+
+      conn = delete(conn, ~p"/room/#{room_id}/component/#{id}")
+      assert response(conn, :no_content)
+
+      assert_receive %TrackRemoved{
+        room_id: ^room_id,
+        endpoint_info: {:component_id, ^id},
+        track: ^track
+      }
     end
 
     test "renders component with audio as source", %{conn: conn, room_id: room_id} do
@@ -102,6 +112,15 @@ defmodule JellyfishWeb.Component.FileComponentTest do
                encoding: :ENCODING_OPUS,
                metadata: "null"
              } = track
+
+      conn = delete(conn, ~p"/room/#{room_id}/component/#{id}")
+      assert response(conn, :no_content)
+
+      assert_receive %TrackRemoved{
+        room_id: ^room_id,
+        endpoint_info: {:component_id, ^id},
+        track: ^track
+      }
     end
 
     test "file in subdirectory", %{

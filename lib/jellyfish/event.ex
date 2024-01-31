@@ -116,8 +116,7 @@ defmodule Jellyfish.Event do
     }
   end
 
-  defp to_proto_track(%type{} = track)
-       when type in [Message.TrackAdded, Message.TrackMetadataUpdated, Message.TrackRemoved] do
+  defp to_proto_track(%Message.TrackAdded{} = track) do
     %Track{
       id: track.track_id,
       type: to_proto_track_type(track.track_type),
