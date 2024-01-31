@@ -458,7 +458,7 @@ defmodule Jellyfish.Room do
         state
       )
       when is_map_key(state.peers, endpoint_id) do
-    Logger.debug("Peer #{endpoint_id} metadata updated: #{metadata}")
+    Logger.info("Peer #{endpoint_id} metadata updated: #{metadata}")
     Event.broadcast_server_notification({:peer_metadata_updated, state.id, endpoint_id, metadata})
 
     state = put_in(state, [:peers, endpoint_id, :metadata], metadata)
@@ -473,9 +473,9 @@ defmodule Jellyfish.Room do
   @impl true
   def handle_info(%TrackAdded{endpoint_id: endpoint_id} = track_info, state)
       when endpoint_exists?(state, endpoint_id) do
-    Logger.info("Endpoint #{endpoint_id} added track #{inspect(track_info)}")
-
     endpoint_id_type = get_endpoint_id_type(state, endpoint_id)
+
+    Logger.info("Track #{track_info.track_id} added, #{endpoint_id_type}: #{endpoint_id}")
 
     Event.broadcast_server_notification(
       {:track_added, state.id, {endpoint_id_type, endpoint_id}, track_info}
@@ -514,7 +514,7 @@ defmodule Jellyfish.Room do
         endpoint_id_type = get_endpoint_id_type(state, endpoint_id)
         updated_track = %Track{track | metadata: track_info.track_metadata}
 
-        Logger.debug(
+        Logger.info(
           "Track #{updated_track.id}, #{endpoint_id_type}: #{endpoint_id} - metadata updated: #{updated_track.metadata}"
         )
 
@@ -524,6 +524,12 @@ defmodule Jellyfish.Room do
 
         {:noreply, put_in(state, access_path, updated_track)}
     end
+  end
+
+  @impl true
+  def handle_info(%TrackMetadataUpdated{endpoint_id: endpoint_id} = track_info, state) do
+    Logger.error("Unknown endpoint #{endpoint_id} updated track #{inspect(track_info)}")
+    {:noreply, state}
   end
 
   @impl true
@@ -542,7 +548,7 @@ defmodule Jellyfish.Room do
 
       track ->
         endpoint_id_type = get_endpoint_id_type(state, endpoint_id)
-        Logger.debug("Track removed: #{track.id}, #{endpoint_id_type}: #{endpoint_id}")
+        Logger.info("Track removed: #{track.id}, #{endpoint_id_type}: #{endpoint_id}")
 
         Event.broadcast_server_notification(
           {:track_removed, state.id, {endpoint_id_type, endpoint_id}, track}
@@ -555,11 +561,6 @@ defmodule Jellyfish.Room do
   @impl true
   def handle_info(%TrackRemoved{endpoint_id: endpoint_id} = track_info, state) do
     Logger.error("Unknown endpoint #{endpoint_id} removed track #{inspect(track_info)}")
-    {:noreply, state}
-  end
-
-  @impl true
-  def handle_info(%EndpointRemoved{}, state) do
     {:noreply, state}
   end
 
