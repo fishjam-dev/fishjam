@@ -69,10 +69,7 @@ defmodule Jellyfish.MixProject do
 
       # Membrane deps
       {:membrane_rtc_engine,
-       github: "jellyfish-dev/membrane_rtc_engine",
-       branch: "RTC-435-track-metadata",
-       sparse: "engine",
-       override: true},
+       github: "jellyfish-dev/membrane_rtc_engine", sparse: "engine", override: true},
       {:membrane_rtc_engine_webrtc,
        github: "jellyfish-dev/membrane_rtc_engine", sparse: "webrtc", override: true},
       {:membrane_rtc_engine_hls,
