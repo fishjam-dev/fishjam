@@ -356,12 +356,6 @@ components:
     Track:
       description: Describes media track of a Peer or Component
       properties:
-        encoding:
-          enum:
-            - H264
-            - VP8
-            - OPUS
-          type: string
         id:
           type: string
         metadata:

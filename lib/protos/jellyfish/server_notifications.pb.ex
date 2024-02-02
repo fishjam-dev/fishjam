@@ -8,17 +8,6 @@ defmodule Jellyfish.ServerMessage.EventType do
   field :EVENT_TYPE_METRICS, 2
 end
 
-defmodule Jellyfish.ServerMessage.Encoding do
-  @moduledoc false
-
-  use Protobuf, enum: true, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
-
-  field :ENCODING_UNSPECIFIED, 0
-  field :ENCODING_H264, 1
-  field :ENCODING_VP8, 2
-  field :ENCODING_OPUS, 3
-end
-
 defmodule Jellyfish.ServerMessage.TrackType do
   @moduledoc false
 
@@ -175,8 +164,7 @@ defmodule Jellyfish.ServerMessage.Track do
 
   field :id, 1, type: :string
   field :type, 2, type: Jellyfish.ServerMessage.TrackType, enum: true
-  field :encoding, 3, type: Jellyfish.ServerMessage.Encoding, enum: true
-  field :metadata, 4, type: :string
+  field :metadata, 3, type: :string
 end
 
 defmodule Jellyfish.ServerMessage.TrackAdded do

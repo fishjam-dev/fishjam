@@ -289,7 +289,6 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
                        %Track{
                          id: _track_id,
                          type: :TRACK_TYPE_VIDEO,
-                         encoding: :ENCODING_H264,
                          metadata: "null"
                        } =
                          track_info
@@ -331,9 +330,9 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
                      room_id: ^room_id,
                      peer_id: ^peer_id,
                      metadata: ^metadata_encoded
-                   } = track_added
+                   } = peer_metadata_updated
 
-    assert_receive {:webhook_notification, ^track_added}, 1_000
+    assert_receive {:webhook_notification, ^peer_metadata_updated}, 1_000
   end
 
   describe "hls upload" do

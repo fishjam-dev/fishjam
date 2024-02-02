@@ -111,7 +111,6 @@ defmodule Jellyfish.Event do
     %Track{
       id: track.id,
       type: to_proto_track_type(track.type),
-      encoding: to_proto_encoding(track.encoding),
       metadata: Jason.encode!(track.metadata)
     }
   end
@@ -120,15 +119,9 @@ defmodule Jellyfish.Event do
     %Track{
       id: track.track_id,
       type: to_proto_track_type(track.track_type),
-      encoding: to_proto_encoding(track.track_encoding),
       metadata: Jason.encode!(track.track_metadata)
     }
   end
-
-  defp to_proto_encoding(:H264), do: :ENCODING_H264
-  defp to_proto_encoding(:VP8), do: :ENCODING_VP8
-  defp to_proto_encoding(:OPUS), do: :ENCODING_OPUS
-  defp to_proto_encoding(_encoding), do: :ENCODING_UNSPECIFIED
 
   defp to_proto_track_type(:video), do: :TRACK_TYPE_VIDEO
   defp to_proto_track_type(:audio), do: :TRACK_TYPE_AUDIO

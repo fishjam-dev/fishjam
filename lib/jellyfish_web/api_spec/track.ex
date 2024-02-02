@@ -16,10 +16,6 @@ defmodule JellyfishWeb.ApiSpec.Track do
         type: :string,
         enum: ["audio", "video"]
       },
-      encoding: %Schema{
-        type: :string,
-        enum: ["H264", "VP8", "OPUS"]
-      },
       metadata: %Schema{
         nullable: true
       }

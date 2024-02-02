@@ -60,7 +60,7 @@ defmodule JellyfishWeb.Component.FileComponentTest do
       assert_receive %TrackAdded{
         room_id: ^room_id,
         endpoint_info: {:component_id, ^id},
-        track: %Track{type: :TRACK_TYPE_VIDEO, encoding: :ENCODING_H264, metadata: "null"} = track
+        track: %Track{type: :TRACK_TYPE_VIDEO, metadata: "null"} = track
       }
 
       conn = delete(conn, ~p"/room/#{room_id}/component/#{id}")
@@ -103,7 +103,6 @@ defmodule JellyfishWeb.Component.FileComponentTest do
 
       assert %{
                type: :TRACK_TYPE_AUDIO,
-               encoding: :ENCODING_OPUS,
                metadata: "null"
              } = track
 

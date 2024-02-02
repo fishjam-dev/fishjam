@@ -7,7 +7,7 @@ defmodule Jellyfish.Track do
 
   alias Membrane.RTC.Engine.Message.{TrackAdded, TrackMetadataUpdated}
 
-  @enforce_keys [:id, :type, :encoding]
+  @enforce_keys [:id, :type]
   defstruct @enforce_keys ++ [:metadata]
 
   @type id() :: String.t()
@@ -15,7 +15,6 @@ defmodule Jellyfish.Track do
   @type t() :: %__MODULE__{
           id: id(),
           type: :audio | :video,
-          encoding: atom(),
           metadata: nil | any()
         }
 
@@ -25,7 +24,6 @@ defmodule Jellyfish.Track do
     %__MODULE__{
       id: message.track_id,
       type: message.track_type,
-      encoding: message.track_encoding,
       metadata: message.track_metadata
     }
   end
