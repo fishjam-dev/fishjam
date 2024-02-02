@@ -60,14 +60,8 @@ defmodule JellyfishWeb.Component.FileComponentTest do
       assert_receive %TrackAdded{
         room_id: ^room_id,
         endpoint_info: {:component_id, ^id},
-        track: %Track{} = track
+        track: %Track{type: :TRACK_TYPE_VIDEO, encoding: :ENCODING_H264, metadata: "null"} = track
       }
-
-      assert %{
-               type: :TRACK_TYPE_VIDEO,
-               encoding: :ENCODING_H264,
-               metadata: "null"
-             } = track
 
       conn = delete(conn, ~p"/room/#{room_id}/component/#{id}")
       assert response(conn, :no_content)

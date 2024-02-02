@@ -51,7 +51,7 @@ defmodule Jellyfish.WebhookNotifier do
     case HTTPoison.post(
            webhook_url,
            notification,
-           [{"Content-Type", "application/octet-stream"}]
+           [{"Content-Type", "application/protobuf"}]
          ) do
       {:ok, result} when result.status_code >= 200 and result.status_code < 300 ->
         nil

@@ -484,7 +484,7 @@ defmodule Jellyfish.Room do
     endpoint_group = get_endpoint_group(state, track_info.endpoint_id)
     access_path = [endpoint_group, track_info.endpoint_id, :tracks, track_info.track_id]
 
-    track = Track.from_track_added_message(track_info)
+    track = Track.from_track_message(track_info)
     state = put_in(state, access_path, track)
 
     {:noreply, state}
@@ -502,13 +502,13 @@ defmodule Jellyfish.Room do
     endpoint_group = get_endpoint_group(state, endpoint_id)
     access_path = [endpoint_group, endpoint_id, :tracks, track_info.track_id]
 
-    case get_in(state, access_path) do
+    update_in(state, access_path, fn
       nil ->
         Logger.warning(
-          "Unable to update track's metadata - track #{inspect(track_info.track_id)} doesn't exist"
+          "Metadata updated of an unknown track #{inspect(track_info)}, new track added"
         )
 
-        {:noreply, state}
+        Track.from_track_message(track_info)
 
       track ->
         endpoint_id_type = get_endpoint_id_type(state, endpoint_id)
@@ -522,8 +522,9 @@ defmodule Jellyfish.Room do
           {:track_metadata_updated, state.id, {endpoint_id_type, endpoint_id}, updated_track}
         )
 
-        {:noreply, put_in(state, access_path, updated_track)}
-    end
+        updated_track
+    end)
+    |> then(&{:noreply, &1})
   end
 
   @impl true
@@ -538,15 +539,15 @@ defmodule Jellyfish.Room do
     endpoint_group = get_endpoint_group(state, endpoint_id)
     access_path = [endpoint_group, endpoint_id, :tracks, track_info.track_id]
 
-    case get_in(state, access_path) do
-      nil ->
+    case pop_in(state, access_path) do
+      {nil, state} ->
         Logger.warning(
           "Unable to remove track - track #{inspect(track_info.track_id)} doesn't exist"
         )
 
-        {:noreply, state}
+        state
 
-      track ->
+      {track, state} ->
         endpoint_id_type = get_endpoint_id_type(state, endpoint_id)
         Logger.info("Track removed: #{track.id}, #{endpoint_id_type}: #{endpoint_id}")
 
@@ -554,8 +555,9 @@ defmodule Jellyfish.Room do
           {:track_removed, state.id, {endpoint_id_type, endpoint_id}, track}
         )
 
-        {:noreply, pop_in(state, access_path)}
+        state
     end
+    |> then(&{:noreply, &1})
   end
 
   @impl true
