@@ -12,7 +12,6 @@ config :jellyfish, JellyfishWeb.Endpoint,
 config :jellyfish, metrics_scrape_interval: 1000
 
 config :membrane_telemetry_metrics, enabled: true
-config :membrane_opentelemetry, enabled: true
 
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",

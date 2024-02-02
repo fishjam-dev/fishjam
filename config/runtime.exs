@@ -9,7 +9,6 @@ alias Jellyfish.ConfigReader
 # any compile-time configuration in here, as it won't be applied.
 # The block below contains prod specific runtime configuration.
 config :ex_dtls, impl: :nif
-config :opentelemetry, traces_exporter: :none
 
 prod? = config_env() == :prod
 
