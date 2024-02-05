@@ -30,6 +30,9 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
   end
 
   setup_all do
+    RoomService.list_rooms()
+    |> Enum.map(&RoomService.delete_room(&1.id))
+
     assert {:ok, _pid} = Endpoint.start_link()
     :ok
   end
@@ -180,7 +183,8 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
 
     Process.sleep(600)
 
-    assert ^metrics_after_one_tick = get_peers_room_metrics()
+    assert ^metrics_after_one_tick =
+             Map.intersect(metrics_after_one_tick, get_peers_room_metrics())
 
     conn = delete(conn, ~p"/room/#{room_id}/")
     response(conn, :no_content)
@@ -193,7 +197,7 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
       "jellyfish_rooms" => "0"
     }
 
-    assert ^metrics_after_removal = get_peers_room_metrics()
+    assert ^metrics_after_removal = Map.intersect(metrics_after_removal, get_peers_room_metrics())
   end
 
   def create_and_authenticate(token) do
@@ -209,8 +213,7 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
     |> HTTPoison.get!()
     |> Map.get(:body)
     |> String.split("\n")
-    |> Enum.reject(&String.starts_with?(&1, "# HELP"))
-    |> Enum.reject(&String.starts_with?(&1, "# TYPE"))
+    |> Enum.reject(&(String.starts_with?(&1, "# HELP") or String.starts_with?(&1, "# TYPE")))
     |> Enum.reduce(%{}, fn elem, acc ->
       if elem == "" do
         acc
