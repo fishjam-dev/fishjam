@@ -172,8 +172,14 @@ components:
         filePath:
           description: Relative path to track file. Must be either OPUS encapsulated in Ogg or raw h264
           type: string
+        framerate:
+          description: Framerate of video in a file. It is only valid for video track
+          example: 30
+          nullable: true
+          type: integer
       required:
         - filePath
+        - framerate
       title: ComponentPropertiesFile
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.File.Properties
@@ -460,6 +466,11 @@ components:
           description: Path to track file. Must be either OPUS encapsulated in Ogg or raw h264
           example: /root/video.h264
           type: string
+        framerate:
+          description: Framerate of video in a file. It is only valid for video track
+          example: 30
+          nullable: true
+          type: integer
       required:
         - filePath
       title: ComponentOptionsFile

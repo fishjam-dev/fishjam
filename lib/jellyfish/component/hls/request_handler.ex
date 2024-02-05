@@ -82,7 +82,7 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
       {:ok, partial}
     else
       {:error, :file_not_found} ->
-        case is_preload_hint(room_id, filename) do
+        case preload_hint?(room_id, filename) do
           {:ok, true} ->
             wait_for_partial_ready(room_id, filename)
 
@@ -102,7 +102,7 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
           {:ok, String.t()} | {:error, atom()}
   def handle_manifest_request(room_id, partial) do
     with {:ok, last_partial} <- EtsHelper.get_recent_partial(room_id) do
-      unless is_partial_ready(partial, last_partial) do
+      unless partial_ready?(partial, last_partial) do
         wait_for_manifest_ready(room_id, partial, :manifest)
       end
 
@@ -117,7 +117,7 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
           {:ok, String.t()} | {:error, atom()}
   def handle_delta_manifest_request(room_id, partial) do
     with {:ok, last_partial} <- EtsHelper.get_delta_recent_partial(room_id) do
-      unless is_partial_ready(partial, last_partial) do
+      unless partial_ready?(partial, last_partial) do
         wait_for_manifest_ready(room_id, partial, :delta_manifest)
       end
 
@@ -176,11 +176,11 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   end
 
   @impl true
-  def handle_cast({:is_partial_ready, partial, from, manifest}, state) do
+  def handle_cast({:partial_ready?, partial, from, manifest}, state) do
     state =
       state
       |> Map.fetch!(manifest)
-      |> handle_is_partial_ready(partial, from)
+      |> handle_partial_ready?(partial, from)
       |> then(&Map.put(state, manifest, &1))
 
     {:noreply, state}
@@ -217,7 +217,7 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
   ###
 
   defp wait_for_manifest_ready(room_id, partial, manifest) do
-    GenServer.cast(registry_id(room_id), {:is_partial_ready, partial, self(), manifest})
+    GenServer.cast(registry_id(room_id), {:partial_ready?, partial, self(), manifest})
 
     receive do
       :manifest_ready ->
@@ -243,7 +243,7 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
     partials_ready =
       waiting_pids
       |> Map.keys()
-      |> Enum.filter(fn partial -> is_partial_ready(partial, last_partial) end)
+      |> Enum.filter(fn partial -> partial_ready?(partial, last_partial) end)
 
     partials_ready
     |> Enum.flat_map(fn partial -> Map.fetch!(waiting_pids, partial) end)
@@ -254,8 +254,8 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
     %{status | waiting_pids: waiting_pids, last_partial: last_partial}
   end
 
-  defp handle_is_partial_ready(status, partial, from) do
-    if is_partial_ready(partial, status.last_partial) do
+  defp handle_partial_ready?(status, partial, from) do
+    if partial_ready?(partial, status.last_partial) do
       send(from, :manifest_ready)
       status
     else
@@ -268,7 +268,7 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
     end
   end
 
-  defp is_preload_hint(room_id, filename) do
+  defp preload_hint?(room_id, filename) do
     partial_sn = get_partial_sn(filename)
 
     with {:ok, recent_partial_sn} <- EtsHelper.get_recent_partial(room_id) do
@@ -310,11 +310,11 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
     Enum.each(waiting_pids, fn pid -> send(pid, :preload_hint_ready) end)
   end
 
-  defp is_partial_ready(_partial, nil) do
+  defp partial_ready?(_partial, nil) do
     false
   end
 
-  defp is_partial_ready({segment_sn, partial_sn}, {last_segment_sn, last_partial_sn}) do
+  defp partial_ready?({segment_sn, partial_sn}, {last_segment_sn, last_partial_sn}) do
     cond do
       last_segment_sn > segment_sn -> true
       last_segment_sn < segment_sn -> false
