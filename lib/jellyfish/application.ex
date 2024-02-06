@@ -72,7 +72,8 @@ defmodule Jellyfish.Application do
   end
 
   defp config_distribution(dist_config) do
-    ensure_epmd_started!()
+    Logger.debug("Distributed config: #{inspect(dist_config)}")
+    :ok = ensure_epmd_started!()
 
     # When running JF not in a cluster and using
     # mix release, it starts in the distributed mode
@@ -101,7 +102,13 @@ defmodule Jellyfish.Application do
 
   defp ensure_epmd_started!() do
     case System.cmd("epmd", ["-daemon"]) do
-      {_, 0} ->
+      {output, 0} ->
+        Logger.debug("Output from epmd -daemon: #{Enum.join(output, "\n")}")
+
+        {output, 0} = System.cmd("epmd", ["-names"])
+
+        Logger.debug("Output from epmd -names: #{Enum.join(output, "\n")}")
+
         :ok
 
       _other ->
