@@ -502,29 +502,24 @@ defmodule Jellyfish.Room do
     endpoint_group = get_endpoint_group(state, endpoint_id)
     access_path = [endpoint_group, endpoint_id, :tracks, track_info.track_id]
 
-    update_in(state, access_path, fn
-      nil ->
-        Logger.warning(
-          "Metadata updated of an unknown track #{inspect(track_info)}, new track added"
-        )
+    state =
+      update_in(state, access_path, fn
+        track ->
+          endpoint_id_type = get_endpoint_id_type(state, endpoint_id)
+          updated_track = %Track{track | metadata: track_info.track_metadata}
 
-        Track.from_track_message(track_info)
+          Logger.info(
+            "Track #{updated_track.id}, #{endpoint_id_type}: #{endpoint_id} - metadata updated: #{updated_track.metadata}"
+          )
 
-      track ->
-        endpoint_id_type = get_endpoint_id_type(state, endpoint_id)
-        updated_track = %Track{track | metadata: track_info.track_metadata}
+          Event.broadcast_server_notification(
+            {:track_metadata_updated, state.id, {endpoint_id_type, endpoint_id}, updated_track}
+          )
 
-        Logger.info(
-          "Track #{updated_track.id}, #{endpoint_id_type}: #{endpoint_id} - metadata updated: #{updated_track.metadata}"
-        )
+          updated_track
+      end)
 
-        Event.broadcast_server_notification(
-          {:track_metadata_updated, state.id, {endpoint_id_type, endpoint_id}, updated_track}
-        )
-
-        updated_track
-    end)
-    |> then(&{:noreply, &1})
+    {:noreply, state}
   end
 
   @impl true
@@ -539,25 +534,16 @@ defmodule Jellyfish.Room do
     endpoint_group = get_endpoint_group(state, endpoint_id)
     access_path = [endpoint_group, endpoint_id, :tracks, track_info.track_id]
 
-    case pop_in(state, access_path) do
-      {nil, state} ->
-        Logger.warning(
-          "Unable to remove track - track #{inspect(track_info.track_id)} doesn't exist"
-        )
+    {track, state} = pop_in(state, access_path)
 
-        state
+    endpoint_id_type = get_endpoint_id_type(state, endpoint_id)
+    Logger.info("Track removed: #{track.id}, #{endpoint_id_type}: #{endpoint_id}")
 
-      {track, state} ->
-        endpoint_id_type = get_endpoint_id_type(state, endpoint_id)
-        Logger.info("Track removed: #{track.id}, #{endpoint_id_type}: #{endpoint_id}")
+    Event.broadcast_server_notification(
+      {:track_removed, state.id, {endpoint_id_type, endpoint_id}, track}
+    )
 
-        Event.broadcast_server_notification(
-          {:track_removed, state.id, {endpoint_id_type, endpoint_id}, track}
-        )
-
-        state
-    end
-    |> then(&{:noreply, &1})
+    {:noreply, state}
   end
 
   @impl true
