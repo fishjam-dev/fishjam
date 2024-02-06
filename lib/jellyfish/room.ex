@@ -458,7 +458,7 @@ defmodule Jellyfish.Room do
         state
       )
       when is_map_key(state.peers, endpoint_id) do
-    Logger.info("Peer #{endpoint_id} metadata updated: #{metadata}")
+    Logger.info("Peer #{endpoint_id} metadata updated: #{inspect(metadata)}")
     Event.broadcast_server_notification({:peer_metadata_updated, state.id, endpoint_id, metadata})
 
     state = put_in(state, [:peers, endpoint_id, :metadata], metadata)
@@ -509,7 +509,7 @@ defmodule Jellyfish.Room do
           updated_track = %Track{track | metadata: track_info.track_metadata}
 
           Logger.info(
-            "Track #{updated_track.id}, #{endpoint_id_type}: #{endpoint_id} - metadata updated: #{updated_track.metadata}"
+            "Track #{updated_track.id}, #{endpoint_id_type}: #{endpoint_id} - metadata updated: #{inspect(updated_track.metadata)}"
           )
 
           Event.broadcast_server_notification(
