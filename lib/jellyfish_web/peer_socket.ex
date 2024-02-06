@@ -89,6 +89,7 @@ defmodule JellyfishWeb.PeerSocket do
     {:ok, state}
   end
 
+  @impl true
   def handle_in({msg, [opcode: :text]}, state) do
     Logger.warning("""
     Received unexpected text message #{msg} from #{inspect(state.peer_id)}, \
@@ -113,18 +114,23 @@ defmodule JellyfishWeb.PeerSocket do
   end
 
   @impl true
-  def handle_info({:stop_connection, reason}, state) do
-    {:stop, reason, state}
+  def handle_info({:stop_connection, :peer_removed}, state) do
+    {:stop, :closed, {1000, "Peer removed"}, state}
+  end
+
+  @impl true
+  def handle_info({:stop_connection, _reason}, state) do
+    {:stop, :closed, {1011, "Internal server error"}, state}
   end
 
   @impl true
   def handle_info(:room_crashed, state) do
-    {:stop, :room_crashed, state}
+    {:stop, :closed, {1011, "Internal server error"}, state}
   end
 
   @impl true
   def handle_info(:room_stopped, state) do
-    {:stop, :room_stopped, state}
+    {:stop, :closed, {1000, "Room stopped"}, state}
   end
 
   @impl true
