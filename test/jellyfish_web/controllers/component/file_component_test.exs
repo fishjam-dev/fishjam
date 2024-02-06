@@ -100,6 +100,7 @@ defmodule JellyfishWeb.Component.FileComponentTest do
 
     test "renders component wiht audio as source", %{conn: conn, room_id: room_id} do
       start_notifier()
+
       conn =
         post(conn, ~p"/room/#{room_id}/component",
           type: "file",
