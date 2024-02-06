@@ -6,6 +6,12 @@ defmodule JellyfishWeb.Router do
     plug :bearer_auth
   end
 
+  scope "/health", JellyfishWeb do
+    pipe_through :api
+
+    get "/", HealthcheckController, :show
+  end
+
   scope "/room", JellyfishWeb do
     pipe_through :api
 
