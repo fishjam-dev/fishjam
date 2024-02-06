@@ -227,16 +227,7 @@ defmodule Jellyfish.Room do
   def handle_call({:remove_peer, peer_id}, _from, state) do
     {reply, state} =
       if Map.has_key?(state.peers, peer_id) do
-        {peer, state} = pop_in(state, [:peers, peer_id])
-        :ok = Engine.remove_endpoint(state.engine_pid, peer_id)
-
-        if is_pid(peer.socket_pid),
-          do: send(peer.socket_pid, {:stop_connection, :peer_removed})
-
-        Logger.info("Removed peer #{inspect(peer_id)} from room #{inspect(state.id)}")
-
-        if peer.status == :connected,
-          do: Event.broadcast_server_notification({:peer_disconnected, state.id, peer_id})
+        state = handle_remove_peer(peer_id, state, :peer_removed)
 
         {:ok, state}
       else
@@ -318,21 +309,7 @@ defmodule Jellyfish.Room do
   def handle_call({:remove_component, component_id}, _from, state) do
     {reply, state} =
       if Map.has_key?(state.components, component_id) do
-        {component, state} = pop_in(state, [:components, component_id])
-        :ok = Engine.remove_endpoint(state.engine_pid, component_id)
-
-        component.tracks
-        |> Map.values()
-        |> Enum.each(
-          &Event.broadcast_server_notification(
-            {:track_removed, state.id, {:component_id, component_id}, &1}
-          )
-        )
-
-        Logger.info("Removed component #{inspect(component_id)}")
-
-        if component.type == HLS, do: on_hls_removal(state.id, component.properties)
-
+        state = handle_remove_component(component_id, state)
         {:ok, state}
       else
         {{:error, :component_not_found}, state}
@@ -343,7 +320,7 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_call({:hls_subscribe, origins}, _from, state) do
-    hls_component = hls_component(state)
+    hls_component = get_hls_component(state)
 
     reply =
       case validate_hls_subscription(hls_component) do
@@ -577,8 +554,16 @@ defmodule Jellyfish.Room do
   def terminate(_reason, %{engine_pid: engine_pid} = state) do
     Engine.terminate(engine_pid, asynchronous?: true, timeout: 10_000)
 
-    hls_component = hls_component(state)
+    hls_component = get_hls_component(state)
     unless is_nil(hls_component), do: on_hls_removal(state.id, hls_component.properties)
+
+    state.peers
+    |> Map.values()
+    |> Enum.each(&handle_remove_peer(&1.id, state, :room_stopped))
+
+    state.components
+    |> Map.values()
+    |> Enum.each(&handle_remove_component(&1.id, state))
 
     :ok
   end
@@ -621,7 +606,47 @@ defmodule Jellyfish.Room do
     }
   end
 
-  defp hls_component(%{components: components}),
+  defp handle_remove_component(component_id, state) do
+    {component, state} = pop_in(state, [:components, component_id])
+    :ok = Engine.remove_endpoint(state.engine_pid, component_id)
+
+    component.tracks
+    |> Map.values()
+    |> Enum.each(
+      &Event.broadcast_server_notification(
+        {:track_removed, state.id, {:component_id, component_id}, &1}
+      )
+    )
+
+    Logger.info("Removed component #{inspect(component_id)}")
+
+    if component.type == HLS, do: on_hls_removal(state.id, component.properties)
+
+    state
+  end
+
+  defp handle_remove_peer(peer_id, state, reason) do
+    {peer, state} = pop_in(state, [:peers, peer_id])
+    :ok = Engine.remove_endpoint(state.engine_pid, peer_id)
+
+    if is_pid(peer.socket_pid),
+      do: send(peer.socket_pid, {:stop_connection, reason})
+
+    peer.tracks
+    |> Map.values()
+    |> Enum.each(
+      &Event.broadcast_server_notification({:track_removed, state.id, {:peer_id, peer_id}, &1})
+    )
+
+    Logger.info("Removed peer #{inspect(peer_id)} from room #{inspect(state.id)}")
+
+    if peer.status == :connected and reason == :peer_removed,
+      do: Event.broadcast_server_notification({:peer_disconnected, state.id, peer_id})
+
+    state
+  end
+
+  defp get_hls_component(%{components: components}),
     do:
       Enum.find_value(components, fn {_id, component} ->
         if component.type == HLS, do: component

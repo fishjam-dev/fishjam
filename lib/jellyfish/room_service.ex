@@ -203,8 +203,6 @@ defmodule Jellyfish.RoomService do
 
     Logger.debug("Room #{room_id} is down with reason: normal")
 
-    Phoenix.PubSub.broadcast(Jellyfish.PubSub, room_id, :room_stopped)
-
     {:noreply, state}
   end
 
