@@ -123,13 +123,12 @@ defmodule JellyfishWeb.Component.FileComponentTest do
       assert_receive %TrackAdded{
         room_id: ^room_id,
         endpoint_info: {:component_id, ^id},
-        track: %Track{} = track
+        track:
+          %{
+            type: :TRACK_TYPE_AUDIO,
+            metadata: "null"
+          } = track
       }
-
-      assert %{
-               type: :TRACK_TYPE_AUDIO,
-               metadata: "null"
-             } = track
 
       conn = delete(conn, ~p"/room/#{room_id}/component/#{id}")
       assert response(conn, :no_content)

@@ -496,7 +496,7 @@ defmodule Jellyfish.Room do
 
     state =
       update_in(state, access_path, fn
-        track ->
+        %Track{} = track ->
           endpoint_id_type = get_endpoint_id_type(state, endpoint_id)
           updated_track = %Track{track | metadata: track_info.track_metadata}
 
