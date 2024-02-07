@@ -30,9 +30,6 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
   end
 
   setup_all do
-    RoomService.list_rooms()
-    |> Enum.map(&RoomService.delete_room(&1.id))
-
     assert {:ok, _pid} = Endpoint.start_link()
     :ok
   end
