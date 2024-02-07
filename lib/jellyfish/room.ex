@@ -555,8 +555,8 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def handle_info(%EndpointRemoved{} = track_info, state) do
-    Logger.info("Endpoint removed #{track_info.endpoint_id} removed track #{inspect(track_info)}")
+  def handle_info(%EndpointRemoved{} = endpoint_info, state) do
+    Logger.info("Endpoint #{endpoint_info.endpoint_id} removed")
     {:noreply, state}
   end
 

@@ -9,7 +9,7 @@ defmodule Jellyfish.RoomService do
 
   alias Jellyfish.{Event, Room, WebhookNotifier}
 
-  @metric_interval_in_seconds Application.compile_env!(:jellyfish, :peer_metrics_scrape_interval)
+  @metric_interval_in_seconds Application.compile_env!(:jellyfish, :room_metrics_scrape_interval)
   @metric_interval_in_milliseconds @metric_interval_in_seconds * 1_000
 
   def start_link(args) do

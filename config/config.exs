@@ -11,7 +11,7 @@ config :jellyfish, JellyfishWeb.Endpoint,
 
 config :jellyfish,
   webrtc_metrics_scrape_interval: 1000,
-  peer_metrics_scrape_interval: 10
+  room_metrics_scrape_interval: 10
 
 config :membrane_telemetry_metrics, enabled: true
 
