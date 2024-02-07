@@ -555,12 +555,6 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def handle_info(%EndpointRemoved{} = endpoint_info, state) do
-    Logger.info("Endpoint #{endpoint_info.endpoint_id} removed")
-    {:noreply, state}
-  end
-
-  @impl true
   def handle_info(info, state) do
     Logger.warning("Received unexpected info: #{inspect(info)}")
     {:noreply, state}
