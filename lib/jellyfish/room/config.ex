@@ -2,7 +2,7 @@ defmodule Jellyfish.Room.Config do
   @moduledoc """
   Room configuration
   """
-  @enforce_keys [:room_id, :max_peers, :video_codec, :webhook_url]
+  @enforce_keys [:room_id, :max_peers, :video_codec, :webhook_url, :peerless_purge_timeout]
 
   defstruct @enforce_keys
 
@@ -10,12 +10,14 @@ defmodule Jellyfish.Room.Config do
   @type max_peers :: non_neg_integer() | nil
   @type video_codec :: :h264 | :vp8 | nil
   @type webhook_url :: String.t()
+  @type peerless_purge_timeout :: pos_integer() | nil
 
   @type t :: %__MODULE__{
           room_id: room_id(),
           max_peers: max_peers(),
           video_codec: video_codec(),
-          webhook_url: URI.t()
+          webhook_url: URI.t(),
+          peerless_purge_timeout: peerless_purge_timeout()
         }
 
   @spec from_params(map()) :: {:ok, __MODULE__.t()} | {:error, atom()}
@@ -24,20 +26,21 @@ defmodule Jellyfish.Room.Config do
     max_peers = Map.get(params, "maxPeers")
     video_codec = Map.get(params, "videoCodec")
     webhook_url = Map.get(params, "webhookUrl")
+    peerless_purge_timeout = Map.get(params, "peerlessPurgeTimeout")
 
     with {:ok, room_id} <- parse_room_id(room_id),
          :ok <- validate_max_peers(max_peers),
          {:ok, video_codec} <- codec_to_atom(video_codec),
-         :ok <- validate_webhook_url(webhook_url) do
+         :ok <- validate_webhook_url(webhook_url),
+         :ok <- validate_purge_timeout(peerless_purge_timeout) do
       {:ok,
        %__MODULE__{
          room_id: room_id,
          max_peers: max_peers,
          video_codec: video_codec,
-         webhook_url: webhook_url
+         webhook_url: webhook_url,
+         peerless_purge_timeout: peerless_purge_timeout
        }}
-    else
-      error -> error
     end
   end
 
@@ -67,4 +70,8 @@ defmodule Jellyfish.Room.Config do
   defp codec_to_atom("vp8"), do: {:ok, :vp8}
   defp codec_to_atom(nil), do: {:ok, nil}
   defp codec_to_atom(_codec), do: {:error, :invalid_video_codec}
+
+  defp validate_purge_timeout(nil), do: :ok
+  defp validate_purge_timeout(timeout) when is_integer(timeout) and timeout > 0, do: :ok
+  defp validate_purge_timeout(_timeout), do: {:error, :invalid_peerless_purge_timeout}
 end

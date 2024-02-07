@@ -36,8 +36,7 @@ defmodule JellyfishWeb.Component.RTSPComponentTest do
                  "type" => "rtsp",
                  "properties" => @rtsp_default_properties
                }
-             } =
-               model_response(conn, :created, "ComponentDetailsResponse")
+             } = model_response(conn, :created, "ComponentDetailsResponse")
 
       assert_component_created(conn, room_id, id, "rtsp")
     end
@@ -55,8 +54,7 @@ defmodule JellyfishWeb.Component.RTSPComponentTest do
                  "type" => "rtsp",
                  "properties" => @rtsp_custom_properties
                }
-             } =
-               model_response(conn, :created, "ComponentDetailsResponse")
+             } = model_response(conn, :created, "ComponentDetailsResponse")
 
       assert_component_created(conn, room_id, id, "rtsp")
     end

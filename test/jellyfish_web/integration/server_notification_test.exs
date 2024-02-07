@@ -83,8 +83,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   setup_all do
     assert {:ok, _pid} = Endpoint.start_link()
 
-    webserver =
-      {Plug.Cowboy, plug: WebHookPlug, scheme: :http, options: [port: @webhook_port]}
+    webserver = {Plug.Cowboy, plug: WebHookPlug, scheme: :http, options: [port: @webhook_port]}
 
     {:ok, _pid} = Supervisor.start_link([webserver], strategy: :one_for_one)
 
@@ -385,8 +384,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
 
     subscribe(ws, :server_notification)
 
-    {room_id, peer_id, peer_token, conn} =
-      add_room_and_peer(conn, server_api_token)
+    {room_id, peer_id, peer_token, conn} = add_room_and_peer(conn, server_api_token)
 
     {:ok, peer_ws} = WS.start("ws://127.0.0.1:#{@port}/socket/peer/websocket", :peer)
     WS.send_auth_request(peer_ws, peer_token)

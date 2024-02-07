@@ -73,7 +73,7 @@ defmodule JellyfishWeb.RoomControllerTest do
 
   describe "create room" do
     test "renders room when data is valid", %{conn: conn} do
-      conn = post(conn, ~p"/room", maxPeers: 10)
+      conn = post(conn, ~p"/room", maxPeers: 10, peerlessPurgeTimeout: 60)
       assert %{"id" => id} = json_response(conn, :created)["data"]["room"]
 
       conn = get(conn, ~p"/room/#{id}")
@@ -82,7 +82,7 @@ defmodule JellyfishWeb.RoomControllerTest do
 
       assert %{
                "id" => ^id,
-               "config" => %{"maxPeers" => 10},
+               "config" => %{"maxPeers" => 10, "peerlessPurgeTimeout" => 60},
                "components" => [],
                "peers" => []
              } = response["data"]
@@ -100,7 +100,7 @@ defmodule JellyfishWeb.RoomControllerTest do
 
       assert %{
                "id" => ^room_id,
-               "config" => %{"maxPeers" => nil},
+               "config" => %{"maxPeers" => nil, "peerlessPurgeTimeout" => nil},
                "components" => [],
                "peers" => []
              } = response["data"]
@@ -118,22 +118,6 @@ defmodule JellyfishWeb.RoomControllerTest do
                "Cannot add room with id \"#{room_id}\" - room already exists"
     end
 
-    test "renders room when max_peers isn't present", %{conn: conn} do
-      conn = post(conn, ~p"/room")
-      assert %{"id" => id} = json_response(conn, :created)["data"]["room"]
-
-      conn = get(conn, ~p"/room/#{id}")
-      response = json_response(conn, :ok)
-      assert_response_schema(response, "RoomDetailsResponse", @schema)
-
-      assert %{
-               "id" => ^id,
-               "config" => %{},
-               "components" => [],
-               "peers" => []
-             } = response["data"]
-    end
-
     test "renders errors when data is invalid", %{conn: conn} do
       conn = post(conn, ~p"/room", maxPeers: "nan")
 
@@ -149,6 +133,11 @@ defmodule JellyfishWeb.RoomControllerTest do
 
       assert json_response(conn, :bad_request)["errors"] ==
                "Expected webhookUrl to be valid URL, got: nan"
+
+      conn = post(conn, ~p"/room", peerlessPurgeTimeout: "nan")
+
+      assert json_response(conn, :bad_request)["errors"] ==
+               "Expected peerlessPurgeTimeout to be a positive integer, got: nan"
     end
   end
 

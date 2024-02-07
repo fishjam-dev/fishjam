@@ -28,13 +28,12 @@ defmodule Jellyfish.Component.File do
          {:ok, framerate} <- validate_framerate(valid_opts.framerate),
          {:ok, track_config} <-
            get_track_config(path, framerate) do
-      endpoint_spec =
-        %FileEndpoint{
-          rtc_engine: engine,
-          file_path: path,
-          track_config: track_config,
-          payload_type: track_config.fmtp.pt
-        }
+      endpoint_spec = %FileEndpoint{
+        rtc_engine: engine,
+        file_path: path,
+        track_config: track_config,
+        payload_type: track_config.fmtp.pt
+      }
 
       properties = valid_opts |> Map.from_struct()
 

@@ -40,8 +40,7 @@ defmodule JellyfishWeb.SubscriptionControllerTest do
                  "type" => "hls",
                  "properties" => %{"subscribeMode" => "auto"}
                }
-             } =
-               json_response(conn, :created)
+             } = json_response(conn, :created)
 
       conn = post(conn, ~p"/hls/#{room_id}/subscribe/", origins: ["peer-1", "rtsp-2"])
 
@@ -61,8 +60,7 @@ defmodule JellyfishWeb.SubscriptionControllerTest do
                  "type" => "hls",
                  "properties" => %{"subscribeMode" => "manual"}
                }
-             } =
-               json_response(conn, :created)
+             } = json_response(conn, :created)
 
       conn = post(conn, ~p"/hls/#{room_id}/subscribe/", origins: ["peer-1", "file-2"])
 
