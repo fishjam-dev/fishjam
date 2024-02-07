@@ -174,11 +174,11 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
 
     metrics_after_one_tick = %{
       peers_in_room_key => "1",
-      peers_in_room_time_key => "500",
+      peers_in_room_time_key => "1",
       "jellyfish_rooms" => "1"
     }
 
-    Process.sleep(600)
+    Process.sleep(1_000)
 
     assert ^metrics_after_one_tick =
              Map.intersect(metrics_after_one_tick, get_peers_room_metrics())
@@ -186,11 +186,11 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
     conn = delete(conn, ~p"/room/#{room_id}/")
     response(conn, :no_content)
 
-    Process.sleep(600)
+    Process.sleep(1_000)
 
     metrics_after_removal = %{
       peers_in_room_key => "0",
-      peers_in_room_time_key => "500",
+      peers_in_room_time_key => "1",
       "jellyfish_rooms" => "0"
     }
 

@@ -9,7 +9,9 @@ config :jellyfish, JellyfishWeb.Endpoint,
   pubsub_server: Jellyfish.PubSub,
   live_view: [signing_salt: "/Lo03qJT"]
 
-config :jellyfish, metrics_scrape_interval: 1000
+config :jellyfish,
+  webrtc_metrics_scrape_interval: 1000,
+  peer_metrics_scrape_interval: 10
 
 config :membrane_telemetry_metrics, enabled: true
 

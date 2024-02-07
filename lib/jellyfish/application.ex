@@ -11,7 +11,7 @@ defmodule Jellyfish.Application do
 
   @impl true
   def start(_type, _args) do
-    scrape_interval = Application.fetch_env!(:jellyfish, :metrics_scrape_interval)
+    scrape_interval = Application.fetch_env!(:jellyfish, :webrtc_metrics_scrape_interval)
     dist_config = Application.fetch_env!(:jellyfish, :dist_config)
     webrtc_config = Application.fetch_env!(:jellyfish, :webrtc_config)
 

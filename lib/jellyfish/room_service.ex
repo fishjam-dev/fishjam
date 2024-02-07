@@ -9,8 +9,8 @@ defmodule Jellyfish.RoomService do
 
   alias Jellyfish.{Event, Room, WebhookNotifier}
 
-  # in milliseconds
-  @metric_interval 10 * Application.compile_env!(:jellyfish, :metrics_scrape_interval)
+  @metric_interval_in_seconds Application.compile_env!(:jellyfish, :peer_metrics_scrape_interval)
+  @metric_interval_in_milliseconds @metric_interval_in_seconds * 1_000
 
   def start_link(args) do
     GenServer.start_link(__MODULE__, args, name: __MODULE__)
@@ -127,7 +127,7 @@ defmodule Jellyfish.RoomService do
 
   @impl true
   def handle_continue(_continue_arg, state) do
-    Process.send_after(self(), :rooms_metrics, @metric_interval)
+    Process.send_after(self(), :rooms_metrics, @metric_interval_in_milliseconds)
     :ok = Phoenix.PubSub.subscribe(Jellyfish.PubSub, "jellyfishes")
     {:noreply, state}
   end
@@ -186,13 +186,13 @@ defmodule Jellyfish.RoomService do
         [:jellyfish, :room],
         %{
           peers: peer_count,
-          peer_time_total: peer_count * @metric_interval
+          peer_time_total: peer_count * @metric_interval_in_seconds
         },
         %{room_id: room.id}
       )
     end
 
-    Process.send_after(self(), :rooms_metrics, @metric_interval)
+    Process.send_after(self(), :rooms_metrics, @metric_interval_in_milliseconds)
 
     {:noreply, state}
   end

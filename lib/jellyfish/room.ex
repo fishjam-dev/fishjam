@@ -439,7 +439,17 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def handle_info(%EndpointAdded{endpoint_id: endpoint_id}, state)
+  def handle_info(%EndpointRemoved{endpoint_id: endpoint_id}, state) do
+    {_endpoint, state} = pop_in(state, [:peers, endpoint_id])
+    Logger.info("Peer #{endpoint_id} removed")
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(
+        %EndpointAdded{endpoint_id: endpoint_id},
+        state
+      )
       when endpoint_exists?(state, endpoint_id) do
     {:noreply, state}
   end
@@ -541,6 +551,12 @@ defmodule Jellyfish.Room do
   @impl true
   def handle_info(%TrackRemoved{endpoint_id: endpoint_id} = track_info, state) do
     Logger.error("Unknown endpoint #{endpoint_id} removed track #{inspect(track_info)}")
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(%EndpointRemoved{} = track_info, state) do
+    Logger.info("Endpoint removed #{track_info.endpoint_id} removed track #{inspect(track_info)}")
     {:noreply, state}
   end
 
