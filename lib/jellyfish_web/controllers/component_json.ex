@@ -19,7 +19,8 @@ defmodule JellyfishWeb.ComponentJSON do
     %{
       id: component.id,
       type: type,
-      properties: component.properties |> ParserJSON.camel_case_keys()
+      properties: component.properties |> ParserJSON.camel_case_keys(),
+      tracks: component.tracks |> Map.values() |> Enum.map(&Map.from_struct/1)
     }
   end
 end

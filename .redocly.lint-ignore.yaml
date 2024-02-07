@@ -3,3 +3,8 @@
 openapi.yaml:
   no-empty-servers:
     - '#/servers'
+  operation-4xx-response:
+    - '#/paths/~1health/get/responses'
+  spec:
+    - '#/components/schemas/Track/properties/metadata/nullable'
+    - '#/components/schemas/PeerMetadata/nullable'

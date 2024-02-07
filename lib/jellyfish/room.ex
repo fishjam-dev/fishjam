@@ -13,6 +13,7 @@ defmodule Jellyfish.Room do
   alias Jellyfish.Event
   alias Jellyfish.Peer
   alias Jellyfish.Room.Config
+  alias Jellyfish.Track
 
   alias Membrane.ICE.TURNManager
   alias Membrane.RTC.Engine
@@ -21,8 +22,10 @@ defmodule Jellyfish.Room do
     EndpointAdded,
     EndpointCrashed,
     EndpointMessage,
+    EndpointMetadataUpdated,
     EndpointRemoved,
     TrackAdded,
+    TrackMetadataUpdated,
     TrackRemoved
   }
 
@@ -224,16 +227,7 @@ defmodule Jellyfish.Room do
   def handle_call({:remove_peer, peer_id}, _from, state) do
     {reply, state} =
       if Map.has_key?(state.peers, peer_id) do
-        {peer, state} = pop_in(state, [:peers, peer_id])
-        :ok = Engine.remove_endpoint(state.engine_pid, peer_id)
-
-        if is_pid(peer.socket_pid),
-          do: send(peer.socket_pid, {:stop_connection, :peer_removed})
-
-        Logger.info("Removed peer #{inspect(peer_id)} from room #{inspect(state.id)}")
-
-        if peer.status == :connected,
-          do: Event.broadcast_server_notification({:peer_disconnected, state.id, peer_id})
+        state = handle_remove_peer(peer_id, state, :peer_removed)
 
         {:ok, state}
       else
@@ -315,13 +309,7 @@ defmodule Jellyfish.Room do
   def handle_call({:remove_component, component_id}, _from, state) do
     {reply, state} =
       if Map.has_key?(state.components, component_id) do
-        {component, state} = pop_in(state, [:components, component_id])
-        :ok = Engine.remove_endpoint(state.engine_pid, component_id)
-
-        Logger.info("Removed component #{inspect(component_id)}")
-
-        if component.type == HLS, do: on_hls_removal(state.id, component.properties)
-
+        state = handle_remove_component(component_id, state)
         {:ok, state}
       else
         {{:error, :component_not_found}, state}
@@ -332,7 +320,7 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_call({:hls_subscribe, origins}, _from, state) do
-    hls_component = hls_component(state)
+    hls_component = get_hls_component(state)
 
     reply =
       case validate_hls_subscription(hls_component) do
@@ -451,23 +439,108 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def handle_info(
-        %EndpointAdded{endpoint_id: endpoint_id},
-        state
-      )
+  def handle_info(%EndpointAdded{endpoint_id: endpoint_id}, state)
       when endpoint_exists?(state, endpoint_id) do
     {:noreply, state}
   end
 
   @impl true
-  def handle_info(%TrackAdded{} = track_info, state) do
-    Logger.info("Endpoint #{track_info.endpoint_id} added track #{inspect(track_info)}")
+  def handle_info(
+        %EndpointMetadataUpdated{endpoint_id: endpoint_id, endpoint_metadata: metadata},
+        state
+      )
+      when is_map_key(state.peers, endpoint_id) do
+    Logger.info("Peer #{endpoint_id} metadata updated: #{inspect(metadata)}")
+    Event.broadcast_server_notification({:peer_metadata_updated, state.id, endpoint_id, metadata})
+
+    state = put_in(state, [:peers, endpoint_id, :metadata], metadata)
     {:noreply, state}
   end
 
   @impl true
-  def handle_info(%TrackRemoved{} = track_info, state) do
-    Logger.info("Endpoint #{track_info.endpoint_id} removed track #{inspect(track_info)}")
+  def handle_info(%EndpointMetadataUpdated{}, state) do
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(%TrackAdded{endpoint_id: endpoint_id} = track_info, state)
+      when endpoint_exists?(state, endpoint_id) do
+    endpoint_id_type = get_endpoint_id_type(state, endpoint_id)
+
+    Logger.info("Track #{track_info.track_id} added, #{endpoint_id_type}: #{endpoint_id}")
+
+    Event.broadcast_server_notification(
+      {:track_added, state.id, {endpoint_id_type, endpoint_id}, track_info}
+    )
+
+    endpoint_group = get_endpoint_group(state, track_info.endpoint_id)
+    access_path = [endpoint_group, track_info.endpoint_id, :tracks, track_info.track_id]
+
+    track = Track.from_track_message(track_info)
+    state = put_in(state, access_path, track)
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(%TrackAdded{endpoint_id: endpoint_id} = track_info, state) do
+    Logger.error("Unknown endpoint #{endpoint_id} added track #{inspect(track_info)}")
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(%TrackMetadataUpdated{endpoint_id: endpoint_id} = track_info, state)
+      when endpoint_exists?(state, endpoint_id) do
+    endpoint_group = get_endpoint_group(state, endpoint_id)
+    access_path = [endpoint_group, endpoint_id, :tracks, track_info.track_id]
+
+    state =
+      update_in(state, access_path, fn
+        %Track{} = track ->
+          endpoint_id_type = get_endpoint_id_type(state, endpoint_id)
+          updated_track = %Track{track | metadata: track_info.track_metadata}
+
+          Logger.info(
+            "Track #{updated_track.id}, #{endpoint_id_type}: #{endpoint_id} - metadata updated: #{inspect(updated_track.metadata)}"
+          )
+
+          Event.broadcast_server_notification(
+            {:track_metadata_updated, state.id, {endpoint_id_type, endpoint_id}, updated_track}
+          )
+
+          updated_track
+      end)
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(%TrackMetadataUpdated{endpoint_id: endpoint_id} = track_info, state) do
+    Logger.error("Unknown endpoint #{endpoint_id} updated track #{inspect(track_info)}")
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(%TrackRemoved{endpoint_id: endpoint_id} = track_info, state)
+      when endpoint_exists?(state, endpoint_id) do
+    endpoint_group = get_endpoint_group(state, endpoint_id)
+    access_path = [endpoint_group, endpoint_id, :tracks, track_info.track_id]
+
+    {track, state} = pop_in(state, access_path)
+
+    endpoint_id_type = get_endpoint_id_type(state, endpoint_id)
+    Logger.info("Track removed: #{track.id}, #{endpoint_id_type}: #{endpoint_id}")
+
+    Event.broadcast_server_notification(
+      {:track_removed, state.id, {endpoint_id_type, endpoint_id}, track}
+    )
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(%TrackRemoved{endpoint_id: endpoint_id} = track_info, state) do
+    Logger.error("Unknown endpoint #{endpoint_id} removed track #{inspect(track_info)}")
     {:noreply, state}
   end
 
@@ -481,8 +554,16 @@ defmodule Jellyfish.Room do
   def terminate(_reason, %{engine_pid: engine_pid} = state) do
     Engine.terminate(engine_pid, asynchronous?: true, timeout: 10_000)
 
-    hls_component = hls_component(state)
+    hls_component = get_hls_component(state)
     unless is_nil(hls_component), do: on_hls_removal(state.id, hls_component.properties)
+
+    state.peers
+    |> Map.values()
+    |> Enum.each(&handle_remove_peer(&1.id, state, :room_stopped))
+
+    state.components
+    |> Map.values()
+    |> Enum.each(&handle_remove_component(&1.id, state))
 
     :ok
   end
@@ -525,7 +606,47 @@ defmodule Jellyfish.Room do
     }
   end
 
-  defp hls_component(%{components: components}),
+  defp handle_remove_component(component_id, state) do
+    {component, state} = pop_in(state, [:components, component_id])
+    :ok = Engine.remove_endpoint(state.engine_pid, component_id)
+
+    component.tracks
+    |> Map.values()
+    |> Enum.each(
+      &Event.broadcast_server_notification(
+        {:track_removed, state.id, {:component_id, component_id}, &1}
+      )
+    )
+
+    Logger.info("Removed component #{inspect(component_id)}")
+
+    if component.type == HLS, do: on_hls_removal(state.id, component.properties)
+
+    state
+  end
+
+  defp handle_remove_peer(peer_id, state, reason) do
+    {peer, state} = pop_in(state, [:peers, peer_id])
+    :ok = Engine.remove_endpoint(state.engine_pid, peer_id)
+
+    if is_pid(peer.socket_pid),
+      do: send(peer.socket_pid, {:stop_connection, reason})
+
+    peer.tracks
+    |> Map.values()
+    |> Enum.each(
+      &Event.broadcast_server_notification({:track_removed, state.id, {:peer_id, peer_id}, &1})
+    )
+
+    Logger.info("Removed peer #{inspect(peer_id)} from room #{inspect(state.id)}")
+
+    if peer.status == :connected and reason == :peer_removed,
+      do: Event.broadcast_server_notification({:peer_disconnected, state.id, peer_id})
+
+    state
+  end
+
+  defp get_hls_component(%{components: components}),
     do:
       Enum.find_value(components, fn {_id, component} ->
         if component.type == HLS, do: component
@@ -593,4 +714,17 @@ defmodule Jellyfish.Room do
     do: {:error, :invalid_subscribe_mode}
 
   defp validate_hls_subscription(%{properties: %{subscribe_mode: :manual}}), do: :ok
+
+  defp get_endpoint_group(state, endpoint_id) when is_map_key(state.components, endpoint_id),
+    do: :components
+
+  defp get_endpoint_group(state, endpoint_id) when is_map_key(state.peers, endpoint_id),
+    do: :peers
+
+  defp get_endpoint_id_type(state, endpoint_id) do
+    case get_endpoint_group(state, endpoint_id) do
+      :peers -> :peer_id
+      :components -> :component_id
+    end
+  end
 end

@@ -3,7 +3,7 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
 
   alias __MODULE__.Endpoint
   alias Jellyfish.PeerMessage
-  alias Jellyfish.PeerMessage.{Authenticated, AuthRequest, MediaEvent}
+  alias Jellyfish.PeerMessage.{Authenticated, MediaEvent}
   alias Jellyfish.RoomService
   alias JellyfishWeb.{PeerSocket, WS}
 
@@ -62,8 +62,7 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
 
   test "invalid token", %{token: token} do
     {:ok, ws} = WS.start_link(@path, :peer)
-    auth_request = auth_request("invalid" <> token)
-    :ok = WS.send_binary_frame(ws, auth_request)
+    WS.send_auth_request(ws, "invalid" <> token)
 
     assert_receive {:disconnected, {:remote, 1000, "invalid token"}}, 1000
   end
@@ -76,9 +75,7 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
     {:ok, ws} = WS.start_link(@path, :peer)
 
     unadded_peer_token = JellyfishWeb.PeerToken.generate(%{peer_id: "peer_id", room_id: room_id})
-    auth_request = auth_request(unadded_peer_token)
-
-    :ok = WS.send_binary_frame(ws, auth_request)
+    WS.send_auth_request(ws, unadded_peer_token)
 
     assert_receive {:disconnected, {:remote, 1000, "peer not found"}}, 1000
   end
@@ -87,8 +84,7 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
     _conn = delete(conn, ~p"/room/#{room_id}")
 
     {:ok, ws} = WS.start_link(@path, :peer)
-    auth_request = auth_request(token)
-    :ok = WS.send_binary_frame(ws, auth_request)
+    WS.send_auth_request(ws, token)
 
     assert_receive {:disconnected, {:remote, 1000, "room not found"}}, 1000
   end
@@ -96,8 +92,7 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
   test "authRequest when already connected", %{token: token} do
     ws = create_and_authenticate(token)
 
-    auth_request = auth_request(token)
-    :ok = WS.send_binary_frame(ws, auth_request)
+    WS.send_auth_request(ws, token)
     refute_receive @auth_response, 1000
     refute_receive {:disconnected, {:remote, 1000, _msg}}
   end
@@ -106,8 +101,7 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
     create_and_authenticate(token)
 
     {:ok, ws2} = WS.start_link(@path, :peer)
-    auth_request = auth_request(token)
-    :ok = WS.send_binary_frame(ws2, auth_request)
+    WS.send_auth_request(ws2, token)
 
     assert_receive {:disconnected, {:remote, 1000, "peer already connected"}}, 1000
   end
@@ -172,16 +166,10 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
   end
 
   def create_and_authenticate(token) do
-    auth_request = auth_request(token)
-
     {:ok, ws} = WS.start_link(@path, :peer)
-    :ok = WS.send_binary_frame(ws, auth_request)
+    WS.send_auth_request(ws, token)
     assert_receive @auth_response, 1000
 
     ws
-  end
-
-  defp auth_request(token) do
-    PeerMessage.encode(%PeerMessage{content: {:auth_request, %AuthRequest{token: token}}})
   end
 end

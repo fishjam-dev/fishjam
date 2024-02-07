@@ -167,6 +167,11 @@ components:
           type: string
         properties:
           $ref: '#/components/schemas/ComponentPropertiesHLS'
+        tracks:
+          description: List of all component's tracks
+          items:
+            $ref: '#/components/schemas/Track'
+          type: array
         type:
           description: Component type
           example: hls
@@ -175,6 +180,7 @@ components:
         - id
         - type
         - properties
+        - tracks
       title: ComponentHLS
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS
@@ -185,6 +191,13 @@ components:
       title: HlsSkip
       type: string
       x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Params.HlsSkip
+    PeerMetadata:
+      description: Custom metadata set by the peer
+      example:
+        name: JellyfishUser
+      nullable: true
+      title: PeerMetadata
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.PeerMetadata
     ComponentPropertiesFile:
       description: Properties specific to the File component
       properties:
@@ -211,6 +224,11 @@ components:
           type: string
         properties:
           $ref: '#/components/schemas/ComponentPropertiesFile'
+        tracks:
+          description: List of all component's tracks
+          items:
+            $ref: '#/components/schemas/Track'
+          type: array
         type:
           description: Component type
           example: file
@@ -218,6 +236,7 @@ components:
       required:
         - id
         - type
+        - tracks
       title: ComponentFile
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.File
@@ -249,6 +268,11 @@ components:
           type: string
         properties:
           $ref: '#/components/schemas/ComponentPropertiesRTSP'
+        tracks:
+          description: List of all component's tracks
+          items:
+            $ref: '#/components/schemas/Track'
+          type: array
         type:
           description: Component type
           example: hls
@@ -257,6 +281,7 @@ components:
         - id
         - type
         - properties
+        - tracks
       title: ComponentRTSP
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.RTSP
@@ -353,6 +378,21 @@ components:
       title: ComponentOptions
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Options
+    Track:
+      description: Describes media track of a Peer or Component
+      properties:
+        id:
+          type: string
+        metadata:
+          nullable: true
+        type:
+          enum:
+            - audio
+            - video
+          type: string
+      title: Track
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Track
     HealthReportDistribution:
       description: Informs about the status of Jellyfish distribution
       properties:
@@ -428,14 +468,23 @@ components:
           description: Assigned peer id
           example: peer-1
           type: string
+        metadata:
+          $ref: '#/components/schemas/PeerMetadata'
         status:
           $ref: '#/components/schemas/PeerStatus'
+        tracks:
+          description: List of all peer's tracks
+          items:
+            $ref: '#/components/schemas/Track'
+          type: array
         type:
           $ref: '#/components/schemas/PeerType'
       required:
         - id
         - type
         - status
+        - tracks
+        - metadata
       title: Peer
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Peer

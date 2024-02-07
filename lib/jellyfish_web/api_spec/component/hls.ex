@@ -126,8 +126,13 @@ defmodule JellyfishWeb.ApiSpec.Component.HLS do
       id: %Schema{type: :string, description: "Assigned component ID", example: "component-1"},
       # FIXME: due to cyclic imports, we can't use ApiSpec.Component.Type here
       type: %Schema{type: :string, description: "Component type", example: "hls"},
-      properties: Properties
+      properties: Properties,
+      tracks: %Schema{
+        type: :array,
+        items: JellyfishWeb.ApiSpec.Track,
+        description: "List of all component's tracks"
+      }
     },
-    required: [:id, :type, :properties]
+    required: [:id, :type, :properties, :tracks]
   })
 end

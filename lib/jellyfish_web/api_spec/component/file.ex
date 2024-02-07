@@ -65,8 +65,13 @@ defmodule JellyfishWeb.ApiSpec.Component.File do
       id: %Schema{type: :string, description: "Assigned component ID", example: "component-1"},
       # FIXME: due to cyclic imports, we can't use ApiSpec.Component.Type here
       type: %Schema{type: :string, description: "Component type", example: "file"},
-      properties: Properties
+      properties: Properties,
+      tracks: %Schema{
+        type: :array,
+        items: JellyfishWeb.ApiSpec.Track,
+        description: "List of all component's tracks"
+      }
     },
-    required: [:id, :type]
+    required: [:id, :type, :tracks]
   })
 end

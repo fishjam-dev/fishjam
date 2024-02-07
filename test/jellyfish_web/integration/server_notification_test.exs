@@ -3,6 +3,8 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
 
   import Mox
 
+  import JellyfishWeb.WS, only: [subscribe: 2]
+
   alias __MODULE__.Endpoint
 
   alias Jellyfish.Component.HLS
@@ -13,18 +15,19 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
 
   alias Jellyfish.ServerMessage.{
     Authenticated,
-    AuthRequest,
     HlsPlayable,
     HlsUploadCrashed,
     HlsUploaded,
     MetricsReport,
     PeerConnected,
     PeerDisconnected,
+    PeerMetadataUpdated,
     RoomCrashed,
     RoomCreated,
     RoomDeleted,
-    SubscribeRequest,
-    SubscribeResponse
+    Track,
+    TrackAdded,
+    TrackRemoved
   }
 
   alias JellyfishWeb.{PeerSocket, ServerSocket, WS}
@@ -36,6 +39,10 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   @path "ws://127.0.0.1:#{@port}/socket/server/websocket"
   @auth_response %Authenticated{}
   @pubsub Jellyfish.PubSub
+
+  @file_component_directory "file_component_sources"
+  @fixtures_directory "test/fixtures"
+  @video_source "video.h264"
 
   @max_peers 1
 
@@ -107,9 +114,8 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   test "invalid token" do
     {:ok, ws} = WS.start_link(@path, :server)
     server_api_token = "invalid" <> Application.fetch_env!(:jellyfish, :server_api_token)
-    auth_request = auth_request(server_api_token)
+    WS.send_auth_request(ws, server_api_token)
 
-    :ok = WS.send_binary_frame(ws, auth_request)
     assert_receive {:disconnected, {:remote, 1000, "invalid token"}}, 1000
   end
 
@@ -194,7 +200,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   end
 
   test "sends a message when peer connects and room is deleted", %{conn: conn} do
-    {room_id, peer_id, conn} = subscribe_on_notifications_and_connect_peer(conn)
+    {room_id, peer_id, conn, _ws} = subscribe_on_notifications_and_connect_peer(conn)
 
     _conn = delete(conn, ~p"/room/#{room_id}")
     assert_receive %RoomDeleted{room_id: ^room_id}
@@ -209,7 +215,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   end
 
   test "sends a message when peer connects and peer is removed", %{conn: conn} do
-    {room_id, peer_id, conn} = subscribe_on_notifications_and_connect_peer(conn)
+    {room_id, peer_id, conn, _ws} = subscribe_on_notifications_and_connect_peer(conn)
 
     conn = delete(conn, ~p"/room/#{room_id}/peer/#{peer_id}")
     assert response(conn, :no_content)
@@ -228,7 +234,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   end
 
   test "sends a message when peer connects and room crashes", %{conn: conn} do
-    {room_id, peer_id, _conn} = subscribe_on_notifications_and_connect_peer(conn)
+    {room_id, peer_id, _conn, _ws} = subscribe_on_notifications_and_connect_peer(conn)
     {:ok, room_pid} = Jellyfish.RoomService.find_room(room_id)
 
     Process.exit(room_pid, :kill)
@@ -245,7 +251,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   end
 
   test "sends a message when peer connects and it crashes", %{conn: conn} do
-    {room_id, peer_id, conn} = subscribe_on_notifications_and_connect_peer(conn)
+    {room_id, peer_id, conn, _ws} = subscribe_on_notifications_and_connect_peer(conn)
 
     {:ok, room_pid} = Jellyfish.RoomService.find_room(room_id)
 
@@ -264,12 +270,77 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     delete(conn, ~p"/room/#{room_id}")
   end
 
+  test "sends message when tracks are added or removed", %{conn: conn} do
+    media_sources_directory =
+      Application.fetch_env!(:jellyfish, :media_files_path)
+      |> Path.join(@file_component_directory)
+      |> Path.expand()
+
+    File.mkdir_p!(media_sources_directory)
+    File.cp_r!(@fixtures_directory, media_sources_directory)
+
+    {room_id, _peer_id, conn, _ws} = subscribe_on_notifications_and_connect_peer(conn)
+    {conn, id} = add_file_component(conn, room_id)
+
+    assert_receive %TrackAdded{
+                     room_id: ^room_id,
+                     endpoint_info: {:component_id, ^id},
+                     track:
+                       %Track{
+                         id: _track_id,
+                         type: :TRACK_TYPE_VIDEO,
+                         metadata: "null"
+                       } =
+                         track_info
+                   } = track_added,
+                   500
+
+    assert_receive {:webhook_notification, ^track_added}, 1_000
+
+    _conn = delete(conn, ~p"/room/#{room_id}/component/#{id}")
+
+    assert_receive %TrackRemoved{
+                     room_id: ^room_id,
+                     endpoint_info: {:component_id, ^id},
+                     track: ^track_info
+                   } = track_removed
+
+    assert_receive {:webhook_notification, ^track_removed}, 1_000
+
+    :file.del_dir_r(media_sources_directory)
+  end
+
+  test "sends message when peer metadata is updated", %{conn: conn} do
+    {room_id, peer_id, _conn, peer_ws} = subscribe_on_notifications_and_connect_peer(conn)
+
+    metadata = %{name: "Jellyuser"}
+    metadata_encoded = Jason.encode!(metadata)
+
+    media_event = %PeerMessage.MediaEvent{
+      data: %{"type" => "connect", "data" => %{"metadata" => metadata}} |> Jason.encode!()
+    }
+
+    :ok =
+      WS.send_binary_frame(
+        peer_ws,
+        PeerMessage.encode(%PeerMessage{content: {:media_event, media_event}})
+      )
+
+    assert_receive %PeerMetadataUpdated{
+                     room_id: ^room_id,
+                     peer_id: ^peer_id,
+                     metadata: ^metadata_encoded
+                   } = peer_metadata_updated
+
+    assert_receive {:webhook_notification, ^peer_metadata_updated}, 1_000
+  end
+
   describe "hls upload" do
     setup :verify_on_exit!
     setup :set_mox_from_context
 
     test "sends a message when hls was uploaded", %{conn: conn} do
-      {room_id, _peer_id, _conn} = subscribe_on_notifications_and_connect_peer(conn)
+      {room_id, _peer_id, _conn, _ws} = subscribe_on_notifications_and_connect_peer(conn)
       test_hls_manager(room_id, request_no: 4, status_code: 200)
 
       assert_receive %HlsUploaded{room_id: ^room_id}
@@ -277,7 +348,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     end
 
     test "sends a message when hls upload crashed", %{conn: conn} do
-      {room_id, _peer_id, _conn} = subscribe_on_notifications_and_connect_peer(conn)
+      {room_id, _peer_id, _conn, _ws} = subscribe_on_notifications_and_connect_peer(conn)
       test_hls_manager(room_id, request_no: 1, status_code: 400)
 
       assert_receive %HlsUploadCrashed{room_id: ^room_id}
@@ -294,8 +365,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     {room_id, peer_id, peer_token, _conn} = add_room_and_peer(conn, server_api_token)
 
     {:ok, peer_ws} = WS.start_link("ws://127.0.0.1:#{@port}/socket/peer/websocket", :peer)
-    auth_request = peer_auth_request(peer_token)
-    :ok = WS.send_binary_frame(peer_ws, auth_request)
+    WS.send_auth_request(peer_ws, peer_token)
 
     assert_receive %PeerConnected{peer_id: ^peer_id, room_id: ^room_id}
 
@@ -319,43 +389,24 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
       add_room_and_peer(conn, server_api_token)
 
     {:ok, peer_ws} = WS.start("ws://127.0.0.1:#{@port}/socket/peer/websocket", :peer)
-    auth_request = peer_auth_request(peer_token)
-    :ok = WS.send_binary_frame(peer_ws, auth_request)
+    WS.send_auth_request(peer_ws, peer_token)
 
     assert_receive %PeerConnected{peer_id: ^peer_id, room_id: ^room_id}
 
     assert_receive {:webhook_notification, %PeerConnected{peer_id: ^peer_id, room_id: ^room_id}},
                    1_000
 
-    {room_id, peer_id, conn}
+    {room_id, peer_id, conn, peer_ws}
   end
 
   def create_and_authenticate() do
     token = Application.fetch_env!(:jellyfish, :server_api_token)
-    auth_request = auth_request(token)
 
     {:ok, ws} = WS.start_link(@path, :server)
-    :ok = WS.send_binary_frame(ws, auth_request)
+    WS.send_auth_request(ws, token)
     assert_receive @auth_response, 1000
 
     ws
-  end
-
-  def subscribe(ws, event_type) do
-    proto_event_type = to_proto_event_type(event_type)
-
-    msg = %ServerMessage{
-      content:
-        {:subscribe_request,
-         %SubscribeRequest{
-           event_type: proto_event_type
-         }}
-    }
-
-    :ok = WS.send_binary_frame(ws, ServerMessage.encode(msg))
-
-    assert_receive %SubscribeResponse{event_type: ^proto_event_type} = response
-    response
   end
 
   defp add_room_and_peer(conn, server_api_token) do
@@ -397,14 +448,17 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     {conn, id}
   end
 
-  defp auth_request(token) do
-    ServerMessage.encode(%ServerMessage{content: {:auth_request, %AuthRequest{token: token}}})
-  end
+  defp add_file_component(conn, room_id) do
+    conn =
+      post(conn, ~p"/room/#{room_id}/component",
+        type: "file",
+        options: %{filePath: @video_source}
+      )
 
-  defp peer_auth_request(token) do
-    PeerMessage.encode(%PeerMessage{
-      content: {:auth_request, %PeerMessage.AuthRequest{token: token}}
-    })
+    assert %{"id" => id, "properties" => %{"filePath" => @video_source}, "type" => "file"} =
+             json_response(conn, :created)["data"]
+
+    {conn, id}
   end
 
   defp trigger_notification(conn) do
@@ -412,12 +466,8 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     {_room_id, _peer_id, peer_token, _conn} = add_room_and_peer(conn, server_api_token)
 
     {:ok, peer_ws} = WS.start_link("ws://127.0.0.1:#{@port}/socket/peer/websocket", :peer)
-    auth_request = peer_auth_request(peer_token)
-    :ok = WS.send_binary_frame(peer_ws, auth_request)
+    WS.send_auth_request(peer_ws, peer_token)
   end
-
-  defp to_proto_event_type(:server_notification), do: :EVENT_TYPE_SERVER_NOTIFICATION
-  defp to_proto_event_type(:metrics), do: :EVENT_TYPE_METRICS
 
   defp test_hls_manager(room_id, request_no: request_no, status_code: status_code) do
     hls_dir = HLS.output_dir(room_id, persistent: false)

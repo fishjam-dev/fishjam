@@ -8,6 +8,16 @@ defmodule Jellyfish.ServerMessage.EventType do
   field :EVENT_TYPE_METRICS, 2
 end
 
+defmodule Jellyfish.ServerMessage.TrackType do
+  @moduledoc false
+
+  use Protobuf, enum: true, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
+
+  field :TRACK_TYPE_UNSPECIFIED, 0
+  field :TRACK_TYPE_VIDEO, 1
+  field :TRACK_TYPE_AUDIO, 2
+end
+
 defmodule Jellyfish.ServerMessage.RoomCrashed do
   @moduledoc false
 
@@ -137,6 +147,65 @@ defmodule Jellyfish.ServerMessage.HlsUploadCrashed do
   field :room_id, 1, type: :string, json_name: "roomId"
 end
 
+defmodule Jellyfish.ServerMessage.PeerMetadataUpdated do
+  @moduledoc false
+
+  use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
+
+  field :room_id, 1, type: :string, json_name: "roomId"
+  field :peer_id, 2, type: :string, json_name: "peerId"
+  field :metadata, 3, type: :string
+end
+
+defmodule Jellyfish.ServerMessage.Track do
+  @moduledoc false
+
+  use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
+
+  field :id, 1, type: :string
+  field :type, 2, type: Jellyfish.ServerMessage.TrackType, enum: true
+  field :metadata, 3, type: :string
+end
+
+defmodule Jellyfish.ServerMessage.TrackAdded do
+  @moduledoc false
+
+  use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
+
+  oneof :endpoint_info, 0
+
+  field :room_id, 1, type: :string, json_name: "roomId"
+  field :peer_id, 2, type: :string, json_name: "peerId", oneof: 0
+  field :component_id, 3, type: :string, json_name: "componentId", oneof: 0
+  field :track, 4, type: Jellyfish.ServerMessage.Track
+end
+
+defmodule Jellyfish.ServerMessage.TrackRemoved do
+  @moduledoc false
+
+  use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
+
+  oneof :endpoint_info, 0
+
+  field :room_id, 1, type: :string, json_name: "roomId"
+  field :peer_id, 2, type: :string, json_name: "peerId", oneof: 0
+  field :component_id, 3, type: :string, json_name: "componentId", oneof: 0
+  field :track, 4, type: Jellyfish.ServerMessage.Track
+end
+
+defmodule Jellyfish.ServerMessage.TrackMetadataUpdated do
+  @moduledoc false
+
+  use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
+
+  oneof :endpoint_info, 0
+
+  field :room_id, 1, type: :string, json_name: "roomId"
+  field :peer_id, 2, type: :string, json_name: "peerId", oneof: 0
+  field :component_id, 3, type: :string, json_name: "componentId", oneof: 0
+  field :track, 4, type: Jellyfish.ServerMessage.Track
+end
+
 defmodule Jellyfish.ServerMessage do
   @moduledoc false
 
@@ -214,5 +283,25 @@ defmodule Jellyfish.ServerMessage do
   field :hls_upload_crashed, 15,
     type: Jellyfish.ServerMessage.HlsUploadCrashed,
     json_name: "hlsUploadCrashed",
+    oneof: 0
+
+  field :peer_metadata_updated, 16,
+    type: Jellyfish.ServerMessage.PeerMetadataUpdated,
+    json_name: "peerMetadataUpdated",
+    oneof: 0
+
+  field :track_added, 17,
+    type: Jellyfish.ServerMessage.TrackAdded,
+    json_name: "trackAdded",
+    oneof: 0
+
+  field :track_removed, 18,
+    type: Jellyfish.ServerMessage.TrackRemoved,
+    json_name: "trackRemoved",
+    oneof: 0
+
+  field :track_metadata_updated, 19,
+    type: Jellyfish.ServerMessage.TrackMetadataUpdated,
+    json_name: "trackMetadataUpdated",
     oneof: 0
 end
