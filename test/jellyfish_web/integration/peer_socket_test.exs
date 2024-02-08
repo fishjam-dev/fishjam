@@ -165,11 +165,63 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
     assert_receive {:disconnected, {:remote, 1000, "Room stopped"}}, 1000
   end
 
+  test "proper calculated peer metrics", %{room_id: room_id, token: token, conn: conn} do
+    assert %{} = get_peers_room_metrics()
+    create_and_authenticate(token)
+
+    peers_in_room_key = "jellyfish_room_peers{room_id=\"#{room_id}\"}"
+    peers_in_room_time_key = "jellyfish_room_peer_time_total_seconds{room_id=\"#{room_id}\"}"
+
+    metrics_after_one_tick = %{
+      peers_in_room_key => "1",
+      peers_in_room_time_key => "1",
+      "jellyfish_rooms" => "1"
+    }
+
+    Process.sleep(1_000)
+
+    assert ^metrics_after_one_tick =
+             Map.intersect(metrics_after_one_tick, get_peers_room_metrics())
+
+    conn = delete(conn, ~p"/room/#{room_id}/")
+    response(conn, :no_content)
+
+    Process.sleep(1_000)
+
+    metrics_after_removal = %{
+      peers_in_room_key => "0",
+      peers_in_room_time_key => "1",
+      "jellyfish_rooms" => "0"
+    }
+
+    assert ^metrics_after_removal = Map.intersect(metrics_after_removal, get_peers_room_metrics())
+  end
+
   def create_and_authenticate(token) do
     {:ok, ws} = WS.start_link(@path, :peer)
     WS.send_auth_request(ws, token)
     assert_receive @auth_response, 1000
 
     ws
+  end
+
+  defp get_peers_room_metrics() do
+    "http://localhost:9568/metrics"
+    |> HTTPoison.get!()
+    |> Map.get(:body)
+    |> String.split("\n")
+    |> Enum.reject(&(String.starts_with?(&1, "# HELP") or String.starts_with?(&1, "# TYPE")))
+    |> Enum.reduce(%{}, fn elem, acc ->
+      if elem == "" do
+        acc
+      else
+        [key, value | _] = String.split(elem, " ")
+        Map.put(acc, key, value)
+      end
+    end)
+    |> Enum.filter(fn {key, _value} ->
+      String.starts_with?(key, "jellyfish_room")
+    end)
+    |> Map.new()
   end
 end

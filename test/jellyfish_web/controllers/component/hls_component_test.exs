@@ -188,6 +188,8 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
 
       assert model_response(conn, :bad_request, "Error")["errors"] ==
                "Incompatible video codec enforced in room #{room_id}"
+
+      RoomService.delete_room(room_id)
     end
 
     test "renders errors when video codec is different than h264 - nil", %{conn: conn} do
@@ -200,6 +202,8 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
 
       assert model_response(conn, :bad_request, "Error")["errors"] ==
                "Incompatible video codec enforced in room #{room_id}"
+
+      RoomService.delete_room(room_id)
     end
   end
 
@@ -208,6 +212,10 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
 
     assert %{"id" => room_id} =
              model_response(conn, :created, "RoomCreateDetailsResponse")["data"]["room"]
+
+    on_exit(fn ->
+      RoomService.delete_room(room_id)
+    end)
 
     %{room_id: room_id}
   end

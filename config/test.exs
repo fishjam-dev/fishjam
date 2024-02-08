@@ -4,7 +4,8 @@ config :jellyfish,
   ip: {127, 0, 0, 1},
   port: 4002,
   server_api_token: "development",
-  metrics_scrape_interval: 50
+  webrtc_metrics_scrape_interval: 50,
+  room_metrics_scrape_interval: 1
 
 config :jellyfish, JellyfishWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],

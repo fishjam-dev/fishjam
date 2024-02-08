@@ -9,8 +9,8 @@ defmodule Jellyfish.RoomService do
 
   alias Jellyfish.{Event, Room, WebhookNotifier}
 
-  # in seconds
-  @metric_interval 10
+  @metric_interval_in_seconds Application.compile_env!(:jellyfish, :room_metrics_scrape_interval)
+  @metric_interval_in_milliseconds @metric_interval_in_seconds * 1_000
 
   def start_link(args) do
     GenServer.start_link(__MODULE__, args, name: __MODULE__)
@@ -127,7 +127,7 @@ defmodule Jellyfish.RoomService do
 
   @impl true
   def handle_continue(_continue_arg, state) do
-    Process.send_after(self(), :rooms_metrics, @metric_interval)
+    Process.send_after(self(), :rooms_metrics, @metric_interval_in_milliseconds)
     :ok = Phoenix.PubSub.subscribe(Jellyfish.PubSub, "jellyfishes")
     {:noreply, state}
   end
@@ -186,13 +186,13 @@ defmodule Jellyfish.RoomService do
         [:jellyfish, :room],
         %{
           peers: peer_count,
-          peer_time_total: peer_count * @metric_interval
+          peer_time_total: peer_count * @metric_interval_in_seconds
         },
         %{room_id: room.id}
       )
     end
 
-    Process.send_after(self(), :rooms_metrics, @metric_interval * 1000)
+    Process.send_after(self(), :rooms_metrics, @metric_interval_in_milliseconds)
 
     {:noreply, state}
   end
@@ -202,6 +202,9 @@ defmodule Jellyfish.RoomService do
     {room_id, state} = pop_in(state, [:rooms, pid])
 
     Logger.debug("Room #{room_id} is down with reason: normal")
+
+    Phoenix.PubSub.broadcast(Jellyfish.PubSub, room_id, :room_stopped)
+    clear_room_metrics(room_id)
 
     {:noreply, state}
   end
@@ -214,8 +217,20 @@ defmodule Jellyfish.RoomService do
 
     Phoenix.PubSub.broadcast(Jellyfish.PubSub, room_id, :room_crashed)
     Event.broadcast_server_notification({:room_crashed, room_id})
+    clear_room_metrics(room_id)
 
     {:noreply, state}
+  end
+
+  defp clear_room_metrics(room_id) do
+    :telemetry.execute(
+      [:jellyfish, :room],
+      %{
+        peers: 0,
+        peer_time_total: 0
+      },
+      %{room_id: room_id}
+    )
   end
 
   defp find_best_node(node_resources) do
