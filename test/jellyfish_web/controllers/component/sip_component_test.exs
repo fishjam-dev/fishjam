@@ -9,8 +9,8 @@ defmodule JellyfishWeb.Component.SIPComponentTest do
   }
 
   @sip_default_properties %{
-                            credentials: map_keys_to_string(@sip_credentials),
-                            external_ip: "127.0.0.1"
+                            credentials: map_keys_to_string(@sip_credentials)
+                            # external_ip: "127.0.0.1"
                           }
                           |> map_keys_to_string()
 

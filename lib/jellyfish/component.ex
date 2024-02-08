@@ -23,8 +23,8 @@ defmodule Jellyfish.Component do
   defstruct @enforce_keys ++ [tracks: %{}]
 
   @type id :: String.t()
-  @type component :: HLS | RTSP | File
-  @type properties :: HLS.properties() | RTSP.properties() | File.properties()
+  @type component :: HLS | RTSP | File | SIP
+  @type properties :: HLS.properties() | RTSP.properties() | File.properties() | SIP.properties()
 
   @typedoc """
   This module contains:

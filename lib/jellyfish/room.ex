@@ -17,6 +17,7 @@ defmodule Jellyfish.Room do
 
   alias Membrane.ICE.TURNManager
   alias Membrane.RTC.Engine
+  alias Membrane.RTC.Engine.Endpoint
 
   alias Membrane.RTC.Engine.Message.{
     EndpointAdded,
@@ -135,6 +136,18 @@ defmodule Jellyfish.Room do
           :ok | {:error, term()}
   def hls_subscribe(room_id, origins) do
     GenServer.call(registry_id(room_id), {:hls_subscribe, origins})
+  end
+
+  @spec dial(id(), Component.id(), String.t()) ::
+          :ok | {:error, term()}
+  def dial(room_id, component_id, phone_number) do
+    GenServer.call(registry_id(room_id), {:dial, component_id, phone_number})
+  end
+
+  @spec end_call(id(), Component.id()) ::
+          :ok | {:error, term()}
+  def end_call(room_id, component_id) do
+    GenServer.call(registry_id(room_id), {:end_call, component_id})
   end
 
   @spec receive_media_event(id(), Peer.id(), String.t()) :: :ok
@@ -324,7 +337,7 @@ defmodule Jellyfish.Room do
     reply =
       case validate_hls_subscription(hls_component) do
         :ok ->
-          Engine.message_endpoint(state.engine_pid, hls_component.id, {:subscribe, origins})
+          Endpoint.HLS.subscribe(state.engine_pid, hls_component.id, origins)
 
         {:error, _reason} = error ->
           error
@@ -337,6 +350,36 @@ defmodule Jellyfish.Room do
   def handle_call(:get_num_forwarded_tracks, _from, state) do
     forwarded_tracks = Engine.get_num_forwarded_tracks(state.engine_pid)
     {:reply, forwarded_tracks, state}
+  end
+
+  @impl true
+  def handle_call({:dial, component_id, phone_number}, _from, state) do
+    case Map.fetch(state.components, component_id) do
+      :error ->
+        {:reply, :component_not_exist, state}
+
+      {:ok, component} when component.type == SIP ->
+        Endpoint.SIP.dial(state.engine_pid, component_id, phone_number)
+        {:reply, :ok, state}
+
+      {:ok, _component} ->
+        {:reply, :bad_component_type, state}
+    end
+  end
+
+  @impl true
+  def handle_call({:end_call, component_id}, _from, state) do
+    case Map.fetch(state.components, component_id) do
+      :error ->
+        {:reply, :component_not_exist, state}
+
+      {:ok, component} when component.type == SIP ->
+        Endpoint.SIP.end_call(state.engine_pid, component_id)
+        {:reply, :ok, state}
+
+      {:ok, _component} ->
+        {:reply, :bad_component_type, state}
+    end
   end
 
   @impl true
@@ -569,7 +612,7 @@ defmodule Jellyfish.Room do
   def terminate(_reason, %{engine_pid: engine_pid} = state) do
     Engine.terminate(engine_pid, asynchronous?: true, timeout: 10_000)
 
-    hls_component = hls_component(state)
+    hls_component = get_hls_component(state)
     unless is_nil(hls_component), do: HLS.on_remove(state, hls_component)
 
     state.peers
