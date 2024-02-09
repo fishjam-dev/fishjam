@@ -62,6 +62,8 @@ defmodule Jellyfish.Room do
   defguardp endpoint_exists?(state, endpoint_id)
             when is_map_key(state.components, endpoint_id) or is_map_key(state.peers, endpoint_id)
 
+  defguardp peerless?(state) when map_size(state.peers) == 0
+
   def registry_id(room_id), do: {:via, Registry, {Jellyfish.RoomRegistry, room_id}}
 
   @spec start(Config.t()) :: {:ok, pid(), id()}
@@ -230,9 +232,9 @@ defmodule Jellyfish.Room do
   def handle_call({:remove_peer, peer_id}, _from, state) do
     {reply, state} =
       if Map.has_key?(state.peers, peer_id) do
-        state = handle_remove_peer(peer_id, state, :peer_removed)
-
-        state = maybe_schedule_peerless_purge(state)
+        state =
+          handle_remove_peer(peer_id, state, :peer_removed)
+          |> maybe_schedule_peerless_purge()
 
         {:ok, state}
       else
@@ -555,6 +557,10 @@ defmodule Jellyfish.Room do
   @impl true
   def handle_info(:peerless_purge, state) do
     if peerless_long_enough?(state) do
+      Logger.info(
+        "Removing room because it was peerless for #{state.config.peerless_purge_timeout} seconds"
+      )
+
       {:stop, :normal, state}
     else
       {:noreply, state}
@@ -630,7 +636,7 @@ defmodule Jellyfish.Room do
   defp maybe_schedule_peerless_purge(%{config: %{peerless_purge_timeout: nil}} = state), do: state
 
   defp maybe_schedule_peerless_purge(%{config: config, peers: peers} = state)
-       when map_size(peers) == 0 do
+       when peerless?(state) do
     last_peer_left = System.monotonic_time(:millisecond)
     Process.send_after(self(), :peerless_purge, config.peerless_purge_timeout * 1000)
 
@@ -640,7 +646,7 @@ defmodule Jellyfish.Room do
   defp maybe_schedule_peerless_purge(state), do: state
 
   defp peerless_long_enough?(%{config: config, peers: peers, last_peer_left: last_peer_left})
-       when map_size(peers) == 0 do
+       when peerless?(state) do
     System.monotonic_time(:millisecond) >= last_peer_left + config.peerless_purge_timeout * 1000
   end
 

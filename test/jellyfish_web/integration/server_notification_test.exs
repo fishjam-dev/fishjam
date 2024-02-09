@@ -289,8 +289,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
                          id: _track_id,
                          type: :TRACK_TYPE_VIDEO,
                          metadata: "null"
-                       } =
-                         track_info
+                       } = track_info
                    } = track_added,
                    500
 
