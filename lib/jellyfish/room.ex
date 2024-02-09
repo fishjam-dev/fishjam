@@ -62,8 +62,6 @@ defmodule Jellyfish.Room do
   defguardp endpoint_exists?(state, endpoint_id)
             when is_map_key(state.components, endpoint_id) or is_map_key(state.peers, endpoint_id)
 
-  defguardp peerless?(state) when map_size(state.peers) == 0
-
   def registry_id(room_id), do: {:via, Registry, {Jellyfish.RoomRegistry, room_id}}
 
   @spec start(Config.t()) :: {:ok, pid(), id()}
@@ -636,7 +634,7 @@ defmodule Jellyfish.Room do
   defp maybe_schedule_peerless_purge(%{config: %{peerless_purge_timeout: nil}} = state), do: state
 
   defp maybe_schedule_peerless_purge(%{config: config, peers: peers} = state)
-       when peerless?(state) do
+       when map_size(peers) == 0 do
     last_peer_left = System.monotonic_time(:millisecond)
     Process.send_after(self(), :peerless_purge, config.peerless_purge_timeout * 1000)
 
@@ -646,7 +644,7 @@ defmodule Jellyfish.Room do
   defp maybe_schedule_peerless_purge(state), do: state
 
   defp peerless_long_enough?(%{config: config, peers: peers, last_peer_left: last_peer_left})
-       when peerless?(state) do
+       when map_size(peers) == 0 do
     System.monotonic_time(:millisecond) >= last_peer_left + config.peerless_purge_timeout * 1000
   end
 
