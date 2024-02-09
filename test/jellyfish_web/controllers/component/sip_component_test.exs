@@ -9,17 +9,25 @@ defmodule JellyfishWeb.Component.SIPComponentTest do
   }
 
   @sip_default_properties %{
-                            credentials: map_keys_to_string(@sip_credentials)
+                            registrarCredentials: map_keys_to_string(@sip_credentials)
                             # external_ip: "127.0.0.1"
                           }
                           |> map_keys_to_string()
+
+  setup_all do
+    Application.put_env(:jellyfish, :sip_config, sip_used?: true, sip_external_ip: "127.0.0.1")
+
+    on_exit(fn ->
+      Application.put_env(:jellyfish, :sip_config, sip_used?: false, sip_external_ip: nil)
+    end)
+  end
 
   describe "create SIP component" do
     test "renders component with required options", %{conn: conn, room_id: room_id} do
       conn =
         post(conn, ~p"/room/#{room_id}/component",
           type: "sip",
-          options: %{credentials: @sip_credentials}
+          options: %{registrarCredentials: @sip_credentials}
         )
 
       assert %{
@@ -41,7 +49,7 @@ defmodule JellyfishWeb.Component.SIPComponentTest do
       conn = post(conn, ~p"/room/#{room_id}/component", type: "sip")
 
       assert model_response(conn, :bad_request, "Error")["errors"] ==
-               "Required field \"credentials\" missing"
+               "Required field \"registrarCredentials\" missing"
     end
   end
 end

@@ -7,6 +7,7 @@ defmodule Jellyfish.Component.SIP do
   @behaviour Jellyfish.Component
 
   alias Membrane.RTC.Engine.Endpoint.SIP
+  alias Membrane.RTC.Engine.Endpoint.SIP.RegistrarCredentials
 
   alias JellyfishWeb.ApiSpec.Component.SIP.Options
 
@@ -20,10 +21,21 @@ defmodule Jellyfish.Component.SIP do
 
   @impl true
   def config(%{engine_pid: engine} = options) do
-    if not Application.fetch_env!(:jellyfish, :sip_config)[:sip_used] do
-      raise(
-        "SIP components can only be used if JF_SIP_USED environmental variable is not set to \"false\""
-      )
+    sip_config = Application.fetch_env!(:jellyfish, :sip_config)
+
+    cond do
+      not sip_config[:sip_used?] ->
+        raise """
+        SIP components can only be used if JF_SIP_USED environmental variable is set to \"true\"
+        """
+
+      is_nil(sip_config[:sip_external_ip]) ->
+        raise """
+        SIP components can only be used if JF_SIP_IP environmental variable is set
+        """
+
+      true ->
+        nil
     end
 
     external_ip = Application.fetch_env!(:jellyfish, :sip_config)[:sip_external_ip]
@@ -37,6 +49,12 @@ defmodule Jellyfish.Component.SIP do
         end)
         |> Map.put(:rtc_engine, engine)
         |> Map.put(:external_ip, external_ip)
+        |> Map.update!(:registrar_credentials, fn credentials ->
+          credentials
+          |> Map.to_list()
+          |> Keyword.new()
+          |> RegistrarCredentials.new()
+        end)
         |> then(&struct(SIP, &1))
 
       properties = valid_opts |> Map.from_struct()

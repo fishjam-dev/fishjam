@@ -120,18 +120,26 @@ defmodule Jellyfish.ConfigReader do
   end
 
   def read_sip_config() do
-    sip_used = read_boolean("JF_SIP_USED")
+    sip_used? = read_boolean("JF_SIP_USED")
+    sip_ip = System.get_env("JF_SIP_IP") || ""
 
-    if sip_used != false do
-      [
-        sip_used: true,
-        sip_external_ip: read_ip("JF_SIP_IP")
-      ]
-    else
-      [
-        sip_used: false,
-        sip_external_ip: nil
-      ]
+    cond do
+      sip_used? != true ->
+        [
+          sip_used?: false,
+          sip_external_ip: nil
+        ]
+
+      ip_address?(sip_ip) ->
+        [
+          sip_used?: true,
+          sip_external_ip: sip_ip
+        ]
+
+      true ->
+        raise """
+        JF_SIP_USED has been set to true but not correct IP address was provided as `JF_SIP_IP`
+        """
     end
   end
 

@@ -128,6 +128,21 @@ defmodule Jellyfish.ConfigReaderTest do
     end
   end
 
+  test "read_sip_config/0" do
+    with_env ["JF_SIP_USED", "JF_SIP_IP"] do
+      assert ConfigReader.read_sip_config() == [sip_used?: false, sip_external_ip: nil]
+
+      System.put_env("JF_SIP_USED", "true")
+      assert_raise RuntimeError, fn -> ConfigReader.read_sip_config() end
+
+      System.put_env("JF_SIP_IP", "abcdefg")
+      assert_raise RuntimeError, fn -> ConfigReader.read_sip_config() end
+
+      System.put_env("JF_SIP_IP", "127.0.0.1")
+      assert ConfigReader.read_sip_config() == [sip_used?: true, sip_external_ip: "127.0.0.1"]
+    end
+  end
+
   test "read_dist_config/0 NODES_LIST" do
     with_env [
       "JF_DIST_ENABLED",

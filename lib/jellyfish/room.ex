@@ -9,7 +9,7 @@ defmodule Jellyfish.Room do
   require Logger
 
   alias Jellyfish.Component
-  alias Jellyfish.Component.{HLS, RTSP}
+  alias Jellyfish.Component.{HLS, RTSP, SIP}
   alias Jellyfish.Event
   alias Jellyfish.Peer
   alias Jellyfish.Room.Config
@@ -356,14 +356,14 @@ defmodule Jellyfish.Room do
   def handle_call({:dial, component_id, phone_number}, _from, state) do
     case Map.fetch(state.components, component_id) do
       :error ->
-        {:reply, :component_not_exist, state}
+        {:reply, {:error, :component_not_exist}, state}
 
       {:ok, component} when component.type == SIP ->
         Endpoint.SIP.dial(state.engine_pid, component_id, phone_number)
         {:reply, :ok, state}
 
       {:ok, _component} ->
-        {:reply, :bad_component_type, state}
+        {:reply, {:error, :bad_component_type}, state}
     end
   end
 
@@ -371,14 +371,14 @@ defmodule Jellyfish.Room do
   def handle_call({:end_call, component_id}, _from, state) do
     case Map.fetch(state.components, component_id) do
       :error ->
-        {:reply, :component_not_exist, state}
+        {:reply, {:error, :component_not_exist}, state}
 
       {:ok, component} when component.type == SIP ->
         Endpoint.SIP.end_call(state.engine_pid, component_id)
         {:reply, :ok, state}
 
       {:ok, _component} ->
-        {:reply, :bad_component_type, state}
+        {:reply, {:error, :bad_component_type}, state}
     end
   end
 

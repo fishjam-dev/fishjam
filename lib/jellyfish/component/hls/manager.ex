@@ -118,7 +118,9 @@ defmodule Jellyfish.Component.HLS.Manager do
   defp get_s3_path(room_id, file), do: Path.join(room_id, file)
 
   defp remove_hls(hls_dir, room_id) do
-    File.rm_rf!(hls_dir)
+    hls_dir
+    |> File.rm_rf!()
+
     Logger.info("Remove hls from a disk, room: #{room_id}")
   end
 

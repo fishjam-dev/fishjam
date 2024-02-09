@@ -42,7 +42,9 @@ defmodule JellyfishWeb.SIPCallController do
     with {:ok, phone_number} <- Map.fetch(params, "phoneNumber"),
          {:ok, _room_pid} <- RoomService.find_room(room_id),
          :ok <- Room.dial(room_id, component_id, phone_number) do
-      send_resp(conn, :created, "Successfully subscribed for tracks")
+      conn
+      |> put_resp_content_type("application/json")
+      |> send_resp(:created, "Successfully schedule calling phone_number: #{phone_number}")
     else
       :error ->
         {:error, :bad_request, "Invalid request body structure"}
@@ -51,18 +53,19 @@ defmodule JellyfishWeb.SIPCallController do
         {:error, :not_found, "Room #{room_id} does not exist"}
 
       {:error, :component_not_exist} ->
-        {:error, :bad_request, "Component with #{component_id} does not exist"}
+        {:error, :bad_request, "Component #{component_id} does not exist"}
 
       {:error, :bad_component_type} ->
-        {:error, :bad_request, "Component with #{component_id} is not SIP component"}
+        {:error, :bad_request, "Component #{component_id} is not SIP component"}
     end
   end
 
-  def delete(conn, %{"room_id" => room_id, "component_id" => component_id} = params) do
-    with {:ok, origins} <- Map.fetch(params, "origins"),
-         {:ok, _room_pid} <- RoomService.find_room(room_id),
-         :ok <- Room.hls_subscribe(room_id, origins) do
-      send_resp(conn, :created, "Successfully subscribed for tracks")
+  def delete(conn, %{"room_id" => room_id, "component_id" => component_id}) do
+    with {:ok, _room_pid} <- RoomService.find_room(room_id),
+         :ok <- Room.end_call(room_id, component_id) do
+      conn
+      |> put_resp_content_type("application/json")
+      |> send_resp(:no_content, "")
     else
       :error ->
         {:error, :bad_request, "Invalid request body structure"}
@@ -71,10 +74,10 @@ defmodule JellyfishWeb.SIPCallController do
         {:error, :not_found, "Room #{room_id} does not exist"}
 
       {:error, :component_not_exist} ->
-        {:error, :bad_request, "Component with #{component_id} does not exist"}
+        {:error, :bad_request, "Component #{component_id} does not exist"}
 
       {:error, :bad_component_type} ->
-        {:error, :bad_request, "Component with #{component_id} is not SIP component"}
+        {:error, :bad_request, "Component #{component_id} is not SIP component"}
     end
   end
 end

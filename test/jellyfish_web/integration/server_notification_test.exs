@@ -15,6 +15,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
 
   alias Jellyfish.ServerMessage.{
     Authenticated,
+    ComponentCrashed,
     HlsPlayable,
     HlsUploadCrashed,
     HlsUploaded,
@@ -56,6 +57,12 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     bucket: "bucket"
   }
 
+  @asterisk_credentials %{
+    address: "127.0.0.1:5061",
+    username: "mymediaserver0",
+    password: "yourpassword"
+  }
+
   Application.put_env(
     :jellyfish,
     Endpoint,
@@ -81,6 +88,12 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   end
 
   setup_all do
+    Application.put_env(:jellyfish, :sip_config, sip_used?: true, sip_external_ip: "127.0.0.1")
+
+    on_exit(fn ->
+      Application.put_env(:jellyfish, :sip_config, sip_used?: false, sip_external_ip: nil)
+    end)
+
     assert {:ok, _pid} = Endpoint.start_link()
 
     webserver = {Plug.Cowboy, plug: WebHookPlug, scheme: :http, options: [port: @webhook_port]}
@@ -354,6 +367,25 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     end
   end
 
+  @tag :asterisk
+  test "dial asterisk from rtc_engine", %{conn: conn} do
+    {room_id, _peer_id, conn, _peer_ws} = subscribe_on_notifications_and_connect_peer(conn)
+
+    {conn, component_id} = add_sip_component(conn, room_id)
+
+    conn = post(conn, ~p"/sip/#{room_id}/#{component_id}/call", phoneNumber: "1230")
+
+    assert response(conn, :created) ==
+             "Successfully schedule calling phone_number: 1230"
+
+    refute_receive %ComponentCrashed{component_id: ^component_id}, 2_500
+    refute_received {:webhook_notification, %ComponentCrashed{component_id: ^component_id}}
+
+    conn = delete(conn, ~p"/sip/#{room_id}/#{component_id}/call")
+
+    assert response(conn, :no_content)
+  end
+
   test "sends metrics", %{conn: conn} do
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
     ws = create_and_authenticate()
@@ -456,6 +488,23 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
              json_response(conn, :created)["data"]
 
     {conn, id}
+  end
+
+  defp add_sip_component(conn, room_id) do
+    conn =
+      post(conn, ~p"/room/#{room_id}/component",
+        type: "sip",
+        options: %{registrarCredentials: @asterisk_credentials}
+      )
+
+    assert %{
+             "data" => %{
+               "id" => component_id,
+               "type" => "sip"
+             }
+           } = json_response(conn, :created)
+
+    {conn, component_id}
   end
 
   defp trigger_notification(conn) do

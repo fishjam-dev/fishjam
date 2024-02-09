@@ -36,14 +36,14 @@ defmodule JellyfishWeb.ApiSpec.Component.SIP do
       description: "Properties specific to the SIP component",
       type: :object,
       properties: %{
-        credentials: %Schema{
+        registrarCredentials: %Schema{
           type: :object,
           description: "Credentials to SIP Provider",
           oneOf: [Credentials],
           nullable: false
         }
       },
-      required: [:credentials]
+      required: [:registrarCredentials]
     })
   end
 
@@ -58,14 +58,14 @@ defmodule JellyfishWeb.ApiSpec.Component.SIP do
       description: "Options specific to the SIP component",
       type: :object,
       properties: %{
-        credentials: %Schema{
+        registrarCredentials: %Schema{
           type: :object,
           description: "Credentials to SIP Provider",
           oneOf: [Credentials],
           nullable: false
         }
       },
-      required: [:credentials]
+      required: [:registrarCredentials]
     })
   end
 
