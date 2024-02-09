@@ -75,6 +75,7 @@ defmodule Jellyfish.Component.HLS do
   def after_init(room_state, component, options) do
     on_hls_startup(room_state.id, component.properties)
     spawn_hls_manager(options)
+    :ok
   end
 
   @impl true
