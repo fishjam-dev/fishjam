@@ -15,6 +15,10 @@ defmodule Jellyfish.Application do
     dist_config = Application.fetch_env!(:jellyfish, :dist_config)
     webrtc_config = Application.fetch_env!(:jellyfish, :webrtc_config)
 
+    Logger.info("Starting Jellyfish v#{@version}")
+    Logger.info("Distribution config: #{inspect(Keyword.delete(dist_config, :cookie))}")
+    Logger.info("WebRTC config: #{inspect(webrtc_config)}")
+
     children =
       [
         {Phoenix.PubSub, name: Jellyfish.PubSub},
@@ -50,10 +54,6 @@ defmodule Jellyfish.Application do
 
     Application.put_env(:jellyfish, :start_time, System.monotonic_time(:second))
 
-    Logger.info("Starting Jellyfish v#{@version}")
-    Logger.info("Distribution config: #{inspect(Keyword.delete(dist_config, :cookie))}")
-    Logger.info("WebRTC config: #{inspect(webrtc_config)}")
-
     result = Supervisor.start_link(children, opts)
 
     # If we do not set a default value for WebRTC metrics,
@@ -72,7 +72,7 @@ defmodule Jellyfish.Application do
   end
 
   defp config_distribution(dist_config) do
-    ensure_epmd_started!()
+    :ok = ensure_epmd_started!()
 
     # When running JF not in a cluster and using
     # mix release, it starts in the distributed mode
@@ -101,7 +101,7 @@ defmodule Jellyfish.Application do
 
   defp ensure_epmd_started!() do
     case System.cmd("epmd", ["-daemon"]) do
-      {_, 0} ->
+      {_output, 0} ->
         :ok
 
       _other ->
