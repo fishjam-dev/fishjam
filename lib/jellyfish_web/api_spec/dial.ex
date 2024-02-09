@@ -1,4 +1,5 @@
 defmodule JellyfishWeb.ApiSpec.Dial do
+  @moduledoc false
   require OpenApiSpex
 
   alias OpenApiSpex.Schema

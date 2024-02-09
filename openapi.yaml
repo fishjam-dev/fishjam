@@ -68,14 +68,14 @@ components:
     ComponentOptionsSIP:
       description: Options specific to the SIP component
       properties:
-        credentials:
+        registrarCredentials:
           description: Credentials to SIP Provider
           nullable: false
           oneOf:
             - $ref: '#/components/schemas/Credentials'
           type: object
       required:
-        - credentials
+        - registrarCredentials
       title: ComponentOptionsSIP
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.SIP.Options
@@ -579,14 +579,14 @@ components:
     ComponentPropertiesSIP:
       description: Properties specific to the SIP component
       properties:
-        credentials:
+        registrarCredentials:
           description: Credentials to SIP Provider
           nullable: false
           oneOf:
             - $ref: '#/components/schemas/Credentials'
           type: object
       required:
-        - credentials
+        - registrarCredentials
       title: ComponentPropertiesSIP
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.SIP.Properties
@@ -1239,8 +1239,42 @@ paths:
       summary: Delete peer
       tags:
         - room
-  /sip/{room_id}/dial:
-    get:
+  /sip/{room_id}/{component_id}/call:
+    delete:
+      callbacks: {}
+      operationId: end_call
+      parameters:
+        - description: Room ID
+          in: path
+          name: room_id
+          required: true
+          schema:
+            type: string
+        - description: SIP Component ID
+          in: path
+          name: component_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Call ended
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Invalid request structure
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Room doesn't exist
+      summary: Finish call made by SIP component
+      tags:
+        - sip
+    post:
       callbacks: {}
       operationId: dial
       parameters:
@@ -1279,41 +1313,6 @@ paths:
                 $ref: '#/components/schemas/Error'
           description: Room doesn't exist
       summary: Making a call from the SIP component to the provided phone number
-      tags:
-        - sip
-  /sip/{room_id}/end_call:
-    get:
-      callbacks: {}
-      operationId: end_call
-      parameters:
-        - description: Room ID
-          in: path
-          name: room_id
-          required: true
-          schema:
-            type: string
-        - description: SIP Component ID
-          in: path
-          name: component_id
-          required: true
-          schema:
-            type: string
-      responses:
-        '201':
-          description: Call ended
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-          description: Invalid request structure
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-          description: Room doesn't exist
-      summary: Finish call made by SIP component
       tags:
         - sip
 security:
