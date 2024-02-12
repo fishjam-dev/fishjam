@@ -309,7 +309,7 @@ defmodule Jellyfish.Room do
   def handle_call({:remove_component, component_id}, _from, state) do
     {reply, state} =
       if Map.has_key?(state.components, component_id) do
-        state = handle_remove_component(component_id, state)
+        state = handle_remove_component(component_id, state, :component_removed)
         {:ok, state}
       else
         {{:error, :component_not_found}, state}
@@ -370,20 +370,12 @@ defmodule Jellyfish.Room do
   def handle_info(%EndpointCrashed{endpoint_id: endpoint_id}, state) do
     Logger.error("RTC Engine endpoint #{inspect(endpoint_id)} crashed")
 
-    if Map.has_key?(state.peers, endpoint_id) do
-      Event.broadcast_server_notification({:peer_crashed, state.id, endpoint_id})
-
-      peer = Map.fetch!(state.peers, endpoint_id)
-
-      if peer.socket_pid != nil do
-        send(peer.socket_pid, {:stop_connection, :endpoint_crashed})
+    state =
+      if Map.has_key?(state.peers, endpoint_id) do
+        handle_remove_peer(endpoint_id, state, :peer_crashed)
+      else
+        handle_remove_component(endpoint_id, state, :component_crashed)
       end
-    else
-      Event.broadcast_server_notification({:component_crashed, state.id, endpoint_id})
-
-      component = Map.get(state.components, endpoint_id)
-      if component.type == HLS, do: on_hls_removal(state.id, component.properties)
-    end
 
     {:noreply, state}
   end
@@ -573,7 +565,7 @@ defmodule Jellyfish.Room do
 
     state.components
     |> Map.values()
-    |> Enum.each(&handle_remove_component(&1.id, state))
+    |> Enum.each(&handle_remove_component(&1.id, state, :room_stopped))
 
     :ok
   end
@@ -616,7 +608,7 @@ defmodule Jellyfish.Room do
     }
   end
 
-  defp handle_remove_component(component_id, state) do
+  defp handle_remove_component(component_id, state, reason) do
     {component, state} = pop_in(state, [:components, component_id])
     :ok = Engine.remove_endpoint(state.engine_pid, component_id)
 
@@ -631,6 +623,9 @@ defmodule Jellyfish.Room do
     Logger.info("Removed component #{inspect(component_id)}")
 
     if component.type == HLS, do: on_hls_removal(state.id, component.properties)
+
+    if reason == :component_crashed,
+      do: Event.broadcast_server_notification({:component_crashed, state.id, component_id})
 
     state
   end
@@ -652,6 +647,9 @@ defmodule Jellyfish.Room do
 
     if peer.status == :connected and reason == :peer_removed,
       do: Event.broadcast_server_notification({:peer_disconnected, state.id, peer_id})
+
+    if reason == :peer_crashed,
+      do: Event.broadcast_server_notification({:peer_crashed, state.id, peer_id})
 
     state
   end
