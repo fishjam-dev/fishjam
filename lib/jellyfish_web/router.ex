@@ -6,33 +6,37 @@ defmodule JellyfishWeb.Router do
     plug :bearer_auth
   end
 
-  scope "/health", JellyfishWeb do
+  scope "/", JellyfishWeb do
     pipe_through :api
 
-    get "/", HealthcheckController, :show
+    scope "/health" do
+      get "/", HealthcheckController, :show
+    end
+
+    scope "/room" do
+      resources("/", RoomController,
+        only: [:create, :index, :show, :delete],
+        param: "room_id"
+      )
+
+      resources("/:room_id/peer", PeerController, only: [:create, :delete])
+      resources("/:room_id/component", ComponentController, only: [:create, :delete])
+    end
+
+    scope "/hls" do
+      post "/:room_id/subscribe", SubscriptionController, :create
+    end
+
+    scope "/recording" do
+      delete "/:recording_id", RecordingController, :delete
+      get "/", RecordingController, :show
+    end
   end
 
-  scope "/room", JellyfishWeb do
-    pipe_through :api
-
-    resources("/", RoomController,
-      only: [:create, :index, :show, :delete],
-      param: "room_id"
-    )
-
-    resources("/:room_id/peer", PeerController, only: [:create, :delete])
-    resources("/:room_id/component", ComponentController, only: [:create, :delete])
-  end
-
-  scope "/hls", JellyfishWeb do
-    get "/:room_id/:filename", HLSController, :index
-    post "/:room_id/subscribe", SubscriptionController, :create
-  end
-
-  scope "/recording", JellyfishWeb do
-    get "/:recording_id/:filename", RecordingController, :index
-    delete "/:recording_id", RecordingController, :delete
-    get "/", RecordingController, :show
+  # Paths which DO NOT require auth
+  scope "/", JellyfishWeb do
+    get "/hls/:room_id/:filename", HLSController, :index
+    get "/recording/:recording_id/:filename", RecordingController, :index
   end
 
   # Enable LiveDashboard in development
