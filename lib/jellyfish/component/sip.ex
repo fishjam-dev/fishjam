@@ -12,7 +12,7 @@ defmodule Jellyfish.Component.SIP do
   alias JellyfishWeb.ApiSpec.Component.SIP.Options
 
   @type properties :: %{
-          credentials: %{
+          registrar_credentials: %{
             address: String.t(),
             username: String.t(),
             password: String.t()
