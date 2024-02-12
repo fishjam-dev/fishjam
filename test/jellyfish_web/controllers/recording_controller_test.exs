@@ -71,11 +71,14 @@ defmodule JellyfishWeb.RecordingControllerTest do
   end
 
   test "list of recordings", %{conn: conn} do
+    conn = inject_auth_headers(conn)
     conn = get(conn, ~p"/recording")
     assert @recording_id in json_response(conn, :ok)["data"]
   end
 
   test "delete recording", %{conn: conn} do
+    conn = inject_auth_headers(conn)
+
     @for_deleting_id
     |> Recording.directory()
     |> prepare_files()
@@ -96,6 +99,8 @@ defmodule JellyfishWeb.RecordingControllerTest do
   end
 
   test "delete whole recording directory", %{conn: conn} do
+    conn = inject_auth_headers(conn)
+
     conn
     |> delete(~p"/recording/.")
     |> json_response(:bad_request)
@@ -103,6 +108,8 @@ defmodule JellyfishWeb.RecordingControllerTest do
   end
 
   test "delete using invalid filename", %{conn: conn} do
+    conn = inject_auth_headers(conn)
+
     conn
     |> delete(~p"/recording/#{@outside_file}")
     |> json_response(:bad_request)
@@ -117,5 +124,13 @@ defmodule JellyfishWeb.RecordingControllerTest do
 
     segment_path = Path.join(output_path, @segment_name)
     File.write!(segment_path, @segment_content)
+  end
+
+  defp inject_auth_headers(conn) do
+    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+
+    conn
+    |> put_req_header("authorization", "Bearer " <> server_api_token)
+    |> put_req_header("accept", "application/json")
   end
 end

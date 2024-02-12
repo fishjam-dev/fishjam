@@ -35,7 +35,8 @@ defmodule JellyfishWeb.RecordingController do
     summary: "Lists all available recordings",
     responses: [
       ok: ApiSpec.data("Success", ApiSpec.RecordingListResponse),
-      not_found: ApiSpec.error("Unable to obtain recordings")
+      not_found: ApiSpec.error("Unable to obtain recordings"),
+      unauthorized: ApiSpec.error("Unauthorized")
     ]
 
   operation :delete,
@@ -45,7 +46,8 @@ defmodule JellyfishWeb.RecordingController do
     responses: [
       no_content: %OpenApiSpex.Response{description: "Successfully deleted recording"},
       not_found: ApiSpec.error("Recording doesn't exist"),
-      bad_request: ApiSpec.error("Invalid recording")
+      bad_request: ApiSpec.error("Invalid recording"),
+      unauthorized: ApiSpec.error("Unauthorized")
     ]
 
   def index(conn, %{"recording_id" => recording_id, "filename" => filename}) do
