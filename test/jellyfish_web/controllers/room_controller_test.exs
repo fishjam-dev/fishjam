@@ -88,7 +88,8 @@ defmodule JellyfishWeb.RoomControllerTest do
              } = response["data"]
     end
 
-    test "renders room when data is valid, custom room_id", %{conn: conn} do
+    test "renders room when data is valid, custom room_id + max_peers and peerless_purge_timeout not present",
+         %{conn: conn} do
       room_id = UUID.uuid4()
 
       conn = post(conn, ~p"/room", roomId: room_id)
