@@ -6,12 +6,14 @@ defmodule JellyfishWeb.HealthcheckController do
 
   action_fallback JellyfishWeb.FallbackController
 
+  tags [:health]
+
   operation :show,
     operation_id: "healthcheck",
     summary: "Describes the health of Jellyfish",
     responses: [
       ok: ApiSpec.data("Healthy", ApiSpec.HealthcheckResponse),
-      internal_server_error: ApiSpec.data("Unhealthy", ApiSpec.HealthcheckResponse)
+      unauthorized: ApiSpec.error("Unauthorized")
     ]
 
   def show(conn, _params) do

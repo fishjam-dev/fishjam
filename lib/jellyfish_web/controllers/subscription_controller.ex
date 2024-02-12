@@ -19,7 +19,8 @@ defmodule JellyfishWeb.SubscriptionController do
     responses: [
       created: %Response{description: "Tracks succesfully added."},
       bad_request: ApiSpec.error("Invalid request structure"),
-      not_found: ApiSpec.error("Room doesn't exist")
+      not_found: ApiSpec.error("Room doesn't exist"),
+      unauthorized: ApiSpec.error("Unauthorized")
     ]
 
   def create(conn, %{"room_id" => room_id} = params) do

@@ -642,14 +642,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/HealthcheckResponse'
           description: Healthy
-        '500':
+        '401':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HealthcheckResponse'
-          description: Unhealthy
+                $ref: '#/components/schemas/Error'
+          description: Unauthorized
       summary: Describes the health of Jellyfish
-      tags: []
+      tags:
+        - health
   /hls/{room_id}/subscribe:
     post:
       callbacks: {}
@@ -677,6 +678,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Invalid request structure
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unauthorized
         '404':
           content:
             application/json:
@@ -761,6 +768,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/RecordingListResponse'
           description: Success
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unauthorized
         '404':
           content:
             application/json:
@@ -790,6 +803,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Invalid recording
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unauthorized
         '404':
           content:
             application/json:
