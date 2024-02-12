@@ -42,9 +42,7 @@ defmodule JellyfishWeb.SIPCallController do
     with {:ok, phone_number} <- Map.fetch(params, "phoneNumber"),
          {:ok, _room_pid} <- RoomService.find_room(room_id),
          :ok <- Room.dial(room_id, component_id, phone_number) do
-      conn
-      |> put_resp_content_type("application/json")
-      |> send_resp(:created, "Successfully schedule calling phone_number: #{phone_number}")
+      send_resp(conn, :created, "Successfully schedule calling phone_number: #{phone_number}")
     else
       :error ->
         {:error, :bad_request, "Invalid request body structure"}

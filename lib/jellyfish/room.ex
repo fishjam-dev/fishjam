@@ -612,9 +612,6 @@ defmodule Jellyfish.Room do
   def terminate(_reason, %{engine_pid: engine_pid} = state) do
     Engine.terminate(engine_pid, asynchronous?: true, timeout: 10_000)
 
-    hls_component = get_hls_component(state)
-    unless is_nil(hls_component), do: HLS.on_remove(state, hls_component)
-
     state.peers
     |> Map.values()
     |> Enum.each(&handle_remove_peer(&1.id, state, :room_stopped))
