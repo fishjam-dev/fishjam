@@ -3,14 +3,22 @@ defmodule Jellyfish.RoomTest do
 
   alias Jellyfish.{Peer, Room}
 
-  @purge_timeout_s 1
-  @message_timeout_ms @purge_timeout_s * 1000 + 10
+  @purge_timeout_s 60
+  @purge_timeout_ms @purge_timeout_s * 1000
+  @message_timeout_ms 20
+
+  setup do
+    Klotho.Mock.reset()
+    Klotho.Mock.freeze()
+  end
 
   describe "peerless purge" do
     test "happens if peers never joined" do
       {:ok, config} = Room.Config.from_params(%{"peerlessPurgeTimeout" => @purge_timeout_s})
       {:ok, pid, _id} = Room.start(config)
       Process.monitor(pid)
+
+      Klotho.Mock.warp_by(@purge_timeout_ms + 10)
 
       assert_receive {:DOWN, _ref, :process, ^pid, :normal}, @message_timeout_ms
     end
@@ -21,9 +29,13 @@ defmodule Jellyfish.RoomTest do
       Process.monitor(pid)
 
       {:ok, peer} = Room.add_peer(id, Peer.WebRTC)
+
+      Klotho.Mock.warp_by(@purge_timeout_ms + 10)
       refute_receive {:DOWN, _ref, :process, ^pid, :normal}, @message_timeout_ms
 
       :ok = Room.remove_peer(id, peer.id)
+
+      Klotho.Mock.warp_by(@purge_timeout_ms + 10)
       assert_receive {:DOWN, _ref, :process, ^pid, :normal}, @message_timeout_ms
     end
 
@@ -34,10 +46,16 @@ defmodule Jellyfish.RoomTest do
 
       {:ok, peer} = Room.add_peer(id, Peer.WebRTC)
 
+      Klotho.Mock.warp_by(@purge_timeout_ms + 10)
+      refute_receive {:DOWN, _ref, :process, ^pid, :normal}, @message_timeout_ms
+
       :ok = Room.remove_peer(id, peer.id)
-      refute_receive {:DOWN, _ref, :process, ^pid, :normal}, @message_timeout_ms |> div(2)
+
+      Klotho.Mock.warp_by(@purge_timeout_ms |> div(2))
+      refute_receive {:DOWN, _ref, :process, ^pid, :normal}, @message_timeout_ms
 
       {:ok, _peer} = Room.add_peer(id, Peer.WebRTC)
+      Klotho.Mock.warp_by(@purge_timeout_ms + 10)
       refute_receive {:DOWN, _ref, :process, ^pid, :normal}, @message_timeout_ms
 
       :ok = GenServer.stop(pid)
@@ -47,6 +65,7 @@ defmodule Jellyfish.RoomTest do
       {:ok, config} = Room.Config.from_params(%{})
       {:ok, pid, _id} = Room.start(config)
 
+      Klotho.Mock.warp_by(@purge_timeout_ms + 10)
       refute_receive {:DOWN, _ref, :process, ^pid, :normal}, @message_timeout_ms
 
       :ok = GenServer.stop(pid)

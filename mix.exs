@@ -5,7 +5,7 @@ defmodule Jellyfish.MixProject do
     [
       app: :jellyfish,
       version: "0.3.0",
-      elixir: "~> 1.14",
+      elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
@@ -91,6 +91,9 @@ defmodule Jellyfish.MixProject do
       # Load balancing
       {:libcluster, "~> 3.3"},
       {:httpoison, "~> 2.0"},
+
+      # Mocking timer in tests
+      {:klotho, "~> 0.1.0"},
 
       # Test deps
       {:websockex, "~> 0.4.3", only: [:test, :ci], runtime: false},

@@ -635,8 +635,8 @@ defmodule Jellyfish.Room do
 
   defp maybe_schedule_peerless_purge(%{config: config, peers: peers} = state)
        when map_size(peers) == 0 do
-    last_peer_left = System.monotonic_time(:millisecond)
-    Process.send_after(self(), :peerless_purge, config.peerless_purge_timeout * 1000)
+    last_peer_left = Klotho.monotonic_time(:millisecond)
+    Klotho.send_after(config.peerless_purge_timeout * 1000, self(), :peerless_purge)
 
     %{state | last_peer_left: last_peer_left}
   end
@@ -645,7 +645,7 @@ defmodule Jellyfish.Room do
 
   defp peerless_long_enough?(%{config: config, peers: peers, last_peer_left: last_peer_left})
        when map_size(peers) == 0 do
-    System.monotonic_time(:millisecond) >= last_peer_left + config.peerless_purge_timeout * 1000
+    Klotho.monotonic_time(:millisecond) >= last_peer_left + config.peerless_purge_timeout * 1000
   end
 
   defp peerless_long_enough?(_state), do: false
