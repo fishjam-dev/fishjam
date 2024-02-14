@@ -181,6 +181,7 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
     Process.sleep(1_000)
 
     metrics_to_compare = get_peers_room_metrics()
+
     for {k, v} <- metrics_after_one_tick do
       assert Map.fetch!(metrics_to_compare, k) == v
     end
@@ -197,6 +198,7 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
     }
 
     metrics_to_compare = get_peers_room_metrics()
+
     for {k, v} <- metrics_after_removal do
       assert Map.fetch!(metrics_to_compare, k) == v
     end
