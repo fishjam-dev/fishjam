@@ -92,6 +92,9 @@ defmodule Jellyfish.MixProject do
       {:libcluster, "~> 3.3"},
       {:httpoison, "~> 2.0"},
 
+      # Mocking timer in tests
+      {:klotho, "~> 0.1.0"},
+
       # Test deps
       {:websockex, "~> 0.4.3", only: [:test, :ci], runtime: false},
       {:excoveralls, "~> 0.15.0", only: :test, runtime: false},

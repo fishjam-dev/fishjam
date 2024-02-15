@@ -52,8 +52,7 @@ defmodule JellyfishWeb.Component.FileComponentTest do
                    "filePath" => @video_source
                  }
                }
-             } =
-               model_response(conn, :created, "ComponentDetailsResponse")
+             } = model_response(conn, :created, "ComponentDetailsResponse")
 
       assert_component_created(conn, room_id, id, "file")
 
@@ -92,8 +91,7 @@ defmodule JellyfishWeb.Component.FileComponentTest do
                    "framerate" => 60
                  }
                }
-             } =
-               model_response(conn, :created, "ComponentDetailsResponse")
+             } = model_response(conn, :created, "ComponentDetailsResponse")
 
       assert_component_created(conn, room_id, id, "file")
     end
@@ -115,8 +113,7 @@ defmodule JellyfishWeb.Component.FileComponentTest do
                    "filePath" => @audio_source
                  }
                }
-             } =
-               model_response(conn, :created, "ComponentDetailsResponse")
+             } = model_response(conn, :created, "ComponentDetailsResponse")
 
       assert_component_created(conn, room_id, id, "file")
 
@@ -164,8 +161,7 @@ defmodule JellyfishWeb.Component.FileComponentTest do
                    "filePath" => ^video_relative_path
                  }
                }
-             } =
-               model_response(conn, :created, "ComponentDetailsResponse")
+             } = model_response(conn, :created, "ComponentDetailsResponse")
 
       assert_component_created(conn, room_id, id, "file")
     end

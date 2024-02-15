@@ -15,8 +15,7 @@ defmodule WebHookPlug do
   def call(conn, _opts) do
     {:ok, body, conn} = Plug.Conn.read_body(conn, [])
 
-    notification =
-      body |> ServerMessage.decode() |> Map.get(:content)
+    notification = body |> ServerMessage.decode() |> Map.get(:content)
 
     {_notification_type, notification} = notification
 

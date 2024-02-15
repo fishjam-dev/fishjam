@@ -35,7 +35,7 @@ defmodule Jellyfish.Room do
     :engine_pid,
     :network_options
   ]
-  defstruct @enforce_keys ++ [components: %{}, peers: %{}]
+  defstruct @enforce_keys ++ [components: %{}, peers: %{}, last_peer_left: 0]
 
   @type id :: String.t()
 
@@ -46,6 +46,8 @@ defmodule Jellyfish.Room do
   * `components` - map of components
   * `peers` - map of peers
   * `engine` - pid of engine
+  * `network_options` - network options
+  * `last_peer_left` - arbitrary timestamp with latest occurence of the room becoming peerless
   """
   @type t :: %__MODULE__{
           id: id(),
@@ -53,7 +55,8 @@ defmodule Jellyfish.Room do
           components: %{Component.id() => Component.t()},
           peers: %{Peer.id() => Peer.t()},
           engine_pid: pid(),
-          network_options: map()
+          network_options: map(),
+          last_peer_left: integer()
         }
 
   defguardp endpoint_exists?(state, endpoint_id)
@@ -227,7 +230,9 @@ defmodule Jellyfish.Room do
   def handle_call({:remove_peer, peer_id}, _from, state) do
     {reply, state} =
       if Map.has_key?(state.peers, peer_id) do
-        state = handle_remove_peer(peer_id, state, :peer_removed)
+        state =
+          handle_remove_peer(peer_id, state, :peer_removed)
+          |> maybe_schedule_peerless_purge()
 
         {:ok, state}
       else
@@ -434,6 +439,7 @@ defmodule Jellyfish.Room do
   def handle_info(%EndpointRemoved{endpoint_id: endpoint_id}, state) do
     {_endpoint, state} = pop_in(state, [:peers, endpoint_id])
     Logger.info("Peer #{endpoint_id} removed")
+    state = maybe_schedule_peerless_purge(state)
     {:noreply, state}
   end
 
@@ -547,6 +553,19 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
+  def handle_info(:peerless_purge, state) do
+    if peerless_long_enough?(state) do
+      Logger.info(
+        "Removing room because it was peerless for #{state.config.peerless_purge_timeout} seconds"
+      )
+
+      {:stop, :normal, state}
+    else
+      {:noreply, state}
+    end
+  end
+
+  @impl true
   def handle_info(info, state) do
     Logger.warning("Received unexpected info: #{inspect(info)}")
     {:noreply, state}
@@ -600,13 +619,36 @@ defmodule Jellyfish.Room do
       TURNManager.ensure_tcp_turn_launched(turn_options, port: tcp_turn_port)
     end
 
-    %__MODULE__{
-      id: id,
-      config: config,
-      engine_pid: pid,
-      network_options: [turn_options: turn_options]
-    }
+    state =
+      %__MODULE__{
+        id: id,
+        config: config,
+        engine_pid: pid,
+        network_options: [turn_options: turn_options]
+      }
+      |> maybe_schedule_peerless_purge()
+
+    state
   end
+
+  defp maybe_schedule_peerless_purge(%{config: %{peerless_purge_timeout: nil}} = state), do: state
+
+  defp maybe_schedule_peerless_purge(%{config: config, peers: peers} = state)
+       when map_size(peers) == 0 do
+    last_peer_left = Klotho.monotonic_time(:millisecond)
+    Klotho.send_after(config.peerless_purge_timeout * 1000, self(), :peerless_purge)
+
+    %{state | last_peer_left: last_peer_left}
+  end
+
+  defp maybe_schedule_peerless_purge(state), do: state
+
+  defp peerless_long_enough?(%{config: config, peers: peers, last_peer_left: last_peer_left})
+       when map_size(peers) == 0 do
+    Klotho.monotonic_time(:millisecond) >= last_peer_left + config.peerless_purge_timeout * 1000
+  end
+
+  defp peerless_long_enough?(_state), do: false
 
   defp handle_remove_component(component_id, state, reason) do
     {component, state} = pop_in(state, [:components, component_id])

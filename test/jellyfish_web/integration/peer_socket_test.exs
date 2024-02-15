@@ -180,8 +180,11 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
 
     Process.sleep(1_000)
 
-    assert ^metrics_after_one_tick =
-             Map.intersect(metrics_after_one_tick, get_peers_room_metrics())
+    metrics_to_compare = get_peers_room_metrics()
+
+    for {k, v} <- metrics_after_one_tick do
+      assert Map.fetch!(metrics_to_compare, k) == v
+    end
 
     conn = delete(conn, ~p"/room/#{room_id}/")
     response(conn, :no_content)
@@ -194,7 +197,11 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
       "jellyfish_rooms" => "0"
     }
 
-    assert ^metrics_after_removal = Map.intersect(metrics_after_removal, get_peers_room_metrics())
+    metrics_to_compare = get_peers_room_metrics()
+
+    for {k, v} <- metrics_after_removal do
+      assert Map.fetch!(metrics_to_compare, k) == v
+    end
   end
 
   def create_and_authenticate(token) do

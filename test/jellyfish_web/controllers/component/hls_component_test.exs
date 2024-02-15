@@ -36,8 +36,7 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
                  "type" => "hls",
                  "properties" => @hls_properties
                }
-             } =
-               model_response(conn, :created, "ComponentDetailsResponse")
+             } = model_response(conn, :created, "ComponentDetailsResponse")
 
       assert_component_created(conn, room_id, id, "hls")
 
@@ -93,8 +92,7 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
                  "type" => "hls",
                  "properties" => @hls_properties
                }
-             } =
-               model_response(conn, :created, "ComponentDetailsResponse")
+             } = model_response(conn, :created, "ComponentDetailsResponse")
 
       parent = self()
       ref = make_ref()

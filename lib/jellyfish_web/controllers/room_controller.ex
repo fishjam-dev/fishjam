@@ -93,6 +93,12 @@ defmodule JellyfishWeb.RoomController do
         webhook_url = Map.get(params, "webhookUrl")
         {:error, :bad_request, "Expected webhookUrl to be valid URL, got: #{webhook_url}"}
 
+      {:error, :invalid_peerless_purge_timeout} ->
+        timeout = Map.get(params, "peerlessPurgeTimeout")
+
+        {:error, :bad_request,
+         "Expected peerlessPurgeTimeout to be a positive integer, got: #{timeout}"}
+
       {:error, :room_already_exists} ->
         room_id = Map.get(params, "roomId")
         {:error, :bad_request, "Cannot add room with id \"#{room_id}\" - room already exists"}

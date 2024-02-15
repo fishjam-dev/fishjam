@@ -38,6 +38,14 @@ defmodule JellyfishWeb.ApiSpec.Room do
           type: :string,
           example: "https://backend.address.com/jellyfish-notifications-endpoint",
           nullable: true
+        },
+        peerlessPurgeTimeout: %Schema{
+          description:
+            "Duration (in seconds) after which the room will be removed if no peers are connected. If not provided, this feature is disabled.",
+          type: :integer,
+          minimum: 1,
+          example: 60,
+          nullable: true
         }
       }
     })

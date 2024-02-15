@@ -599,6 +599,12 @@ components:
           minimum: 1
           nullable: true
           type: integer
+        peerlessPurgeTimeout:
+          description: Duration (in seconds) after which the room will be removed if no peers are connected. If not provided, this feature is disabled.
+          example: 60
+          minimum: 1
+          nullable: true
+          type: integer
         roomId:
           description: Custom id used for identifying room within Jellyfish. Must be unique across all rooms. If not provided, random UUID is generated.
           nullable: true
