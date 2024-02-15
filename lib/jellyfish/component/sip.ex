@@ -23,22 +23,14 @@ defmodule Jellyfish.Component.SIP do
   def config(%{engine_pid: engine} = options) do
     sip_config = Application.fetch_env!(:jellyfish, :sip_config)
 
-    cond do
-      not sip_config[:sip_used?] ->
+    external_ip =
+      if sip_config[:sip_used?] do
+        Application.fetch_env!(:jellyfish, :sip_config)[:sip_external_ip]
+      else
         raise """
         SIP components can only be used if JF_SIP_USED environmental variable is set to \"true\"
         """
-
-      is_nil(sip_config[:sip_external_ip]) ->
-        raise """
-        SIP components can only be used if JF_SIP_IP environmental variable is set
-        """
-
-      true ->
-        nil
-    end
-
-    external_ip = Application.fetch_env!(:jellyfish, :sip_config)[:sip_external_ip]
+      end
 
     with {:ok, valid_opts} <- OpenApiSpex.cast_value(options, Options.schema()) do
       endpoint_spec =
@@ -61,7 +53,7 @@ defmodule Jellyfish.Component.SIP do
 
       {:ok, %{endpoint: endpoint_spec, properties: properties}}
     else
-      {:error, [%OpenApiSpex.Cast.Error{reason: :missing_field, name: name}]} ->
+      {:error, [%OpenApiSpex.Cast.Error{reason: :missing_field, name: name} | _rest]} ->
         {:error, {:missing_parameter, name}}
 
       {:error, _reason} = error ->
@@ -74,9 +66,4 @@ defmodule Jellyfish.Component.SIP do
 
   @impl true
   def on_remove(_room_state, _component), do: :ok
-
-  @impl true
-  def parse_properties(component) do
-    component.properties
-  end
 end

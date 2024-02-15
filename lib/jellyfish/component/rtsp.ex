@@ -50,7 +50,4 @@ defmodule Jellyfish.Component.RTSP do
 
   @impl true
   def on_remove(_room_state, _component), do: :ok
-
-  @impl true
-  def parse_properties(component), do: component.properties
 end

@@ -89,9 +89,6 @@ defmodule Jellyfish.Component.HLS do
     if low_latency, do: remove_request_handler(room_id)
   end
 
-  @impl true
-  def parse_properties(component), do: component.properties
-
   @spec output_dir(Room.id(), persistent: boolean()) :: String.t()
   def output_dir(room_id, persistent: true) do
     Recording.directory(room_id)

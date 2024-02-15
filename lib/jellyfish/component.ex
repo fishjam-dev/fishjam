@@ -41,18 +41,24 @@ defmodule Jellyfish.Component do
           tracks: %{Track.id() => Track.t()}
         }
 
+  @doc """
+  This callback is run after initialization of the component. 
+  In it some additional work can be done, which can't be run inside Engine endpoint.
+  """
   @callback after_init(
               room_state :: Room.t(),
               component :: __MODULE__.t(),
               component_options :: map()
             ) :: :ok
 
+  @doc """
+  This callback is run after scheduling removing of component. 
+  In it some additional cleanup can be done.
+  """
   @callback on_remove(
               room_state :: Room.t(),
               component :: __MODULE__.t()
             ) :: :ok
-
-  @callback parse_properties(component :: __MODULE__.t()) :: any()
 
   @spec parse_type(String.t()) :: {:ok, component()} | {:error, :invalid_type}
   def parse_type(type) do

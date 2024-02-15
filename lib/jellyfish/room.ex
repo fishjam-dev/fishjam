@@ -356,7 +356,7 @@ defmodule Jellyfish.Room do
   def handle_call({:dial, component_id, phone_number}, _from, state) do
     case Map.fetch(state.components, component_id) do
       :error ->
-        {:reply, {:error, :component_not_exist}, state}
+        {:reply, {:error, :component_does_not_exist}, state}
 
       {:ok, component} when component.type == SIP ->
         Endpoint.SIP.dial(state.engine_pid, component_id, phone_number)
@@ -370,12 +370,12 @@ defmodule Jellyfish.Room do
   @impl true
   def handle_call({:end_call, component_id}, _from, state) do
     case Map.fetch(state.components, component_id) do
-      :error ->
-        {:reply, {:error, :component_not_exist}, state}
-
       {:ok, component} when component.type == SIP ->
         Endpoint.SIP.end_call(state.engine_pid, component_id)
         {:reply, :ok, state}
+
+      :error ->
+        {:reply, {:error, :component_does_not_exist}, state}
 
       {:ok, _component} ->
         {:reply, {:error, :bad_component_type}, state}
@@ -634,7 +634,7 @@ defmodule Jellyfish.Room do
     webrtc_config = Application.fetch_env!(:jellyfish, :webrtc_config)
 
     turn_options =
-      if webrtc_config[:webrtc_used] do
+      if webrtc_config[:webrtc_used?] do
         turn_ip = webrtc_config[:turn_listen_ip]
         turn_mock_ip = webrtc_config[:turn_ip]
 
@@ -649,7 +649,7 @@ defmodule Jellyfish.Room do
 
     tcp_turn_port = webrtc_config[:turn_tcp_port]
 
-    if webrtc_config[:webrtc_used] and tcp_turn_port != nil do
+    if webrtc_config[:webrtc_used?] and tcp_turn_port != nil do
       TURNManager.ensure_tcp_turn_launched(turn_options, port: tcp_turn_port)
     end
 

@@ -65,9 +65,6 @@ defmodule Jellyfish.Component.File do
   @impl true
   def on_remove(_room_state, _component), do: :ok
 
-  @impl true
-  def parse_properties(component), do: component.properties
-
   defp validate_file_path(file_path) do
     base_path =
       Application.fetch_env!(:jellyfish, :media_files_path)

@@ -14,7 +14,7 @@ defmodule Jellyfish.Peer.WebRTC do
 
   @impl true
   def config(options) do
-    if not Application.fetch_env!(:jellyfish, :webrtc_config)[:webrtc_used] do
+    if not Application.fetch_env!(:jellyfish, :webrtc_config)[:webrtc_used?] do
       raise(
         "WebRTC peers can only be used if JF_WEBRTC_USED environmental variable is not set to \"false\""
       )

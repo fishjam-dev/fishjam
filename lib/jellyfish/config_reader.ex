@@ -98,11 +98,11 @@ defmodule Jellyfish.ConfigReader do
   end
 
   def read_webrtc_config() do
-    webrtc_used = read_boolean("JF_WEBRTC_USED")
+    webrtc_used? = read_boolean("JF_WEBRTC_USED")
 
-    if webrtc_used != false do
+    if webrtc_used? != false do
       [
-        webrtc_used: true,
+        webrtc_used?: true,
         turn_ip: read_ip("JF_WEBRTC_TURN_IP") || {127, 0, 0, 1},
         turn_listen_ip: read_ip("JF_WEBRTC_TURN_LISTEN_IP") || {127, 0, 0, 1},
         turn_port_range: read_port_range("JF_WEBRTC_TURN_PORT_RANGE") || {50_000, 59_999},
@@ -110,7 +110,7 @@ defmodule Jellyfish.ConfigReader do
       ]
     else
       [
-        webrtc_used: false,
+        webrtc_used?: false,
         turn_ip: nil,
         turn_listen_ip: nil,
         turn_port_range: nil,
@@ -138,7 +138,7 @@ defmodule Jellyfish.ConfigReader do
 
       true ->
         raise """
-        JF_SIP_USED has been set to true but not correct IP address was provided as `JF_SIP_IP`
+        JF_SIP_USED has been set to true but incorrect IP address was provided as `JF_SIP_IP`
         """
     end
   end

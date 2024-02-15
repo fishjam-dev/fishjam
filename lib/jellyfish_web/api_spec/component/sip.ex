@@ -4,20 +4,21 @@ defmodule JellyfishWeb.ApiSpec.Component.SIP do
   require OpenApiSpex
   alias OpenApiSpex.Schema
 
-  defmodule Credentials do
+  defmodule SIPCredentials do
     @moduledoc false
 
     require OpenApiSpex
 
     OpenApiSpex.schema(%{
-      title: "Credentials",
+      title: "SIPCredentials",
       description: "Credentials used to authorize in SIP Provider service",
       type: :object,
       properties: %{
         address: %Schema{
           type: :string,
           description:
-            "SIP provider address. Can be in the form of FQDN (my-sip-registrar.net) or IPv4 (1.2.3.4). Port can be specified e.g: 5.6.7.8:9999. If not given, the default SIP port `5060` will be assumed"
+            "SIP provider address. Can be in the form of FQDN (my-sip-registrar.net) or IPv4 (1.2.3.4). Port can be specified e.g: 5.6.7.8:9999. If not given, the default SIP port `5060` will be assumed",
+          example: "example.org"
         },
         username: %Schema{type: :string, description: "Username in SIP service provider"},
         password: %Schema{type: :string, description: "Password in SIP service provider"}
@@ -36,10 +37,11 @@ defmodule JellyfishWeb.ApiSpec.Component.SIP do
       description: "Properties specific to the SIP component",
       type: :object,
       properties: %{
+        # FIXME: verify why changing to CREDENTIALS breaks tests
         registrarCredentials: %Schema{
           type: :object,
           description: "Credentials to SIP Provider",
-          oneOf: [Credentials],
+          oneOf: [SIPCredentials],
           nullable: false
         }
       },
@@ -51,7 +53,6 @@ defmodule JellyfishWeb.ApiSpec.Component.SIP do
     @moduledoc false
 
     require OpenApiSpex
-    alias OpenApiSpex.Schema
 
     OpenApiSpex.schema(%{
       title: "ComponentOptionsSIP",
@@ -61,7 +62,7 @@ defmodule JellyfishWeb.ApiSpec.Component.SIP do
         registrarCredentials: %Schema{
           type: :object,
           description: "Credentials to SIP Provider",
-          oneOf: [Credentials],
+          oneOf: [SIPCredentials],
           nullable: false
         }
       },

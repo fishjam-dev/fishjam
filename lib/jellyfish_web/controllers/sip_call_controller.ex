@@ -13,7 +13,7 @@ defmodule JellyfishWeb.SIPCallController do
 
   operation :create,
     operation_id: "dial",
-    summary: "Making a call from the SIP component to the provided phone number",
+    summary: "Make a call from the SIP component to the provided phone number",
     parameters: [
       room_id: [in: :path, description: "Room ID", type: :string],
       component_id: [in: :path, description: "SIP Component ID", type: :string]
@@ -22,7 +22,8 @@ defmodule JellyfishWeb.SIPCallController do
     responses: [
       created: %Response{description: "Call started"},
       bad_request: ApiSpec.error("Invalid request structure"),
-      not_found: ApiSpec.error("Room doesn't exist")
+      not_found: ApiSpec.error("Room doesn't exist"),
+      unauthorized: ApiSpec.error("Unauthorized")
     ]
 
   operation :delete,
@@ -50,11 +51,11 @@ defmodule JellyfishWeb.SIPCallController do
       {:error, :room_not_found} ->
         {:error, :not_found, "Room #{room_id} does not exist"}
 
-      {:error, :component_not_exist} ->
+      {:error, :component_does_not_exist} ->
         {:error, :bad_request, "Component #{component_id} does not exist"}
 
       {:error, :bad_component_type} ->
-        {:error, :bad_request, "Component #{component_id} is not SIP component"}
+        {:error, :bad_request, "Component #{component_id} is not a SIP component"}
     end
   end
 
@@ -71,7 +72,7 @@ defmodule JellyfishWeb.SIPCallController do
       {:error, :room_not_found} ->
         {:error, :not_found, "Room #{room_id} does not exist"}
 
-      {:error, :component_not_exist} ->
+      {:error, :component_does_not_exist} ->
         {:error, :bad_request, "Component #{component_id} does not exist"}
 
       {:error, :bad_component_type} ->

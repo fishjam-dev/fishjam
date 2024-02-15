@@ -67,7 +67,7 @@ defmodule JellyfishWeb.DialControllerTest do
       conn = post(conn, ~p"/sip/#{room_id}/#{component_id}/call", phoneNumber: "+123456")
 
       assert json_response(conn, :bad_request)["errors"] ==
-               "Component #{component_id} is not SIP component"
+               "Component #{component_id} is not a SIP component"
     end
 
     test "return success for proper dial", %{conn: conn, room_id: room_id} do
