@@ -37,13 +37,7 @@ defmodule JellyfishWeb.ApiSpec.Component.SIP do
       description: "Properties specific to the SIP component",
       type: :object,
       properties: %{
-        # FIXME: verify why changing to CREDENTIALS breaks tests
-        registrarCredentials: %Schema{
-          type: :object,
-          description: "Credentials to SIP Provider",
-          oneOf: [SIPCredentials],
-          nullable: false
-        }
+        registrarCredentials: SIPCredentials.schema()
       },
       required: [:registrarCredentials]
     })
@@ -59,12 +53,7 @@ defmodule JellyfishWeb.ApiSpec.Component.SIP do
       description: "Options specific to the SIP component",
       type: :object,
       properties: %{
-        registrarCredentials: %Schema{
-          type: :object,
-          description: "Credentials to SIP Provider",
-          oneOf: [SIPCredentials],
-          nullable: false
-        }
+        registrarCredentials: SIPCredentials.schema()
       },
       required: [:registrarCredentials]
     })

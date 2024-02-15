@@ -69,11 +69,25 @@ components:
       description: Options specific to the SIP component
       properties:
         registrarCredentials:
-          description: Credentials to SIP Provider
-          nullable: false
-          oneOf:
-            - $ref: '#/components/schemas/Credentials'
+          description: Credentials used to authorize in SIP Provider service
+          properties:
+            address:
+              description: 'SIP provider address. Can be in the form of FQDN (my-sip-registrar.net) or IPv4 (1.2.3.4). Port can be specified e.g: 5.6.7.8:9999. If not given, the default SIP port `5060` will be assumed'
+              example: example.org
+              type: string
+            password:
+              description: Password in SIP service provider
+              type: string
+            username:
+              description: Username in SIP service provider
+              type: string
+          required:
+            - address
+            - username
+            - password
+          title: SIPCredentials
           type: object
+          x-struct: Elixir.JellyfishWeb.ApiSpec.Component.SIP.SIPCredentials
       required:
         - registrarCredentials
       title: ComponentOptionsSIP
@@ -378,11 +392,12 @@ components:
       title: ComponentOptionsHLS
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS.Options
-    Credentials:
+    SIPCredentials:
       description: Credentials used to authorize in SIP Provider service
       properties:
         address:
           description: 'SIP provider address. Can be in the form of FQDN (my-sip-registrar.net) or IPv4 (1.2.3.4). Port can be specified e.g: 5.6.7.8:9999. If not given, the default SIP port `5060` will be assumed'
+          example: example.org
           type: string
         password:
           description: Password in SIP service provider
@@ -394,9 +409,9 @@ components:
         - address
         - username
         - password
-      title: Credentials
+      title: SIPCredentials
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.SIP.Credentials
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.SIP.SIPCredentials
     S3Credentials:
       description: An AWS S3 credential that will be used to send HLS stream. The stream will only be uploaded if credentials are provided
       properties:
@@ -580,11 +595,25 @@ components:
       description: Properties specific to the SIP component
       properties:
         registrarCredentials:
-          description: Credentials to SIP Provider
-          nullable: false
-          oneOf:
-            - $ref: '#/components/schemas/Credentials'
+          description: Credentials used to authorize in SIP Provider service
+          properties:
+            address:
+              description: 'SIP provider address. Can be in the form of FQDN (my-sip-registrar.net) or IPv4 (1.2.3.4). Port can be specified e.g: 5.6.7.8:9999. If not given, the default SIP port `5060` will be assumed'
+              example: example.org
+              type: string
+            password:
+              description: Password in SIP service provider
+              type: string
+            username:
+              description: Username in SIP service provider
+              type: string
+          required:
+            - address
+            - username
+            - password
+          title: SIPCredentials
           type: object
+          x-struct: Elixir.JellyfishWeb.ApiSpec.Component.SIP.SIPCredentials
       required:
         - registrarCredentials
       title: ComponentPropertiesSIP
@@ -1306,13 +1335,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Invalid request structure
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unauthorized
         '404':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Room doesn't exist
-      summary: Making a call from the SIP component to the provided phone number
+      summary: Make a call from the SIP component to the provided phone number
       tags:
         - sip
 security:

@@ -355,15 +355,15 @@ defmodule Jellyfish.Room do
   @impl true
   def handle_call({:dial, component_id, phone_number}, _from, state) do
     case Map.fetch(state.components, component_id) do
-      :error ->
-        {:reply, {:error, :component_does_not_exist}, state}
-
       {:ok, component} when component.type == SIP ->
         Endpoint.SIP.dial(state.engine_pid, component_id, phone_number)
         {:reply, :ok, state}
 
       {:ok, _component} ->
         {:reply, {:error, :bad_component_type}, state}
+
+      :error ->
+        {:reply, {:error, :component_does_not_exist}, state}
     end
   end
 
