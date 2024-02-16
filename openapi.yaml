@@ -323,7 +323,7 @@ components:
           type: string
       title: DialConfig
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Dial
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Dial.PhoneNumber
     ComponentRTSP:
       description: Describes the RTSP component
       properties:

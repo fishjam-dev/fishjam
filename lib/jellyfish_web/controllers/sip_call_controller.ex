@@ -18,7 +18,7 @@ defmodule JellyfishWeb.SIPCallController do
       room_id: [in: :path, description: "Room ID", type: :string],
       component_id: [in: :path, description: "SIP Component ID", type: :string]
     ],
-    request_body: {"Phone Number configuration", "application/json", ApiSpec.Dial},
+    request_body: {"Phone Number configuration", "application/json", ApiSpec.Dial.PhoneNumber},
     responses: [
       created: %Response{description: "Call started"},
       bad_request: ApiSpec.error("Invalid request structure"),
