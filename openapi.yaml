@@ -197,6 +197,11 @@ components:
           type: string
         properties:
           $ref: '#/components/schemas/ComponentPropertiesSIP'
+        tracks:
+          description: List of all component's tracks
+          items:
+            $ref: '#/components/schemas/Track'
+          type: array
         type:
           description: Component type
           example: sip
@@ -204,6 +209,8 @@ components:
       required:
         - id
         - type
+        - properties
+        - tracks
       title: ComponentSIP
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.SIP
