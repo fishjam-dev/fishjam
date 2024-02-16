@@ -60,6 +60,38 @@ defmodule Jellyfish.Component do
               component :: __MODULE__.t()
             ) :: :ok
 
+  defmacro __using__(_opts) do
+    quote location: :keep do
+      @behaviour Jellyfish.Component
+
+      @impl true
+      def after_init(_room_state, _component, _component_options), do: :ok
+
+      @impl true
+      def on_remove(_room_state, _component), do: :ok
+
+      defoverridable after_init: 3, on_remove: 2
+
+      def serialize_options(opts, opts_schema) do
+        with {:ok, valid_opts} <- OpenApiSpex.Cast.cast(opts_schema, opts) do
+          valid_opts =
+            valid_opts
+            |> Map.from_struct()
+            |> Map.new(fn {k, v} -> {underscore(k), serialize(v)} end)
+
+          {:ok, valid_opts}
+        end
+      end
+
+      defp serialize(v) when is_struct(v),
+        do: v |> Map.from_struct() |> Map.new(fn {k, v} -> {underscore(k), v} end)
+
+      defp serialize(v), do: v
+
+      defp underscore(k), do: k |> Atom.to_string() |> Macro.underscore() |> String.to_atom()
+    end
+  end
+
   @spec parse_type(String.t()) :: {:ok, component()} | {:error, :invalid_type}
   def parse_type(type) do
     case type do

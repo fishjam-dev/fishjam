@@ -4,7 +4,7 @@ defmodule Jellyfish.Component.HLS do
   """
 
   @behaviour Jellyfish.Endpoint.Config
-  @behaviour Jellyfish.Component
+  use Jellyfish.Component
 
   alias Jellyfish.Component.HLS.{
     EtsHelper,
@@ -36,11 +36,12 @@ defmodule Jellyfish.Component.HLS do
   def config(options) do
     options = Map.delete(options, "s3")
 
-    with {:ok, valid_opts} <- serialize_options(options) do
-      hls_config = create_hls_config(options.room_id, valid_opts)
+    with {:ok, serialized_opts} <- serialize_options(options, Options.schema()),
+         result_opts <- Map.update!(serialized_opts, :subscribe_mode, &String.to_atom/1) do
+      hls_config = create_hls_config(options.room_id, result_opts)
 
       properties =
-        valid_opts
+        result_opts
         |> Map.put(:playable, false)
         |> Enum.into(%{})
 
@@ -62,7 +63,7 @@ defmodule Jellyfish.Component.HLS do
              }
            },
            hls_config: hls_config,
-           subscribe_mode: valid_opts.subscribe_mode
+           subscribe_mode: result_opts.subscribe_mode
          },
          properties: properties
        }}
@@ -74,6 +75,7 @@ defmodule Jellyfish.Component.HLS do
   @impl true
   def after_init(room_state, component, options) do
     on_hls_startup(room_state.id, component.properties)
+
     spawn_hls_manager(options)
     :ok
   end
@@ -99,20 +101,6 @@ defmodule Jellyfish.Component.HLS do
     Path.join([base_path, "temporary_hls", "#{room_id}"])
   end
 
-  def serialize_options(options) do
-    with {:ok, valid_opts} <- OpenApiSpex.Cast.cast(Options.schema(), options) do
-      valid_opts =
-        valid_opts
-        |> Map.from_struct()
-        |> Map.new(fn {k, v} -> {underscore(k), serialize(v)} end)
-        |> Map.update!(:subscribe_mode, &String.to_atom/1)
-
-      {:ok, valid_opts}
-    else
-      {:error, _reason} = error -> error
-    end
-  end
-
   defp on_hls_startup(room_id, %{low_latency: low_latency, persistent: persistent}) do
     room_id
     |> output_dir(persistent: persistent)
@@ -123,7 +111,7 @@ defmodule Jellyfish.Component.HLS do
 
   defp spawn_hls_manager(%{engine_pid: engine_pid, room_id: room_id} = options) do
     {:ok, hls_dir} = EtsHelper.get_hls_folder_path(room_id)
-    {:ok, valid_opts} = serialize_options(options)
+    {:ok, valid_opts} = serialize_options(options, Options.schema())
 
     {:ok, _pid} = Manager.start(room_id, engine_pid, hls_dir, valid_opts)
   end
@@ -163,11 +151,4 @@ defmodule Jellyfish.Component.HLS do
   defp setup_hls_storage(_room_id, low_latency: false) do
     fn directory -> %Storage{directory: directory} end
   end
-
-  defp underscore(k), do: k |> Atom.to_string() |> Macro.underscore() |> String.to_atom()
-
-  defp serialize(v) when is_struct(v),
-    do: v |> Map.from_struct() |> Map.new(fn {k, v} -> {underscore(k), v} end)
-
-  defp serialize(v), do: v
 end

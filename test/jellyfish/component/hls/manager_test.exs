@@ -24,7 +24,7 @@ defmodule Jellyfish.Component.HLS.ManagerTest do
     File.mkdir_p!(hls_dir)
     for filename <- @files, do: :ok = hls_dir |> Path.join(filename) |> File.touch!()
 
-    on_exit(fn -> hls_dir |> File.rm_rf!() end)
+    on_exit(fn -> File.rm_rf!(hls_dir) end)
 
     {:ok, %{room_id: room_id, hls_dir: hls_dir, options: options}}
   end

@@ -4,7 +4,7 @@ defmodule Jellyfish.Component.SIP do
   """
 
   @behaviour Jellyfish.Endpoint.Config
-  @behaviour Jellyfish.Component
+  use Jellyfish.Component
 
   alias Membrane.RTC.Engine.Endpoint.SIP
   alias Membrane.RTC.Engine.Endpoint.SIP.RegistrarCredentials
@@ -32,24 +32,14 @@ defmodule Jellyfish.Component.SIP do
         """
       end
 
-    with {:ok, valid_opts} <- OpenApiSpex.cast_value(options, Options.schema()) do
-      endpoint_spec =
-        Map.from_struct(valid_opts)
-        # OpenApiSpex will remove invalid options, so the following conversion, while ugly, is memory-safe
-        |> Map.new(fn {k, v} ->
-          {Atom.to_string(k) |> Macro.underscore() |> String.to_atom(), v}
-        end)
-        |> Map.put(:rtc_engine, engine)
-        |> Map.put(:external_ip, external_ip)
-        |> Map.update!(:registrar_credentials, fn credentials ->
-          credentials
-          |> Map.to_list()
-          |> Keyword.new()
-          |> RegistrarCredentials.new()
-        end)
-        |> then(&struct(SIP, &1))
+    with {:ok, serialized_opts} <- serialize_options(options, Options.schema()) do
+      endpoint_spec = %SIP{
+        rtc_engine: engine,
+        external_ip: external_ip,
+        registrar_credentials: create_register_credentials(serialized_opts.registrar_credentials)
+      }
 
-      properties = valid_opts |> Map.from_struct()
+      properties = serialized_opts
 
       {:ok, %{endpoint: endpoint_spec, properties: properties}}
     else
@@ -61,9 +51,10 @@ defmodule Jellyfish.Component.SIP do
     end
   end
 
-  @impl true
-  def after_init(_room_state, _component, _component_options), do: :ok
-
-  @impl true
-  def on_remove(_room_state, _component), do: :ok
+  defp create_register_credentials(credentials) do
+    credentials
+    |> Map.to_list()
+    |> Keyword.new()
+    |> RegistrarCredentials.new()
+  end
 end
