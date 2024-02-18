@@ -14,6 +14,7 @@ defmodule JellyfishWeb.Component.FileComponentTest do
   @file_component_directory "file_component_sources"
   @fixtures_directory "test/fixtures"
   @video_source "video.h264"
+  @video_source_short "video_short.h264"
   @audio_source "audio.ogg"
 
   @ws_url "ws://127.0.0.1:4002/socket/server/websocket"
@@ -135,6 +136,30 @@ defmodule JellyfishWeb.Component.FileComponentTest do
         endpoint_info: {:component_id, ^id},
         track: ^track
       }
+    end
+
+    test "file component removed after stream finishes", %{conn: conn, room_id: room_id} do
+      start_notifier()
+
+      conn =
+        post(conn, ~p"/room/#{room_id}/component",
+          type: "file",
+          options: %{filePath: @video_source_short}
+        )
+
+      assert %{
+               "data" => %{"id" => id, "properties" => %{"filePath" => @video_source_short}}
+             } = model_response(conn, :created, "ComponentDetailsResponse")
+
+      assert_component_created(conn, room_id, id, "file")
+
+      assert_receive %TrackAdded{}
+
+      assert_receive %TrackRemoved{}, 1500
+
+      conn = get(conn, ~p"/room/#{room_id}")
+      response = json_response(conn, :ok)
+      assert Enum.empty?(response["data"]["components"])
     end
 
     test "file in subdirectory", %{
