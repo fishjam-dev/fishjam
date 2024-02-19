@@ -1,7 +1,7 @@
 defmodule JellyfishWeb.ComponentJSON do
   @moduledoc false
 
-  alias Jellyfish.Component.{File, HLS, RTSP}
+  alias Jellyfish.Component.{File, HLS, RTSP, SIP}
   alias Jellyfish.Utils.ParserJSON
 
   def show(%{component: component}) do
@@ -14,6 +14,7 @@ defmodule JellyfishWeb.ComponentJSON do
         HLS -> "hls"
         RTSP -> "rtsp"
         File -> "file"
+        SIP -> "sip"
       end
 
     %{

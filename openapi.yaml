@@ -65,6 +65,34 @@ components:
       title: ComponentOptionsRTSP
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.RTSP.Options
+    ComponentOptionsSIP:
+      description: Options specific to the SIP component
+      properties:
+        registrarCredentials:
+          description: Credentials used to authorize in SIP Provider service
+          properties:
+            address:
+              description: 'SIP provider address. Can be in the form of FQDN (my-sip-registrar.net) or IPv4 (1.2.3.4). Port can be specified e.g: 5.6.7.8:9999. If not given, the default SIP port `5060` will be assumed'
+              example: example.org
+              type: string
+            password:
+              description: Password in SIP service provider
+              type: string
+            username:
+              description: Username in SIP service provider
+              type: string
+          required:
+            - address
+            - username
+            - password
+          title: SIPCredentials
+          type: object
+          x-struct: Elixir.JellyfishWeb.ApiSpec.Component.SIP.SIPCredentials
+      required:
+        - registrarCredentials
+      title: ComponentOptionsSIP
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.SIP.Options
     ComponentPropertiesHLS:
       description: Properties specific to the HLS component
       properties:
@@ -130,11 +158,13 @@ components:
           file: '#/components/schemas/ComponentFile'
           hls: '#/components/schemas/ComponentHLS'
           rtsp: '#/components/schemas/ComponentRTSP'
+          sip: '#/components/schemas/ComponentSIP'
         propertyName: type
       oneOf:
         - $ref: '#/components/schemas/ComponentHLS'
         - $ref: '#/components/schemas/ComponentRTSP'
         - $ref: '#/components/schemas/ComponentFile'
+        - $ref: '#/components/schemas/ComponentSIP'
       title: Component
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component
@@ -158,6 +188,32 @@ components:
       title: HealthcheckResponse
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.HealthcheckResponse
+    ComponentSIP:
+      description: Describes the SIP component
+      properties:
+        id:
+          description: Assigned component ID
+          example: component-1
+          type: string
+        properties:
+          $ref: '#/components/schemas/ComponentPropertiesSIP'
+        tracks:
+          description: List of all component's tracks
+          items:
+            $ref: '#/components/schemas/Track'
+          type: array
+        type:
+          description: Component type
+          example: sip
+          type: string
+      required:
+        - id
+        - type
+        - properties
+        - tracks
+      title: ComponentSIP
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.SIP
     ComponentHLS:
       description: Describes the HLS component
       properties:
@@ -259,6 +315,15 @@ components:
       title: HlsMsn
       type: integer
       x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Params.HlsMsn
+    DialConfig:
+      description: Dial config
+      properties:
+        phoneNumber:
+          description: Phone number on which SIP Component will call
+          type: string
+      title: DialConfig
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Dial.PhoneNumber
     ComponentRTSP:
       description: Describes the RTSP component
       properties:
@@ -334,6 +399,26 @@ components:
       title: ComponentOptionsHLS
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS.Options
+    SIPCredentials:
+      description: Credentials used to authorize in SIP Provider service
+      properties:
+        address:
+          description: 'SIP provider address. Can be in the form of FQDN (my-sip-registrar.net) or IPv4 (1.2.3.4). Port can be specified e.g: 5.6.7.8:9999. If not given, the default SIP port `5060` will be assumed'
+          example: example.org
+          type: string
+        password:
+          description: Password in SIP service provider
+          type: string
+        username:
+          description: Username in SIP service provider
+          type: string
+      required:
+        - address
+        - username
+        - password
+      title: SIPCredentials
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.SIP.SIPCredentials
     S3Credentials:
       description: An AWS S3 credential that will be used to send HLS stream. The stream will only be uploaded if credentials are provided
       properties:
@@ -375,6 +460,7 @@ components:
         - $ref: '#/components/schemas/ComponentOptionsHLS'
         - $ref: '#/components/schemas/ComponentOptionsRTSP'
         - $ref: '#/components/schemas/ComponentOptionsFile'
+        - $ref: '#/components/schemas/ComponentOptionsSIP'
       title: ComponentOptions
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Options
@@ -512,6 +598,34 @@ components:
       title: RoomsListingResponse
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.RoomsListingResponse
+    ComponentPropertiesSIP:
+      description: Properties specific to the SIP component
+      properties:
+        registrarCredentials:
+          description: Credentials used to authorize in SIP Provider service
+          properties:
+            address:
+              description: 'SIP provider address. Can be in the form of FQDN (my-sip-registrar.net) or IPv4 (1.2.3.4). Port can be specified e.g: 5.6.7.8:9999. If not given, the default SIP port `5060` will be assumed'
+              example: example.org
+              type: string
+            password:
+              description: Password in SIP service provider
+              type: string
+            username:
+              description: Username in SIP service provider
+              type: string
+          required:
+            - address
+            - username
+            - password
+          title: SIPCredentials
+          type: object
+          x-struct: Elixir.JellyfishWeb.ApiSpec.Component.SIP.SIPCredentials
+      required:
+        - registrarCredentials
+      title: ComponentPropertiesSIP
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.SIP.Properties
     PeerDetailsResponse:
       description: Response containing peer details and their token
       properties:
@@ -1161,6 +1275,94 @@ paths:
       summary: Delete peer
       tags:
         - room
+  /sip/{room_id}/{component_id}/call:
+    delete:
+      callbacks: {}
+      operationId: end_call
+      parameters:
+        - description: Room ID
+          in: path
+          name: room_id
+          required: true
+          schema:
+            type: string
+        - description: SIP Component ID
+          in: path
+          name: component_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Call ended
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Invalid request structure
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unauthorized
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Room doesn't exist
+      summary: Finish call made by SIP component
+      tags:
+        - sip
+    post:
+      callbacks: {}
+      operationId: dial
+      parameters:
+        - description: Room ID
+          in: path
+          name: room_id
+          required: true
+          schema:
+            type: string
+        - description: SIP Component ID
+          in: path
+          name: component_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DialConfig'
+        description: Phone Number configuration
+        required: false
+      responses:
+        '201':
+          description: Call started
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Invalid request structure
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unauthorized
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Room doesn't exist
+      summary: Make a call from the SIP component to the provided phone number
+      tags:
+        - sip
 security:
   - authorization: []
 servers: []

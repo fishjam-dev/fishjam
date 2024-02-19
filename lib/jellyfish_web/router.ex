@@ -27,6 +27,13 @@ defmodule JellyfishWeb.Router do
       post "/:room_id/subscribe", SubscriptionController, :create
     end
 
+    scope "/sip" do
+      resources("/:room_id/:component_id/call", SIPCallController,
+        only: [:create, :delete],
+        singleton: true
+      )
+    end
+
     scope "/recording" do
       delete "/:recording_id", RecordingController, :delete
       get "/", RecordingController, :show

@@ -9,7 +9,7 @@ defmodule Jellyfish.Room do
   require Logger
 
   alias Jellyfish.Component
-  alias Jellyfish.Component.{HLS, RTSP}
+  alias Jellyfish.Component.{HLS, RTSP, SIP}
   alias Jellyfish.Event
   alias Jellyfish.Peer
   alias Jellyfish.Room.Config
@@ -17,6 +17,7 @@ defmodule Jellyfish.Room do
 
   alias Membrane.ICE.TURNManager
   alias Membrane.RTC.Engine
+  alias Membrane.RTC.Engine.Endpoint
 
   alias Membrane.RTC.Engine.Message.{
     EndpointAdded,
@@ -137,6 +138,18 @@ defmodule Jellyfish.Room do
     GenServer.call(registry_id(room_id), {:hls_subscribe, origins})
   end
 
+  @spec dial(id(), Component.id(), String.t()) ::
+          :ok | {:error, term()}
+  def dial(room_id, component_id, phone_number) do
+    GenServer.call(registry_id(room_id), {:dial, component_id, phone_number})
+  end
+
+  @spec end_call(id(), Component.id()) ::
+          :ok | {:error, term()}
+  def end_call(room_id, component_id) do
+    GenServer.call(registry_id(room_id), {:end_call, component_id})
+  end
+
   @spec receive_media_event(id(), Peer.id(), String.t()) :: :ok
   def receive_media_event(room_id, peer_id, event) do
     GenServer.cast(registry_id(room_id), {:media_event, peer_id, event})
@@ -250,17 +263,11 @@ defmodule Jellyfish.Room do
         options
       )
 
-    component_options = Map.delete(options, "s3")
-
     with :ok <- check_component_allowed(component_type, state),
-         {:ok, component} <-
-           Component.new(component_type, component_options) do
+         {:ok, component} <- Component.new(component_type, options) do
       state = put_in(state, [:components, component.id], component)
 
-      if component_type == HLS do
-        on_hls_startup(state.id, component.properties)
-        spawn_hls_manager(options)
-      end
+      component_type.after_init(state, component, options)
 
       :ok = Engine.add_endpoint(state.engine_pid, component.engine_endpoint, id: component.id)
 
@@ -330,7 +337,7 @@ defmodule Jellyfish.Room do
     reply =
       case validate_hls_subscription(hls_component) do
         :ok ->
-          Engine.message_endpoint(state.engine_pid, hls_component.id, {:subscribe, origins})
+          Endpoint.HLS.subscribe(state.engine_pid, hls_component.id, origins)
 
         {:error, _reason} = error ->
           error
@@ -343,6 +350,36 @@ defmodule Jellyfish.Room do
   def handle_call(:get_num_forwarded_tracks, _from, state) do
     forwarded_tracks = Engine.get_num_forwarded_tracks(state.engine_pid)
     {:reply, forwarded_tracks, state}
+  end
+
+  @impl true
+  def handle_call({:dial, component_id, phone_number}, _from, state) do
+    case Map.fetch(state.components, component_id) do
+      {:ok, component} when component.type == SIP ->
+        Endpoint.SIP.dial(state.engine_pid, component_id, phone_number)
+        {:reply, :ok, state}
+
+      {:ok, _component} ->
+        {:reply, {:error, :bad_component_type}, state}
+
+      :error ->
+        {:reply, {:error, :component_does_not_exist}, state}
+    end
+  end
+
+  @impl true
+  def handle_call({:end_call, component_id}, _from, state) do
+    case Map.fetch(state.components, component_id) do
+      {:ok, component} when component.type == SIP ->
+        Endpoint.SIP.end_call(state.engine_pid, component_id)
+        {:reply, :ok, state}
+
+      :error ->
+        {:reply, {:error, :component_does_not_exist}, state}
+
+      {:ok, _component} ->
+        {:reply, {:error, :bad_component_type}, state}
+    end
   end
 
   @impl true
@@ -575,9 +612,6 @@ defmodule Jellyfish.Room do
   def terminate(_reason, %{engine_pid: engine_pid} = state) do
     Engine.terminate(engine_pid, asynchronous?: true, timeout: 10_000)
 
-    hls_component = get_hls_component(state)
-    unless is_nil(hls_component), do: on_hls_removal(state.id, hls_component.properties)
-
     state.peers
     |> Map.values()
     |> Enum.each(&handle_remove_peer(&1.id, state, :room_stopped))
@@ -600,7 +634,7 @@ defmodule Jellyfish.Room do
     webrtc_config = Application.fetch_env!(:jellyfish, :webrtc_config)
 
     turn_options =
-      if webrtc_config[:webrtc_used] do
+      if webrtc_config[:webrtc_used?] do
         turn_ip = webrtc_config[:turn_listen_ip]
         turn_mock_ip = webrtc_config[:turn_ip]
 
@@ -615,7 +649,7 @@ defmodule Jellyfish.Room do
 
     tcp_turn_port = webrtc_config[:turn_tcp_port]
 
-    if webrtc_config[:webrtc_used] and tcp_turn_port != nil do
+    if webrtc_config[:webrtc_used?] and tcp_turn_port != nil do
       TURNManager.ensure_tcp_turn_launched(turn_options, port: tcp_turn_port)
     end
 
@@ -664,7 +698,7 @@ defmodule Jellyfish.Room do
 
     Logger.info("Removed component #{inspect(component_id)}")
 
-    if component.type == HLS, do: on_hls_removal(state.id, component.properties)
+    component.type.on_remove(state, component)
 
     if reason == :component_crashed,
       do: Event.broadcast_server_notification({:component_crashed, state.id, component_id})
@@ -702,26 +736,6 @@ defmodule Jellyfish.Room do
         if component.type == HLS, do: component
       end)
 
-  defp on_hls_startup(room_id, %{low_latency: low_latency, persistent: persistent}) do
-    room_id
-    |> HLS.output_dir(persistent: persistent)
-    |> then(&HLS.EtsHelper.add_hls_folder_path(room_id, &1))
-
-    if low_latency, do: spawn_request_handler(room_id)
-  end
-
-  defp spawn_request_handler(room_id),
-    do: HLS.RequestHandler.start(room_id)
-
-  defp on_hls_removal(room_id, %{low_latency: low_latency}) do
-    HLS.EtsHelper.delete_hls_folder_path(room_id)
-
-    if low_latency, do: remove_request_handler(room_id)
-  end
-
-  defp remove_request_handler(room_id),
-    do: HLS.RequestHandler.stop(room_id)
-
   defp check_component_allowed(HLS, %{
          config: %{video_codec: video_codec},
          components: components
@@ -750,13 +764,6 @@ defmodule Jellyfish.Room do
 
   defp hls_component_already_present?(components),
     do: components |> Map.values() |> Enum.any?(&(&1.type == HLS))
-
-  defp spawn_hls_manager(%{engine_pid: engine_pid, room_id: room_id} = options) do
-    {:ok, hls_dir} = HLS.EtsHelper.get_hls_folder_path(room_id)
-    {:ok, valid_opts} = HLS.serialize_options(options)
-
-    {:ok, _pid} = HLS.Manager.start(room_id, engine_pid, hls_dir, valid_opts)
-  end
 
   defp validate_hls_subscription(nil), do: {:error, :hls_component_not_exists}
 

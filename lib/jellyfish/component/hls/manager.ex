@@ -119,6 +119,7 @@ defmodule Jellyfish.Component.HLS.Manager do
 
   defp remove_hls(hls_dir, room_id) do
     File.rm_rf!(hls_dir)
+
     Logger.info("Remove hls from a disk, room: #{room_id}")
   end
 

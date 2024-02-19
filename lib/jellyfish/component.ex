@@ -10,7 +10,8 @@ defmodule Jellyfish.Component do
 
   use Bunch.Access
 
-  alias Jellyfish.Component.{File, HLS, RTSP}
+  alias Jellyfish.Room
+  alias Jellyfish.Component.{File, HLS, RTSP, SIP}
   alias Jellyfish.Track
 
   @enforce_keys [
@@ -22,8 +23,8 @@ defmodule Jellyfish.Component do
   defstruct @enforce_keys ++ [tracks: %{}]
 
   @type id :: String.t()
-  @type component :: HLS | RTSP | File
-  @type properties :: HLS.properties() | RTSP.properties() | File.properties()
+  @type component :: HLS | RTSP | File | SIP
+  @type properties :: HLS.properties() | RTSP.properties() | File.properties() | SIP.properties()
 
   @typedoc """
   This module contains:
@@ -40,12 +41,64 @@ defmodule Jellyfish.Component do
           tracks: %{Track.id() => Track.t()}
         }
 
+  @doc """
+  This callback is run after initialization of the component. 
+  In it some additional work can be done, which can't be run inside Engine endpoint.
+  """
+  @callback after_init(
+              room_state :: Room.t(),
+              component :: __MODULE__.t(),
+              component_options :: map()
+            ) :: :ok
+
+  @doc """
+  This callback is run after scheduling removing of component. 
+  In it some additional cleanup can be done.
+  """
+  @callback on_remove(
+              room_state :: Room.t(),
+              component :: __MODULE__.t()
+            ) :: :ok
+
+  defmacro __using__(_opts) do
+    quote location: :keep do
+      @behaviour Jellyfish.Component
+
+      @impl true
+      def after_init(_room_state, _component, _component_options), do: :ok
+
+      @impl true
+      def on_remove(_room_state, _component), do: :ok
+
+      defoverridable after_init: 3, on_remove: 2
+
+      def serialize_options(opts, opts_schema) do
+        with {:ok, valid_opts} <- OpenApiSpex.Cast.cast(opts_schema, opts) do
+          valid_opts =
+            valid_opts
+            |> Map.from_struct()
+            |> Map.new(fn {k, v} -> {underscore(k), serialize(v)} end)
+
+          {:ok, valid_opts}
+        end
+      end
+
+      defp serialize(v) when is_struct(v),
+        do: v |> Map.from_struct() |> Map.new(fn {k, v} -> {underscore(k), v} end)
+
+      defp serialize(v), do: v
+
+      defp underscore(k), do: k |> Atom.to_string() |> Macro.underscore() |> String.to_atom()
+    end
+  end
+
   @spec parse_type(String.t()) :: {:ok, component()} | {:error, :invalid_type}
   def parse_type(type) do
     case type do
       "hls" -> {:ok, HLS}
       "rtsp" -> {:ok, RTSP}
       "file" -> {:ok, File}
+      "sip" -> {:ok, SIP}
       _other -> {:error, :invalid_type}
     end
   end

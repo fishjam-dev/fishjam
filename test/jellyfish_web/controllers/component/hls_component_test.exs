@@ -64,7 +64,10 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
       assert_hls_path(room_id, persistent: true)
 
       # It is persistent stream so we have to remove it manually
-      assert {:ok, _removed_files} = room_id |> HLS.Recording.directory() |> File.rm_rf()
+      assert {:ok, _removed_files} =
+               room_id
+               |> HLS.Recording.directory()
+               |> File.rm_rf()
     end
 
     setup :set_mox_from_context

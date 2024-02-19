@@ -4,6 +4,7 @@ defmodule Jellyfish.Component.RTSP do
   """
 
   @behaviour Jellyfish.Endpoint.Config
+  use Jellyfish.Component
 
   alias Membrane.RTC.Engine.Endpoint.RTSP
 
@@ -21,18 +22,14 @@ defmodule Jellyfish.Component.RTSP do
   def config(%{engine_pid: engine} = options) do
     options = Map.drop(options, [:engine_pid, :room_id])
 
-    with {:ok, valid_opts} <- OpenApiSpex.cast_value(options, Options.schema()) do
+    with {:ok, serialized_opts} <- serialize_options(options, Options.schema()) do
       endpoint_spec =
-        Map.from_struct(valid_opts)
-        # OpenApiSpex will remove invalid options, so the following conversion, while ugly, is memory-safe
-        |> Map.new(fn {k, v} ->
-          {Atom.to_string(k) |> Macro.underscore() |> String.to_atom(), v}
-        end)
+        serialized_opts
         |> Map.put(:rtc_engine, engine)
         |> Map.put(:max_reconnect_attempts, :infinity)
         |> then(&struct(RTSP, &1))
 
-      properties = valid_opts |> Map.from_struct()
+      properties = serialized_opts
 
       {:ok, %{endpoint: endpoint_spec, properties: properties}}
     else

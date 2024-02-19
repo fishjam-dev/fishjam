@@ -4,6 +4,7 @@ defmodule Jellyfish.Component.File do
   """
 
   @behaviour Jellyfish.Endpoint.Config
+  use Jellyfish.Component
 
   alias ExSDP.Attribute.FMTP
   alias Membrane.RTC.Engine.Endpoint.File, as: FileEndpoint
