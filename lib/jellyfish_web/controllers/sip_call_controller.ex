@@ -36,7 +36,8 @@ defmodule JellyfishWeb.SIPCallController do
     responses: [
       created: %Response{description: "Call ended"},
       bad_request: ApiSpec.error("Invalid request structure"),
-      not_found: ApiSpec.error("Room doesn't exist")
+      not_found: ApiSpec.error("Room doesn't exist"),
+      unauthorized: ApiSpec.error("Unauthorized")
     ]
 
   def create(conn, %{"room_id" => room_id, "component_id" => component_id} = params) do
