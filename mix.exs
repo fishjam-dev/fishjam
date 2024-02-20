@@ -58,6 +58,7 @@ defmodule Jellyfish.MixProject do
       {:open_api_spex, "~> 3.16"},
       {:ymlr, "~> 3.0"},
       {:bunch, "~> 1.6"},
+      {:logger_json, "~> 5.1"},
 
       # aws deps
       {:ex_aws, "~> 2.1"},
