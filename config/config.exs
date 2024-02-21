@@ -19,6 +19,11 @@ config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id, :room_id]
 
+config :logger_json, :backend,
+  metadata: [:request_id, :room_id],
+  json_encoder: Jason,
+  formatter: LoggerJSON.Formatters.BasicLogger
+
 config :phoenix, :json_library, Jason
 config :phoenix, :logger, false
 
@@ -27,7 +32,9 @@ config :logger,
     [application: :membrane_rtc_engine, level_lower_than: :warning],
     [application: :membrane_rtc_engine_webrtc, level_lower_than: :warning],
     [application: :membrane_rtc_engine_hls, level_lower_than: :warning],
-    [application: :membrane_rtc_engine_rtsp, level_lower_than: :warning]
+    [application: :membrane_rtc_engine_rtsp, level_lower_than: :warning],
+    [application: :membrane_rtc_engine_file, level_lower_than: :warning],
+    [application: :membrane_rtc_engine_sip, level_lower_than: :warning]
   ]
 
 config :jellyfish,

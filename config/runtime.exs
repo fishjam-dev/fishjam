@@ -10,6 +10,9 @@ alias Jellyfish.ConfigReader
 # The block below contains prod specific runtime configuration.
 config :ex_dtls, impl: :nif
 
+structured_logging? = ConfigReader.read_boolean("JF_STRUCTURED_LOGGING") || false
+config :logger, backends: [if(structured_logging?, do: LoggerJSON, else: :console)]
+
 prod? = config_env() == :prod
 
 ip = ConfigReader.read_ip("JF_IP") || Application.fetch_env!(:jellyfish, :ip)
