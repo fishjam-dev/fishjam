@@ -16,6 +16,8 @@ defmodule JellyfishWeb.RecordingController do
 
   tags [:recording]
 
+  security(%{"authorization" => []})
+
   operation :index,
     operation_id: "getRecordingContent",
     summary: "Retrieve Recording (HLS) Content",

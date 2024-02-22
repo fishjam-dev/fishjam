@@ -12,6 +12,8 @@ defmodule JellyfishWeb.ComponentController do
 
   tags [:room]
 
+  security(%{"authorization" => []})
+
   operation :create,
     operation_id: "add_component",
     summary: "Creates the component and adds it to the room",

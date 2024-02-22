@@ -768,6 +768,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Unauthorized
+      security:
+        - authorization: []
       summary: Describes the health of Jellyfish
       tags:
         - health
@@ -810,6 +812,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Room doesn't exist
+      security:
+        - authorization: []
       summary: Subscribe the HLS component to the tracks of peers or components
       tags:
         - hls
@@ -900,6 +904,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Unable to obtain recordings
+      security:
+        - authorization: []
       summary: Lists all available recordings
       tags:
         - recording
@@ -935,6 +941,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Recording doesn't exist
+      security:
+        - authorization: []
       summary: Deletes the recording
       tags:
         - recording
@@ -995,6 +1003,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Unauthorized
+      security:
+        - authorization: []
       summary: Show information about all rooms
       tags:
         - room
@@ -1028,6 +1038,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Unauthorized
+      security:
+        - authorization: []
       summary: Creates a room
       tags:
         - room
@@ -1057,6 +1069,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Room doesn't exist
+      security:
+        - authorization: []
       summary: Delete the room
       tags:
         - room
@@ -1089,6 +1103,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Room doesn't exist
+      security:
+        - authorization: []
       summary: Shows information about the room
       tags:
         - room
@@ -1142,6 +1158,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Room doesn't exist
+      security:
+        - authorization: []
       summary: Creates the component and adds it to the room
       tags:
         - room
@@ -1177,6 +1195,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Either component or the room doesn't exist
+      security:
+        - authorization: []
       summary: Delete the component from the room
       tags:
         - room
@@ -1237,6 +1257,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Peer limit has been reached
+      security:
+        - authorization: []
       summary: Create peer
       tags:
         - room
@@ -1272,6 +1294,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Room ID or Peer ID references a resource that doesn't exist
+      security:
+        - authorization: []
       summary: Delete peer
       tags:
         - room
@@ -1313,6 +1337,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Room doesn't exist
+      security:
+        - authorization: []
       summary: Finish call made by SIP component
       tags:
         - sip
@@ -1360,10 +1386,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Room doesn't exist
+      security:
+        - authorization: []
       summary: Make a call from the SIP component to the provided phone number
       tags:
         - sip
-security:
-  - authorization: []
+security: []
 servers: []
 tags: []
