@@ -13,6 +13,8 @@ defmodule JellyfishWeb.PeerController do
 
   tags [:room]
 
+  security(%{"authorization" => []})
+
   operation :create,
     operation_id: "add_peer",
     summary: "Create peer",

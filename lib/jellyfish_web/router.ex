@@ -42,8 +42,8 @@ defmodule JellyfishWeb.Router do
 
   # Paths which DO NOT require auth
   scope "/", JellyfishWeb do
-    get "/hls/:room_id/:filename", HLSController, :index
-    get "/recording/:recording_id/:filename", RecordingController, :index
+    get "/hls/:room_id/:filename", HLSContentController, :index
+    get "/recording/:recording_id/:filename", RecordingContentController, :index
   end
 
   # Enable LiveDashboard in development

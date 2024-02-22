@@ -1,4 +1,4 @@
-defmodule JellyfishWeb.HLSController do
+defmodule JellyfishWeb.HLSContentController do
   use JellyfishWeb, :controller
   use OpenApiSpex.ControllerSpecs
 

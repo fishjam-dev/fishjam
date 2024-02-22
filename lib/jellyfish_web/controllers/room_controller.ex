@@ -11,6 +11,8 @@ defmodule JellyfishWeb.RoomController do
 
   tags [:room]
 
+  security(%{"authorization" => []})
+
   operation :index,
     operation_id: "get_all_rooms",
     summary: "Show information about all rooms",

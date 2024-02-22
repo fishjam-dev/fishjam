@@ -20,8 +20,7 @@ defmodule JellyfishWeb.ApiSpec do
       paths: Paths.from_router(JellyfishWeb.Router),
       components: %Components{
         securitySchemes: %{"authorization" => %SecurityScheme{type: "http", scheme: "bearer"}}
-      },
-      security: [%{"authorization" => []}]
+      }
     }
     |> OpenApiSpex.resolve_schema_modules()
   end

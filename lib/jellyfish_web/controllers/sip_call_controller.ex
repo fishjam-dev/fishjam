@@ -11,6 +11,8 @@ defmodule JellyfishWeb.SIPCallController do
 
   tags [:sip]
 
+  security(%{"authorization" => []})
+
   operation :create,
     operation_id: "dial",
     summary: "Make a call from the SIP component to the provided phone number",

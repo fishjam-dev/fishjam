@@ -11,6 +11,8 @@ defmodule JellyfishWeb.SubscriptionController do
 
   tags [:hls]
 
+  security(%{"authorization" => []})
+
   operation :create,
     operation_id: "subscribe_hls_to",
     summary: "Subscribe the HLS component to the tracks of peers or components",

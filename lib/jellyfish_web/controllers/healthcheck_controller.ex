@@ -8,6 +8,8 @@ defmodule JellyfishWeb.HealthcheckController do
 
   tags [:health]
 
+  security(%{"authorization" => []})
+
   operation :show,
     operation_id: "healthcheck",
     summary: "Describes the health of Jellyfish",
