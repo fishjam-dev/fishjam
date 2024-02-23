@@ -71,7 +71,6 @@ defmodule Jellyfish.MixProject do
       # Membrane deps
       {:membrane_rtc_engine,
        github: "jellyfish-dev/membrane_rtc_engine",
-       branch: "RTC-472-fix-endpoint-eos",
        sparse: "engine",
        override: true},
       {:membrane_rtc_engine_webrtc,
@@ -82,7 +81,6 @@ defmodule Jellyfish.MixProject do
        github: "jellyfish-dev/membrane_rtc_engine", sparse: "rtsp", override: true},
       {:membrane_rtc_engine_file,
        github: "jellyfish-dev/membrane_rtc_engine",
-       branch: "RTC-472-fix-endpoint-eos",
        sparse: "file",
        override: true},
       {:membrane_rtc_engine_sip,
