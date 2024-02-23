@@ -473,10 +473,17 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def handle_info(%EndpointRemoved{endpoint_id: endpoint_id}, state) do
+  def handle_info(%EndpointRemoved{endpoint_id: endpoint_id}, state)
+      when is_map_key(state.peers, endpoint_id) do
     {_endpoint, state} = pop_in(state, [:peers, endpoint_id])
     Logger.info("Peer #{endpoint_id} removed")
     state = maybe_schedule_peerless_purge(state)
+    {:noreply, state}
+  end
+
+  def handle_info(%EndpointRemoved{endpoint_id: endpoint_id}, state)
+      when is_map_key(state.components, endpoint_id) do
+    state = handle_remove_component(endpoint_id, state, :component_finished)
     {:noreply, state}
   end
 
@@ -696,7 +703,7 @@ defmodule Jellyfish.Room do
       )
     )
 
-    Logger.info("Removed component #{inspect(component_id)}")
+    Logger.info("Removed component #{inspect(component_id)}: #{inspect(reason)}")
 
     component.type.on_remove(state, component)
 

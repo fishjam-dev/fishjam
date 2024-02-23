@@ -61,8 +61,7 @@ defmodule JellyfishWeb.DialControllerTest do
                  "id" => component_id,
                  "type" => "rtsp"
                }
-             } =
-               json_response(conn, :created)
+             } = json_response(conn, :created)
 
       conn = post(conn, ~p"/sip/#{room_id}/#{component_id}/call", phoneNumber: "+123456")
 
@@ -82,8 +81,7 @@ defmodule JellyfishWeb.DialControllerTest do
                  "id" => component_id,
                  "type" => "sip"
                }
-             } =
-               json_response(conn, :created)
+             } = json_response(conn, :created)
 
       conn = post(conn, ~p"/sip/#{room_id}/#{component_id}/call", phoneNumber: "+123456")
 
@@ -103,8 +101,7 @@ defmodule JellyfishWeb.DialControllerTest do
                  "id" => component_id,
                  "type" => "sip"
                }
-             } =
-               json_response(conn, :created)
+             } = json_response(conn, :created)
 
       conn = post(conn, ~p"/sip/#{room_id}/#{component_id}/call", phoneNumber: "+123456")
 
