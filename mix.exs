@@ -70,9 +70,7 @@ defmodule Jellyfish.MixProject do
 
       # Membrane deps
       {:membrane_rtc_engine,
-       github: "jellyfish-dev/membrane_rtc_engine",
-       sparse: "engine",
-       override: true},
+       github: "jellyfish-dev/membrane_rtc_engine", sparse: "engine", override: true},
       {:membrane_rtc_engine_webrtc,
        github: "jellyfish-dev/membrane_rtc_engine", sparse: "webrtc", override: true},
       {:membrane_rtc_engine_hls,
@@ -80,9 +78,7 @@ defmodule Jellyfish.MixProject do
       {:membrane_rtc_engine_rtsp,
        github: "jellyfish-dev/membrane_rtc_engine", sparse: "rtsp", override: true},
       {:membrane_rtc_engine_file,
-       github: "jellyfish-dev/membrane_rtc_engine",
-       sparse: "file",
-       override: true},
+       github: "jellyfish-dev/membrane_rtc_engine", sparse: "file", override: true},
       {:membrane_rtc_engine_sip,
        github: "jellyfish-dev/membrane_rtc_engine", sparse: "sip", override: true},
       {:membrane_telemetry_metrics, "~> 0.1.0"},

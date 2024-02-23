@@ -35,8 +35,7 @@ defmodule JellyfishWeb.Component.SIPComponentTest do
                  "type" => "sip",
                  "properties" => @sip_default_properties
                }
-             } =
-               model_response(conn, :created, "ComponentDetailsResponse")
+             } = model_response(conn, :created, "ComponentDetailsResponse")
 
       assert_component_created(conn, room_id, id, "sip")
     end
