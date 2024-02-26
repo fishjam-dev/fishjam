@@ -4,7 +4,7 @@ defmodule Jellyfish.MixProject do
   def project do
     [
       app: :jellyfish,
-      version: "0.3.0",
+      version: "0.4.0",
       elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -69,18 +69,12 @@ defmodule Jellyfish.MixProject do
       {:protobuf, "~> 0.12.0"},
 
       # Membrane deps
-      {:membrane_rtc_engine,
-       github: "jellyfish-dev/membrane_rtc_engine", sparse: "engine", override: true},
-      {:membrane_rtc_engine_webrtc,
-       github: "jellyfish-dev/membrane_rtc_engine", sparse: "webrtc", override: true},
-      {:membrane_rtc_engine_hls,
-       github: "jellyfish-dev/membrane_rtc_engine", sparse: "hls", override: true},
-      {:membrane_rtc_engine_rtsp,
-       github: "jellyfish-dev/membrane_rtc_engine", sparse: "rtsp", override: true},
-      {:membrane_rtc_engine_file,
-       github: "jellyfish-dev/membrane_rtc_engine", sparse: "file", override: true},
-      {:membrane_rtc_engine_sip,
-       github: "jellyfish-dev/membrane_rtc_engine", sparse: "sip", override: true},
+      {:membrane_rtc_engine, "~> 0.21.0"},
+      {:membrane_rtc_engine_webrtc, "~> 0.7.0"},
+      {:membrane_rtc_engine_hls, "~> 0.6.0"},
+      {:membrane_rtc_engine_rtsp, "~> 0.6.0"},
+      {:membrane_rtc_engine_file, "~> 0.4.0"},
+      {:membrane_rtc_engine_sip, "~> 0.2.0"},
       {:membrane_telemetry_metrics, "~> 0.1.0"},
 
       # HLS endpoints deps
