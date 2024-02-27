@@ -150,7 +150,13 @@ defmodule Jellyfish.MixProject do
     {_io_stream, exit_status} =
       System.cmd(
         "mix",
-        ["openapi.spec.yaml", "--start-app=false", "--spec", "JellyfishWeb.ApiSpec", generated_filename],
+        [
+          "openapi.spec.yaml",
+          "--start-app=false",
+          "--spec",
+          "JellyfishWeb.ApiSpec",
+          generated_filename
+        ],
         into: IO.stream()
       )
 
