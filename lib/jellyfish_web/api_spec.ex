@@ -11,7 +11,7 @@ defmodule JellyfishWeb.ApiSpec do
     %OpenApiSpex.OpenApi{
       info: %Info{
         title: "Jellyfish Media Server",
-        version: "0.2.0",
+        version: Mix.Project.config()[:version],
         license: %License{
           name: "Apache 2.0",
           url: "https://www.apache.org/licenses/LICENSE-2.0"
