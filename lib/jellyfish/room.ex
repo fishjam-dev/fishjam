@@ -216,6 +216,7 @@ defmodule Jellyfish.Room do
           :ok = Engine.add_endpoint(state.engine_pid, peer.engine_endpoint, id: peer_id)
 
           Logger.info("Peer #{inspect(peer_id)} connected")
+          :telemetry.execute([:jellyfish, :room], %{peer_connects: 1}, %{room_id: state.id})
 
           {:ok, state}
 
@@ -433,6 +434,7 @@ defmodule Jellyfish.Room do
         {peer_id, peer} ->
           :ok = Engine.remove_endpoint(state.engine_pid, peer_id)
           Event.broadcast_server_notification({:peer_disconnected, state.id, peer_id})
+          :telemetry.execute([:jellyfish, :room], %{peer_disconnects: 1}, %{room_id: state.id})
           peer = %{peer | status: :disconnected, socket_pid: nil}
 
           put_in(state, [:peers, peer_id], peer)
@@ -737,11 +739,14 @@ defmodule Jellyfish.Room do
 
     Logger.info("Removed peer #{inspect(peer_id)} from room #{inspect(state.id)}")
 
-    if peer.status == :connected and reason == :peer_removed,
-      do: Event.broadcast_server_notification({:peer_disconnected, state.id, peer_id})
+    if peer.status == :connected and reason == :peer_removed do
+      Event.broadcast_server_notification({:peer_disconnected, state.id, peer_id})
+      :telemetry.execute([:jellyfish, :room], %{peer_disconnects: 1}, %{room_id: state.id})
+    end
 
     with {:peer_crashed, crash_reason} <- reason do
       Event.broadcast_server_notification({:peer_crashed, state.id, peer_id, crash_reason})
+      :telemetry.execute([:jellyfish, :room], %{peer_crashes: 1}, %{room_id: state.id})
     end
 
     state
