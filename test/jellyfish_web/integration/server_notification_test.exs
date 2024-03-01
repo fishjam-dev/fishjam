@@ -279,6 +279,9 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
                     %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}},
                    2_000
 
+    state = :sys.get_state(room_pid)
+    assert Map.has_key?(state.peers, peer_id)
+
     delete(conn, ~p"/room/#{room_id}")
   end
 

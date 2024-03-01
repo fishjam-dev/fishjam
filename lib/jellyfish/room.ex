@@ -475,8 +475,6 @@ defmodule Jellyfish.Room do
   @impl true
   def handle_info(%EndpointRemoved{endpoint_id: endpoint_id}, state)
       when is_map_key(state.peers, endpoint_id) do
-    {_endpoint, state} = pop_in(state, [:peers, endpoint_id])
-    Logger.info("Peer #{endpoint_id} removed")
     state = maybe_schedule_peerless_purge(state)
     {:noreply, state}
   end
