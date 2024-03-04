@@ -2,17 +2,52 @@ defmodule JellyfishWeb.RoomControllerTest do
   use JellyfishWeb.ConnCase, async: false
 
   import OpenApiSpex.TestAssertions
+
+  alias __MODULE__.Endpoint
+
+  alias Jellyfish.PeerMessage.Authenticated
   alias Jellyfish.RoomService
+  alias JellyfishWeb.{PeerSocket, WS}
 
   @schema JellyfishWeb.ApiSpec.spec()
 
+  @purge_timeout_s 3
+  @purge_timeout_ms @purge_timeout_s * 1000
+
+  @port 5910
+  @path "ws://127.0.0.1:#{@port}/socket/peer/websocket"
+  @auth_response %Authenticated{}
+
+  Application.put_env(
+    :jellyfish,
+    Endpoint,
+    https: false,
+    http: [port: @port],
+    server: true
+  )
+
+  defmodule Endpoint do
+    use Phoenix.Endpoint, otp_app: :jellyfish
+
+    alias JellyfishWeb.PeerSocket
+
+    socket "/socket/peer", PeerSocket,
+      websocket: true,
+      longpoll: false
+  end
+
   setup_all do
     delete_all_rooms()
+    assert {:ok, _pid} = Endpoint.start_link()
+    :ok
   end
 
   setup %{conn: conn} do
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
+
+    Klotho.Mock.reset()
+    Klotho.Mock.freeze()
 
     on_exit(fn -> delete_all_rooms() end)
 
@@ -142,6 +177,125 @@ defmodule JellyfishWeb.RoomControllerTest do
     end
   end
 
+  describe "peerless purge" do
+    setup %{conn: conn} do
+      conn = post(conn, ~p"/room", peerlessPurgeTimeout: @purge_timeout_s)
+      assert %{"id" => id} = json_response(conn, :created)["data"]["room"]
+      %{conn: conn, id: id}
+    end
+
+    test "happens if peers never joined", %{conn: conn, id: id} do
+      conn = post(conn, ~p"/room/#{id}/peer", type: "webrtc")
+      assert response(conn, :created)
+
+      Klotho.Mock.warp_by(@purge_timeout_ms + 10)
+
+      conn = get(conn, ~p"/room")
+      assert Enum.empty?(json_response(conn, :ok)["data"])
+    end
+
+    test "happens if peer joined, then removed", %{conn: conn, id: id} do
+      conn = post(conn, ~p"/room/#{id}/peer", type: "webrtc")
+
+      assert %{"token" => token, "peer" => %{"id" => peer_id}} =
+               json_response(conn, :created)["data"]
+
+      connect_peer(token)
+
+      Klotho.Mock.warp_by(@purge_timeout_ms + 10)
+      conn = get(conn, ~p"/room/#{id}")
+      assert response(conn, :ok)
+
+      conn = delete(conn, ~p"/room/#{id}/peer/#{peer_id}")
+      assert response(conn, :no_content)
+      Klotho.Mock.warp_by(@purge_timeout_ms + 10)
+
+      conn = get(conn, ~p"/room")
+      assert Enum.empty?(json_response(conn, :ok)["data"])
+    end
+
+    test "happens if peer joined, then disconnected", %{conn: conn, id: id} do
+      conn = post(conn, ~p"/room/#{id}/peer", type: "webrtc")
+      assert %{"token" => token} = json_response(conn, :created)["data"]
+
+      ws = connect_peer(token)
+
+      Klotho.Mock.warp_by(@purge_timeout_ms + 10)
+      conn = get(conn, ~p"/room/#{id}")
+      assert response(conn, :ok)
+
+      GenServer.stop(ws)
+      Process.sleep(10)
+
+      conn = get(conn, ~p"/room/#{id}")
+
+      assert %{"status" => "disconnected"} =
+               json_response(conn, :ok)["data"]["peers"] |> List.first()
+
+      Klotho.Mock.warp_by(@purge_timeout_ms + 10)
+
+      conn = get(conn, ~p"/room")
+      assert Enum.empty?(json_response(conn, :ok)["data"])
+    end
+
+    test "does not happen if peers rejoined quickly", %{conn: conn, id: id} do
+      conn = post(conn, ~p"/room/#{id}/peer", type: "webrtc")
+      assert %{"token" => token} = json_response(conn, :created)["data"]
+
+      ws = connect_peer(token)
+
+      Klotho.Mock.warp_by(@purge_timeout_ms + 10)
+      conn = get(conn, ~p"/room/#{id}")
+      assert response(conn, :ok)
+
+      GenServer.stop(ws)
+      Process.sleep(10)
+      conn = get(conn, ~p"/room/#{id}")
+
+      assert %{"status" => "disconnected"} =
+               json_response(conn, :ok)["data"]["peers"] |> List.first()
+
+      Klotho.Mock.warp_by(@purge_timeout_ms |> div(2))
+      conn = get(conn, ~p"/room/#{id}")
+      assert response(conn, :ok)
+
+      connect_peer(token)
+      Klotho.Mock.warp_by(@purge_timeout_ms + 10)
+      conn = get(conn, ~p"/room/#{id}")
+      assert response(conn, :ok)
+    end
+
+    test "timeout is reset if another peer is created and removed", %{conn: conn, id: id} do
+      conn = post(conn, ~p"/room/#{id}/peer", type: "webrtc")
+      assert %{"peer" => %{"id" => peer_id}} = json_response(conn, :created)["data"]
+
+      conn = delete(conn, ~p"/room/#{id}/peer/#{peer_id}")
+      assert response(conn, :no_content)
+
+      Klotho.Mock.warp_by(@purge_timeout_ms |> div(2))
+
+      conn = post(conn, ~p"/room/#{id}/peer", type: "webrtc")
+      assert response(conn, :created)
+
+      Klotho.Mock.warp_by(@purge_timeout_ms |> div(2) |> Kernel.+(10))
+      conn = get(conn, ~p"/room/#{id}")
+      assert response(conn, :ok)
+
+      Klotho.Mock.warp_by(@purge_timeout_ms |> div(2))
+      conn = get(conn, ~p"/room")
+      assert Enum.empty?(json_response(conn, :ok)["data"])
+    end
+
+    test "does not happen when not configured", %{conn: conn} do
+      conn = post(conn, ~p"/room")
+      assert %{"id" => id} = json_response(conn, :created)["data"]["room"]
+
+      Klotho.Mock.warp_by(@purge_timeout_ms + 10)
+      conn = get(conn, ~p"/room/#{id}")
+      assert response(conn, :ok)
+    end
+  end
+
   describe "delete room" do
     setup [:create_room]
 
@@ -236,5 +390,13 @@ defmodule JellyfishWeb.RoomControllerTest do
       assert {:ok, %HTTPoison.Response{status_code: 204}} =
                HTTPoison.delete("http://127.0.0.1:4002/room/#{room["id"]}", headers)
     end)
+  end
+
+  def connect_peer(token) do
+    {:ok, ws} = WS.start_link(@path, :peer)
+    WS.send_auth_request(ws, token)
+    assert_receive @auth_response
+
+    ws
   end
 end
