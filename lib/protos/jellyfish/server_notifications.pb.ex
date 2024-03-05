@@ -51,6 +51,7 @@ defmodule Jellyfish.ServerMessage.PeerCrashed do
 
   field :room_id, 1, type: :string, json_name: "roomId"
   field :peer_id, 2, type: :string, json_name: "peerId"
+  field :reason, 3, type: :string
 end
 
 defmodule Jellyfish.ServerMessage.ComponentCrashed do
