@@ -737,13 +737,11 @@ defmodule Jellyfish.Room do
 
     Logger.info("Removed peer #{inspect(peer_id)} from room #{inspect(state.id)}")
 
-    cond do
-      peer.status == :connected and reason == :peer_removed ->
-        Event.broadcast_server_notification({:peer_disconnected, state.id, peer_id})
+    if peer.status == :connected and reason == :peer_removed,
+      do: Event.broadcast_server_notification({:peer_disconnected, state.id, peer_id})
 
-      match?({:peer_crashed, _reason}, reason) ->
-        {:peer_crashed, crash_reason} = reason
-        Event.broadcast_server_notification({:peer_crashed, state.id, peer_id, crash_reason})
+    with {:peer_crashed, crash_reason} <- reason do
+      Event.broadcast_server_notification({:peer_crashed, state.id, peer_id, crash_reason})
     end
 
     state

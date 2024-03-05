@@ -70,7 +70,10 @@ defmodule Jellyfish.MixProject do
 
       # Membrane deps
       {:membrane_rtc_engine,
-       github: "jellyfish-dev/membrane_rtc_engine", branch: "RTC-478-endpoint-crash-reason", sparse: "engine", override: true},
+       github: "jellyfish-dev/membrane_rtc_engine",
+       branch: "RTC-478-endpoint-crash-reason",
+       sparse: "engine",
+       override: true},
       {:membrane_rtc_engine_webrtc, "~> 0.7.0"},
       {:membrane_rtc_engine_hls, "~> 0.6.0"},
       {:membrane_rtc_engine_rtsp, "~> 0.6.0"},
