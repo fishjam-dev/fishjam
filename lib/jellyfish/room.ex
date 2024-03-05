@@ -82,7 +82,8 @@ defmodule Jellyfish.Room do
     try do
       GenServer.call(registry_room_id, :get_state)
     catch
-      :exit, {:noproc, {GenServer, :call, [^registry_room_id, :get_state, _timeout]}} ->
+      :exit, {reason, {GenServer, :call, [^registry_room_id, :get_state, _timeout]}}
+      when reason in [:noproc, :normal] ->
         Logger.warning(
           "Cannot get state of #{inspect(room_id)}, the room's process doesn't exist anymore"
         )
@@ -187,7 +188,7 @@ defmodule Jellyfish.Room do
           )
 
         with {:ok, peer} <- Peer.new(peer_type, options) do
-          state = put_in(state, [:peers, peer.id], peer)
+          state = put_in(state, [:peers, peer.id], peer) |> maybe_schedule_peerless_purge()
 
           Logger.info("Added peer #{inspect(peer.id)}")
 
@@ -433,7 +434,9 @@ defmodule Jellyfish.Room do
           :ok = Engine.remove_endpoint(state.engine_pid, peer_id)
           Event.broadcast_server_notification({:peer_disconnected, state.id, peer_id})
           peer = %{peer | status: :disconnected, socket_pid: nil}
+
           put_in(state, [:peers, peer_id], peer)
+          |> maybe_schedule_peerless_purge()
       end
 
     {:noreply, state}
@@ -475,9 +478,8 @@ defmodule Jellyfish.Room do
   @impl true
   def handle_info(%EndpointRemoved{endpoint_id: endpoint_id}, state)
       when is_map_key(state.peers, endpoint_id) do
-    {_endpoint, state} = pop_in(state, [:peers, endpoint_id])
-    Logger.info("Peer #{endpoint_id} removed")
-    state = maybe_schedule_peerless_purge(state)
+    # The peer has been either removed, crashed or disconnected
+    # The changes in state are applied in appropriate callbacks
     {:noreply, state}
   end
 
@@ -674,22 +676,29 @@ defmodule Jellyfish.Room do
 
   defp maybe_schedule_peerless_purge(%{config: %{peerless_purge_timeout: nil}} = state), do: state
 
-  defp maybe_schedule_peerless_purge(%{config: config, peers: peers} = state)
-       when map_size(peers) == 0 do
-    last_peer_left = Klotho.monotonic_time(:millisecond)
-    Klotho.send_after(config.peerless_purge_timeout * 1000, self(), :peerless_purge)
+  defp maybe_schedule_peerless_purge(%{config: config, peers: peers} = state) do
+    if all_peers_disconnected?(peers) do
+      last_peer_left = Klotho.monotonic_time(:millisecond)
 
-    %{state | last_peer_left: last_peer_left}
+      Klotho.send_after(config.peerless_purge_timeout * 1000, self(), :peerless_purge)
+
+      %{state | last_peer_left: last_peer_left}
+    else
+      state
+    end
   end
 
-  defp maybe_schedule_peerless_purge(state), do: state
-
-  defp peerless_long_enough?(%{config: config, peers: peers, last_peer_left: last_peer_left})
-       when map_size(peers) == 0 do
-    Klotho.monotonic_time(:millisecond) >= last_peer_left + config.peerless_purge_timeout * 1000
+  defp peerless_long_enough?(%{config: config, peers: peers, last_peer_left: last_peer_left}) do
+    if all_peers_disconnected?(peers) do
+      Klotho.monotonic_time(:millisecond) >= last_peer_left + config.peerless_purge_timeout * 1000
+    else
+      false
+    end
   end
 
-  defp peerless_long_enough?(_state), do: false
+  defp all_peers_disconnected?(peers) do
+    peers |> Map.values() |> Enum.all?(&(&1.status == :disconnected))
+  end
 
   defp handle_remove_component(component_id, state, reason) do
     {component, state} = pop_in(state, [:components, component_id])
