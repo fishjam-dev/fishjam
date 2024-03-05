@@ -478,6 +478,8 @@ defmodule Jellyfish.Room do
   @impl true
   def handle_info(%EndpointRemoved{endpoint_id: endpoint_id}, state)
       when is_map_key(state.peers, endpoint_id) do
+    # The peer has been either removed, crashed or disconnected
+    # The changes in state are applied in appropriate callbacks
     {:noreply, state}
   end
 
