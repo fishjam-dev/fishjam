@@ -125,37 +125,52 @@ defmodule JellyfishWeb.Telemetry do
           description: "Total HTTP traffic sent (bytes)"
         ),
         last_value("jellyfish.rooms",
-          description: "Amount of rooms currently present in Jellyfish"
+          description: "Number of rooms currently present in Jellyfish"
         ),
 
         # FIXME: Prometheus warns about using labels to store dimensions with high cardinality,
         # such as UUIDs. For more information refer here: https://prometheus.io/docs/practices/naming/#labels
         last_value("jellyfish.room.peers",
           tags: [:room_id],
-          description: "Amount of peers currently present in a given room"
+          description: "Number of peers currently present in a given room"
         ),
         sum("jellyfish.room.peer_time.total.seconds",
           event_name: [:jellyfish, :room],
-          measurement: :peer_time_total,
+          measurement: :peer_time,
           tags: [:room_id],
           description: "Total peer time accumulated for a given room (seconds)"
+        ),
+        sum("jellyfish.room.duration.seconds",
+          event_name: [:jellyfish, :room],
+          measurement: :duration,
+          tags: [:room_id],
+          description: "Duration of a given room (seconds)"
+        ),
+        sum("jellyfish.room.peer_connects.total",
+          event_name: [:jellyfish, :room],
+          measurement: :peer_connects,
+          tags: [:room_id],
+          description:
+            "Number of PeerConnected events emitted during the lifetime of a given room"
+        ),
+        sum("jellyfish.room.peer_disconnects.total",
+          event_name: [:jellyfish, :room],
+          measurement: :peer_disconnects,
+          tags: [:room_id],
+          description:
+            "Number of PeerDisconnected events emitted during the lifetime of a given room"
+        ),
+        sum("jellyfish.room.peer_crashes.total",
+          event_name: [:jellyfish, :room],
+          measurement: :peer_crashes,
+          tags: [:room_id],
+          description: "Number of PeerCrashed events emitted during the lifetime of a given room"
         )
       ]
   end
 
   def default_webrtc_metrics() do
-    :telemetry.execute(
-      [Membrane.ICE, :ice, :payload, :sent],
-      %{
-        bytes: 0
-      }
-    )
-
-    :telemetry.execute(
-      [Membrane.ICE, :ice, :payload, :received],
-      %{
-        bytes: 0
-      }
-    )
+    :telemetry.execute(@ice_sent_event, %{bytes: 0})
+    :telemetry.execute(@ice_received_event, %{bytes: 0})
   end
 end

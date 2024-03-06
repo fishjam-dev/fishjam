@@ -186,7 +186,8 @@ defmodule Jellyfish.RoomService do
         [:jellyfish, :room],
         %{
           peers: peer_count,
-          peer_time_total: peer_count * @metric_interval_in_seconds
+          peer_time: peer_count * @metric_interval_in_seconds,
+          duration: @metric_interval_in_seconds
         },
         %{room_id: room.id}
       )
@@ -223,14 +224,7 @@ defmodule Jellyfish.RoomService do
   end
 
   defp clear_room_metrics(room_id) do
-    :telemetry.execute(
-      [:jellyfish, :room],
-      %{
-        peers: 0,
-        peer_time_total: 0
-      },
-      %{room_id: room_id}
-    )
+    :telemetry.execute([:jellyfish, :room], %{peers: 0}, %{room_id: room_id})
   end
 
   defp find_best_node(node_resources) do
