@@ -60,8 +60,8 @@ defmodule Jellyfish.Event do
   defp to_proto_server_notification({:peer_disconnected, room_id, peer_id}),
     do: {:peer_disconnected, %PeerDisconnected{room_id: room_id, peer_id: peer_id}}
 
-  defp to_proto_server_notification({:peer_crashed, room_id, peer_id}),
-    do: {:peer_crashed, %PeerCrashed{room_id: room_id, peer_id: peer_id}}
+  defp to_proto_server_notification({:peer_crashed, room_id, peer_id, reason}),
+    do: {:peer_crashed, %PeerCrashed{room_id: room_id, peer_id: peer_id, reason: reason}}
 
   defp to_proto_server_notification({:component_crashed, room_id, component_id}),
     do: {:component_crashed, %ComponentCrashed{room_id: room_id, component_id: component_id}}
