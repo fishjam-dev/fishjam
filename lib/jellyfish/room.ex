@@ -410,12 +410,12 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def handle_info(%EndpointCrashed{endpoint_id: endpoint_id}, state) do
-    Logger.error("RTC Engine endpoint #{inspect(endpoint_id)} crashed")
+  def handle_info(%EndpointCrashed{endpoint_id: endpoint_id, reason: reason}, state) do
+    Logger.error("RTC Engine endpoint #{inspect(endpoint_id)} crashed: #{inspect(reason)}")
 
     state =
       if Map.has_key?(state.peers, endpoint_id) do
-        handle_remove_peer(endpoint_id, state, :peer_crashed)
+        handle_remove_peer(endpoint_id, state, {:peer_crashed, parse_crash_reason(reason)})
       else
         handle_remove_component(endpoint_id, state, :component_crashed)
       end
@@ -740,8 +740,9 @@ defmodule Jellyfish.Room do
     if peer.status == :connected and reason == :peer_removed,
       do: Event.broadcast_server_notification({:peer_disconnected, state.id, peer_id})
 
-    if reason == :peer_crashed,
-      do: Event.broadcast_server_notification({:peer_crashed, state.id, peer_id})
+    with {:peer_crashed, crash_reason} <- reason do
+      Event.broadcast_server_notification({:peer_crashed, state.id, peer_id, crash_reason})
+    end
 
     state
   end
@@ -800,4 +801,11 @@ defmodule Jellyfish.Room do
       :components -> :component_id
     end
   end
+
+  defp parse_crash_reason(
+         {:membrane_child_crash, _child, {%RuntimeError{message: reason}, _stack}}
+       ),
+       do: reason
+
+  defp parse_crash_reason(_reason), do: nil
 end
