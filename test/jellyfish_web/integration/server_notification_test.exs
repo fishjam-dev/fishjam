@@ -9,9 +9,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
 
   alias Jellyfish.Component.HLS
   alias Jellyfish.Component.HLS.Manager
-  alias Jellyfish.PeerMessage
-  alias Jellyfish.RoomService
-  alias Jellyfish.ServerMessage
+  alias Jellyfish.{PeerMessage, RoomService, ServerMessage}
 
   alias Jellyfish.ServerMessage.{
     Authenticated,
@@ -106,10 +104,10 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   setup(%{conn: conn}) do
     :ok = PubSub.subscribe(@pubsub, "webhook")
 
-    on_exit(fn ->
-      server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
-      conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
+    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+    conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
+    on_exit(fn ->
       conn = get(conn, ~p"/room")
       rooms = json_response(conn, :ok)["data"]
 
@@ -121,9 +119,16 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
 
       :ok = PubSub.unsubscribe(@pubsub, "webhook")
     end)
+
+    %{conn: conn}
   end
 
   describe "establishing connection" do
+    # setup %{conn: conn} do
+    #   conn = delete_req_header(conn, "authorization")
+    #   %{conn: conn}
+    # end
+
     test "invalid token" do
       {:ok, ws} = WS.start_link(@path, :server)
       server_api_token = "invalid" <> Application.fetch_env!(:jellyfish, :server_api_token)
@@ -332,10 +337,9 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   end
 
   test "sends HlsPlayable notification", %{conn: conn} do
-    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
     ws = create_and_authenticate()
     subscribe(ws, :server_notification)
-    {room_id, _peer_id, _token, conn} = add_room_and_peer(conn, server_api_token)
+    {room_id, _peer_id, _token, conn} = add_room_and_peer(conn)
 
     {conn, hls_id} = add_hls_component(conn, room_id)
     {conn, _rtsp_id} = add_rtsp_component(conn, room_id)
@@ -394,12 +398,11 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   end
 
   test "sends metrics", %{conn: conn} do
-    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
     ws = create_and_authenticate()
 
     subscribe(ws, :server_notification)
 
-    {room_id, peer_id, peer_token, _conn} = add_room_and_peer(conn, server_api_token)
+    {room_id, peer_id, peer_token, _conn} = add_room_and_peer(conn)
 
     {:ok, peer_ws} = WS.start_link("ws://127.0.0.1:#{@port}/socket/peer/websocket", :peer)
     WS.send_auth_request(peer_ws, peer_token)
@@ -416,13 +419,13 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     assert String.contains?(endpoint_id, "endpoint_id")
   end
 
-  def subscribe_on_notifications_and_connect_peer(conn) do
-    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+  defp subscribe_on_notifications_and_connect_peer(conn) do
     ws = create_and_authenticate()
 
     subscribe(ws, :server_notification)
 
-    {room_id, peer_id, peer_token, conn} = add_room_and_peer(conn, server_api_token)
+    {room_id, conn} = add_room(conn)
+    {peer_id, peer_token, conn} = add_peer(conn, room_id)
 
     {:ok, peer_ws} = WS.start("ws://127.0.0.1:#{@port}/socket/peer/websocket", :peer)
     WS.send_auth_request(peer_ws, peer_token)
@@ -445,9 +448,14 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     ws
   end
 
-  defp add_room_and_peer(conn, server_api_token) do
-    conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
+  defp add_room_and_peer(conn) do
+    {room_id, conn} = add_room(conn)
+    {peer_id, token, conn} = add_peer(conn, room_id)
 
+    {room_id, peer_id, token, conn}
+  end
+
+  defp add_room(conn) do
     conn =
       post(conn, ~p"/room",
         maxPeers: @max_peers,
@@ -457,12 +465,16 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
 
     assert %{"id" => room_id} = json_response(conn, :created)["data"]["room"]
 
+    {room_id, conn}
+  end
+
+  defp add_peer(conn, room_id) do
     conn = post(conn, ~p"/room/#{room_id}/peer", type: "webrtc")
 
     assert %{"token" => peer_token, "peer" => %{"id" => peer_id}} =
              json_response(conn, :created)["data"]
 
-    {room_id, peer_id, peer_token, conn}
+    {peer_id, peer_token, conn}
   end
 
   defp add_hls_component(conn, room_id) do
@@ -515,8 +527,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   end
 
   defp trigger_notification(conn) do
-    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
-    {_room_id, _peer_id, peer_token, _conn} = add_room_and_peer(conn, server_api_token)
+    {_room_id, _peer_id, peer_token, _conn} = add_room_and_peer(conn)
 
     {:ok, peer_ws} = WS.start_link("ws://127.0.0.1:#{@port}/socket/peer/websocket", :peer)
     WS.send_auth_request(peer_ws, peer_token)
