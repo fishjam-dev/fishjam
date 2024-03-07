@@ -126,11 +126,6 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   end
 
   describe "establishing connection" do
-    # setup %{conn: conn} do
-    #   conn = delete_req_header(conn, "authorization")
-    #   %{conn: conn}
-    # end
-
     test "invalid token" do
       {:ok, ws} = WS.start_link(@path, :server)
       server_api_token = "invalid" <> Application.fetch_env!(:jellyfish, :server_api_token)
