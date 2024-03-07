@@ -73,6 +73,8 @@ defmodule Jellyfish.MixProject do
        github: "jellyfish-dev/membrane_rtc_engine", sparse: "engine", override: true},
       {:membrane_rtc_engine_webrtc, "~> 0.7.0"},
       {:membrane_rtc_engine_hls, "~> 0.6.0"},
+      {:membrane_rtc_engine_recording,
+       github: "jellyfish-dev/membrane_rtc_engine", sparse: "recording"},
       {:membrane_rtc_engine_rtsp, "~> 0.6.0"},
       {:membrane_rtc_engine_file, "~> 0.4.0"},
       {:membrane_rtc_engine_sip, "~> 0.2.0"},

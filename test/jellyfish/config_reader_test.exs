@@ -143,6 +143,26 @@ defmodule Jellyfish.ConfigReaderTest do
     end
   end
 
+  test "read_s3_credentials/0" do
+    with_env ["JF_S3_BUCKET", "JF_S3_ACCESS_KEY_ID", "JF_S3_SECRET_ACCESS_KEY", "JF_S3_REGION"] do
+      assert ConfigReader.read_s3_credentials() == nil
+
+      System.put_env("JF_S3_BUCKET", "bucket")
+      assert_raise RuntimeError, fn -> ConfigReader.read_s3_credentials() end
+
+      System.put_env("JF_S3_ACCESS_KEY_ID", "id")
+      System.put_env("JF_S3_SECRET_ACCESS_KEY", "key")
+      System.put_env("JF_S3_REGION", "region")
+
+      assert ConfigReader.read_s3_credentials() == [
+               bucket: "bucket",
+               region: "region",
+               access_key_id: "id",
+               secret_access_key: "key"
+             ]
+    end
+  end
+
   test "read_dist_config/0 NODES_LIST" do
     with_env [
       "JF_DIST_ENABLED",

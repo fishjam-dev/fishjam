@@ -35,6 +35,7 @@ config :jellyfish,
   dist_config: ConfigReader.read_dist_config(),
   webrtc_config: ConfigReader.read_webrtc_config(),
   sip_config: ConfigReader.read_sip_config(),
+  s3_credentials: ConfigReader.read_s3_credentials(),
   git_commit: ConfigReader.read_git_commit()
 
 case System.get_env("JF_SERVER_API_TOKEN") do

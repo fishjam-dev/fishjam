@@ -143,6 +143,28 @@ defmodule Jellyfish.ConfigReader do
     end
   end
 
+  def read_s3_credentials() do
+    credentials = [
+      bucket: System.get_env("JF_S3_BUCKET"),
+      region: System.get_env("JF_S3_REGION"),
+      access_key_id: System.get_env("JF_S3_ACCESS_KEY_ID"),
+      secret_access_key: System.get_env("JF_S3_SECRET_ACCESS_KEY")
+    ]
+
+    cond do
+      Enum.all?(credentials, fn {_key, val} -> val != nil end) ->
+        credentials
+
+      Enum.all?(credentials, fn {_key, val} -> val == nil end) ->
+        nil
+
+      true ->
+        raise """
+        Either all S3 credentials have to be set: `JF_S3_BUCKET`, `JF_S3_REGION`, `JF_S3_ACCESS_KEY_ID`, `JF_S3_SECRET_ACCESS_KEY`, or none must be set.
+        """
+    end
+  end
+
   def read_dist_config() do
     dist_enabled? = read_boolean("JF_DIST_ENABLED")
     dist_strategy = System.get_env("JF_DIST_STRATEGY_NAME")
