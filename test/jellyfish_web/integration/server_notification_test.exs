@@ -123,71 +123,51 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     end)
   end
 
-  test "invalid token" do
-    {:ok, ws} = WS.start_link(@path, :server)
-    server_api_token = "invalid" <> Application.fetch_env!(:jellyfish, :server_api_token)
-    WS.send_auth_request(ws, server_api_token)
+  describe "establishing connection" do
+    test "invalid token" do
+      {:ok, ws} = WS.start_link(@path, :server)
+      server_api_token = "invalid" <> Application.fetch_env!(:jellyfish, :server_api_token)
+      WS.send_auth_request(ws, server_api_token)
 
-    assert_receive {:disconnected, {:remote, 1000, "invalid token"}}, 1000
-  end
+      assert_receive {:disconnected, {:remote, 1000, "invalid token"}}, 1000
+    end
 
-  test "invalid first message" do
-    {:ok, ws} = WS.start_link(@path, :server)
-    msg = ServerMessage.encode(%ServerMessage{content: {:authenticated, %Authenticated{}}})
+    test "invalid first message" do
+      {:ok, ws} = WS.start_link(@path, :server)
+      msg = ServerMessage.encode(%ServerMessage{content: {:authenticated, %Authenticated{}}})
 
-    :ok = WS.send_binary_frame(ws, msg)
-    assert_receive {:disconnected, {:remote, 1000, "invalid auth request"}}, 1000
-  end
+      :ok = WS.send_binary_frame(ws, msg)
+      assert_receive {:disconnected, {:remote, 1000, "invalid auth request"}}, 1000
+    end
 
-  test "correct token" do
-    create_and_authenticate()
-  end
+    test "correct token" do
+      create_and_authenticate()
+    end
 
-  test "closes on receiving an invalid message from a client" do
-    ws = create_and_authenticate()
+    test "closes on receiving an invalid message from a client" do
+      ws = create_and_authenticate()
 
-    Process.flag(:trap_exit, true)
+      Process.flag(:trap_exit, true)
 
-    :ok =
-      WS.send_binary_frame(
-        ws,
-        ServerMessage.encode(%ServerMessage{content: {:authenticated, %Authenticated{}}})
-      )
+      :ok =
+        WS.send_binary_frame(
+          ws,
+          ServerMessage.encode(%ServerMessage{content: {:authenticated, %Authenticated{}}})
+        )
 
-    assert_receive {:disconnected, {:remote, 1003, "operation not allowed"}}, 1000
-    assert_receive {:EXIT, ^ws, {:remote, 1003, "operation not allowed"}}
+      assert_receive {:disconnected, {:remote, 1003, "operation not allowed"}}, 1000
+      assert_receive {:EXIT, ^ws, {:remote, 1003, "operation not allowed"}}
 
-    Process.flag(:trap_exit, false)
-  end
+      Process.flag(:trap_exit, false)
+    end
 
-  test "sends HlsPlayable notification", %{conn: conn} do
-    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
-    ws = create_and_authenticate()
-    subscribe(ws, :server_notification)
-    {room_id, _peer_id, _token, conn} = add_room_and_peer(conn, server_api_token)
+    test "doesn't send messages if not subscribed", %{conn: conn} do
+      create_and_authenticate()
 
-    {conn, hls_id} = add_hls_component(conn, room_id)
-    {conn, _rtsp_id} = add_rtsp_component(conn, room_id)
+      trigger_notification(conn)
 
-    {:ok, room_pid} = RoomService.find_room(room_id)
-
-    send(room_pid, {:playlist_playable, :video, "hls_output/#{room_id}"})
-    assert_receive %HlsPlayable{room_id: ^room_id, component_id: ^hls_id}
-
-    assert_receive {:webhook_notification,
-                    %HlsPlayable{room_id: ^room_id, component_id: ^hls_id}},
-                   1_000
-
-    conn = delete(conn, ~p"/room/#{room_id}/")
-    assert response(conn, :no_content)
-  end
-
-  test "doesn't send messages if not subscribed", %{conn: conn} do
-    create_and_authenticate()
-
-    trigger_notification(conn)
-
-    refute_receive %PeerConnected{}, 200
+      refute_receive %PeerConnected{}, 200
+    end
   end
 
   test "sends a message when room gets created and deleted", %{conn: conn} do
@@ -211,78 +191,105 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     assert_receive {:webhook_notification, %RoomDeleted{room_id: ^room_id}}, 1_000
   end
 
-  test "sends a message when peer connects and room is deleted", %{conn: conn} do
-    {room_id, peer_id, conn, _ws} = subscribe_on_notifications_and_connect_peer(conn)
+  describe "WebRTC Peer" do
+    test "sends a message when peer connects and room is deleted", %{conn: conn} do
+      {room_id, peer_id, conn, _ws} = subscribe_on_notifications_and_connect_peer(conn)
 
-    _conn = delete(conn, ~p"/room/#{room_id}")
-    assert_receive %RoomDeleted{room_id: ^room_id}
+      _conn = delete(conn, ~p"/room/#{room_id}")
+      assert_receive %RoomDeleted{room_id: ^room_id}
 
-    assert_receive {:webhook_notification, %RoomDeleted{room_id: ^room_id}},
-                   1_000
+      assert_receive {:webhook_notification, %RoomDeleted{room_id: ^room_id}},
+                     1_000
 
-    refute_received %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}
+      refute_received %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}
 
-    refute_received {:webhook_notification,
-                     %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}}
-  end
+      refute_received {:webhook_notification,
+                       %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}}
+    end
 
-  test "sends a message when peer connects and peer is removed", %{conn: conn} do
-    {room_id, peer_id, conn, _ws} = subscribe_on_notifications_and_connect_peer(conn)
+    test "sends a message when peer connects and peer is removed", %{conn: conn} do
+      {room_id, peer_id, conn, _ws} = subscribe_on_notifications_and_connect_peer(conn)
 
-    conn = delete(conn, ~p"/room/#{room_id}/peer/#{peer_id}")
-    assert response(conn, :no_content)
+      conn = delete(conn, ~p"/room/#{room_id}/peer/#{peer_id}")
+      assert response(conn, :no_content)
 
-    assert_receive %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}
+      assert_receive %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}
 
-    assert_receive {:webhook_notification,
-                    %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}},
-                   2_500
+      assert_receive {:webhook_notification,
+                      %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}},
+                     2_500
 
-    _conn = delete(conn, ~p"/room/#{room_id}")
-    assert_receive %RoomDeleted{room_id: ^room_id}
+      _conn = delete(conn, ~p"/room/#{room_id}")
+      assert_receive %RoomDeleted{room_id: ^room_id}
 
-    assert_receive {:webhook_notification, %RoomDeleted{room_id: ^room_id}},
-                   1_000
-  end
+      assert_receive {:webhook_notification, %RoomDeleted{room_id: ^room_id}},
+                     1_000
+    end
 
-  test "sends a message when peer connects and room crashes", %{conn: conn} do
-    {room_id, peer_id, _conn, _ws} = subscribe_on_notifications_and_connect_peer(conn)
-    {:ok, room_pid} = Jellyfish.RoomService.find_room(room_id)
+    test "sends a message when peer connects and room crashes", %{conn: conn} do
+      {room_id, peer_id, _conn, _ws} = subscribe_on_notifications_and_connect_peer(conn)
+      {:ok, room_pid} = Jellyfish.RoomService.find_room(room_id)
 
-    Process.exit(room_pid, :kill)
+      Process.exit(room_pid, :kill)
 
-    assert_receive %RoomCrashed{room_id: ^room_id}
+      assert_receive %RoomCrashed{room_id: ^room_id}
 
-    assert_receive {:webhook_notification, %RoomCrashed{room_id: ^room_id}},
-                   1_000
+      assert_receive {:webhook_notification, %RoomCrashed{room_id: ^room_id}},
+                     1_000
 
-    refute_received %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}
+      refute_received %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}
 
-    refute_received {:webhook_notification,
-                     %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}}
-  end
+      refute_received {:webhook_notification,
+                       %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}}
+    end
 
-  test "sends a message when peer connects and it crashes", %{conn: conn} do
-    {room_id, peer_id, conn, _ws} = subscribe_on_notifications_and_connect_peer(conn)
+    test "sends a message when peer connects and it crashes", %{conn: conn} do
+      {room_id, peer_id, conn, _ws} = subscribe_on_notifications_and_connect_peer(conn)
 
-    {:ok, room_pid} = Jellyfish.RoomService.find_room(room_id)
+      {:ok, room_pid} = Jellyfish.RoomService.find_room(room_id)
 
-    state = :sys.get_state(room_pid)
+      state = :sys.get_state(room_pid)
 
-    peer_socket_pid = state.peers[peer_id].socket_pid
+      peer_socket_pid = state.peers[peer_id].socket_pid
 
-    Process.exit(peer_socket_pid, :kill)
+      Process.exit(peer_socket_pid, :kill)
 
-    assert_receive %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}
+      assert_receive %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}
 
-    assert_receive {:webhook_notification,
-                    %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}},
-                   2_000
+      assert_receive {:webhook_notification,
+                      %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}},
+                     2_000
 
-    state = :sys.get_state(room_pid)
-    assert Map.has_key?(state.peers, peer_id)
+      state = :sys.get_state(room_pid)
+      assert Map.has_key?(state.peers, peer_id)
 
-    delete(conn, ~p"/room/#{room_id}")
+      delete(conn, ~p"/room/#{room_id}")
+    end
+
+    test "sends message when peer metadata is updated", %{conn: conn} do
+      {room_id, peer_id, _conn, peer_ws} = subscribe_on_notifications_and_connect_peer(conn)
+
+      metadata = %{name: "Jellyuser"}
+      metadata_encoded = Jason.encode!(metadata)
+
+      media_event = %PeerMessage.MediaEvent{
+        data: %{"type" => "connect", "data" => %{"metadata" => metadata}} |> Jason.encode!()
+      }
+
+      :ok =
+        WS.send_binary_frame(
+          peer_ws,
+          PeerMessage.encode(%PeerMessage{content: {:media_event, media_event}})
+        )
+
+      assert_receive %PeerMetadataUpdated{
+                       room_id: ^room_id,
+                       peer_id: ^peer_id,
+                       metadata: ^metadata_encoded
+                     } = peer_metadata_updated
+
+      assert_receive {:webhook_notification, ^peer_metadata_updated}, 1_000
+    end
   end
 
   test "sends message when tracks are added or removed", %{conn: conn} do
@@ -324,29 +331,26 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     :file.del_dir_r(media_sources_directory)
   end
 
-  test "sends message when peer metadata is updated", %{conn: conn} do
-    {room_id, peer_id, _conn, peer_ws} = subscribe_on_notifications_and_connect_peer(conn)
+  test "sends HlsPlayable notification", %{conn: conn} do
+    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+    ws = create_and_authenticate()
+    subscribe(ws, :server_notification)
+    {room_id, _peer_id, _token, conn} = add_room_and_peer(conn, server_api_token)
 
-    metadata = %{name: "Jellyuser"}
-    metadata_encoded = Jason.encode!(metadata)
+    {conn, hls_id} = add_hls_component(conn, room_id)
+    {conn, _rtsp_id} = add_rtsp_component(conn, room_id)
 
-    media_event = %PeerMessage.MediaEvent{
-      data: %{"type" => "connect", "data" => %{"metadata" => metadata}} |> Jason.encode!()
-    }
+    {:ok, room_pid} = RoomService.find_room(room_id)
 
-    :ok =
-      WS.send_binary_frame(
-        peer_ws,
-        PeerMessage.encode(%PeerMessage{content: {:media_event, media_event}})
-      )
+    send(room_pid, {:playlist_playable, :video, "hls_output/#{room_id}"})
+    assert_receive %HlsPlayable{room_id: ^room_id, component_id: ^hls_id}
 
-    assert_receive %PeerMetadataUpdated{
-                     room_id: ^room_id,
-                     peer_id: ^peer_id,
-                     metadata: ^metadata_encoded
-                   } = peer_metadata_updated
+    assert_receive {:webhook_notification,
+                    %HlsPlayable{room_id: ^room_id, component_id: ^hls_id}},
+                   1_000
 
-    assert_receive {:webhook_notification, ^peer_metadata_updated}, 1_000
+    conn = delete(conn, ~p"/room/#{room_id}/")
+    assert response(conn, :no_content)
   end
 
   describe "hls upload" do
