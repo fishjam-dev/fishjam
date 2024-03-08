@@ -433,7 +433,16 @@ defmodule Jellyfish.Room do
         {peer_id, peer} ->
           :ok = Engine.remove_endpoint(state.engine_pid, peer_id)
           Event.broadcast_server_notification({:peer_disconnected, state.id, peer_id})
-          peer = %{peer | status: :disconnected, socket_pid: nil}
+
+          peer.tracks
+          |> Map.values()
+          |> Enum.each(
+            &Event.broadcast_server_notification(
+              {:track_removed, state.id, {:peer_id, peer_id}, &1}
+            )
+          )
+
+          peer = %{peer | status: :disconnected, socket_pid: nil, tracks: %{}}
 
           put_in(state, [:peers, peer_id], peer)
           |> maybe_schedule_peerless_purge()
