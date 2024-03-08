@@ -487,8 +487,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     ws = create_and_authenticate()
     subscribe(ws, :server_notification)
 
-    {room_id, conn} = add_room(conn)
-    {peer_id, peer_token, conn} = add_peer(conn, room_id)
+    {room_id, peer_id, peer_token, conn} = add_room_and_peer(conn)
 
     {:ok, peer_ws} = WS.start("ws://127.0.0.1:#{@port}/socket/peer/websocket", :peer)
     WS.send_auth_request(peer_ws, peer_token)
