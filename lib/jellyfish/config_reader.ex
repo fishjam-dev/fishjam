@@ -159,8 +159,14 @@ defmodule Jellyfish.ConfigReader do
         nil
 
       true ->
+        missing_envs =
+          credentials
+          |> Enum.filter(fn {_key, val} -> val == nil end)
+          |> Enum.map(fn {key, _val} -> "JF_" <> (key |> Atom.to_string() |> String.upcase()) end)
+
         raise """
         Either all S3 credentials have to be set: `JF_S3_BUCKET`, `JF_S3_REGION`, `JF_S3_ACCESS_KEY_ID`, `JF_S3_SECRET_ACCESS_KEY`, or none must be set.
+        Currently, the following required credentials are missing: #{inspect(missing_envs)}.
         """
     end
   end

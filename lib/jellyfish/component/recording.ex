@@ -16,8 +16,11 @@ defmodule Jellyfish.Component.Recording do
     with {:ok, serialized_opts} <- serialize_options(options, Options.schema()),
          {:ok, credentials} <- get_credentials(serialized_opts) do
       path_prefix = serialized_opts.path_prefix
+      output_dir = Path.join(get_base_path(), path_prefix)
 
-      file_storage = {Recording.Storage.File, %{output_dir: get_base_path()}}
+      File.mkdir_p!(output_dir)
+
+      file_storage = {Recording.Storage.File, %{output_dir: output_dir}}
       s3_storage = {Recording.Storage.S3, %{credentials: credentials, path_prefix: path_prefix}}
 
       endpoint = %Recording{
@@ -38,7 +41,7 @@ defmodule Jellyfish.Component.Recording do
 
   defp get_credentials(%{credentials: nil}) do
     case Application.fetch_env!(:jellyfish, :s3_credentials) do
-      nil -> {:error, :missing_credentials}
+      nil -> {:error, :missing_s3_credentials}
       credentials -> {:ok, Enum.into(credentials, %{})}
     end
   end

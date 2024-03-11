@@ -313,9 +313,9 @@ defmodule Jellyfish.Room do
         Logger.warning("Unable to add component: missing parameter #{inspect(name)}")
         {:reply, {:error, {:missing_parameter, name}}, state}
 
-      {:error, :missing_credentials} ->
+      {:error, :missing_s3_credentials} ->
         Logger.warning("Unable to add component: missing s3 credentials")
-        {:reply, {:error, :missing_credentials}, state}
+        {:reply, {:error, :missing_s3_credentials}, state}
 
       {:error, reason} ->
         Logger.warning("Unable to add component: #{inspect(reason)}")

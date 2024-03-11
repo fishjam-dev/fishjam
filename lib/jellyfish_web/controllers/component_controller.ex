@@ -79,7 +79,7 @@ defmodule JellyfishWeb.ComponentController do
       {:error, {:missing_parameter, name}} ->
         {:error, :bad_request, "Required field \"#{Atom.to_string(name)}\" missing"}
 
-      {:error, :missing_credentials} ->
+      {:error, :missing_s3_credentials} ->
         {:error, :bad_request,
          "S3 credentials has to be passed either by request or at application startup as envs"}
 
