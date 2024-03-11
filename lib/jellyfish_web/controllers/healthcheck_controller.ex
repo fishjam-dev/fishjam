@@ -4,6 +4,8 @@ defmodule JellyfishWeb.HealthcheckController do
 
   alias JellyfishWeb.ApiSpec
 
+  @version Mix.Project.config()[:version]
+
   action_fallback JellyfishWeb.FallbackController
 
   tags [:health]
@@ -30,7 +32,9 @@ defmodule JellyfishWeb.HealthcheckController do
     %{
       status: :up,
       uptime: get_uptime(),
-      distribution: get_distribution_report()
+      distribution: get_distribution_report(),
+      version: @version,
+      git_commit: Application.get_env(:jellyfish, :git_commit)
     }
   end
 

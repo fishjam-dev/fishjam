@@ -14,8 +14,9 @@ defmodule Jellyfish.Application do
     scrape_interval = Application.fetch_env!(:jellyfish, :webrtc_metrics_scrape_interval)
     dist_config = Application.fetch_env!(:jellyfish, :dist_config)
     webrtc_config = Application.fetch_env!(:jellyfish, :webrtc_config)
+    git_commit = Application.get_env(:jellyfish, :git_commit)
 
-    Logger.info("Starting Jellyfish v#{@version}")
+    Logger.info("Starting Jellyfish v#{@version} (#{git_commit})")
     Logger.info("Distribution config: #{inspect(Keyword.delete(dist_config, :cookie))}")
     Logger.info("WebRTC config: #{inspect(webrtc_config)}")
 

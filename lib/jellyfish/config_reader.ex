@@ -180,6 +180,16 @@ defmodule Jellyfish.ConfigReader do
     end
   end
 
+  def read_git_commit() do
+    System.get_env("JF_GIT_COMMIT") ||
+      with {_path, 0} <- System.cmd("which", ["git"]),
+           {commit, 0} <- System.cmd("git", ["rev-parse", "HEAD"]) do
+        commit |> String.trim()
+      else
+        _error -> nil
+      end
+  end
+
   defp do_read_nodes_list_config(node_name_value, cookie, mode) do
     nodes_value = System.get_env("JF_DIST_NODES", "")
 
@@ -300,7 +310,7 @@ defmodule Jellyfish.ConfigReader do
 
       {:error, reason} ->
         raise """
-        Couldn't resolve #{hostname}, reason: #{reason}.        
+        Couldn't resolve #{hostname}, reason: #{reason}.
         """
     end
   end
