@@ -50,8 +50,10 @@ defmodule JellyfishWeb.ApiSpec.HealthReport do
     properties: %{
       status: Status,
       uptime: %Schema{type: :integer, description: "Uptime of Jellyfish (in seconds)"},
-      distribution: Distribution
+      distribution: Distribution,
+      version: %Schema{type: :string, description: "Version of Jellyfish"},
+      git_commit: %Schema{type: :string, description: "Commit hash of the build"}
     },
-    required: [:status, :uptime, :distribution]
+    required: [:status, :uptime, :distribution, :version]
   })
 end
