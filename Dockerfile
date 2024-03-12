@@ -51,6 +51,9 @@ RUN mix release
 
 FROM alpine:3.17 AS app
 
+ARG JF_GIT_COMMIT
+ENV JF_GIT_COMMIT=$JF_GIT_COMMIT
+
 RUN addgroup -S jellyfish && adduser -S jellyfish -G jellyfish
 
 # We run the whole image as root, fix permissions in

@@ -535,15 +535,23 @@ components:
       properties:
         distribution:
           $ref: '#/components/schemas/HealthReportDistribution'
+        gitCommit:
+          description: Commit hash of the build
+          type: string
         status:
           $ref: '#/components/schemas/HealthReportStatus'
         uptime:
           description: Uptime of Jellyfish (in seconds)
           type: integer
+        version:
+          description: Version of Jellyfish
+          type: string
       required:
         - status
         - uptime
         - distribution
+        - version
+        - gitCommit
       title: HealthReport
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.HealthReport
@@ -747,7 +755,7 @@ info:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0
   title: Jellyfish Media Server
-  version: 0.4.1
+  version: 0.4.2
 openapi: 3.0.0
 paths:
   /health:

@@ -30,7 +30,9 @@ defmodule JellyfishWeb.HealthcheckController do
     %{
       status: :up,
       uptime: get_uptime(),
-      distribution: get_distribution_report()
+      distribution: get_distribution_report(),
+      version: Jellyfish.version(),
+      gitCommit: Application.get_env(:jellyfish, :git_commit)
     }
   end
 
