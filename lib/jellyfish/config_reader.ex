@@ -152,10 +152,10 @@ defmodule Jellyfish.ConfigReader do
     ]
 
     cond do
-      Enum.all?(credentials, fn {_key, val} -> val != nil end) ->
+      Enum.all?(credentials, fn {_key, val} -> not is_nil(val) end) ->
         credentials
 
-      Enum.all?(credentials, fn {_key, val} -> val == nil end) ->
+      Enum.all?(credentials, fn {_key, val} -> is_nil(val) end) ->
         nil
 
       true ->
