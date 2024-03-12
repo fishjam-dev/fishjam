@@ -52,8 +52,8 @@ defmodule JellyfishWeb.ApiSpec.HealthReport do
       uptime: %Schema{type: :integer, description: "Uptime of Jellyfish (in seconds)"},
       distribution: Distribution,
       version: %Schema{type: :string, description: "Version of Jellyfish"},
-      git_commit: %Schema{type: :string, description: "Commit hash of the build"}
+      gitCommit: %Schema{type: :string, description: "Commit hash of the build"}
     },
-    required: [:status, :uptime, :distribution, :version]
+    required: [:status, :uptime, :distribution, :version, :gitCommit]
   })
 end

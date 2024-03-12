@@ -7,7 +7,7 @@ defmodule JellyfishWeb.HealthcheckJSON do
 
   def data(%{status: status, distribution: distribution} = report) do
     report
-    |> Map.take([:uptime, :version, :git_commit])
+    |> Map.take([:uptime, :version, :gitCommit])
     |> Map.merge(%{
       status: status_str(status),
       distribution: %{

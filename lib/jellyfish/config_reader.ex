@@ -181,13 +181,7 @@ defmodule Jellyfish.ConfigReader do
   end
 
   def read_git_commit() do
-    System.get_env("JF_GIT_COMMIT") ||
-      with {_path, 0} <- System.cmd("which", ["git"]),
-           {commit, 0} <- System.cmd("git", ["rev-parse", "HEAD"]) do
-        commit |> String.trim()
-      else
-        _error -> nil
-      end
+    System.get_env("JF_GIT_COMMIT") || "dev"
   end
 
   defp do_read_nodes_list_config(node_name_value, cookie, mode) do

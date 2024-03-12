@@ -5,7 +5,7 @@ defmodule JellyfishWeb.HealthcheckControllerTest do
 
   @schema JellyfishWeb.ApiSpec.spec()
 
-  @commit_hash_length 40
+  @commit_hash_length 7
 
   setup %{conn: conn} do
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
@@ -19,7 +19,7 @@ defmodule JellyfishWeb.HealthcheckControllerTest do
     response = json_response(conn, :ok)
     assert_response_schema(response, "HealthcheckResponse", @schema)
 
-    version = Mix.Project.config()[:version]
+    version = Jellyfish.version()
 
     assert %{
              "status" => "UP",
@@ -33,6 +33,6 @@ defmodule JellyfishWeb.HealthcheckControllerTest do
              "git_commit" => commit
            } = response["data"]
 
-    assert String.length(commit) == @commit_hash_length
+    assert commit == "dev" || String.length(commit) == @commit_hash_length
   end
 end
