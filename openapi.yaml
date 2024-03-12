@@ -535,7 +535,7 @@ components:
       properties:
         distribution:
           $ref: '#/components/schemas/HealthReportDistribution'
-        git_commit:
+        gitCommit:
           description: Commit hash of the build
           type: string
         status:
@@ -551,6 +551,7 @@ components:
         - uptime
         - distribution
         - version
+        - gitCommit
       title: HealthReport
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.HealthReport

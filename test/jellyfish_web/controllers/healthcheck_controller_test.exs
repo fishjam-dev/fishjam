@@ -30,7 +30,7 @@ defmodule JellyfishWeb.HealthcheckControllerTest do
                "nodesInCluster" => 0
              },
              "version" => ^version,
-             "git_commit" => commit
+             "gitCommit" => commit
            } = response["data"]
 
     assert commit == "dev" || String.length(commit) == @commit_hash_length
