@@ -181,7 +181,7 @@ defmodule Jellyfish.ConfigReader do
   end
 
   def read_git_commit() do
-    System.get_env("JF_GIT_COMMIT") || "dev"
+    System.get_env("JF_GIT_COMMIT", "dev")
   end
 
   defp do_read_nodes_list_config(node_name_value, cookie, mode) do
