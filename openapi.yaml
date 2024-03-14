@@ -151,12 +151,29 @@ components:
       title: Room
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Room
+    ComponentOptionsRecording:
+      description: Options specific to the Recording component
+      properties:
+        credentials:
+          description: Credentials to AWS S3 bucket.
+          nullable: true
+          oneOf:
+            - $ref: '#/components/schemas/S3Credentials'
+          type: object
+        pathPrefix:
+          default: ''
+          description: Path prefix under which all recording are stored
+          type: string
+      title: ComponentOptionsRecording
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Recording.Options
     Component:
       description: Describes component
       discriminator:
         mapping:
           file: '#/components/schemas/ComponentFile'
           hls: '#/components/schemas/ComponentHLS'
+          recording: '#/components/schemas/ComponentRecording'
           rtsp: '#/components/schemas/ComponentRTSP'
           sip: '#/components/schemas/ComponentSIP'
         propertyName: type
@@ -165,6 +182,7 @@ components:
         - $ref: '#/components/schemas/ComponentRTSP'
         - $ref: '#/components/schemas/ComponentFile'
         - $ref: '#/components/schemas/ComponentSIP'
+        - $ref: '#/components/schemas/ComponentRecording'
       title: Component
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component
@@ -315,6 +333,17 @@ components:
       title: HlsMsn
       type: integer
       x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Params.HlsMsn
+    ComponentPropertiesRecording:
+      description: Properties specific to the Recording component
+      properties:
+        pathPrefix:
+          description: Path prefix under which all recording are stored
+          type: string
+      required:
+        - pathPrefix
+      title: ComponentPropertiesRecording
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Recording.Properties
     DialConfig:
       description: Dial config
       properties:
@@ -461,6 +490,7 @@ components:
         - $ref: '#/components/schemas/ComponentOptionsRTSP'
         - $ref: '#/components/schemas/ComponentOptionsFile'
         - $ref: '#/components/schemas/ComponentOptionsSIP'
+        - $ref: '#/components/schemas/ComponentOptionsRecording'
       title: ComponentOptions
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Options
@@ -657,6 +687,32 @@ components:
       title: HlsResponse
       type: string
       x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Response
+    ComponentRecording:
+      description: Describes the Recording component
+      properties:
+        id:
+          description: Assigned component ID
+          example: component-1
+          type: string
+        properties:
+          $ref: '#/components/schemas/ComponentPropertiesRecording'
+        tracks:
+          description: List of all component's tracks
+          items:
+            $ref: '#/components/schemas/Track'
+          type: array
+        type:
+          description: Component type
+          example: recording
+          type: string
+      required:
+        - id
+        - type
+        - properties
+        - tracks
+      title: ComponentRecording
+      type: object
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Recording
     PeerType:
       description: Peer type
       example: webrtc

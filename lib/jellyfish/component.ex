@@ -11,7 +11,7 @@ defmodule Jellyfish.Component do
   use Bunch.Access
 
   alias Jellyfish.Room
-  alias Jellyfish.Component.{File, HLS, RTSP, SIP}
+  alias Jellyfish.Component.{File, HLS, Recording, RTSP, SIP}
   alias Jellyfish.Track
 
   @enforce_keys [
@@ -23,8 +23,13 @@ defmodule Jellyfish.Component do
   defstruct @enforce_keys ++ [tracks: %{}]
 
   @type id :: String.t()
-  @type component :: HLS | RTSP | File | SIP
-  @type properties :: HLS.properties() | RTSP.properties() | File.properties() | SIP.properties()
+  @type component :: HLS | RTSP | File | SIP | Recording
+  @type properties ::
+          HLS.properties()
+          | RTSP.properties()
+          | File.properties()
+          | SIP.properties()
+          | Recording.properties()
 
   @typedoc """
   This module contains:
@@ -42,7 +47,7 @@ defmodule Jellyfish.Component do
         }
 
   @doc """
-  This callback is run after initialization of the component. 
+  This callback is run after initialization of the component.
   In it some additional work can be done, which can't be run inside Engine endpoint.
   """
   @callback after_init(
@@ -52,7 +57,7 @@ defmodule Jellyfish.Component do
             ) :: :ok
 
   @doc """
-  This callback is run after scheduling removing of component. 
+  This callback is run after scheduling removing of component.
   In it some additional cleanup can be done.
   """
   @callback on_remove(
@@ -99,6 +104,7 @@ defmodule Jellyfish.Component do
       "rtsp" -> {:ok, RTSP}
       "file" -> {:ok, File}
       "sip" -> {:ok, SIP}
+      "recording" -> {:ok, Recording}
       _other -> {:error, :invalid_type}
     end
   end

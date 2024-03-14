@@ -65,11 +65,9 @@ defmodule JellyfishWeb.ComponentController do
   def create(conn, %{"room_id" => room_id} = params) do
     with component_options <- Map.get(params, "options", %{}),
          {:ok, component_type_string} <- Map.fetch(params, "type"),
-         {:ok, component_type} <-
-           Component.parse_type(component_type_string),
+         {:ok, component_type} <- Component.parse_type(component_type_string),
          {:ok, _room_pid} <- RoomService.find_room(room_id),
-         {:ok, component} <-
-           Room.add_component(room_id, component_type, component_options) do
+         {:ok, component} <- Room.add_component(room_id, component_type, component_options) do
       conn
       |> put_resp_content_type("application/json")
       |> put_status(:created)
@@ -80,6 +78,10 @@ defmodule JellyfishWeb.ComponentController do
 
       {:error, {:missing_parameter, name}} ->
         {:error, :bad_request, "Required field \"#{Atom.to_string(name)}\" missing"}
+
+      {:error, :missing_s3_credentials} ->
+        {:error, :bad_request,
+         "S3 credentials has to be passed either by request or at application startup as envs"}
 
       {:error, :invalid_type} ->
         {:error, :bad_request, "Invalid component type"}
