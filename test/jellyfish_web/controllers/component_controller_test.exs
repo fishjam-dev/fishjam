@@ -22,6 +22,7 @@ defmodule JellyfishWeb.ComponentControllerTest do
   end
 
   describe "delete component" do
+    setup [:create_h264_room]
     setup [:create_rtsp_component]
 
     test "deletes chosen component", %{conn: conn, room_id: room_id, component_id: component_id} do

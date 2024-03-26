@@ -46,7 +46,7 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
 
       assert model_response(conn, :bad_request, "Error")["errors"] ==
-               "Reached components limit for component HLS in room #{room_id}"
+               "Reached components limit for component in room #{room_id}"
 
       conn = delete(conn, ~p"/room/#{room_id}")
       assert response(conn, :no_content)
@@ -206,19 +206,6 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
 
       RoomService.delete_room(room_id)
     end
-  end
-
-  defp create_h264_room(%{conn: conn}) do
-    conn = post(conn, ~p"/room", videoCodec: "h264")
-
-    assert %{"id" => room_id} =
-             model_response(conn, :created, "RoomCreateDetailsResponse")["data"]["room"]
-
-    on_exit(fn ->
-      RoomService.delete_room(room_id)
-    end)
-
-    %{room_id: room_id}
   end
 
   defp assert_hls_path(room_id, persistent: persistent) do

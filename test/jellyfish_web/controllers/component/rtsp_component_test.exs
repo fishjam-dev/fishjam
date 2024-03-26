@@ -23,6 +23,8 @@ defmodule JellyfishWeb.Component.RTSPComponentTest do
   @rtsp_custom_properties @rtsp_custom_options |> map_keys_to_string()
 
   describe "create rtsp component" do
+    setup [:create_h264_room]
+
     test "renders component with required options", %{conn: conn, room_id: room_id} do
       conn =
         post(conn, ~p"/room/#{room_id}/component",
