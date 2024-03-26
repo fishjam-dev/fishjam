@@ -110,4 +110,17 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
       {:ok, %{status_code: 200, headers: %{}}}
     end)
   end
+
+  defp create_h264_room(%{conn: conn}) do
+    conn = post(conn, ~p"/room", videoCodec: "h264")
+
+    assert %{"id" => room_id} =
+             model_response(conn, :created, "RoomCreateDetailsResponse")["data"]["room"]
+
+    on_exit(fn ->
+      RoomService.delete_room(room_id)
+    end)
+
+    %{room_id: room_id}
+  end
 end

@@ -789,10 +789,16 @@ defmodule Jellyfish.Room do
     end
   end
 
+  defp check_component_allowed(Recording, %{config: %{video_codec: video_codec}}) do
+    if video_codec == :h264,
+      do: :ok,
+      else: {:error, :incompatible_codec}
+  end
+
   defp check_component_allowed(RTSP, %{config: %{video_codec: video_codec}}) do
     # Right now, RTSP component can only publish H264, so there's no point adding it
-    # to a room which enforces another video codec, e.g. VP8
-    if video_codec in [:h264, nil],
+    # to a room which allows another video codec, e.g. VP8
+    if video_codec == :h264,
       do: :ok,
       else: {:error, :incompatible_codec}
   end
