@@ -318,6 +318,14 @@ defmodule Jellyfish.Room do
         Logger.warning("Unable to add component: missing s3 credentials")
         {:reply, {:error, :missing_s3_credentials}, state}
 
+      {:error, :overridding_credentials} ->
+        Logger.warning("Unable to add component: tried to override s3 credentials")
+        {:reply, {:error, :overridding_credentials}, state}
+
+      {:error, :overridding_path_prefix} ->
+        Logger.warning("Unable to add component: tried to override s3 path_prefix")
+        {:reply, {:error, :overridding_path_prefix}, state}
+
       {:error, reason} ->
         Logger.warning("Unable to add component: #{inspect(reason)}")
         {:reply, :error, state}

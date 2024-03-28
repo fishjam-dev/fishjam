@@ -83,6 +83,14 @@ defmodule JellyfishWeb.ComponentController do
         {:error, :bad_request,
          "S3 credentials has to be passed either by request or at application startup as envs"}
 
+      {:error, :overridding_credentials} ->
+        {:error, :bad_request,
+         "Conflicting S3 credentials supplied via environment variables and the REST API. Please provide credentials through only one method"}
+
+      {:error, :overridding_path_prefix} ->
+        {:error, :bad_request,
+         "Conflicting S3 path prefix supplied via environment variables and the REST API. Please provide credentials through only one method"}
+
       {:error, :invalid_type} ->
         {:error, :bad_request, "Invalid component type"}
 

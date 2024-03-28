@@ -143,22 +143,34 @@ defmodule Jellyfish.ConfigReaderTest do
     end
   end
 
-  test "read_s3_credentials/0" do
-    with_env ["JF_S3_BUCKET", "JF_S3_ACCESS_KEY_ID", "JF_S3_SECRET_ACCESS_KEY", "JF_S3_REGION"] do
-      assert ConfigReader.read_s3_credentials() == nil
+  test "read_s3_config/0" do
+    with_env [
+      "JF_S3_BUCKET",
+      "JF_S3_ACCESS_KEY_ID",
+      "JF_S3_SECRET_ACCESS_KEY",
+      "JF_S3_REGION",
+      "JF_S3_PATH_PREFIX"
+    ] do
+      assert ConfigReader.read_s3_config() == [path_prefix: nil, credentials: nil]
+
+      System.put_env("JF_S3_PATH_PREFIX", "path_prefix")
+      assert ConfigReader.read_s3_config() == [path_prefix: "path_prefix", credentials: nil]
 
       System.put_env("JF_S3_BUCKET", "bucket")
-      assert_raise RuntimeError, fn -> ConfigReader.read_s3_credentials() end
+      assert_raise RuntimeError, fn -> ConfigReader.read_s3_config() end
 
       System.put_env("JF_S3_ACCESS_KEY_ID", "id")
       System.put_env("JF_S3_SECRET_ACCESS_KEY", "key")
       System.put_env("JF_S3_REGION", "region")
 
-      assert ConfigReader.read_s3_credentials() == [
-               bucket: "bucket",
-               region: "region",
-               access_key_id: "id",
-               secret_access_key: "key"
+      assert ConfigReader.read_s3_config() == [
+               path_prefix: "path_prefix",
+               credentials: [
+                 bucket: "bucket",
+                 region: "region",
+                 access_key_id: "id",
+                 secret_access_key: "key"
+               ]
              ]
     end
   end
