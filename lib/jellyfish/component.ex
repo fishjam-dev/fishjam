@@ -109,6 +109,18 @@ defmodule Jellyfish.Component do
     end
   end
 
+  @spec to_string!(module()) :: String.t()
+  def to_string!(component) do
+    case component do
+      HLS -> "hls"
+      RTSP -> "rtsp"
+      File -> "file"
+      SIP -> "sip"
+      Recording -> "recording"
+      _other -> raise "Invalid component"
+    end
+  end
+
   @spec new(component(), map()) :: {:ok, t()} | {:error, term()}
   def new(type, options) do
     with {:ok, %{endpoint: endpoint, properties: properties}} <- type.config(options) do

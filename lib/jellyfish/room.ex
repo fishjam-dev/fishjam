@@ -282,8 +282,9 @@ defmodule Jellyfish.Room do
         {:reply, {:error, :incompatible_codec}, state}
 
       {:error, :reached_components_limit} ->
-        Logger.warning("Unable to add component: reached components limit")
-        {:reply, {:error, :reached_components_limit}, state}
+        type = Component.to_string!(component_type)
+        Logger.warning("Unable to add component: reached components limit #{type}")
+        {:reply, {:error, {:reached_components_limit, type}}, state}
 
       {:error, :file_does_not_exist} ->
         Logger.warning("Unable to add component: file does not exist")

@@ -46,7 +46,7 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
 
       assert model_response(conn, :bad_request, "Error")["errors"] ==
-               "Reached components limit for component in room #{room_id}"
+               "Reached hls components limit for component in room #{room_id}"
 
       conn = delete(conn, ~p"/room/#{room_id}")
       assert response(conn, :no_content)

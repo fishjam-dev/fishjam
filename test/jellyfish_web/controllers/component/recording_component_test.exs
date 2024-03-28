@@ -42,7 +42,7 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
       conn = post(conn, ~p"/room/#{room_id}/component", type: "recording")
 
       assert model_response(conn, :bad_request, "Error")["errors"] ==
-               "Reached components limit for component in room #{room_id}"
+               "Reached recording components limit for component in room #{room_id}"
     end
 
     setup :set_mox_from_context
