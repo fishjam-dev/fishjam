@@ -174,6 +174,11 @@ defmodule JellyfishWeb.RoomControllerTest do
 
       assert json_response(conn, :bad_request)["errors"] ==
                "Expected peerlessPurgeTimeout to be a positive integer, got: nan"
+
+      conn = post(conn, ~p"/room", roomId: "test/path")
+
+      assert json_response(conn, :bad_request)["errors"] ==
+               "Cannot add room with id \"test/path\" - roomId accepts only alphanumeric characters"
     end
   end
 
