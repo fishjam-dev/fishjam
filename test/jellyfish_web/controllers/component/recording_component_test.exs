@@ -28,13 +28,17 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
           options: %{credentials: Enum.into(@s3_credentials, %{}), pathPrefix: @path_prefix}
         )
 
+      prefix = "#{@path_prefix}/#{room_id}/part_"
+
       assert %{
                "data" => %{
                  "id" => id,
                  "type" => "recording",
-                 "properties" => %{"pathPrefix" => @path_prefix}
+                 "properties" => %{"pathPrefix" => path_prefix}
                }
              } = model_response(conn, :created, "ComponentDetailsResponse")
+
+      assert String.starts_with?(path_prefix, prefix)
 
       assert_component_created(conn, room_id, id, "recording")
 
@@ -60,15 +64,74 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
           options: %{pathPrefix: @path_prefix}
         )
 
+      prefix = "#{@path_prefix}/#{room_id}/part_"
+
       assert %{
                "data" => %{
                  "id" => id,
                  "type" => "recording",
-                 "properties" => %{"pathPrefix" => @path_prefix}
+                 "properties" => %{"pathPrefix" => path_prefix}
+               }
+             } = model_response(conn, :created, "ComponentDetailsResponse")
+
+      assert String.starts_with?(path_prefix, prefix)
+
+      assert_component_created(conn, room_id, id, "recording")
+
+      clean_s3_envs()
+    end
+
+    test "path prefix modify when recording is created second time",
+         %{
+           conn: conn,
+           room_id: room_id
+         } do
+      mock_http_request()
+      put_s3_envs(path_prefix: nil, credentials: @s3_credentials)
+
+      conn =
+        post(conn, ~p"/room/#{room_id}/component",
+          type: "recording",
+          options: %{pathPrefix: @path_prefix}
+        )
+
+      prefix = "#{@path_prefix}/#{room_id}/part_"
+
+      assert %{
+               "data" => %{
+                 "id" => id,
+                 "type" => "recording",
+                 "properties" => %{"pathPrefix" => path_prefix1}
+               }
+             } = model_response(conn, :created, "ComponentDetailsResponse")
+
+      assert String.starts_with?(path_prefix1, prefix)
+
+      assert_component_created(conn, room_id, id, "recording")
+
+      conn = delete(conn, ~p"/room/#{room_id}/component/#{id}")
+      assert response(conn, :no_content)
+
+      # Second recording
+      conn =
+        post(conn, ~p"/room/#{room_id}/component",
+          type: "recording",
+          options: %{pathPrefix: @path_prefix}
+        )
+
+      assert %{
+               "data" => %{
+                 "id" => id,
+                 "type" => "recording",
+                 "properties" => %{"pathPrefix" => path_prefix2}
                }
              } = model_response(conn, :created, "ComponentDetailsResponse")
 
       assert_component_created(conn, room_id, id, "recording")
+
+      assert String.starts_with?(path_prefix2, prefix)
+
+      assert path_prefix1 != path_prefix2
 
       clean_s3_envs()
     end

@@ -47,7 +47,6 @@ defmodule Jellyfish.Room.Config do
   defp parse_room_id(nil), do: {:ok, UUID.uuid4()}
 
   defp parse_room_id(room_id) when is_binary(room_id) do
-    # if Regex.match?(~r/^\w+$/, room_id) do
     if Regex.match?(~r/^[a-zA-Z0-9-]*$/, room_id) do
       {:ok, room_id}
     else

@@ -25,7 +25,12 @@ defmodule Jellyfish.Component.Recording do
     with {:ok, serialized_opts} <- serialize_options(options, Options.schema()),
          {:ok, credentials} <- get_credentials(serialized_opts, sink_config),
          {:ok, path_prefix} <- get_path_prefix(serialized_opts, sink_config) do
-      output_dir = get_base_path()
+      datetime = DateTime.utc_now() |> to_string()
+      path_suffix = Path.join(options.room_id, "part_#{datetime}")
+
+      path_prefix = Path.join(path_prefix, path_suffix)
+      output_dir = Path.join(get_base_path(), path_suffix)
+
       File.mkdir_p!(output_dir)
 
       file_storage = {Recording.Storage.File, %{output_dir: output_dir}}
