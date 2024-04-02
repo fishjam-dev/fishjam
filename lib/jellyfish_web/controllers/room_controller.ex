@@ -109,7 +109,7 @@ defmodule JellyfishWeb.RoomController do
         room_id = Map.get(params, "roomId")
 
         {:error, :bad_request,
-         "Cannot add room with id \"#{room_id}\" - roomId accepts only alphanumeric characters"}
+         "Cannot add room with id \"#{room_id}\" - roomId may contain only alphanumeric characters and hyphens"}
     end
   end
 
