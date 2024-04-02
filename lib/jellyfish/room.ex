@@ -9,7 +9,7 @@ defmodule Jellyfish.Room do
   require Logger
 
   alias Jellyfish.Component
-  alias Jellyfish.Component.{HLS, RTSP, SIP}
+  alias Jellyfish.Component.{HLS, Recording, RTSP, SIP}
   alias Jellyfish.Event
   alias Jellyfish.Peer
   alias Jellyfish.Room.Config
@@ -281,9 +281,10 @@ defmodule Jellyfish.Room do
         Logger.warning("Unable to add component: incompatible codec")
         {:reply, {:error, :incompatible_codec}, state}
 
-      {:error, :reached_components_limit_hls} ->
-        Logger.warning("Unable to add component: reached components limit")
-        {:reply, {:error, :reached_components_limit_hls}, state}
+      {:error, :reached_components_limit} ->
+        type = Component.to_string!(component_type)
+        Logger.warning("Unable to add component: reached components limit #{type}")
+        {:reply, {:error, {:reached_components_limit, type}}, state}
 
       {:error, :file_does_not_exist} ->
         Logger.warning("Unable to add component: file does not exist")
@@ -771,16 +772,17 @@ defmodule Jellyfish.Room do
         if component.type == HLS, do: component
       end)
 
-  defp check_component_allowed(HLS, %{
+  defp check_component_allowed(type, %{
          config: %{video_codec: video_codec},
          components: components
-       }) do
+       })
+       when type in [HLS, Recording] do
     cond do
       video_codec != :h264 ->
         {:error, :incompatible_codec}
 
-      hls_component_already_present?(components) ->
-        {:error, :reached_components_limit_hls}
+      component_already_present?(type, components) ->
+        {:error, :reached_components_limit}
 
       true ->
         :ok
@@ -797,8 +799,8 @@ defmodule Jellyfish.Room do
 
   defp check_component_allowed(_component_type, _state), do: :ok
 
-  defp hls_component_already_present?(components),
-    do: components |> Map.values() |> Enum.any?(&(&1.type == HLS))
+  defp component_already_present?(type, components),
+    do: components |> Map.values() |> Enum.any?(&(&1.type == type))
 
   defp validate_hls_subscription(nil), do: {:error, :hls_component_not_exists}
 

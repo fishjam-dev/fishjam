@@ -7,6 +7,8 @@ defmodule JellyfishWeb.ComponentCase do
   use ExUnit.CaseTemplate
   use JellyfishWeb.ConnCase
 
+  alias Jellyfish.RoomService
+
   using do
     quote do
       import JellyfishWeb.ComponentCase
@@ -70,5 +72,19 @@ defmodule JellyfishWeb.ComponentCase do
       model,
       JellyfishWeb.ApiSpec.spec()
     )
+  end
+
+  @spec create_h264_room(context :: term()) :: map()
+  def create_h264_room(%{conn: conn}) do
+    conn = post(conn, ~p"/room", videoCodec: "h264")
+
+    assert %{"id" => room_id} =
+             model_response(conn, :created, "RoomCreateDetailsResponse")["data"]["room"]
+
+    on_exit(fn ->
+      RoomService.delete_room(room_id)
+    end)
+
+    %{room_id: room_id}
   end
 end
