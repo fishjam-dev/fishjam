@@ -13,11 +13,19 @@ defmodule Jellyfish.Component.Recording do
 
   @impl true
   def config(%{engine_pid: engine} = options) do
-    with {:ok, serialized_opts} <- serialize_options(options, Options.schema()),
-         {:ok, credentials} <- get_credentials(serialized_opts) do
-      path_prefix = serialized_opts.path_prefix
-      output_dir = Path.join(get_base_path(), path_prefix)
+    recording_config = Application.fetch_env!(:jellyfish, :recording_config)
+    sink_config = Application.fetch_env!(:jellyfish, :s3_config)
 
+    unless recording_config[:recording_used?],
+      do:
+        raise("""
+        Recording components can only be used if JF_RECORDING_USED environmental variable is set to \"true\"
+        """)
+
+    with {:ok, serialized_opts} <- serialize_options(options, Options.schema()),
+         {:ok, credentials} <- get_credentials(serialized_opts, sink_config),
+         {:ok, path_prefix} <- get_path_prefix(serialized_opts, sink_config) do
+      output_dir = get_base_path()
       File.mkdir_p!(output_dir)
 
       file_storage = {Recording.Storage.File, %{output_dir: output_dir}}
@@ -39,13 +47,24 @@ defmodule Jellyfish.Component.Recording do
     end
   end
 
-  defp get_credentials(%{credentials: nil}) do
-    case Application.fetch_env!(:jellyfish, :s3_credentials) do
-      nil -> {:error, :missing_s3_credentials}
-      credentials -> {:ok, Enum.into(credentials, %{})}
+  defp get_credentials(%{credentials: credentials}, s3_config) do
+    case {credentials, s3_config[:credentials]} do
+      {nil, nil} -> {:error, :missing_s3_credentials}
+      {nil, credentials} -> {:ok, Enum.into(credentials, %{})}
+      {credentials, nil} -> {:ok, credentials}
+      _else -> {:error, :overridding_credentials}
     end
   end
 
-  defp get_credentials(%{credentials: credentials}), do: {:ok, credentials}
-  defp get_base_path(), do: Application.fetch_env!(:jellyfish, :media_files_path)
+  defp get_path_prefix(%{path_prefix: path_prefix}, s3_config) do
+    case {path_prefix, s3_config[:path_prefix]} do
+      {nil, nil} -> {:ok, ""}
+      {nil, path_prefix} -> {:ok, path_prefix}
+      {path_prefix, nil} -> {:ok, path_prefix}
+      _else -> {:error, :overridding_path_prefix}
+    end
+  end
+
+  defp get_base_path(),
+    do: :jellyfish |> Application.fetch_env!(:media_files_path) |> Path.join("raw_recordings")
 end

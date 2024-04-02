@@ -52,7 +52,7 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
       room_id: room_id
     } do
       mock_http_request()
-      Application.put_env(:jellyfish, :s3_credentials, @s3_credentials)
+      put_s3_envs(path_prefix: nil, credentials: @s3_credentials)
 
       conn =
         post(conn, ~p"/room/#{room_id}/component",
@@ -70,7 +70,43 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
 
       assert_component_created(conn, room_id, id, "recording")
 
-      Application.put_env(:jellyfish, :s3_credentials, nil)
+      clean_s3_envs()
+    end
+
+    test "renders error when credentials are passed both in config and request", %{
+      conn: conn,
+      room_id: room_id
+    } do
+      put_s3_envs(path_prefix: nil, credentials: @s3_credentials)
+
+      conn =
+        post(conn, ~p"/room/#{room_id}/component",
+          type: "recording",
+          options: %{credentials: @s3_credentials}
+        )
+
+      assert model_response(conn, :bad_request, "Error")["errors"] ==
+               "Conflicting S3 credentials supplied via environment variables and the REST API. Overrides on existing values are disallowed"
+
+      clean_s3_envs()
+    end
+
+    test "renders error when path prefix is passed both in config and request", %{
+      conn: conn,
+      room_id: room_id
+    } do
+      put_s3_envs(path_prefix: @path_prefix, credentials: @s3_credentials)
+
+      conn =
+        post(conn, ~p"/room/#{room_id}/component",
+          type: "recording",
+          options: %{path_prefix: @path_prefix}
+        )
+
+      assert model_response(conn, :bad_request, "Error")["errors"] ==
+               "Conflicting S3 path prefix supplied via environment variables and the REST API. Overrides on existing values are disallowed"
+
+      clean_s3_envs()
     end
 
     test "renders errors when required options are missing", %{conn: conn, room_id: room_id} do
@@ -85,7 +121,8 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
     end
 
     test "renders errors when video codec is different than h264 - vp8", %{conn: conn} do
-      Application.put_env(:jellyfish, :s3_credentials, @s3_credentials)
+      put_s3_envs(path_prefix: nil, credentials: @s3_credentials)
+
       conn = post(conn, ~p"/room", videoCodec: "vp8")
 
       assert %{"id" => room_id} =
@@ -97,7 +134,7 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
                "Incompatible video codec enforced in room #{room_id}"
 
       RoomService.delete_room(room_id)
-      Application.put_env(:jellyfish, :s3_credentials, nil)
+      clean_s3_envs()
     end
   end
 
@@ -109,5 +146,16 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
                                                    _http_opts ->
       {:ok, %{status_code: 200, headers: %{}}}
     end)
+  end
+
+  defp put_s3_envs(path_prefix: path_prefix, credentials: credentials) do
+    Application.put_env(:jellyfish, :s3_config,
+      path_prefix: path_prefix,
+      credentials: credentials
+    )
+  end
+
+  defp clean_s3_envs() do
+    Application.put_env(:jellyfish, :s3_config, path_prefix: nil, credentials: nil)
   end
 end

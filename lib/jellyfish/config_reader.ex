@@ -143,7 +143,13 @@ defmodule Jellyfish.ConfigReader do
     end
   end
 
-  def read_s3_credentials() do
+  def read_recording_config() do
+    [
+      recording_used?: read_boolean("JF_RECORDING_USED") != false
+    ]
+  end
+
+  def read_s3_config() do
     credentials = [
       bucket: System.get_env("JF_S3_BUCKET"),
       region: System.get_env("JF_S3_REGION"),
@@ -151,24 +157,34 @@ defmodule Jellyfish.ConfigReader do
       secret_access_key: System.get_env("JF_S3_SECRET_ACCESS_KEY")
     ]
 
-    cond do
-      Enum.all?(credentials, fn {_key, val} -> not is_nil(val) end) ->
-        credentials
+    path_prefix = System.get_env("JF_S3_PATH_PREFIX")
 
-      Enum.all?(credentials, fn {_key, val} -> is_nil(val) end) ->
-        nil
-
-      true ->
-        missing_envs =
+    credentials =
+      cond do
+        Enum.all?(credentials, fn {_key, val} -> not is_nil(val) end) ->
           credentials
-          |> Enum.filter(fn {_key, val} -> val == nil end)
-          |> Enum.map(fn {key, _val} -> "JF_" <> (key |> Atom.to_string() |> String.upcase()) end)
 
-        raise """
-        Either all S3 credentials have to be set: `JF_S3_BUCKET`, `JF_S3_REGION`, `JF_S3_ACCESS_KEY_ID`, `JF_S3_SECRET_ACCESS_KEY`, or none must be set.
-        Currently, the following required credentials are missing: #{inspect(missing_envs)}.
-        """
-    end
+        Enum.all?(credentials, fn {_key, val} -> is_nil(val) end) ->
+          nil
+
+        true ->
+          missing_envs =
+            credentials
+            |> Enum.filter(fn {_key, val} -> val == nil end)
+            |> Enum.map(fn {key, _val} ->
+              "JF_" <> (key |> Atom.to_string() |> String.upcase())
+            end)
+
+          raise """
+          Either all S3 credentials have to be set: `JF_S3_BUCKET`, `JF_S3_REGION`, `JF_S3_ACCESS_KEY_ID`, `JF_S3_SECRET_ACCESS_KEY`, or none must be set.
+          Currently, the following required credentials are missing: #{inspect(missing_envs)}.
+          """
+      end
+
+    [
+      path_prefix: path_prefix,
+      credentials: credentials
+    ]
   end
 
   def read_dist_config() do

@@ -318,6 +318,14 @@ defmodule Jellyfish.Room do
         Logger.warning("Unable to add component: missing s3 credentials")
         {:reply, {:error, :missing_s3_credentials}, state}
 
+      {:error, :overridding_credentials} ->
+        Logger.warning("Unable to add component: tried to override s3 credentials")
+        {:reply, {:error, :overridding_credentials}, state}
+
+      {:error, :overridding_path_prefix} ->
+        Logger.warning("Unable to add component: tried to override s3 path_prefix")
+        {:reply, {:error, :overridding_path_prefix}, state}
+
       {:error, reason} ->
         Logger.warning("Unable to add component: #{inspect(reason)}")
         {:reply, :error, state}
@@ -791,8 +799,8 @@ defmodule Jellyfish.Room do
 
   defp check_component_allowed(RTSP, %{config: %{video_codec: video_codec}}) do
     # Right now, RTSP component can only publish H264, so there's no point adding it
-    # to a room which enforces another video codec, e.g. VP8
-    if video_codec in [:h264, nil],
+    # to a room which allows another video codec, e.g. VP8
+    if video_codec == :h264,
       do: :ok,
       else: {:error, :incompatible_codec}
   end
