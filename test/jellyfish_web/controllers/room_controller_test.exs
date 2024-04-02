@@ -178,7 +178,12 @@ defmodule JellyfishWeb.RoomControllerTest do
       conn = post(conn, ~p"/room", roomId: "test/path")
 
       assert json_response(conn, :bad_request)["errors"] ==
-               "Cannot add room with id \"test/path\" - roomId accepts only alphanumeric characters"
+               "Cannot add room with id \"test/path\" - roomId may contain only alphanumeric characters and hyphens"
+
+      conn = post(conn, ~p"/room", roomId: "")
+
+      assert json_response(conn, :bad_request)["errors"] ==
+               "Cannot add room with id \"\" - roomId may contain only alphanumeric characters and hyphens"
     end
   end
 
