@@ -86,7 +86,7 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
         )
 
       assert model_response(conn, :bad_request, "Error")["errors"] ==
-               "Conflicting S3 credentials supplied via environment variables and the REST API. Please provide credentials through only one method"
+               "Conflicting S3 credentials supplied via environment variables and the REST API. Overrides on existing values are disallowed"
 
       clean_s3_envs()
     end
@@ -104,7 +104,7 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
         )
 
       assert model_response(conn, :bad_request, "Error")["errors"] ==
-               "Conflicting S3 path prefix supplied via environment variables and the REST API. Please provide credentials through only one method"
+               "Conflicting S3 path prefix supplied via environment variables and the REST API. Overrides on existing values are disallowed"
 
       clean_s3_envs()
     end

@@ -85,11 +85,11 @@ defmodule JellyfishWeb.ComponentController do
 
       {:error, :overridding_credentials} ->
         {:error, :bad_request,
-         "Conflicting S3 credentials supplied via environment variables and the REST API. Please provide credentials through only one method"}
+         "Conflicting S3 credentials supplied via environment variables and the REST API. Overrides on existing values are disallowed"}
 
       {:error, :overridding_path_prefix} ->
         {:error, :bad_request,
-         "Conflicting S3 path prefix supplied via environment variables and the REST API. Please provide credentials through only one method"}
+         "Conflicting S3 path prefix supplied via environment variables and the REST API. Overrides on existing values are disallowed"}
 
       {:error, :invalid_type} ->
         {:error, :bad_request, "Invalid component type"}
