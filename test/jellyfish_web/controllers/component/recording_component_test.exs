@@ -47,7 +47,7 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
 
     setup :set_mox_from_context
 
-    test "renders component when credentials are in passed in config", %{
+    test "renders component when credentials are passed in config", %{
       conn: conn,
       room_id: room_id
     } do
@@ -58,6 +58,32 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
         post(conn, ~p"/room/#{room_id}/component",
           type: "recording",
           options: %{pathPrefix: @path_prefix}
+        )
+
+      assert %{
+               "data" => %{
+                 "id" => id,
+                 "type" => "recording",
+                 "properties" => %{"pathPrefix" => @path_prefix}
+               }
+             } = model_response(conn, :created, "ComponentDetailsResponse")
+
+      assert_component_created(conn, room_id, id, "recording")
+
+      clean_s3_envs()
+    end
+
+    test "renders component when path prefix is passed in config", %{
+      conn: conn,
+      room_id: room_id
+    } do
+      mock_http_request()
+      put_s3_envs(path_prefix: @path_prefix, credentials: nil)
+
+      conn =
+        post(conn, ~p"/room/#{room_id}/component",
+          type: "recording",
+          options: %{credentials: Enum.into(@s3_credentials, %{})}
         )
 
       assert %{
@@ -100,7 +126,7 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
       conn =
         post(conn, ~p"/room/#{room_id}/component",
           type: "recording",
-          options: %{path_prefix: @path_prefix}
+          options: %{pathPrefix: @path_prefix}
         )
 
       assert model_response(conn, :bad_request, "Error")["errors"] ==
