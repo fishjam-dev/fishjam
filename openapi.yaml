@@ -161,7 +161,6 @@ components:
             - $ref: '#/components/schemas/S3Credentials'
           type: object
         pathPrefix:
-          default: ''
           description: Path prefix under which all recording are stored
           type: string
       title: ComponentOptionsRecording
