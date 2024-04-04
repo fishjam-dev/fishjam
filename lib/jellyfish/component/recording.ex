@@ -23,6 +23,7 @@ defmodule Jellyfish.Component.Recording do
         """)
 
     with {:ok, serialized_opts} <- serialize_options(options, Options.schema()),
+         result_opts <- Map.update!(serialized_opts, :subscribe_mode, &String.to_atom/1),
          {:ok, credentials} <- get_credentials(serialized_opts, sink_config),
          {:ok, path_prefix} <- get_path_prefix(serialized_opts, sink_config) do
       datetime = DateTime.utc_now() |> to_string()
@@ -39,10 +40,15 @@ defmodule Jellyfish.Component.Recording do
       endpoint = %Recording{
         rtc_engine: engine,
         recording_id: options.room_id,
-        stores: [file_storage, s3_storage]
+        stores: [file_storage, s3_storage],
+        subscribe_mode: result_opts.subscribe_mode
       }
 
-      {:ok, %{endpoint: endpoint, properties: %{path_prefix: path_prefix}}}
+      {:ok,
+       %{
+         endpoint: endpoint,
+         properties: %{path_prefix: path_prefix, subscribe_mode: result_opts.subscribe_mode}
+       }}
     else
       {:error, [%OpenApiSpex.Cast.Error{reason: :missing_field, name: name} | _rest]} ->
         {:error, {:missing_parameter, name}}
