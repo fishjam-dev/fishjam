@@ -162,6 +162,7 @@ components:
           type: object
         pathPrefix:
           description: Path prefix under which all recording are stored
+          nullable: true
           type: string
       title: ComponentOptionsRecording
       type: object
