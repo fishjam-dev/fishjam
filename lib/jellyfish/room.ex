@@ -822,7 +822,7 @@ defmodule Jellyfish.Room do
     do: {:error, :invalid_subscribe_mode}
 
   defp validate_subscription_mode(%{properties: %{subscribe_mode: :manual}}), do: :ok
-  defp validate_subscription_mode(_not_properties), do: {:error, :no_subscribe_mode}
+  defp validate_subscription_mode(_not_properties), do: {:error, :invalid_component_type}
 
   defp get_endpoint_group(state, endpoint_id) when is_map_key(state.components, endpoint_id),
     do: :components

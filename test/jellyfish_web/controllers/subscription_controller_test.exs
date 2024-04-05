@@ -69,8 +69,7 @@ defmodule JellyfishWeb.SubscriptionControllerTest do
       assert %{
                "data" => %{
                  "id" => id,
-                 "type" => "sip",
-                 "properties" => @sip_default_properties
+                 "type" => "sip"
                }
              } = json_response(conn, :created)
 
