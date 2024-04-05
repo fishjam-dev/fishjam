@@ -9,13 +9,13 @@ defmodule JellyfishWeb.SubscriptionController do
 
   action_fallback JellyfishWeb.FallbackController
 
-  tags [:hls]
+  tags [:room]
 
   security(%{"authorization" => []})
 
   operation :create,
-    operation_id: "subscribe_hls_to",
-    summary: "Subscribe the HLS component to the tracks of peers or components",
+    operation_id: "subscribe_to",
+    summary: "Subscribe component to the tracks of peers or components",
     parameters: [
       room_id: [in: :path, description: "Room ID", type: :string],
       component_id: [in: :path, description: "Component ID", type: :string]

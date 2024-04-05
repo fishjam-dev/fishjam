@@ -57,7 +57,7 @@ defmodule JellyfishWeb.ApiSpec.Component.Recording do
         subscribeMode: %Schema{
           type: :string,
           description:
-            "Whether the HLS component should subscribe to tracks automatically or manually.",
+            "Whether the Recording component should subscribe to tracks automatically or manually.",
           enum: ["auto", "manual"],
           default: "auto"
         }

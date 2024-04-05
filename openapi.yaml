@@ -166,7 +166,7 @@ components:
           type: string
         subscribeMode:
           default: auto
-          description: Whether the HLS component should subscribe to tracks automatically or manually.
+          description: Whether the Recording component should subscribe to tracks automatically or manually.
           enum:
             - auto
             - manual
@@ -1200,7 +1200,7 @@ paths:
   /room/{room_id}/component/{component_id}/subscribe:
     post:
       callbacks: {}
-      operationId: subscribe_hls_to
+      operationId: subscribe_to
       parameters:
         - description: Room ID
           in: path
@@ -1244,9 +1244,9 @@ paths:
           description: Room doesn't exist
       security:
         - authorization: []
-      summary: Subscribe the HLS component to the tracks of peers or components
+      summary: Subscribe component to the tracks of peers or components
       tags:
-        - hls
+        - room
   /room/{room_id}/component/{id}:
     delete:
       callbacks: {}
