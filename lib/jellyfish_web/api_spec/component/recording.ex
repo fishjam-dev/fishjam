@@ -39,7 +39,8 @@ defmodule JellyfishWeb.ApiSpec.Component.Recording do
         pathPrefix: %Schema{
           type: :string,
           description: "Path prefix under which all recording are stored",
-          default: nil
+          default: nil,
+          nullable: true
         },
         credentials: %Schema{
           type: :object,
