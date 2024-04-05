@@ -164,6 +164,13 @@ components:
           description: Path prefix under which all recording are stored
           nullable: true
           type: string
+        subscribeMode:
+          default: auto
+          description: Whether the HLS component should subscribe to tracks automatically or manually.
+          enum:
+            - auto
+            - manual
+          type: string
       title: ComponentOptionsRecording
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Recording.Options
@@ -339,8 +346,15 @@ components:
         pathPrefix:
           description: Path prefix under which all recording are stored
           type: string
+        subscribeMode:
+          description: Whether the Recording component should subscribe to tracks automatically or manually
+          enum:
+            - auto
+            - manual
+          type: string
       required:
         - pathPrefix
+        - subscribeMode
       title: ComponentPropertiesRecording
       type: object
       x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Recording.Properties
@@ -837,50 +851,6 @@ paths:
       summary: Describes the health of Jellyfish
       tags:
         - health
-  /hls/{room_id}/subscribe:
-    post:
-      callbacks: {}
-      operationId: subscribe_hls_to
-      parameters:
-        - description: Room ID
-          in: path
-          name: room_id
-          required: true
-          schema:
-            type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SubscriptionConfig'
-        description: Subscribe configuration
-        required: false
-      responses:
-        '201':
-          description: Tracks succesfully added.
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-          description: Invalid request structure
-        '401':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-          description: Unauthorized
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-          description: Room doesn't exist
-      security:
-        - authorization: []
-      summary: Subscribe the HLS component to the tracks of peers or components
-      tags:
-        - hls
   /hls/{room_id}/{filename}:
     get:
       callbacks: {}
@@ -1227,6 +1197,56 @@ paths:
       summary: Creates the component and adds it to the room
       tags:
         - room
+  /room/{room_id}/component/{component_id}/subscribe:
+    post:
+      callbacks: {}
+      operationId: subscribe_hls_to
+      parameters:
+        - description: Room ID
+          in: path
+          name: room_id
+          required: true
+          schema:
+            type: string
+        - description: Component ID
+          in: path
+          name: component_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriptionConfig'
+        description: Subscribe configuration
+        required: false
+      responses:
+        '201':
+          description: Tracks succesfully added.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Invalid request structure
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unauthorized
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Room doesn't exist
+      security:
+        - authorization: []
+      summary: Subscribe the HLS component to the tracks of peers or components
+      tags:
+        - hls
   /room/{room_id}/component/{id}:
     delete:
       callbacks: {}
