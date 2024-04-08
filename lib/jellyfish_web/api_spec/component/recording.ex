@@ -17,10 +17,6 @@ defmodule JellyfishWeb.ApiSpec.Component.Recording do
       description: "Properties specific to the Recording component",
       type: :object,
       properties: %{
-        pathPrefix: %Schema{
-          type: :string,
-          description: "Path prefix under which all recording are stored"
-        },
         subscribeMode: %Schema{
           type: :string,
           description:
@@ -28,7 +24,7 @@ defmodule JellyfishWeb.ApiSpec.Component.Recording do
           enum: ["auto", "manual"]
         }
       },
-      required: [:pathPrefix, :subscribeMode]
+      required: [:subscribeMode]
     })
   end
 

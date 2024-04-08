@@ -343,9 +343,6 @@ components:
     ComponentPropertiesRecording:
       description: Properties specific to the Recording component
       properties:
-        pathPrefix:
-          description: Path prefix under which all recording are stored
-          type: string
         subscribeMode:
           description: Whether the Recording component should subscribe to tracks automatically or manually
           enum:
@@ -353,7 +350,6 @@ components:
             - manual
           type: string
       required:
-        - pathPrefix
         - subscribeMode
       title: ComponentPropertiesRecording
       type: object

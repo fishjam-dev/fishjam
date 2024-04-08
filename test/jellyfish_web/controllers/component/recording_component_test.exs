@@ -70,10 +70,11 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
                "data" => %{
                  "id" => id,
                  "type" => "recording",
-                 "properties" => %{"pathPrefix" => path_prefix}
+                 "properties" => %{}
                }
              } = model_response(conn, :created, "ComponentDetailsResponse")
 
+      path_prefix = get_recording_path_prefix(room_id, id)
       assert String.starts_with?(path_prefix, prefix)
 
       assert_component_created(conn, room_id, id, "recording")
@@ -101,10 +102,11 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
                "data" => %{
                  "id" => id,
                  "type" => "recording",
-                 "properties" => %{"pathPrefix" => path_prefix1}
+                 "properties" => %{}
                }
              } = model_response(conn, :created, "ComponentDetailsResponse")
 
+      path_prefix1 = get_recording_path_prefix(room_id, id)
       assert String.starts_with?(path_prefix1, prefix)
 
       assert_component_created(conn, room_id, id, "recording")
@@ -123,11 +125,13 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
                "data" => %{
                  "id" => id,
                  "type" => "recording",
-                 "properties" => %{"pathPrefix" => path_prefix2}
+                 "properties" => %{}
                }
              } = model_response(conn, :created, "ComponentDetailsResponse")
 
       assert_component_created(conn, room_id, id, "recording")
+
+      path_prefix2 = get_recording_path_prefix(room_id, id)
 
       assert String.starts_with?(path_prefix2, prefix)
 
@@ -153,9 +157,11 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
                "data" => %{
                  "id" => id,
                  "type" => "recording",
-                 "properties" => %{"pathPrefix" => path_prefix}
+                 "properties" => %{}
                }
              } = model_response(conn, :created, "ComponentDetailsResponse")
+
+      path_prefix = get_recording_path_prefix(room_id, id)
 
       assert String.starts_with?(path_prefix, @path_prefix)
 
@@ -248,5 +254,11 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
 
   defp clean_s3_envs() do
     Application.put_env(:jellyfish, :s3_config, path_prefix: nil, credentials: nil)
+  end
+
+  defp get_recording_path_prefix(room_id, component_id) do
+    assert {:ok, room_state} = RoomService.get_room(room_id)
+
+    get_in(room_state, [:components, component_id, :properties, :path_prefix])
   end
 end
