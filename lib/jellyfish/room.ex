@@ -780,7 +780,7 @@ defmodule Jellyfish.Room do
     state
   end
 
-  defp get_component_by_id(%{components: components} = _state, component_id),
+  defp get_component_by_id(%{components: components}, component_id),
     do:
       Enum.find_value(components, fn {id, component} ->
         if id == component_id, do: component

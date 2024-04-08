@@ -23,7 +23,7 @@ defmodule Jellyfish.Component.Recording do
         """)
 
     with {:ok, serialized_opts} <- serialize_options(options, Options.schema()),
-         result_opts <- Map.update!(serialized_opts, :subscribe_mode, &String.to_atom/1),
+         result_opts <- parse_subscribe_mode(serialized_opts),
          {:ok, credentials} <- get_credentials(serialized_opts, sink_config),
          {:ok, path_prefix} <- get_path_prefix(serialized_opts, sink_config) do
       datetime = DateTime.utc_now() |> to_string()
@@ -56,6 +56,10 @@ defmodule Jellyfish.Component.Recording do
       {:error, _reason} = error ->
         error
     end
+  end
+
+  defp parse_subscribe_mode(opts) do
+    Map.update!(opts, :subscribe_mode, &String.to_atom/1)
   end
 
   defp get_credentials(%{credentials: credentials}, s3_config) do
