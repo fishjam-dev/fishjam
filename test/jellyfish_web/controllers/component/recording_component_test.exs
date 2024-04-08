@@ -153,9 +153,11 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
                "data" => %{
                  "id" => id,
                  "type" => "recording",
-                 "properties" => %{"pathPrefix" => @path_prefix}
+                 "properties" => %{"pathPrefix" => path_prefix}
                }
              } = model_response(conn, :created, "ComponentDetailsResponse")
+
+      assert String.starts_with?(path_prefix, @path_prefix)
 
       assert_component_created(conn, room_id, id, "recording")
 
