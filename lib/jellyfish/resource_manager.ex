@@ -25,7 +25,7 @@ defmodule Jellyfish.ResourceManager do
   def init(opts) do
     Logger.debug("Initialize resource manager")
 
-    send(self(), :free_resources)
+    schedule_free_resources(opts.interval)
 
     {:ok, opts}
   end
@@ -45,10 +45,13 @@ defmodule Jellyfish.ResourceManager do
         Logger.error("Resource Manager: can't list recordings, reason: #{reason}")
     end
 
-    Process.send_after(self(), :free_resources, state.interval * 1000)
+    schedule_free_resources(state.interval)
 
     {:noreply, state}
   end
+
+  defp schedule_free_resources(interval),
+    do: Process.send_after(self(), :free_resources, :timer.seconds(interval))
 
   defp remove_recording_if_obsolete(current_time, recording_timeout, recording_path) do
     file_stats =
