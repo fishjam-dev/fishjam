@@ -123,7 +123,8 @@ defmodule Jellyfish.Component do
 
   @spec new(component(), map()) :: {:ok, t()} | {:error, term()}
   def new(type, options) do
-    with {:ok, %{endpoint: endpoint, properties: properties}} <- type.config(options) do
+    with {:ok, %{endpoint: endpoint, properties: properties}} <-
+           type.config(options) do
       {:ok,
        %__MODULE__{
          id: UUID.uuid4(),

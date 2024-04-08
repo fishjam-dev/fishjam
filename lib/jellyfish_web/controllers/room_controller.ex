@@ -104,6 +104,12 @@ defmodule JellyfishWeb.RoomController do
       {:error, :room_already_exists} ->
         room_id = Map.get(params, "roomId")
         {:error, :bad_request, "Cannot add room with id \"#{room_id}\" - room already exists"}
+
+      {:error, :invalid_room_id} ->
+        room_id = Map.get(params, "roomId")
+
+        {:error, :bad_request,
+         "Cannot add room with id \"#{room_id}\" - roomId may contain only alphanumeric characters and hyphens"}
     end
   end
 
