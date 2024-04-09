@@ -73,12 +73,14 @@ defmodule Jellyfish.MixProject do
        github: "jellyfish-dev/membrane_rtc_engine", sparse: "engine", override: true},
       {:membrane_rtc_engine_webrtc,
        github: "jellyfish-dev/membrane_rtc_engine", sparse: "webrtc", override: true},
-      {:membrane_rtc_engine_hls, github: "jellyfish-dev/membrane_rtc_engine", sparse: "hls"},
+      {:membrane_rtc_engine_hls,
+       github: "jellyfish-dev/membrane_rtc_engine", sparse: "hls", override: true},
       {:membrane_rtc_engine_recording,
-       github: "jellyfish-dev/membrane_rtc_engine", sparse: "recording"},
+       github: "jellyfish-dev/membrane_rtc_engine", sparse: "recording", override: true},
       {:membrane_rtc_engine_rtsp, github: "jellyfish-dev/membrane_rtc_engine", sparse: "rtsp"},
       {:membrane_rtc_engine_file, github: "jellyfish-dev/membrane_rtc_engine", sparse: "file"},
-      {:membrane_rtc_engine_sip, github: "jellyfish-dev/membrane_rtc_engine", sparse: "sip"},
+      {:membrane_rtc_engine_sip,
+       github: "jellyfish-dev/membrane_rtc_engine", sparse: "sip", override: true},
       {:membrane_telemetry_metrics, "~> 0.1.0"},
 
       # HLS endpoints deps

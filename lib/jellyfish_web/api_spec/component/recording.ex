@@ -17,12 +17,14 @@ defmodule JellyfishWeb.ApiSpec.Component.Recording do
       description: "Properties specific to the Recording component",
       type: :object,
       properties: %{
-        pathPrefix: %Schema{
+        subscribeMode: %Schema{
           type: :string,
-          description: "Path prefix under which all recording are stored"
+          description:
+            "Whether the Recording component should subscribe to tracks automatically or manually",
+          enum: ["auto", "manual"]
         }
       },
-      required: [:pathPrefix]
+      required: [:subscribeMode]
     })
   end
 
@@ -47,6 +49,13 @@ defmodule JellyfishWeb.ApiSpec.Component.Recording do
           description: "Credentials to AWS S3 bucket.",
           oneOf: [S3],
           nullable: true
+        },
+        subscribeMode: %Schema{
+          type: :string,
+          description:
+            "Whether the Recording component should subscribe to tracks automatically or manually.",
+          enum: ["auto", "manual"],
+          default: "auto"
         }
       },
       required: []

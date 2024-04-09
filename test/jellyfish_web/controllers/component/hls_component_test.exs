@@ -71,7 +71,6 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
     end
 
     setup :set_mox_from_context
-    setup :verify_on_exit!
 
     test "renders component with s3 credentials", %{conn: conn, room_id: room_id} do
       bucket = "bucket"
@@ -100,17 +99,17 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
       parent = self()
       ref = make_ref()
 
-      expect(ExAws.Request.HttpMock, :request, 4, fn _method,
-                                                     url,
-                                                     req_body,
-                                                     _headers,
-                                                     _http_opts ->
-        assert req_body == @body
-        assert String.contains?(url, bucket)
-        assert String.ends_with?(url, @files)
+      expect(ExAws.Request.HttpMock, :request, 10, fn
+        :get, _url, _req_body, _headers, _opts ->
+          {:ok, %{status_code: 200, headers: %{}}}
 
-        send(parent, {ref, :request})
-        {:ok, %{status_code: 200, headers: %{}}}
+        _method, url, req_body, _headers, _http_opts ->
+          assert req_body == @body
+          assert String.contains?(url, bucket)
+          assert String.ends_with?(url, @files)
+
+          send(parent, {ref, :request})
+          {:ok, %{status_code: 200, headers: %{}}}
       end)
 
       assert_hls_path(room_id, persistent: false)

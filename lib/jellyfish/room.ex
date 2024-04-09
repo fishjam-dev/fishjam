@@ -133,10 +133,10 @@ defmodule Jellyfish.Room do
     GenServer.call(registry_id(room_id), {:remove_component, component_id})
   end
 
-  @spec hls_subscribe(id(), [Peer.id() | Component.id()]) ::
+  @spec subscribe(id(), Component.id(), [Peer.id() | Component.id()]) ::
           :ok | {:error, term()}
-  def hls_subscribe(room_id, origins) do
-    GenServer.call(registry_id(room_id), {:hls_subscribe, origins})
+  def subscribe(room_id, component_id, origins) do
+    GenServer.call(registry_id(room_id), {:subscribe, component_id, origins})
   end
 
   @spec dial(id(), Component.id(), String.t()) ::
@@ -346,13 +346,19 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def handle_call({:hls_subscribe, origins}, _from, state) do
-    hls_component = get_hls_component(state)
+  def handle_call({:subscribe, component_id, origins}, _from, state) do
+    component = get_component_by_id(state, component_id)
 
     reply =
-      case validate_hls_subscription(hls_component) do
-        :ok ->
-          Endpoint.HLS.subscribe(state.engine_pid, hls_component.id, origins)
+      case validate_subscription_mode(component) do
+        :ok when component.type == HLS ->
+          Endpoint.HLS.subscribe(state.engine_pid, component.id, origins)
+
+        :ok when component.type == Recording ->
+          Endpoint.Recording.subscribe(state.engine_pid, component.id, origins)
+
+        :ok when component.type not in [HLS, Recording] ->
+          {:error, :invalid_component_type}
 
         {:error, _reason} = error ->
           error
@@ -774,10 +780,10 @@ defmodule Jellyfish.Room do
     state
   end
 
-  defp get_hls_component(%{components: components}),
+  defp get_component_by_id(%{components: components}, component_id),
     do:
-      Enum.find_value(components, fn {_id, component} ->
-        if component.type == HLS, do: component
+      Enum.find_value(components, fn {id, component} ->
+        if id == component_id, do: component
       end)
 
   defp check_component_allowed(type, %{
@@ -810,12 +816,13 @@ defmodule Jellyfish.Room do
   defp component_already_present?(type, components),
     do: components |> Map.values() |> Enum.any?(&(&1.type == type))
 
-  defp validate_hls_subscription(nil), do: {:error, :hls_component_not_exists}
+  defp validate_subscription_mode(nil), do: {:error, :component_not_exists}
 
-  defp validate_hls_subscription(%{properties: %{subscribe_mode: :auto}}),
+  defp validate_subscription_mode(%{properties: %{subscribe_mode: :auto}}),
     do: {:error, :invalid_subscribe_mode}
 
-  defp validate_hls_subscription(%{properties: %{subscribe_mode: :manual}}), do: :ok
+  defp validate_subscription_mode(%{properties: %{subscribe_mode: :manual}}), do: :ok
+  defp validate_subscription_mode(_not_properties), do: {:error, :invalid_component_type}
 
   defp get_endpoint_group(state, endpoint_id) when is_map_key(state.components, endpoint_id),
     do: :components

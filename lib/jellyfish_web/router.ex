@@ -21,10 +21,7 @@ defmodule JellyfishWeb.Router do
 
       resources("/:room_id/peer", PeerController, only: [:create, :delete])
       resources("/:room_id/component", ComponentController, only: [:create, :delete])
-    end
-
-    scope "/hls" do
-      post "/:room_id/subscribe", SubscriptionController, :create
+      post "/:room_id/component/:component_id/subscribe", SubscriptionController, :create
     end
 
     scope "/sip" do
