@@ -47,7 +47,7 @@ defmodule Jellyfish.Component.Recording do
       {:ok,
        %{
          endpoint: endpoint,
-         properties: %{path_prefix: path_prefix, subscribe_mode: result_opts.subscribe_mode}
+         properties: %{subscribe_mode: result_opts.subscribe_mode}
        }}
     else
       {:error, [%OpenApiSpex.Cast.Error{reason: :missing_field, name: name} | _rest]} ->

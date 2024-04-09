@@ -34,10 +34,13 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
                "data" => %{
                  "id" => id,
                  "type" => "recording",
-                 "properties" => %{"pathPrefix" => path_prefix}
+                 "properties" => path_prefix
                }
              } = model_response(conn, :created, "ComponentDetailsResponse")
 
+      assert path_prefix == %{"subscribeMode" => "auto"}
+
+      path_prefix = get_recording_path_prefix(room_id, id)
       assert String.starts_with?(path_prefix, prefix)
 
       assert_component_created(conn, room_id, id, "recording")
@@ -70,9 +73,11 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
                "data" => %{
                  "id" => id,
                  "type" => "recording",
-                 "properties" => %{}
+                 "properties" => path_prefix
                }
              } = model_response(conn, :created, "ComponentDetailsResponse")
+
+      assert path_prefix == %{"subscribeMode" => "auto"}
 
       path_prefix = get_recording_path_prefix(room_id, id)
       assert String.starts_with?(path_prefix, prefix)
@@ -102,9 +107,11 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
                "data" => %{
                  "id" => id,
                  "type" => "recording",
-                 "properties" => %{}
+                 "properties" => path_prefix
                }
              } = model_response(conn, :created, "ComponentDetailsResponse")
+
+      assert path_prefix == %{"subscribeMode" => "auto"}
 
       path_prefix1 = get_recording_path_prefix(room_id, id)
       assert String.starts_with?(path_prefix1, prefix)
@@ -125,9 +132,11 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
                "data" => %{
                  "id" => id,
                  "type" => "recording",
-                 "properties" => %{}
+                 "properties" => path_prefix
                }
              } = model_response(conn, :created, "ComponentDetailsResponse")
+
+      assert path_prefix == %{"subscribeMode" => "auto"}
 
       assert_component_created(conn, room_id, id, "recording")
 
@@ -157,9 +166,11 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
                "data" => %{
                  "id" => id,
                  "type" => "recording",
-                 "properties" => %{}
+                 "properties" => path_prefix
                }
              } = model_response(conn, :created, "ComponentDetailsResponse")
+
+      assert path_prefix == %{"subscribeMode" => "auto"}
 
       path_prefix = get_recording_path_prefix(room_id, id)
 
@@ -259,6 +270,15 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
   defp get_recording_path_prefix(room_id, component_id) do
     assert {:ok, room_state} = RoomService.get_room(room_id)
 
-    get_in(room_state, [:components, component_id, :properties, :path_prefix])
+    {_store, %{path_prefix: path_prefix}} =
+      room_state
+      |> get_in([:components, component_id, :engine_endpoint])
+      |> Map.fetch!(:stores)
+      |> Enum.find(fn
+        {_store, %{path_prefix: path_prefix}} -> path_prefix
+        _other -> false
+      end)
+
+    path_prefix
   end
 end
