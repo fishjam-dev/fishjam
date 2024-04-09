@@ -4,7 +4,7 @@ defmodule Jellyfish.ResourceManager do
   Right now it only removes outdated resources created by recording component.
   """
 
-  use GenServer, restart: :temporary
+  use GenServer, restart: :permanent
 
   require Logger
 
