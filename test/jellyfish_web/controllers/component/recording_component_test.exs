@@ -34,11 +34,11 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
                "data" => %{
                  "id" => id,
                  "type" => "recording",
-                 "properties" => path_prefix
+                 "properties" => properties
                }
              } = model_response(conn, :created, "ComponentDetailsResponse")
 
-      assert path_prefix == %{"subscribeMode" => "auto"}
+      assert properties == %{"subscribeMode" => "auto"}
 
       path_prefix = get_recording_path_prefix(room_id, id)
       assert String.starts_with?(path_prefix, prefix)
@@ -73,11 +73,11 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
                "data" => %{
                  "id" => id,
                  "type" => "recording",
-                 "properties" => path_prefix
+                 "properties" => properties
                }
              } = model_response(conn, :created, "ComponentDetailsResponse")
 
-      assert path_prefix == %{"subscribeMode" => "auto"}
+      assert properties == %{"subscribeMode" => "auto"}
 
       path_prefix = get_recording_path_prefix(room_id, id)
       assert String.starts_with?(path_prefix, prefix)
@@ -107,11 +107,11 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
                "data" => %{
                  "id" => id,
                  "type" => "recording",
-                 "properties" => path_prefix
+                 "properties" => properties
                }
              } = model_response(conn, :created, "ComponentDetailsResponse")
 
-      assert path_prefix == %{"subscribeMode" => "auto"}
+      assert properties == %{"subscribeMode" => "auto"}
 
       path_prefix1 = get_recording_path_prefix(room_id, id)
       assert String.starts_with?(path_prefix1, prefix)
@@ -132,11 +132,11 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
                "data" => %{
                  "id" => id,
                  "type" => "recording",
-                 "properties" => path_prefix
+                 "properties" => properties
                }
              } = model_response(conn, :created, "ComponentDetailsResponse")
 
-      assert path_prefix == %{"subscribeMode" => "auto"}
+      assert properties == %{"subscribeMode" => "auto"}
 
       assert_component_created(conn, room_id, id, "recording")
 
@@ -166,11 +166,11 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
                "data" => %{
                  "id" => id,
                  "type" => "recording",
-                 "properties" => path_prefix
+                 "properties" => properties
                }
              } = model_response(conn, :created, "ComponentDetailsResponse")
 
-      assert path_prefix == %{"subscribeMode" => "auto"}
+      assert properties == %{"subscribeMode" => "auto"}
 
       path_prefix = get_recording_path_prefix(room_id, id)
 
