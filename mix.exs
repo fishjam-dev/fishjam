@@ -69,6 +69,7 @@ defmodule Jellyfish.MixProject do
       {:protobuf, "~> 0.12.0"},
 
       # Membrane deps
+      {:membrane_core, "1.1.0-rc0", override: true},
       {:membrane_rtc_engine,
        github: "jellyfish-dev/membrane_rtc_engine", sparse: "engine", override: true},
       {:membrane_rtc_engine_webrtc,
