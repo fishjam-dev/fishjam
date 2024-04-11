@@ -41,7 +41,7 @@ defmodule Jellyfish.ResourceManager do
     recordings_list =
       rooms_list
       |> Enum.map(fn room ->
-        room_path = base_path |> Path.join(room)
+        room_path = Path.join(base_path, room)
 
         room_path
         |> File.ls!()
