@@ -589,6 +589,23 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
+  def handle_info({:peer_purge, peer_id}, state) do
+    # if State.peer_disconnected_long_enough?(state) do
+    #   Logger.info(
+    #     "Removing room because it was peerless for #{State.peerless_purge_timeout(state)} seconds"
+    #   )
+
+    #   {:stop, :normal, state}
+    # else
+    #   Logger.debug("Ignore peerless purge message")
+
+    #   {:noreply, state}
+    # end
+
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_info(info, state) do
     Logger.warning("Received unexpected info: #{inspect(info)}")
     {:noreply, state}

@@ -122,6 +122,7 @@ defmodule Jellyfish.Room.State do
   def put_peer(state, peer) do
     state
     |> put_in([:peers, peer.id], peer)
+    |> maybe_schedule_peer_purge(peer)
     |> maybe_schedule_peerless_purge()
   end
 
@@ -360,6 +361,22 @@ defmodule Jellyfish.Room.State do
       %{state | last_peer_left: last_peer_left}
     else
       state
+    end
+  end
+
+  defp maybe_schedule_peer_purge(%{config: config} = state, peer) do
+    case fetch_peer(state, peer.id) do
+      {:ok, peer} when peer.status == :disconnected ->
+        last_time_connected = Klotho.monotonic_time(:millisecond)
+
+        Klotho.send_after(config.peerless_purge_timeout * 1000, self(), {:peer_purge, peer.id})
+
+        peer = %{peer | last_time_connected: last_time_connected}
+
+        put_in(state, [:peers, peer.id], peer)
+
+      _other ->
+        state
     end
   end
 

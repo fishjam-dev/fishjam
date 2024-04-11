@@ -13,7 +13,14 @@ defmodule Jellyfish.Peer do
     :type,
     :engine_endpoint
   ]
-  defstruct @enforce_keys ++ [status: :disconnected, socket_pid: nil, tracks: %{}, metadata: nil]
+  defstruct @enforce_keys ++
+              [
+                status: :disconnected,
+                socket_pid: nil,
+                tracks: %{},
+                metadata: nil,
+                last_time_connected: 0
+              ]
 
   @type id :: String.t()
   @type peer :: WebRTC
@@ -32,7 +39,8 @@ defmodule Jellyfish.Peer do
           socket_pid: pid() | nil,
           engine_endpoint: Membrane.ChildrenSpec.child_definition(),
           tracks: %{Track.id() => Track.t()},
-          metadata: any()
+          metadata: any(),
+          last_time_connected: non_neg_integer()
         }
 
   @spec parse_type(String.t()) :: {:ok, peer()} | {:error, :invalid_type}
