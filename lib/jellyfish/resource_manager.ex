@@ -9,6 +9,7 @@ defmodule Jellyfish.ResourceManager do
   require Logger
 
   alias Jellyfish.Component.Recording
+  alias Jellyfish.RoomService
 
   @type seconds :: pos_integer()
   @type opts :: %{interval: seconds(), recording_timeout: seconds()}
@@ -33,17 +34,27 @@ defmodule Jellyfish.ResourceManager do
   @impl true
   def handle_info(:free_resources, state) do
     base_path = Recording.get_base_path()
+    current_time = System.system_time(:second)
 
-    with {:ok, files} <- File.ls(base_path) do
-      current_time = System.system_time(:second)
+    rooms_list = File.ls!(base_path)
 
-      files
-      |> Enum.map(&Path.join(base_path, &1))
-      |> Enum.each(&remove_recording_if_obsolete(current_time, state.recording_timeout, &1))
-    else
-      {:error, reason} ->
-        Logger.error("Resource Manager: can't list recordings, reason: #{reason}")
-    end
+    recordings_list =
+      rooms_list
+      |> Enum.map(fn room ->
+        room_path = base_path |> Path.join(room)
+
+        room_path
+        |> File.ls!()
+        |> Enum.map(fn recording -> {room, Path.join(room_path, recording)} end)
+      end)
+      |> Enum.concat()
+
+    Enum.each(
+      recordings_list,
+      &remove_recording_if_obsolete(current_time, state.recording_timeout, &1)
+    )
+
+    Enum.each(rooms_list, &remove_room_if_obsolete(&1, base_path))
 
     schedule_free_resources(state.interval)
 
@@ -53,30 +64,39 @@ defmodule Jellyfish.ResourceManager do
   defp schedule_free_resources(interval),
     do: Process.send_after(self(), :free_resources, :timer.seconds(interval))
 
-  defp remove_recording_if_obsolete(current_time, recording_timeout, recording_path) do
-    file_stats =
-      recording_path
-      |> Path.join("report.json")
-      |> File.lstat(time: :posix)
+  defp remove_recording_if_obsolete(current_time, recording_timeout, {room, recording_path}) do
+    with {:error, :room_not_found} <- RoomService.find_room(room) do
+      case File.ls!(recording_path) do
+        [] ->
+          File.rm_rf!(recording_path)
 
-    with {:ok, %{mtime: mtime}} <- file_stats,
-         true <- should_remove_file?(current_time, mtime, recording_timeout),
-         {:ok, _files} <- File.rm_rf(recording_path) do
-      :ok
-    else
-      false ->
-        :ok
+        files ->
+          # select the most recently modified file
+          %{mtime: mtime} =
+            files
+            |> Enum.map(fn file ->
+              recording_path |> Path.join(file) |> File.lstat!(time: :posix)
+            end)
+            |> Enum.sort_by(fn stats -> stats.mtime end, :desc)
+            |> List.first()
 
-      {:error, reason, _files} ->
-        Logger.error(
-          "Resource Manager: can't remove recording - #{recording_path}. Reason: #{reason}"
-        )
-
-      {:error, reason} ->
-        Logger.error("Resource Manager: can't read stats - #{recording_path}. Reason: #{reason}")
+          should_remove_recording?(current_time, mtime, recording_timeout) &&
+            File.rm_rf!(recording_path)
+      end
     end
   end
 
-  defp should_remove_file?(current_time, mtime, recording_timeout),
+  defp remove_room_if_obsolete(room_id, base_path) do
+    state_of_room = RoomService.find_room(room_id)
+    room_path = Path.join(base_path, room_id)
+    content = File.ls!(room_path)
+
+    if should_remove_room?(content, state_of_room), do: File.rmdir!(room_path)
+  end
+
+  defp should_remove_room?([], {:error, :room_not_found}), do: true
+  defp should_remove_room?(_content, _state_of_room), do: false
+
+  defp should_remove_recording?(current_time, mtime, recording_timeout),
     do: current_time - mtime > recording_timeout
 end
