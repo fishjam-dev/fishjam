@@ -58,6 +58,9 @@ defmodule Jellyfish.Component.Recording do
     end
   end
 
+  def get_base_path(),
+    do: :jellyfish |> Application.fetch_env!(:media_files_path) |> Path.join("raw_recordings")
+
   defp parse_subscribe_mode(opts) do
     Map.update!(opts, :subscribe_mode, &String.to_atom/1)
   end
@@ -79,7 +82,4 @@ defmodule Jellyfish.Component.Recording do
       _else -> {:error, :overridding_path_prefix}
     end
   end
-
-  defp get_base_path(),
-    do: :jellyfish |> Application.fetch_env!(:media_files_path) |> Path.join("raw_recordings")
 end

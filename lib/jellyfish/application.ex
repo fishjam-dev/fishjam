@@ -7,6 +7,9 @@ defmodule Jellyfish.Application do
 
   require Logger
 
+  # seconds
+  @resource_manager_opts %{interval: 600, recording_timeout: 3_600}
+
   @impl true
   def start(_type, _args) do
     scrape_interval = Application.fetch_env!(:jellyfish, :webrtc_metrics_scrape_interval)
@@ -30,6 +33,8 @@ defmodule Jellyfish.Application do
         JellyfishWeb.Endpoint,
         # Start the RoomService
         Jellyfish.RoomService,
+        # Start the ResourceManager, responsible for cleaning old recordings
+        {Jellyfish.ResourceManager, @resource_manager_opts},
         Jellyfish.WebhookNotifier,
         {Registry, keys: :unique, name: Jellyfish.RoomRegistry},
         {Registry, keys: :unique, name: Jellyfish.RequestHandlerRegistry},
