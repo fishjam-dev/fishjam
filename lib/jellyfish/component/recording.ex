@@ -58,10 +58,6 @@ defmodule Jellyfish.Component.Recording do
     end
   end
 
-  defp parse_subscribe_mode(opts) do
-    Map.update!(opts, :subscribe_mode, &String.to_atom/1)
-  end
-
   def get_base_path(),
     do: :jellyfish |> Application.fetch_env!(:media_files_path) |> Path.join("raw_recordings")
 
