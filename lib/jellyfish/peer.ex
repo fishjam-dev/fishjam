@@ -19,7 +19,7 @@ defmodule Jellyfish.Peer do
                 socket_pid: nil,
                 tracks: %{},
                 metadata: nil,
-                last_time_connected: 0
+                last_time_connected: nil
               ]
 
   @type id :: String.t()

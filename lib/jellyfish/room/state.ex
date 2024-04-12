@@ -48,8 +48,6 @@ defmodule Jellyfish.Room.State do
           last_peer_left: integer()
         }
 
-  @disconnect_timeout 10
-
   defguard peer_exists?(state, endpoint_id) when is_map_key(state.peers, endpoint_id)
 
   defguard component_exists?(state, endpoint_id) when is_map_key(state.components, endpoint_id)
@@ -116,6 +114,17 @@ defmodule Jellyfish.Room.State do
     else
       false
     end
+  end
+
+  @spec peer_disconnected_long_enough?(state :: t(), peer :: Peer.t()) :: boolean()
+  def peer_disconnected_long_enough?(_state, peer) when peer.status != :disconnected, do: false
+
+  def peer_disconnected_long_enough?(state, peer) do
+    remove_timestamp = peer.last_time_connected + state.config.peer_disconnected_timeout * 1000
+
+    now = Klotho.monotonic_time(:millisecond)
+
+    now >= remove_timestamp
   end
 
   @spec put_peer(state :: t(), peer :: Peer.t()) :: t()
@@ -196,7 +205,39 @@ defmodule Jellyfish.Room.State do
           {:ok, Component.t()} | :error
   def fetch_component(state, component_id), do: Map.fetch(state.components, component_id)
 
-  @spec remove_peer(state :: t(), peer :: Peer.id(), reason :: any()) :: t()
+  @spec disconnect_peer(state :: t(), peer_ws_pid :: pid()) :: t()
+  def disconnect_peer(state, peer_ws_pid) do
+    case find_peer_with_pid(state, peer_ws_pid) do
+      nil ->
+        state
+
+      {peer_id, peer} ->
+        :ok = Engine.remove_endpoint(state.engine_pid, peer_id)
+
+        Event.broadcast_server_notification({:peer_disconnected, state.id, peer_id})
+        :telemetry.execute([:jellyfish, :room], %{peer_disconnects: 1}, %{room_id: state.id})
+
+        peer.tracks
+        |> Map.values()
+        |> Enum.each(
+          &Event.broadcast_server_notification(
+            {:track_removed, state.id, {:peer_id, peer_id}, &1}
+          )
+        )
+
+        peer = %{peer | status: :disconnected, socket_pid: nil, tracks: %{}}
+
+        put_peer(state, peer)
+    end
+  end
+
+  @spec remove_peer(state :: t(), peer_id :: Peer.id(), reason :: any()) :: t()
+  def remove_peer(state, peer_id, :timeout) do
+    {_peer, state} = pop_in(state, [:peers, peer_id])
+
+    maybe_schedule_peerless_purge(state)
+  end
+
   def remove_peer(state, peer_id, reason) do
     {peer, state} = pop_in(state, [:peers, peer_id])
     :ok = Engine.remove_endpoint(state.engine_pid, peer_id)
@@ -261,7 +302,7 @@ defmodule Jellyfish.Room.State do
   end
 
   @spec find_peer_with_pid(state :: t(), pid :: pid()) :: {Peer.id(), Peer.t()} | nil
-  def find_peer_with_pid(state, pid),
+  defp find_peer_with_pid(state, pid),
     do: Enum.find(state.peers, fn {_id, peer} -> peer.socket_pid == pid end)
 
   @spec get_component_by_id(state :: t(), component_id :: Component.id()) :: Component.t() | nil
@@ -364,16 +405,17 @@ defmodule Jellyfish.Room.State do
     end
   end
 
+  defp maybe_schedule_peer_purge(%{config: %{peer_disconnected_timeout: nil}} = state, _peer),
+    do: state
+
   defp maybe_schedule_peer_purge(%{config: config} = state, peer) do
     case fetch_peer(state, peer.id) do
       {:ok, peer} when peer.status == :disconnected ->
         last_time_connected = Klotho.monotonic_time(:millisecond)
 
-        Klotho.send_after(config.peerless_purge_timeout * 1000, self(), {:peer_purge, peer.id})
+        Klotho.send_after(config.peer_disconnected_timeout * 1000, self(), {:peer_purge, peer.id})
 
-        peer = %{peer | last_time_connected: last_time_connected}
-
-        put_in(state, [:peers, peer.id], peer)
+        put_in(state, [:peers, peer.id, :last_time_connected], last_time_connected)
 
       _other ->
         state

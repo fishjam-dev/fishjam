@@ -425,34 +425,7 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
-    state =
-      case State.find_peer_with_pid(state, pid) do
-        nil ->
-          state
-
-        {peer_id, peer} ->
-          room_id = State.id(state)
-
-          :ok =
-            state
-            |> State.engine_pid()
-            |> Engine.remove_endpoint(peer_id)
-
-          Event.broadcast_server_notification({:peer_disconnected, room_id, peer_id})
-          :telemetry.execute([:jellyfish, :room], %{peer_disconnects: 1}, %{room_id: room_id})
-
-          peer.tracks
-          |> Map.values()
-          |> Enum.each(
-            &Event.broadcast_server_notification(
-              {:track_removed, room_id, {:peer_id, peer_id}, &1}
-            )
-          )
-
-          peer = %{peer | status: :disconnected, socket_pid: nil, tracks: %{}}
-
-          State.put_peer(state, peer)
-      end
+    state = State.disconnect_peer(state, pid)
 
     {:noreply, state}
   end
@@ -590,19 +563,22 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_info({:peer_purge, peer_id}, state) do
-    # if State.peer_disconnected_long_enough?(state) do
-    #   Logger.info(
-    #     "Removing room because it was peerless for #{State.peerless_purge_timeout(state)} seconds"
-    #   )
+    with {:ok, peer} <- State.fetch_peer(state, peer_id),
+         true <- State.peer_disconnected_long_enough?(state, peer) do
+      Logger.info(
+        "Removing peer because it was disconnected for #{State.peerless_purge_timeout(state)} seconds"
+      )
 
-    #   {:stop, :normal, state}
-    # else
-    #   Logger.debug("Ignore peerless purge message")
+      state = State.remove_peer(state, peer_id, :timeout)
 
-    #   {:noreply, state}
-    # end
 
-    {:noreply, state}
+      {:noreply, state}
+    else
+      _other ->
+        Logger.debug("Ignore peer purge message for peer: #{peer_id}")
+
+        {:noreply, state}
+    end
   end
 
   @impl true
