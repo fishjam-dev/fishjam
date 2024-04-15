@@ -205,6 +205,7 @@ defmodule Jellyfish.RoomService do
     Logger.debug("Room #{room_id} is down with reason: normal")
 
     Phoenix.PubSub.broadcast(Jellyfish.PubSub, room_id, :room_stopped)
+    Event.broadcast_server_notification({:room_deleted, room_id})
     clear_room_metrics(room_id)
 
     {:noreply, state}
@@ -256,8 +257,6 @@ defmodule Jellyfish.RoomService do
     try do
       :ok = GenServer.stop(room, :normal)
       Logger.info("Deleted room #{inspect(room_id)}")
-
-      Event.broadcast_server_notification({:room_deleted, room_id})
     catch
       :exit, {:noproc, {GenServer, :stop, [^room, :normal, :infinity]}} ->
         Logger.warning("Room process with id #{inspect(room_id)} doesn't exist")

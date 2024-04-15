@@ -193,6 +193,29 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     assert_receive {:webhook_notification, %RoomDeleted{room_id: ^room_id}}, 1_000
   end
 
+  test "sends a message when room gets created and deleted by peerless purge", %{conn: conn} do
+    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+    ws = create_and_authenticate()
+
+    subscribe(ws, :server_notification)
+
+    conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
+
+    conn = post(conn, ~p"/room", maxPeers: 1, webhookUrl: @webhook_url, peerlessPurgeTimeout: 1)
+    assert %{"id" => room_id} = json_response(conn, :created)["data"]["room"]
+
+    assert_receive %RoomCreated{room_id: ^room_id}
+    assert_receive {:webhook_notification, %RoomCreated{room_id: ^room_id}}, 1_000
+
+    {peer_id, _token, _conn} = add_peer(conn, room_id)
+
+    conn = delete(conn, ~p"/room/#{room_id}/peer/#{peer_id}")
+    assert response(conn, :no_content)
+
+    assert_receive %RoomDeleted{room_id: ^room_id}, 5_000
+    assert_receive {:webhook_notification, %RoomDeleted{room_id: ^room_id}}, 1_000
+  end
+
   describe "WebRTC Peer" do
     test "sends a message when peer connects and room is deleted", %{conn: conn} do
       {room_id, peer_id, conn, _ws} = subscribe_on_notifications_and_connect_peer(conn)
@@ -358,6 +381,43 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
              } = peer
 
       assert Enum.empty?(tracks)
+    end
+
+    test "sends a message when peer gets created and deleted by disconnected purge", %{conn: conn} do
+      server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+      ws = create_and_authenticate()
+
+      subscribe(ws, :server_notification)
+
+      conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
+
+      conn =
+        post(conn, ~p"/room",
+          maxPeers: 1,
+          webhookUrl: @webhook_url,
+          peerlessPurgeTimeout: 1,
+          peerDisconnectedTimeout: 1
+        )
+
+      assert %{"id" => room_id} = json_response(conn, :created)["data"]["room"]
+
+      assert_receive %RoomCreated{room_id: ^room_id}
+      assert_receive {:webhook_notification, %RoomCreated{room_id: ^room_id}}, 1_000
+
+      {peer_id, token, _conn} = add_peer(conn, room_id)
+      {:ok, peer_ws} = WS.start("ws://127.0.0.1:#{@port}/socket/peer/websocket", :peer)
+      WS.send_auth_request(peer_ws, token)
+      assert_receive %PeerConnected{peer_id: ^peer_id, room_id: ^room_id}
+      :ok = GenServer.stop(peer_ws)
+
+      assert_receive %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}
+
+      assert_receive {:webhook_notification,
+                      %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}},
+                     1000
+
+      assert_receive %RoomDeleted{room_id: ^room_id}, 5_000
+      assert_receive {:webhook_notification, %RoomDeleted{room_id: ^room_id}}, 1_000
     end
   end
 
