@@ -141,27 +141,23 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def handle_call({:add_peer, peer_type, options}, _from, state) do
-    {reply, state} =
-      if State.reached_peers_limit?(state) do
-        {{:error, :reached_peers_limit}, state}
-      else
-        options = State.generate_peer_options(state, options)
+  def handle_call({:add_peer, peer_type, override_options}, _from, state) do
+    with false <- State.reached_peers_limit?(state),
+         options <- State.generate_peer_options(state, override_options),
+         {:ok, peer} <- Peer.new(peer_type, options) do
+      state = State.put_peer(state, peer)
 
-        with {:ok, peer} <- Peer.new(peer_type, options) do
-          state = State.put_peer(state, peer)
+      Logger.info("Added peer #{inspect(peer.id)}")
 
-          Logger.info("Added peer #{inspect(peer.id)}")
+      {:reply, {:ok, peer}, state}
+    else
+      true ->
+        {:reply, {:error, :reached_peers_limit}, state}
 
-          {{:ok, peer}, state}
-        else
-          {:error, reason} ->
-            Logger.warning("Unable to add peer: #{inspect(reason)}")
-            {:error, state}
-        end
-      end
-
-    {:reply, reply, state}
+      {:error, reason} ->
+        Logger.warning("Unable to add peer: #{inspect(reason)}")
+        {:reply, :error, state}
+    end
   end
 
   @impl true
