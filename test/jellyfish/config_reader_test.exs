@@ -181,7 +181,8 @@ defmodule Jellyfish.ConfigReaderTest do
       "JF_DIST_MODE",
       "JF_DIST_COOKIE",
       "JF_DIST_NODE_NAME",
-      "JF_DIST_NODES"
+      "JF_DIST_NODES",
+      "JF_DIST_POLLING_INTERVAL"
     ] do
       {:ok, hostname} = :inet.gethostname()
 
@@ -237,7 +238,8 @@ defmodule Jellyfish.ConfigReaderTest do
       "JF_DIST_COOKIE",
       "JF_DIST_NODE_NAME",
       "JF_DIST_NODES",
-      "JF_DIST_STRATEGY_NAME"
+      "JF_DIST_STRATEGY_NAME",
+      "JF_DIST_POLLING_INTERVAL"
     ] do
       assert ConfigReader.read_dist_config() == [
                enabled: false,

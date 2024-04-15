@@ -571,7 +571,6 @@ defmodule Jellyfish.Room do
 
       state = State.remove_peer(state, peer_id, :timeout)
 
-
       {:noreply, state}
     else
       _other ->
