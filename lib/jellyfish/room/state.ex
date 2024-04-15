@@ -104,7 +104,7 @@ defmodule Jellyfish.Room.State do
   @spec engine_pid(state :: t()) :: pid()
   def engine_pid(state), do: state.engine_pid
 
-  @spec peerless_purge_timeout(state :: t()) :: Config.peerless_purge_timeout()
+  @spec peerless_purge_timeout(state :: t()) :: Config.purge_timeout()
   def peerless_purge_timeout(state), do: state.config.peerless_purge_timeout
 
   @spec peerless_long_enough?(state :: t()) :: boolean()
