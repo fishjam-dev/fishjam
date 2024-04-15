@@ -129,6 +129,7 @@ defmodule Jellyfish.Room do
   @impl true
   def init([id, config]) do
     state = State.new(id, config)
+
     Logger.metadata(room_id: id)
     Logger.info("Initialize room")
 
