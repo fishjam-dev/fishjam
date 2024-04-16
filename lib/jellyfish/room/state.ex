@@ -205,6 +205,28 @@ defmodule Jellyfish.Room.State do
           {:ok, Component.t()} | :error
   def fetch_component(state, component_id), do: Map.fetch(state.components, component_id)
 
+  @spec update_peer_metadata(state :: t(), peer_id :: Peer.id(), metadata :: any()) :: t()
+  def update_peer_metadata(state, peer_id, metadata) do
+    Event.broadcast_server_notification({:peer_metadata_updated, state.id, peer_id, metadata})
+
+    put_in(state, [:peers, peer_id, :metadata], metadata)
+  end
+
+  @spec connect_peer(state :: t(), peer :: Peer.t(), socket_pid :: pid()) :: t()
+  def connect_peer(state, peer, socket_pid) do
+    peer = %{peer | status: :connected, socket_pid: socket_pid}
+
+    state = put_peer(state, peer)
+
+    :ok = Engine.add_endpoint(state.engine_pid, peer.engine_endpoint, id: peer.id)
+
+    Logger.info("Peer #{inspect(peer.id)} connected")
+
+    :telemetry.execute([:jellyfish, :room], %{peer_connects: 1}, %{room_id: state.id})
+
+    state
+  end
+
   @spec disconnect_peer(state :: t(), peer_ws_pid :: pid()) :: t()
   def disconnect_peer(state, peer_ws_pid) do
     case find_peer_with_pid(state, peer_ws_pid) do
@@ -310,6 +332,15 @@ defmodule Jellyfish.Room.State do
     Enum.find_value(state.components, fn {id, component} ->
       if id == component_id, do: component
     end)
+  end
+
+  @spec set_hls_playable(state :: t()) :: t()
+  def set_hls_playable(state) do
+    endpoint_id = find_hls_component_id(state)
+
+    Event.broadcast_server_notification({:hls_playable, state.id, endpoint_id})
+
+    update_in(state, [:components, endpoint_id, :properties], &Map.put(&1, :playable, true))
   end
 
   @spec find_hls_component_id(state :: t()) :: Component.t() | nil

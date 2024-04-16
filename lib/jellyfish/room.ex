@@ -12,7 +12,6 @@ defmodule Jellyfish.Room do
 
   alias Jellyfish.Component
   alias Jellyfish.Component.{HLS, Recording, SIP}
-  alias Jellyfish.Event
   alias Jellyfish.Peer
   alias Jellyfish.Room.{Config, State}
 
@@ -168,17 +167,7 @@ defmodule Jellyfish.Room do
         {:ok, %{status: :disconnected} = peer} ->
           Process.monitor(socket_pid)
 
-          peer = %{peer | status: :connected, socket_pid: socket_pid}
-          state = put_in(state, [:peers, peer_id], peer)
-
-          :ok =
-            state
-            |> State.engine_pid()
-            |> Engine.add_endpoint(peer.engine_endpoint, id: peer_id)
-
-          Logger.info("Peer #{inspect(peer_id)} connected")
-
-          :telemetry.execute([:jellyfish, :room], %{peer_connects: 1}, %{room_id: State.id(state)})
+          state = State.connect_peer(state, peer, socket_pid)
 
           {:ok, state}
 
@@ -432,12 +421,7 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_info({:playlist_playable, :video, _playlist_id}, state) do
-    endpoint_id = State.find_hls_component_id(state)
-
-    Event.broadcast_server_notification({:hls_playable, State.id(state), endpoint_id})
-
-    state =
-      update_in(state, [:components, endpoint_id, :properties], &Map.put(&1, :playable, true))
+    state = State.set_hls_playable(state)
 
     {:noreply, state}
   end
@@ -488,11 +472,7 @@ defmodule Jellyfish.Room do
       when peer_exists?(state, endpoint_id) do
     Logger.info("Peer #{endpoint_id} metadata updated: #{inspect(metadata)}")
 
-    Event.broadcast_server_notification(
-      {:peer_metadata_updated, State.id(state), endpoint_id, metadata}
-    )
-
-    state = put_in(state, [:peers, endpoint_id, :metadata], metadata)
+    state = State.update_peer_metadata(state, endpoint_id, metadata)
     {:noreply, state}
   end
 

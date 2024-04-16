@@ -40,7 +40,7 @@ defmodule Jellyfish.Peer do
           engine_endpoint: Membrane.ChildrenSpec.child_definition(),
           tracks: %{Track.id() => Track.t()},
           metadata: any(),
-          last_time_connected: non_neg_integer() | nil
+          last_time_connected: integer() | nil
         }
 
   @spec parse_type(String.t()) :: {:ok, peer()} | {:error, :invalid_type}
