@@ -61,6 +61,19 @@ defmodule JellyfishWeb.ApiSpec.Peer do
     })
   end
 
+  defmodule WebSocketUrl do
+    @moduledoc false
+
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "WebsocketURL",
+      description: "Websocket URL to which peer has to connect",
+      type: :string,
+      example: "www.jellyfish.org/socket/peer"
+    })
+  end
+
   defmodule PeerMetadata do
     @moduledoc false
 

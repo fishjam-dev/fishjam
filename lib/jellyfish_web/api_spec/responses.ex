@@ -2,7 +2,11 @@
   {PeerDetailsResponse, "Response containing peer details and their token",
    %OpenApiSpex.Schema{
      type: :object,
-     properties: %{peer: JellyfishWeb.ApiSpec.Peer, token: JellyfishWeb.ApiSpec.Peer.Token},
+     properties: %{
+       peer: JellyfishWeb.ApiSpec.Peer,
+       token: JellyfishWeb.ApiSpec.Peer.Token,
+       peer_websocket_url: JellyfishWeb.ApiSpec.Peer.WebSocketUrl
+     },
      required: [:peer, :token]
    }},
   {RoomDetailsResponse, "Response containing room details", JellyfishWeb.ApiSpec.Room},

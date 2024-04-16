@@ -397,6 +397,12 @@ components:
       title: HlsPart
       type: integer
       x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Params.HlsPart
+    WebsocketURL:
+      description: Websocket URL to which peer has to connect
+      example: www.jellyfish.org/socket/peer
+      title: WebsocketURL
+      type: string
+      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.WebSocketUrl
     ComponentDetailsResponse:
       description: Response containing component details
       properties:
@@ -681,6 +687,8 @@ components:
           properties:
             peer:
               $ref: '#/components/schemas/Peer'
+            peer_websocket_url:
+              $ref: '#/components/schemas/WebsocketURL'
             token:
               $ref: '#/components/schemas/AuthToken'
           required:
