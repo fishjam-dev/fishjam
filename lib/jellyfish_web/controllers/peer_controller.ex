@@ -74,7 +74,11 @@ defmodule JellyfishWeb.PeerController do
          {:ok, peer_type} <- Peer.parse_type(peer_type_string),
          {:ok, _room_pid} <- RoomService.find_room(room_id),
          {:ok, peer} <- Room.add_peer(room_id, peer_type, peer_options) do
-      assigns = [peer: peer, token: PeerToken.generate(%{peer_id: peer.id, room_id: room_id})]
+      assigns = [
+        peer: peer,
+        token: PeerToken.generate(%{peer_id: peer.id, room_id: room_id}),
+        peer_websocket_url: Jellyfish.Application.get_peer_websocket_address()
+      ]
 
       conn
       |> put_resp_content_type("application/json")

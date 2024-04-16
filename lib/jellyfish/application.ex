@@ -75,6 +75,16 @@ defmodule Jellyfish.Application do
     :ok
   end
 
+  @spec get_jellyfish_address() :: binary()
+  def get_jellyfish_address() do
+    Application.fetch_env!(:jellyfish, :address)
+  end
+
+  @spec get_peer_websocket_address() :: binary()
+  def get_peer_websocket_address() do
+    Application.fetch_env!(:jellyfish, :address) <> "/socket/peer"
+  end
+
   defp config_distribution(dist_config) do
     :ok = ensure_epmd_started!()
 
