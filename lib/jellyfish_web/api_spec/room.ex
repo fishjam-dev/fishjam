@@ -49,7 +49,7 @@ defmodule JellyfishWeb.ApiSpec.Room do
         },
         peerDisconnectedTimeout: %Schema{
           description:
-            "Duration (in seconds) after which the peer will be removed if it disconnects. If not provided, this feature is disabled.",
+            "Duration (in seconds) after which the peer will be removed if it is disconnected. If not provided, this feature is disabled.",
           type: :integer,
           minimum: 1,
           example: 60,
