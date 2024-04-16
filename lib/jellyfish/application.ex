@@ -82,7 +82,7 @@ defmodule Jellyfish.Application do
 
   @spec get_peer_websocket_address() :: binary()
   def get_peer_websocket_address() do
-    Application.fetch_env!(:jellyfish, :address) <> "/socket/peer"
+    Application.fetch_env!(:jellyfish, :address) <> "/socket/peer/websocket"
   end
 
   defp config_distribution(dist_config) do
