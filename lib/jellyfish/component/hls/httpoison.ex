@@ -5,7 +5,7 @@ defmodule Jellyfish.Component.HLS.HTTPoison do
 
   @impl true
   def request(method, url, body \\ "", headers \\ [], http_opts \\ []) do
-    case HTTPoison.request(method, url, body, headers, http_opts) do
+    case HTTPoison.request(method, url, body, headers, http_opts ++ [recv_timeout: 10_000]) do
       {:ok, %HTTPoison.Response{} = response} ->
         {:ok, adapt_response(response)}
 
