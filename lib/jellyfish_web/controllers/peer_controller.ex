@@ -77,7 +77,7 @@ defmodule JellyfishWeb.PeerController do
       assigns = [
         peer: peer,
         token: PeerToken.generate(%{peer_id: peer.id, room_id: room_id}),
-        peer_websocket_url: Jellyfish.Application.get_peer_websocket_address()
+        peer_websocket_url: Jellyfish.peer_websocket_address()
       ]
 
       conn

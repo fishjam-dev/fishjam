@@ -22,7 +22,7 @@ defmodule JellyfishWeb.PeerControllerTest do
       assert response(conn, :no_content)
     end)
 
-    peer_ws_url = Jellyfish.Application.get_peer_websocket_address()
+    peer_ws_url = Jellyfish.peer_websocket_address()
 
     {:ok, %{conn: conn, room_id: id, peer_ws_url: peer_ws_url}}
   end
