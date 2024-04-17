@@ -26,6 +26,17 @@ defmodule Jellyfish.ResourceManager do
   def init(opts) do
     Logger.debug("Initialize resource manager")
 
+    base_path = Recording.get_base_path()
+    dir_result = File.mkdir_p(base_path)
+
+    case dir_result do
+      {:error, reason} ->
+        Logger.error("Can't create directory at #{base_path} with reason: #{reason}")
+
+      :ok ->
+        nil
+    end
+
     schedule_free_resources(opts.interval)
 
     {:ok, opts}

@@ -146,7 +146,7 @@ defmodule Jellyfish.RoomService do
 
       Event.broadcast_server_notification({:room_created, room_id})
 
-      {:reply, {:ok, room, Application.fetch_env!(:jellyfish, :address)}, state}
+      {:reply, {:ok, room, Jellyfish.address()}, state}
     else
       {:error, :room_already_exists} = error ->
         {:reply, error, state}

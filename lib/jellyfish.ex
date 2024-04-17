@@ -10,4 +10,14 @@ defmodule Jellyfish do
   @version Mix.Project.config()[:version]
 
   def version(), do: @version
+
+  @spec address() :: binary()
+  def address() do
+    Application.fetch_env!(:jellyfish, :address)
+  end
+
+  @spec peer_websocket_address() :: binary()
+  def peer_websocket_address() do
+    Application.fetch_env!(:jellyfish, :address) <> "/socket/peer/websocket"
+  end
 end
