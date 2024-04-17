@@ -63,6 +63,9 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     password: "yourpassword"
   }
 
+  @purge_timeout_s 1
+  @purge_timeout_ms @purge_timeout_s * 1000
+
   Application.put_env(
     :jellyfish,
     Endpoint,
@@ -108,6 +111,9 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
 
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
+
+    Klotho.Mock.reset()
+    Klotho.Mock.freeze()
 
     on_exit(fn ->
       conn = get(conn, ~p"/room")
@@ -190,6 +196,37 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     assert response(conn, :no_content)
 
     assert_receive %RoomDeleted{room_id: ^room_id}
+    assert_receive {:webhook_notification, %RoomDeleted{room_id: ^room_id}}, 1_000
+  end
+
+  test "sends a message when room gets created and deleted by peerless purge", %{conn: conn} do
+    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+    ws = create_and_authenticate()
+
+    subscribe(ws, :server_notification)
+
+    conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
+
+    conn =
+      post(conn, ~p"/room",
+        maxPeers: 1,
+        webhookUrl: @webhook_url,
+        peerlessPurgeTimeout: @purge_timeout_s
+      )
+
+    assert %{"id" => room_id} = json_response(conn, :created)["data"]["room"]
+
+    assert_receive %RoomCreated{room_id: ^room_id}
+    assert_receive {:webhook_notification, %RoomCreated{room_id: ^room_id}}, 1_000
+
+    {peer_id, _token, _conn} = add_peer(conn, room_id)
+
+    conn = delete(conn, ~p"/room/#{room_id}/peer/#{peer_id}")
+    assert response(conn, :no_content)
+
+    Klotho.Mock.warp_by(@purge_timeout_ms + 25)
+
+    assert_receive %RoomDeleted{room_id: ^room_id}, 1_000
     assert_receive {:webhook_notification, %RoomDeleted{room_id: ^room_id}}, 1_000
   end
 
@@ -358,6 +395,51 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
              } = peer
 
       assert Enum.empty?(tracks)
+    end
+
+    test "sends a message when peer gets created and deleted by disconnected purge", %{conn: conn} do
+      server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+      ws = create_and_authenticate()
+
+      subscribe(ws, :server_notification)
+
+      conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
+
+      conn =
+        post(conn, ~p"/room",
+          maxPeers: 1,
+          webhookUrl: @webhook_url,
+          peerlessPurgeTimeout: @purge_timeout_s,
+          peerDisconnectedTimeout: @purge_timeout_s
+        )
+
+      assert %{"id" => room_id} = json_response(conn, :created)["data"]["room"]
+
+      assert_receive %RoomCreated{room_id: ^room_id}
+      assert_receive {:webhook_notification, %RoomCreated{room_id: ^room_id}}, 1_000
+
+      {peer_id, token, _conn} = add_peer(conn, room_id)
+      {:ok, peer_ws} = WS.start("ws://127.0.0.1:#{@port}/socket/peer/websocket", :peer)
+      WS.send_auth_request(peer_ws, token)
+
+      assert_receive %PeerConnected{peer_id: ^peer_id, room_id: ^room_id}
+
+      assert_receive {:webhook_notification,
+                      %PeerConnected{peer_id: ^peer_id, room_id: ^room_id}},
+                     1000
+
+      :ok = GenServer.stop(peer_ws)
+
+      assert_receive %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}
+
+      assert_receive {:webhook_notification,
+                      %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}},
+                     1_000
+
+      Klotho.Mock.warp_by(@purge_timeout_ms * 3)
+
+      assert_receive %RoomDeleted{room_id: ^room_id}, 1_000
+      assert_receive {:webhook_notification, %RoomDeleted{room_id: ^room_id}}, 1_000
     end
   end
 

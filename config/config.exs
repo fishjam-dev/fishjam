@@ -17,7 +17,7 @@ config :membrane_telemetry_metrics, enabled: true
 
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id, :room_id]
+  metadata: [:request_id, :room_id, :peer_id]
 
 config :logger_json, :backend,
   metadata: [:request_id, :room_id],

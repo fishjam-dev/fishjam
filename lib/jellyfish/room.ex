@@ -6,16 +6,15 @@ defmodule Jellyfish.Room do
   use Bunch.Access
   use GenServer
 
+  import Jellyfish.Room.State
+
   require Logger
 
   alias Jellyfish.Component
-  alias Jellyfish.Component.{HLS, Recording, RTSP, SIP}
-  alias Jellyfish.Event
+  alias Jellyfish.Component.{HLS, Recording, SIP}
   alias Jellyfish.Peer
-  alias Jellyfish.Room.Config
-  alias Jellyfish.Track
+  alias Jellyfish.Room.{Config, State}
 
-  alias Membrane.ICE.TURNManager
   alias Membrane.RTC.Engine
   alias Membrane.RTC.Engine.Endpoint
 
@@ -30,38 +29,8 @@ defmodule Jellyfish.Room do
     TrackRemoved
   }
 
-  @enforce_keys [
-    :id,
-    :config,
-    :engine_pid,
-    :network_options
-  ]
-  defstruct @enforce_keys ++ [components: %{}, peers: %{}, last_peer_left: 0]
-
   @type id :: String.t()
-
-  @typedoc """
-  This module contains:
-  * `id` - room id
-  * `config` - configuration of room. For example you can specify maximal number of peers
-  * `components` - map of components
-  * `peers` - map of peers
-  * `engine` - pid of engine
-  * `network_options` - network options
-  * `last_peer_left` - arbitrary timestamp with latest occurence of the room becoming peerless
-  """
-  @type t :: %__MODULE__{
-          id: id(),
-          config: Config.t(),
-          components: %{Component.id() => Component.t()},
-          peers: %{Peer.id() => Peer.t()},
-          engine_pid: pid(),
-          network_options: map(),
-          last_peer_left: integer()
-        }
-
-  defguardp endpoint_exists?(state, endpoint_id)
-            when is_map_key(state.components, endpoint_id) or is_map_key(state.peers, endpoint_id)
+  @type t :: State.t()
 
   def registry_id(room_id), do: {:via, Registry, {Jellyfish.RoomRegistry, room_id}}
 
@@ -75,7 +44,7 @@ defmodule Jellyfish.Room do
     end
   end
 
-  @spec get_state(id()) :: t() | nil
+  @spec get_state(id()) :: State.t() | nil
   def get_state(room_id) do
     registry_room_id = registry_id(room_id)
 
@@ -158,7 +127,8 @@ defmodule Jellyfish.Room do
 
   @impl true
   def init([id, config]) do
-    state = new(id, config)
+    state = State.new(id, config)
+
     Logger.metadata(room_id: id)
     Logger.info("Initialize room")
 
@@ -171,52 +141,33 @@ defmodule Jellyfish.Room do
   end
 
   @impl true
-  def handle_call({:add_peer, peer_type, options}, _from, state) do
-    {reply, state} =
-      if Enum.count(state.peers) == state.config.max_peers do
-        {{:error, :reached_peers_limit}, state}
-      else
-        options =
-          Map.merge(
-            %{
-              engine_pid: state.engine_pid,
-              network_options: state.network_options,
-              video_codec: state.config.video_codec,
-              room_id: state.id
-            },
-            options
-          )
+  def handle_call({:add_peer, peer_type, override_options}, _from, state) do
+    with false <- State.reached_peers_limit?(state),
+         options <- State.generate_peer_options(state, override_options),
+         {:ok, peer} <- Peer.new(peer_type, options) do
+      state = State.put_peer(state, peer)
 
-        with {:ok, peer} <- Peer.new(peer_type, options) do
-          state = put_in(state, [:peers, peer.id], peer) |> maybe_schedule_peerless_purge()
+      Logger.info("Added peer #{inspect(peer.id)}")
 
-          Logger.info("Added peer #{inspect(peer.id)}")
+      {:reply, {:ok, peer}, state}
+    else
+      true ->
+        {:reply, {:error, :reached_peers_limit}, state}
 
-          {{:ok, peer}, state}
-        else
-          {:error, reason} ->
-            Logger.warning("Unable to add peer: #{inspect(reason)}")
-            {:error, state}
-        end
-      end
-
-    {:reply, reply, state}
+      {:error, reason} ->
+        Logger.warning("Unable to add peer: #{inspect(reason)}")
+        {:reply, :error, state}
+    end
   end
 
   @impl true
   def handle_call({:set_peer_connected, peer_id}, {socket_pid, _tag}, state) do
     {reply, state} =
-      case Map.fetch(state.peers, peer_id) do
+      case State.fetch_peer(state, peer_id) do
         {:ok, %{status: :disconnected} = peer} ->
           Process.monitor(socket_pid)
 
-          peer = %{peer | status: :connected, socket_pid: socket_pid}
-          state = put_in(state, [:peers, peer_id], peer)
-
-          :ok = Engine.add_endpoint(state.engine_pid, peer.engine_endpoint, id: peer_id)
-
-          Logger.info("Peer #{inspect(peer_id)} connected")
-          :telemetry.execute([:jellyfish, :room], %{peer_connects: 1}, %{room_id: state.id})
+          state = State.connect_peer(state, peer, socket_pid)
 
           {:ok, state}
 
@@ -233,7 +184,7 @@ defmodule Jellyfish.Room do
   @impl true
   def handle_call({:get_peer_connection_status, peer_id}, _from, state) do
     reply =
-      case Map.fetch(state.peers, peer_id) do
+      case State.fetch_peer(state, peer_id) do
         {:ok, peer} -> {:ok, peer.status}
         :error -> {:error, :peer_not_found}
       end
@@ -244,10 +195,8 @@ defmodule Jellyfish.Room do
   @impl true
   def handle_call({:remove_peer, peer_id}, _from, state) do
     {reply, state} =
-      if Map.has_key?(state.peers, peer_id) do
-        state =
-          handle_remove_peer(peer_id, state, :peer_removed)
-          |> maybe_schedule_peerless_purge()
+      if peer_exists?(state, peer_id) do
+        state = State.remove_peer(state, peer_id, :peer_removed)
 
         {:ok, state}
       else
@@ -259,19 +208,21 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_call({:add_component, component_type, options}, _from, state) do
+    engine_pid = State.engine_pid(state)
+
     options =
       Map.merge(
-        %{engine_pid: state.engine_pid, room_id: state.id},
+        %{engine_pid: engine_pid, room_id: State.id(state)},
         options
       )
 
     with :ok <- check_component_allowed(component_type, state),
          {:ok, component} <- Component.new(component_type, options) do
-      state = put_in(state, [:components, component.id], component)
+      state = State.put_component(state, component)
 
       component_type.after_init(state, component, options)
 
-      :ok = Engine.add_endpoint(state.engine_pid, component.engine_endpoint, id: component.id)
+      :ok = Engine.add_endpoint(engine_pid, component.engine_endpoint, id: component.id)
 
       Logger.info("Added component #{inspect(component.id)}")
 
@@ -335,8 +286,8 @@ defmodule Jellyfish.Room do
   @impl true
   def handle_call({:remove_component, component_id}, _from, state) do
     {reply, state} =
-      if Map.has_key?(state.components, component_id) do
-        state = handle_remove_component(component_id, state, :component_removed)
+      if component_exists?(state, component_id) do
+        state = State.remove_component(state, component_id, :component_removed)
         {:ok, state}
       else
         {{:error, :component_not_found}, state}
@@ -347,15 +298,17 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_call({:subscribe, component_id, origins}, _from, state) do
-    component = get_component_by_id(state, component_id)
+    component = State.get_component_by_id(state, component_id)
+
+    engine_pid = State.engine_pid(state)
 
     reply =
       case validate_subscription_mode(component) do
         :ok when component.type == HLS ->
-          Endpoint.HLS.subscribe(state.engine_pid, component.id, origins)
+          Endpoint.HLS.subscribe(engine_pid, component.id, origins)
 
         :ok when component.type == Recording ->
-          Endpoint.Recording.subscribe(state.engine_pid, component.id, origins)
+          Endpoint.Recording.subscribe(engine_pid, component.id, origins)
 
         :ok when component.type not in [HLS, Recording] ->
           {:error, :invalid_component_type}
@@ -369,15 +322,22 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_call(:get_num_forwarded_tracks, _from, state) do
-    forwarded_tracks = Engine.get_num_forwarded_tracks(state.engine_pid)
+    forwarded_tracks =
+      state
+      |> State.engine_pid()
+      |> Engine.get_num_forwarded_tracks()
+
     {:reply, forwarded_tracks, state}
   end
 
   @impl true
   def handle_call({:dial, component_id, phone_number}, _from, state) do
-    case Map.fetch(state.components, component_id) do
+    case State.fetch_component(state, component_id) do
       {:ok, component} when component.type == SIP ->
-        Endpoint.SIP.dial(state.engine_pid, component_id, phone_number)
+        state
+        |> State.engine_pid()
+        |> Endpoint.SIP.dial(component_id, phone_number)
+
         {:reply, :ok, state}
 
       {:ok, _component} ->
@@ -390,9 +350,12 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_call({:end_call, component_id}, _from, state) do
-    case Map.fetch(state.components, component_id) do
+    case State.fetch_component(state, component_id) do
       {:ok, component} when component.type == SIP ->
-        Endpoint.SIP.end_call(state.engine_pid, component_id)
+        state
+        |> State.engine_pid()
+        |> Endpoint.SIP.end_call(component_id)
+
         {:reply, :ok, state}
 
       :error ->
@@ -405,13 +368,16 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_cast({:media_event, peer_id, event}, state) do
-    Engine.message_endpoint(state.engine_pid, peer_id, {:media_event, event})
+    state
+    |> State.engine_pid()
+    |> Engine.message_endpoint(peer_id, {:media_event, event})
+
     {:noreply, state}
   end
 
   @impl true
   def handle_info(%EndpointMessage{endpoint_id: to, message: {:media_event, data}}, state) do
-    with {:ok, peer} <- Map.fetch(state.peers, to),
+    with {:ok, peer} <- State.fetch_peer(state, to),
          socket_pid when is_pid(socket_pid) <- Map.get(peer, :socket_pid) do
       send(socket_pid, {:media_event, data})
     else
@@ -434,10 +400,10 @@ defmodule Jellyfish.Room do
     Logger.error("RTC Engine endpoint #{inspect(endpoint_id)} crashed: #{inspect(reason)}")
 
     state =
-      if Map.has_key?(state.peers, endpoint_id) do
-        handle_remove_peer(endpoint_id, state, {:peer_crashed, parse_crash_reason(reason)})
+      if peer_exists?(state, endpoint_id) do
+        State.remove_peer(state, endpoint_id, {:peer_crashed, parse_crash_reason(reason)})
       else
-        handle_remove_component(endpoint_id, state, :component_crashed)
+        State.remove_component(state, endpoint_id, :component_crashed)
       end
 
     {:noreply, state}
@@ -445,29 +411,7 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
-    state =
-      case Enum.find(state.peers, fn {_id, peer} -> peer.socket_pid == pid end) do
-        nil ->
-          state
-
-        {peer_id, peer} ->
-          :ok = Engine.remove_endpoint(state.engine_pid, peer_id)
-          Event.broadcast_server_notification({:peer_disconnected, state.id, peer_id})
-          :telemetry.execute([:jellyfish, :room], %{peer_disconnects: 1}, %{room_id: state.id})
-
-          peer.tracks
-          |> Map.values()
-          |> Enum.each(
-            &Event.broadcast_server_notification(
-              {:track_removed, state.id, {:peer_id, peer_id}, &1}
-            )
-          )
-
-          peer = %{peer | status: :disconnected, socket_pid: nil, tracks: %{}}
-
-          put_in(state, [:peers, peer_id], peer)
-          |> maybe_schedule_peerless_purge()
-      end
+    state = State.disconnect_peer(state, pid)
 
     {:noreply, state}
   end
@@ -477,15 +421,7 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_info({:playlist_playable, :video, _playlist_id}, state) do
-    endpoint_id =
-      Enum.find_value(state.components, fn {id, %{type: type}} ->
-        if type == HLS, do: id
-      end)
-
-    Event.broadcast_server_notification({:hls_playable, state.id, endpoint_id})
-
-    state =
-      update_in(state, [:components, endpoint_id, :properties], &Map.put(&1, :playable, true))
+    state = State.set_hls_playable(state)
 
     {:noreply, state}
   end
@@ -507,15 +443,15 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_info(%EndpointRemoved{endpoint_id: endpoint_id}, state)
-      when is_map_key(state.peers, endpoint_id) do
+      when peer_exists?(state, endpoint_id) do
     # The peer has been either removed, crashed or disconnected
     # The changes in state are applied in appropriate callbacks
     {:noreply, state}
   end
 
   def handle_info(%EndpointRemoved{endpoint_id: endpoint_id}, state)
-      when is_map_key(state.components, endpoint_id) do
-    state = handle_remove_component(endpoint_id, state, :component_finished)
+      when component_exists?(state, endpoint_id) do
+    state = State.remove_component(state, endpoint_id, :component_finished)
     {:noreply, state}
   end
 
@@ -533,11 +469,10 @@ defmodule Jellyfish.Room do
         %EndpointMetadataUpdated{endpoint_id: endpoint_id, endpoint_metadata: metadata},
         state
       )
-      when is_map_key(state.peers, endpoint_id) do
+      when peer_exists?(state, endpoint_id) do
     Logger.info("Peer #{endpoint_id} metadata updated: #{inspect(metadata)}")
-    Event.broadcast_server_notification({:peer_metadata_updated, state.id, endpoint_id, metadata})
 
-    state = put_in(state, [:peers, endpoint_id, :metadata], metadata)
+    state = State.update_peer_metadata(state, endpoint_id, metadata)
     {:noreply, state}
   end
 
@@ -549,19 +484,7 @@ defmodule Jellyfish.Room do
   @impl true
   def handle_info(%TrackAdded{endpoint_id: endpoint_id} = track_info, state)
       when endpoint_exists?(state, endpoint_id) do
-    endpoint_id_type = get_endpoint_id_type(state, endpoint_id)
-
-    Logger.info("Track #{track_info.track_id} added, #{endpoint_id_type}: #{endpoint_id}")
-
-    Event.broadcast_server_notification(
-      {:track_added, state.id, {endpoint_id_type, endpoint_id}, track_info}
-    )
-
-    endpoint_group = get_endpoint_group(state, track_info.endpoint_id)
-    access_path = [endpoint_group, track_info.endpoint_id, :tracks, track_info.track_id]
-
-    track = Track.from_track_message(track_info)
-    state = put_in(state, access_path, track)
+    state = State.put_track(state, track_info)
 
     {:noreply, state}
   end
@@ -575,25 +498,7 @@ defmodule Jellyfish.Room do
   @impl true
   def handle_info(%TrackMetadataUpdated{endpoint_id: endpoint_id} = track_info, state)
       when endpoint_exists?(state, endpoint_id) do
-    endpoint_group = get_endpoint_group(state, endpoint_id)
-    access_path = [endpoint_group, endpoint_id, :tracks, track_info.track_id]
-
-    state =
-      update_in(state, access_path, fn
-        %Track{} = track ->
-          endpoint_id_type = get_endpoint_id_type(state, endpoint_id)
-          updated_track = %Track{track | metadata: track_info.track_metadata}
-
-          Logger.info(
-            "Track #{updated_track.id}, #{endpoint_id_type}: #{endpoint_id} - metadata updated: #{inspect(updated_track.metadata)}"
-          )
-
-          Event.broadcast_server_notification(
-            {:track_metadata_updated, state.id, {endpoint_id_type, endpoint_id}, updated_track}
-          )
-
-          updated_track
-      end)
+    state = State.update_track(state, track_info)
 
     {:noreply, state}
   end
@@ -607,17 +512,7 @@ defmodule Jellyfish.Room do
   @impl true
   def handle_info(%TrackRemoved{endpoint_id: endpoint_id} = track_info, state)
       when endpoint_exists?(state, endpoint_id) do
-    endpoint_group = get_endpoint_group(state, endpoint_id)
-    access_path = [endpoint_group, endpoint_id, :tracks, track_info.track_id]
-
-    {track, state} = pop_in(state, access_path)
-
-    endpoint_id_type = get_endpoint_id_type(state, endpoint_id)
-    Logger.info("Track removed: #{track.id}, #{endpoint_id_type}: #{endpoint_id}")
-
-    Event.broadcast_server_notification(
-      {:track_removed, state.id, {endpoint_id_type, endpoint_id}, track}
-    )
+    state = State.remove_track(state, track_info)
 
     {:noreply, state}
   end
@@ -630,14 +525,35 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_info(:peerless_purge, state) do
-    if peerless_long_enough?(state) do
+    if State.peerless_long_enough?(state) do
       Logger.info(
-        "Removing room because it was peerless for #{state.config.peerless_purge_timeout} seconds"
+        "Removing room because it was peerless for #{State.peerless_purge_timeout(state)} seconds"
       )
 
       {:stop, :normal, state}
     else
+      Logger.debug("Ignore peerless purge message")
+
       {:noreply, state}
+    end
+  end
+
+  @impl true
+  def handle_info({:peer_purge, peer_id}, state) do
+    with {:ok, peer} <- State.fetch_peer(state, peer_id),
+         true <- State.peer_disconnected_long_enough?(state, peer) do
+      Logger.info(
+        "Removing peer because it was disconnected for #{State.peerless_purge_timeout(state)} seconds"
+      )
+
+      state = State.remove_peer(state, peer_id, :timeout)
+
+      {:noreply, state}
+    else
+      _other ->
+        Logger.debug("Ignore peer purge message for peer: #{peer_id}")
+
+        {:noreply, state}
     end
   end
 
@@ -651,190 +567,9 @@ defmodule Jellyfish.Room do
   def terminate(_reason, %{engine_pid: engine_pid} = state) do
     Engine.terminate(engine_pid, asynchronous?: true, timeout: 10_000)
 
-    state.peers
-    |> Map.values()
-    |> Enum.each(&handle_remove_peer(&1.id, state, :room_stopped))
-
-    state.components
-    |> Map.values()
-    |> Enum.each(&handle_remove_component(&1.id, state, :room_stopped))
+    State.remove_all_endpoints(state)
 
     :ok
-  end
-
-  defp new(id, config) do
-    rtc_engine_options = [
-      id: id
-    ]
-
-    {:ok, pid} = Engine.start_link(rtc_engine_options, [])
-    Engine.register(pid, self())
-
-    webrtc_config = Application.fetch_env!(:jellyfish, :webrtc_config)
-
-    turn_options =
-      if webrtc_config[:webrtc_used?] do
-        turn_ip = webrtc_config[:turn_listen_ip]
-        turn_mock_ip = webrtc_config[:turn_ip]
-
-        [
-          ip: turn_ip,
-          mock_ip: turn_mock_ip,
-          ports_range: webrtc_config[:turn_port_range]
-        ]
-      else
-        []
-      end
-
-    tcp_turn_port = webrtc_config[:turn_tcp_port]
-
-    if webrtc_config[:webrtc_used?] and tcp_turn_port != nil do
-      TURNManager.ensure_tcp_turn_launched(turn_options, port: tcp_turn_port)
-    end
-
-    state =
-      %__MODULE__{
-        id: id,
-        config: config,
-        engine_pid: pid,
-        network_options: [turn_options: turn_options]
-      }
-      |> maybe_schedule_peerless_purge()
-
-    state
-  end
-
-  defp maybe_schedule_peerless_purge(%{config: %{peerless_purge_timeout: nil}} = state), do: state
-
-  defp maybe_schedule_peerless_purge(%{config: config, peers: peers} = state) do
-    if all_peers_disconnected?(peers) do
-      last_peer_left = Klotho.monotonic_time(:millisecond)
-
-      Klotho.send_after(config.peerless_purge_timeout * 1000, self(), :peerless_purge)
-
-      %{state | last_peer_left: last_peer_left}
-    else
-      state
-    end
-  end
-
-  defp peerless_long_enough?(%{config: config, peers: peers, last_peer_left: last_peer_left}) do
-    if all_peers_disconnected?(peers) do
-      Klotho.monotonic_time(:millisecond) >= last_peer_left + config.peerless_purge_timeout * 1000
-    else
-      false
-    end
-  end
-
-  defp all_peers_disconnected?(peers) do
-    peers |> Map.values() |> Enum.all?(&(&1.status == :disconnected))
-  end
-
-  defp handle_remove_component(component_id, state, reason) do
-    {component, state} = pop_in(state, [:components, component_id])
-    :ok = Engine.remove_endpoint(state.engine_pid, component_id)
-
-    component.tracks
-    |> Map.values()
-    |> Enum.each(
-      &Event.broadcast_server_notification(
-        {:track_removed, state.id, {:component_id, component_id}, &1}
-      )
-    )
-
-    Logger.info("Removed component #{inspect(component_id)}: #{inspect(reason)}")
-
-    component.type.on_remove(state, component)
-
-    if reason == :component_crashed,
-      do: Event.broadcast_server_notification({:component_crashed, state.id, component_id})
-
-    state
-  end
-
-  defp handle_remove_peer(peer_id, state, reason) do
-    {peer, state} = pop_in(state, [:peers, peer_id])
-    :ok = Engine.remove_endpoint(state.engine_pid, peer_id)
-
-    if is_pid(peer.socket_pid),
-      do: send(peer.socket_pid, {:stop_connection, reason})
-
-    peer.tracks
-    |> Map.values()
-    |> Enum.each(
-      &Event.broadcast_server_notification({:track_removed, state.id, {:peer_id, peer_id}, &1})
-    )
-
-    Logger.info("Removed peer #{inspect(peer_id)} from room #{inspect(state.id)}")
-
-    if peer.status == :connected and reason == :peer_removed do
-      Event.broadcast_server_notification({:peer_disconnected, state.id, peer_id})
-      :telemetry.execute([:jellyfish, :room], %{peer_disconnects: 1}, %{room_id: state.id})
-    end
-
-    with {:peer_crashed, crash_reason} <- reason do
-      Event.broadcast_server_notification({:peer_crashed, state.id, peer_id, crash_reason})
-      :telemetry.execute([:jellyfish, :room], %{peer_crashes: 1}, %{room_id: state.id})
-    end
-
-    state
-  end
-
-  defp get_component_by_id(%{components: components}, component_id),
-    do:
-      Enum.find_value(components, fn {id, component} ->
-        if id == component_id, do: component
-      end)
-
-  defp check_component_allowed(type, %{
-         config: %{video_codec: video_codec},
-         components: components
-       })
-       when type in [HLS, Recording] do
-    cond do
-      video_codec != :h264 ->
-        {:error, :incompatible_codec}
-
-      component_already_present?(type, components) ->
-        {:error, :reached_components_limit}
-
-      true ->
-        :ok
-    end
-  end
-
-  defp check_component_allowed(RTSP, %{config: %{video_codec: video_codec}}) do
-    # Right now, RTSP component can only publish H264, so there's no point adding it
-    # to a room which allows another video codec, e.g. VP8
-    if video_codec == :h264,
-      do: :ok,
-      else: {:error, :incompatible_codec}
-  end
-
-  defp check_component_allowed(_component_type, _state), do: :ok
-
-  defp component_already_present?(type, components),
-    do: components |> Map.values() |> Enum.any?(&(&1.type == type))
-
-  defp validate_subscription_mode(nil), do: {:error, :component_not_exists}
-
-  defp validate_subscription_mode(%{properties: %{subscribe_mode: :auto}}),
-    do: {:error, :invalid_subscribe_mode}
-
-  defp validate_subscription_mode(%{properties: %{subscribe_mode: :manual}}), do: :ok
-  defp validate_subscription_mode(_not_properties), do: {:error, :invalid_component_type}
-
-  defp get_endpoint_group(state, endpoint_id) when is_map_key(state.components, endpoint_id),
-    do: :components
-
-  defp get_endpoint_group(state, endpoint_id) when is_map_key(state.peers, endpoint_id),
-    do: :peers
-
-  defp get_endpoint_id_type(state, endpoint_id) do
-    case get_endpoint_group(state, endpoint_id) do
-      :peers -> :peer_id
-      :components -> :component_id
-    end
   end
 
   defp parse_crash_reason(

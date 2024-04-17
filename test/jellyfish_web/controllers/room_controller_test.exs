@@ -175,6 +175,11 @@ defmodule JellyfishWeb.RoomControllerTest do
       assert json_response(conn, :bad_request)["errors"] ==
                "Expected peerlessPurgeTimeout to be a positive integer, got: nan"
 
+      conn = post(conn, ~p"/room", peerDisconnectedTimeout: "nan")
+
+      assert json_response(conn, :bad_request)["errors"] ==
+               "Expected peerDisconnectedTimeout to be a positive integer, got: nan"
+
       conn = post(conn, ~p"/room", roomId: "test/path")
 
       assert json_response(conn, :bad_request)["errors"] ==
@@ -303,6 +308,119 @@ defmodule JellyfishWeb.RoomControllerTest do
       Klotho.Mock.warp_by(@purge_timeout_ms + 10)
       conn = get(conn, ~p"/room/#{id}")
       assert response(conn, :ok)
+    end
+  end
+
+  describe "peer disconnect purge" do
+    setup %{conn: conn} do
+      conn = post(conn, ~p"/room", peerDisconnectedTimeout: @purge_timeout_s)
+      assert %{"id" => id} = json_response(conn, :created)["data"]["room"]
+      %{conn: conn, id: id}
+    end
+
+    test "happens if peer added, but not joined", %{conn: conn, id: id} do
+      conn = post(conn, ~p"/room/#{id}/peer", type: "webrtc")
+
+      assert %{"token" => _token, "peer" => %{"id" => _peer_id}} =
+               json_response(conn, :created)["data"]
+
+      Klotho.Mock.warp_by(@purge_timeout_ms + 10)
+      conn = get(conn, ~p"/room/#{id}")
+      assert json_response(conn, :ok)["data"]["peers"] |> Enum.empty?()
+    end
+
+    test "happens if peer joined, then disconnected", %{conn: conn, id: id} do
+      conn = post(conn, ~p"/room/#{id}/peer", type: "webrtc")
+      assert %{"token" => token} = json_response(conn, :created)["data"]
+
+      ws = connect_peer(token)
+
+      Klotho.Mock.warp_by(@purge_timeout_ms + 10)
+      conn = get(conn, ~p"/room/#{id}")
+      assert response(conn, :ok)
+
+      GenServer.stop(ws)
+      Process.sleep(10)
+
+      conn = get(conn, ~p"/room/#{id}")
+
+      assert %{"status" => "disconnected"} =
+               json_response(conn, :ok)["data"]["peers"] |> List.first()
+
+      Klotho.Mock.warp_by(@purge_timeout_ms + 10)
+
+      conn = get(conn, ~p"/room/#{id}")
+      assert json_response(conn, :ok)["data"]["peers"] |> Enum.empty?()
+    end
+
+    test "does not happen if peers rejoined quickly", %{conn: conn, id: id} do
+      conn = post(conn, ~p"/room/#{id}/peer", type: "webrtc")
+      assert %{"token" => token} = json_response(conn, :created)["data"]
+
+      ws = connect_peer(token)
+
+      Klotho.Mock.warp_by(@purge_timeout_ms + 10)
+      conn = get(conn, ~p"/room/#{id}")
+      assert response(conn, :ok)
+
+      GenServer.stop(ws)
+      Process.sleep(10)
+      conn = get(conn, ~p"/room/#{id}")
+
+      assert %{"status" => "disconnected"} =
+               json_response(conn, :ok)["data"]["peers"] |> List.first()
+
+      Klotho.Mock.warp_by(@purge_timeout_ms |> div(2))
+      conn = get(conn, ~p"/room/#{id}")
+      assert response(conn, :ok)
+      assert peers = json_response(conn, :ok)["data"]["peers"]
+      assert not Enum.empty?(peers)
+
+      connect_peer(token)
+      Klotho.Mock.warp_by(@purge_timeout_ms + 10)
+      conn = get(conn, ~p"/room/#{id}")
+      assert response(conn, :ok)
+    end
+
+    test "does not happen when not configured", %{conn: conn} do
+      conn = post(conn, ~p"/room")
+      assert %{"id" => id} = json_response(conn, :created)["data"]["room"]
+
+      conn = post(conn, ~p"/room/#{id}/peer", type: "webrtc")
+
+      assert %{"token" => _token, "peer" => %{"id" => _peer_id}} =
+               json_response(conn, :created)["data"]
+
+      Klotho.Mock.warp_by(@purge_timeout_ms + 10)
+      conn = get(conn, ~p"/room/#{id}")
+      peers = json_response(conn, :ok)["data"]["peers"]
+
+      assert not Enum.empty?(peers)
+    end
+
+    test "does work with peerlessPurgeTimeout", %{conn: conn} do
+      conn =
+        post(conn, ~p"/room",
+          peerlessPurgeTimeout: @purge_timeout_s * 2,
+          peerDisconnectedTimeout: @purge_timeout_s
+        )
+
+      assert %{"id" => id} = json_response(conn, :created)["data"]["room"]
+
+      conn = post(conn, ~p"/room/#{id}/peer", type: "webrtc")
+
+      assert %{"token" => _token, "peer" => %{"id" => _peer_id}} =
+               json_response(conn, :created)["data"]
+
+      Klotho.Mock.warp_by(@purge_timeout_ms + 10)
+      conn = get(conn, ~p"/room/#{id}")
+      peers = json_response(conn, :ok)["data"]["peers"]
+
+      assert Enum.empty?(peers)
+
+      Klotho.Mock.warp_by(@purge_timeout_ms * 2 + 10)
+      conn = get(conn, ~p"/room")
+      assert Enum.all?(json_response(conn, :ok)["data"], &(&1["id"] != id))
     end
   end
 

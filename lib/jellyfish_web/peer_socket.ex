@@ -49,6 +49,7 @@ defmodule JellyfishWeb.PeerSocket do
             })
 
           Event.broadcast_server_notification({:peer_connected, room_id, peer_id})
+          Logger.metadata(room_id: room_id, peer_id: peer_id)
 
           {:reply, :ok, {:binary, encoded_message}, state}
         else
@@ -115,32 +116,38 @@ defmodule JellyfishWeb.PeerSocket do
 
   @impl true
   def handle_info({:stop_connection, :peer_removed}, state) do
+    Logger.info("Peer socket stopped because peer removed")
     {:stop, :closed, {1000, "Peer removed"}, state}
   end
 
   @impl true
   def handle_info({:stop_connection, :room_stopped}, state) do
+    Logger.info("Peer socket stopped because room stopped")
     {:stop, :closed, {1000, "Room stopped"}, state}
   end
 
   @impl true
   def handle_info({:stop_connection, {:peer_crashed, crash_reason}}, state)
       when crash_reason != nil do
+    Logger.warning("Peer socket stopped because peer crashed with reason: #{crash_reason}")
     {:stop, :closed, {1011, crash_reason}, state}
   end
 
   @impl true
   def handle_info({:stop_connection, {:peer_crashed, _reason}}, state) do
+    Logger.warning("Peer socket stopped because peer crashed with unknown reason")
     {:stop, :closed, {1011, "Internal server error"}, state}
   end
 
   @impl true
   def handle_info(:room_crashed, state) do
+    Logger.warning("Peer socket stopped because room crashed")
     {:stop, :closed, {1011, "Internal server error"}, state}
   end
 
   @impl true
-  def terminate(_reason, _state) do
+  def terminate(reason, _state) do
+    Logger.info("Peer socket terminates with reason #{reason}")
     :ok
   end
 
