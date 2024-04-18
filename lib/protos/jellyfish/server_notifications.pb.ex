@@ -26,6 +26,24 @@ defmodule Jellyfish.ServerMessage.RoomCrashed do
   field :room_id, 1, type: :string, json_name: "roomId"
 end
 
+defmodule Jellyfish.ServerMessage.PeerAdded do
+  @moduledoc false
+
+  use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
+
+  field :room_id, 1, type: :string, json_name: "roomId"
+  field :peer_id, 2, type: :string, json_name: "peerId"
+end
+
+defmodule Jellyfish.ServerMessage.PeerDeleted do
+  @moduledoc false
+
+  use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
+
+  field :room_id, 1, type: :string, json_name: "roomId"
+  field :peer_id, 2, type: :string, json_name: "peerId"
+end
+
 defmodule Jellyfish.ServerMessage.PeerConnected do
   @moduledoc false
 

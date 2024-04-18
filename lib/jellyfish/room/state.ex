@@ -212,6 +212,16 @@ defmodule Jellyfish.Room.State do
     put_in(state, [:peers, peer_id, :metadata], metadata)
   end
 
+  @spec add_peer(state :: t(), peer :: Peer.t()) :: t()
+  def add_peer(state, peer) do
+    state = put_peer(state, peer)
+
+    Logger.info("Added peer #{inspect(peer.id)}")
+    Event.broadcast_server_notification({:peer_added, state.id, peer.id})
+
+    state
+  end
+
   @spec connect_peer(state :: t(), peer :: Peer.t(), socket_pid :: pid()) :: t()
   def connect_peer(state, peer, socket_pid) do
     peer = %{peer | status: :connected, socket_pid: socket_pid}
@@ -255,7 +265,9 @@ defmodule Jellyfish.Room.State do
 
   @spec remove_peer(state :: t(), peer_id :: Peer.id(), reason :: any()) :: t()
   def remove_peer(state, peer_id, :timeout) do
-    {_peer, state} = pop_in(state, [:peers, peer_id])
+    {peer, state} = pop_in(state, [:peers, peer_id])
+
+    Event.broadcast_server_notification({:peer_deleted, state.id, peer.id})
 
     maybe_schedule_peerless_purge(state)
   end
@@ -280,9 +292,13 @@ defmodule Jellyfish.Room.State do
       :telemetry.execute([:jellyfish, :room], %{peer_disconnects: 1}, %{room_id: state.id})
     end
 
-    with {:peer_crashed, crash_reason} <- reason do
-      Event.broadcast_server_notification({:peer_crashed, state.id, peer_id, crash_reason})
-      :telemetry.execute([:jellyfish, :room], %{peer_crashes: 1}, %{room_id: state.id})
+    case reason do
+      {:peer_crashed, crash_reason} ->
+        Event.broadcast_server_notification({:peer_crashed, state.id, peer_id, crash_reason})
+        :telemetry.execute([:jellyfish, :room], %{peer_crashes: 1}, %{room_id: state.id})
+
+      _other ->
+        Event.broadcast_server_notification({:peer_deleted, state.id, peer.id})
     end
 
     maybe_schedule_peerless_purge(state)

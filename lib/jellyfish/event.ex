@@ -7,8 +7,10 @@ defmodule Jellyfish.Event do
     HlsUploadCrashed,
     HlsUploaded,
     MetricsReport,
+    PeerAdded,
     PeerConnected,
     PeerCrashed,
+    PeerDeleted,
     PeerDisconnected,
     PeerMetadataUpdated,
     RoomCrashed,
@@ -53,6 +55,12 @@ defmodule Jellyfish.Event do
 
   defp to_proto_server_notification({:room_crashed, room_id}),
     do: {:room_crashed, %RoomCrashed{room_id: room_id}}
+
+  defp to_proto_server_notification({:peer_added, room_id, peer_id}),
+    do: {:peer_added, %PeerAdded{room_id: room_id, peer_id: peer_id}}
+
+  defp to_proto_server_notification({:peer_deleted, room_id, peer_id}),
+    do: {:peer_deleted, %PeerDeleted{room_id: room_id, peer_id: peer_id}}
 
   defp to_proto_server_notification({:peer_connected, room_id, peer_id}),
     do: {:peer_connected, %PeerConnected{room_id: room_id, peer_id: peer_id}}

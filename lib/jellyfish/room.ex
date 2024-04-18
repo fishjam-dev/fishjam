@@ -145,9 +145,7 @@ defmodule Jellyfish.Room do
     with false <- State.reached_peers_limit?(state),
          options <- State.generate_peer_options(state, override_options),
          {:ok, peer} <- Peer.new(peer_type, options) do
-      state = State.put_peer(state, peer)
-
-      Logger.info("Added peer #{inspect(peer.id)}")
+      state = State.add_peer(state, peer)
 
       {:reply, {:ok, peer}, state}
     else
