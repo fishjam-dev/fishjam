@@ -20,8 +20,10 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     HlsUploadCrashed,
     HlsUploaded,
     MetricsReport,
+    PeerAdded,
     PeerConnected,
     PeerDisconnected,
+    PeerDeleted,
     PeerMetadataUpdated,
     RoomCrashed,
     RoomCreated,
@@ -172,7 +174,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     test "doesn't send messages if not subscribed", %{conn: conn} do
       create_and_authenticate()
 
-      trigger_notification(conn)
+      trigger_notification(conn, false)
 
       refute_receive %PeerConnected{}, 200
     end
@@ -224,6 +226,9 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     conn = delete(conn, ~p"/room/#{room_id}/peer/#{peer_id}")
     assert response(conn, :no_content)
 
+    assert_receive %PeerDeleted{room_id: ^room_id, peer_id: ^peer_id}
+    assert_receive {:webhook_notification, %PeerDeleted{room_id: ^room_id, peer_id: ^peer_id}}
+
     Klotho.Mock.warp_by(@purge_timeout_ms + 25)
 
     assert_receive %RoomDeleted{room_id: ^room_id}, 1_000
@@ -244,6 +249,9 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
 
       refute_received {:webhook_notification,
                        %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}}
+
+      assert_receive %PeerDeleted{room_id: ^room_id, peer_id: ^peer_id}
+      assert_receive {:webhook_notification, %PeerDeleted{room_id: ^room_id, peer_id: ^peer_id}}
     end
 
     test "sends a message when peer connects and peer is removed", %{conn: conn} do
@@ -257,6 +265,9 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
       assert_receive {:webhook_notification,
                       %PeerDisconnected{room_id: ^room_id, peer_id: ^peer_id}},
                      1_000
+
+      assert_receive %PeerDeleted{room_id: ^room_id, peer_id: ^peer_id}
+      assert_receive {:webhook_notification, %PeerDeleted{room_id: ^room_id, peer_id: ^peer_id}}
 
       _conn = delete(conn, ~p"/room/#{room_id}")
       assert_receive %RoomDeleted{room_id: ^room_id}
@@ -419,6 +430,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
       assert_receive {:webhook_notification, %RoomCreated{room_id: ^room_id}}, 1_000
 
       {peer_id, token, _conn} = add_peer(conn, room_id)
+
       {:ok, peer_ws} = WS.start("ws://127.0.0.1:#{@port}/socket/peer/websocket", :peer)
       WS.send_auth_request(peer_ws, token)
 
@@ -437,6 +449,9 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
                      1_000
 
       Klotho.Mock.warp_by(@purge_timeout_ms * 3)
+
+      assert_receive %PeerDeleted{room_id: ^room_id, peer_id: ^peer_id}
+      assert_receive {:webhook_notification, %PeerDeleted{room_id: ^room_id, peer_id: ^peer_id}}
 
       assert_receive %RoomDeleted{room_id: ^room_id}, 1_000
       assert_receive {:webhook_notification, %RoomDeleted{room_id: ^room_id}}, 1_000
@@ -592,9 +607,9 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     ws
   end
 
-  defp add_room_and_peer(conn) do
+  defp add_room_and_peer(conn, assert_notifications? \\ true) do
     {room_id, conn} = add_room(conn)
-    {peer_id, token, conn} = add_peer(conn, room_id)
+    {peer_id, token, conn} = add_peer(conn, room_id, assert_notifications?)
 
     {room_id, peer_id, token, conn}
   end
@@ -612,11 +627,16 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     {room_id, conn}
   end
 
-  defp add_peer(conn, room_id) do
+  defp add_peer(conn, room_id, assert_notifications? \\ true) do
     conn = post(conn, ~p"/room/#{room_id}/peer", type: "webrtc")
 
     assert %{"token" => peer_token, "peer" => %{"id" => peer_id}} =
              json_response(conn, :created)["data"]
+
+    if assert_notifications? do
+      assert_receive %PeerAdded{room_id: ^room_id, peer_id: ^peer_id}
+      assert_receive {:webhook_notification, %PeerAdded{room_id: ^room_id, peer_id: ^peer_id}}
+    end
 
     {peer_id, peer_token, conn}
   end
@@ -670,8 +690,8 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     {conn, component_id}
   end
 
-  defp trigger_notification(conn) do
-    {_room_id, _peer_id, peer_token, _conn} = add_room_and_peer(conn)
+  defp trigger_notification(conn, assert_notifications?) do
+    {_room_id, _peer_id, peer_token, _conn} = add_room_and_peer(conn, assert_notifications?)
 
     {:ok, peer_ws} = WS.start_link("ws://127.0.0.1:#{@port}/socket/peer/websocket", :peer)
     WS.send_auth_request(peer_ws, peer_token)
