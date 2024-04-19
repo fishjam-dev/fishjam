@@ -323,4 +323,11 @@ defmodule Jellyfish.ServerMessage do
     type: Jellyfish.ServerMessage.TrackMetadataUpdated,
     json_name: "trackMetadataUpdated",
     oneof: 0
+
+  field :peer_added, 20, type: Jellyfish.ServerMessage.PeerAdded, json_name: "peerAdded", oneof: 0
+
+  field :peer_deleted, 21,
+    type: Jellyfish.ServerMessage.PeerDeleted,
+    json_name: "peerDeleted",
+    oneof: 0
 end
