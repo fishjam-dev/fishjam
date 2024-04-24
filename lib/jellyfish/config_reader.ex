@@ -24,7 +24,7 @@ defmodule Jellyfish.ConfigReader do
     if value = System.get_env(env) do
       value = value |> to_charlist()
 
-      case :inet.parse_address(value) do
+      case :inet.getaddr(value, :inet) do
         {:ok, parsed_ip} ->
           parsed_ip
 
