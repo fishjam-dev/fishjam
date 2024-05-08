@@ -43,6 +43,29 @@ defmodule Jellyfish.ConfigReaderTest do
     end
   end
 
+  test "read_and_resolve_hostname/1" do
+    env_name = "JF_CONF_READER_TEST_HOSTNAME"
+
+    with_env env_name do
+      System.put_env(env_name, "127.0.0.1")
+      assert ConfigReader.read_and_resolve_hostname(env_name) == {127, 0, 0, 1}
+
+      # On most systems, both of these hostnames will resolve to {127, 0, 0, 1}
+      # However, since we can't expect this to always be true,
+      # let's settle for asserting that these calls return and not raise an error
+      System.put_env(env_name, "localhost")
+      assert ConfigReader.read_and_resolve_hostname(env_name)
+      {:ok, hostname} = :inet.gethostname()
+      System.put_env(env_name, "#{hostname}")
+      assert ConfigReader.read_and_resolve_hostname(env_name)
+
+      System.delete_env(env_name)
+      assert ConfigReader.read_and_resolve_hostname(env_name) == nil
+      System.put_env(env_name, "unresolvable-hostname")
+      assert_raise RuntimeError, fn -> ConfigReader.read_and_resolve_hostname(env_name) end
+    end
+  end
+
   test "read_port/1" do
     env_name = "JF_CONF_READER_TEST_PORT"
 
