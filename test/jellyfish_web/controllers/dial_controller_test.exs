@@ -10,10 +10,12 @@ defmodule JellyfishWeb.DialControllerTest do
   }
 
   setup_all do
-    Application.put_env(:jellyfish, :sip_config, sip_used?: true, sip_external_ip: "127.0.0.1")
+    Application.put_env(:jellyfish, :sip_config, sip_external_ip: "127.0.0.1")
+    Application.put_env(:jellyfish, :component_used?, sip: true, rtsp: true)
 
     on_exit(fn ->
-      Application.put_env(:jellyfish, :sip_config, sip_used?: false, sip_external_ip: nil)
+      Application.put_env(:jellyfish, :sip_config, sip_external_ip: nil)
+      Application.put_env(:jellyfish, :component_used?, sip: false, rtsp: false)
     end)
   end
 

@@ -13,14 +13,7 @@ defmodule Jellyfish.Component.Recording do
 
   @impl true
   def config(%{engine_pid: engine} = options) do
-    recording_config = Application.fetch_env!(:jellyfish, :recording_config)
     sink_config = Application.fetch_env!(:jellyfish, :s3_config)
-
-    unless recording_config[:recording_used?],
-      do:
-        raise("""
-        Recording components can only be used if JF_RECORDING_USED environmental variable is set to \"true\"
-        """)
 
     with {:ok, serialized_opts} <- serialize_options(options, Options.schema()),
          result_opts <- parse_subscribe_mode(serialized_opts),

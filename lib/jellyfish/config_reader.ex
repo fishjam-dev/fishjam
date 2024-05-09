@@ -128,6 +128,16 @@ defmodule Jellyfish.ConfigReader do
     end
   end
 
+  def read_components_used() do
+    [
+      hls: read_boolean("JF_HLS_USED") == true,
+      rtsp: read_boolean("JF_RTSP_USED") == true,
+      file: read_boolean("JF_FILE_USED") == true,
+      sip: read_boolean("JF_SIP_USED") == true,
+      recording: read_boolean("JF_RECORDING_USED") == true
+    ]
+  end
+
   def read_sip_config() do
     sip_used? = read_boolean("JF_SIP_USED")
     sip_ip = System.get_env("JF_SIP_IP") || ""
@@ -135,13 +145,11 @@ defmodule Jellyfish.ConfigReader do
     cond do
       sip_used? != true ->
         [
-          sip_used?: false,
           sip_external_ip: nil
         ]
 
       ip_address?(sip_ip) ->
         [
-          sip_used?: true,
           sip_external_ip: sip_ip
         ]
 
@@ -150,12 +158,6 @@ defmodule Jellyfish.ConfigReader do
         JF_SIP_USED has been set to true but incorrect IP address was provided as `JF_SIP_IP`
         """
     end
-  end
-
-  def read_recording_config() do
-    [
-      recording_used?: read_boolean("JF_RECORDING_USED") != false
-    ]
   end
 
   def read_s3_config() do

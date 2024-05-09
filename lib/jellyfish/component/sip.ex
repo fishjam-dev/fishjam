@@ -21,16 +21,7 @@ defmodule Jellyfish.Component.SIP do
 
   @impl true
   def config(%{engine_pid: engine} = options) do
-    sip_config = Application.fetch_env!(:jellyfish, :sip_config)
-
-    external_ip =
-      if sip_config[:sip_used?] do
-        Application.fetch_env!(:jellyfish, :sip_config)[:sip_external_ip]
-      else
-        raise """
-        SIP components can only be used if JF_SIP_USED environmental variable is set to \"true\"
-        """
-      end
+    external_ip = Application.fetch_env!(:jellyfish, :sip_config)[:sip_external_ip]
 
     with {:ok, serialized_opts} <- serialize_options(options, Options.schema()) do
       endpoint_spec = %SIP{

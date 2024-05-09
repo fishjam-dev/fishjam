@@ -15,6 +15,14 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
 
   @path_prefix "path_prefix"
 
+  setup_all do
+    Application.put_env(:jellyfish, :component_used?, recording: true)
+
+    on_exit(fn ->
+      Application.put_env(:jellyfish, :component_used?, recording: false)
+    end)
+  end
+
   describe "create recording component" do
     setup [:create_h264_room]
     setup :set_mox_from_context

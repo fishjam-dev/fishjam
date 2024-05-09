@@ -34,8 +34,8 @@ config :jellyfish,
   metrics_port: ConfigReader.read_port("JF_METRICS_PORT") || 9568,
   dist_config: ConfigReader.read_dist_config(),
   webrtc_config: ConfigReader.read_webrtc_config(),
+  component_used?: ConfigReader.read_components_used(),
   sip_config: ConfigReader.read_sip_config(),
-  recording_config: ConfigReader.read_recording_config(),
   s3_config: ConfigReader.read_s3_config(),
   git_commit: ConfigReader.read_git_commit()
 

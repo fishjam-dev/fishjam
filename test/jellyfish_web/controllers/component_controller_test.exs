@@ -4,6 +4,14 @@ defmodule JellyfishWeb.ComponentControllerTest do
 
   @source_uri "rtsp://placeholder-19inrifjbsjb.it:12345/afwefae"
 
+  setup_all do
+    Application.put_env(:jellyfish, :component_used?, rtsp: true, hls: true)
+
+    on_exit(fn ->
+      Application.put_env(:jellyfish, :component_used?, rtsp: false, hls: false)
+    end)
+  end
+
   describe "create component" do
     test "renders errors when component type is invalid", %{conn: conn, room_id: room_id} do
       conn = post(conn, ~p"/room/#{room_id}/component", type: "invalid_type")
