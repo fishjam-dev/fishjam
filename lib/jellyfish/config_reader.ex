@@ -36,6 +36,15 @@ defmodule Jellyfish.ConfigReader do
     end
   end
 
+  def read_and_resolve_hostname(env) do
+    if value = System.get_env(env) do
+      # resolve_hostname will raise if address is invalid/unresolvable
+      {:ok, resolved_ip} = value |> resolve_hostname() |> to_charlist() |> :inet.parse_address()
+
+      resolved_ip
+    end
+  end
+
   def read_port(env) do
     if value = System.get_env(env) do
       case Integer.parse(value) do
@@ -104,7 +113,7 @@ defmodule Jellyfish.ConfigReader do
       [
         webrtc_used?: true,
         turn_ip: read_ip("JF_WEBRTC_TURN_IP") || {127, 0, 0, 1},
-        turn_listen_ip: read_ip("JF_WEBRTC_TURN_LISTEN_IP") || {127, 0, 0, 1},
+        turn_listen_ip: read_and_resolve_hostname("JF_WEBRTC_TURN_LISTEN_IP") || {127, 0, 0, 1},
         turn_port_range: read_port_range("JF_WEBRTC_TURN_PORT_RANGE") || {50_000, 59_999},
         turn_tcp_port: read_port("JF_WEBRTC_TURN_TCP_PORT")
       ]
@@ -256,7 +265,8 @@ defmodule Jellyfish.ConfigReader do
   end
 
   defp do_read_dns_config(node_name_value, cookie, mode) do
-    node_name = parse_node_name(node_name_value)
+    # Verify the node name is formatted correctly
+    _node_name = parse_node_name(node_name_value)
 
     query_value = System.get_env("JF_DIST_QUERY")
 
@@ -265,21 +275,8 @@ defmodule Jellyfish.ConfigReader do
     end
 
     [node_basename, hostname | []] = String.split(node_name_value, "@")
-
-    node_name =
-      if ip_address?(hostname) do
-        node_name
-      else
-        Logger.info(
-          "Resolving hostname part of JF node name as DNS cluster strategy requires IP address."
-        )
-
-        resolved_hostname = resolve_hostname(hostname)
-
-        Logger.info("Resolved #{hostname} as #{resolved_hostname}")
-
-        String.to_atom("#{node_basename}@#{resolved_hostname}")
-      end
+    resolved_hostname = resolve_hostname(hostname)
+    node_name = String.to_atom("#{node_basename}@#{resolved_hostname}")
 
     polling_interval = parse_polling_interval()
 
@@ -344,7 +341,12 @@ defmodule Jellyfish.ConfigReader do
         # Assert there is at least one ip address.
         # In other case, this is fatal error
         [h | _] = h_addr_list
-        "#{:inet.ntoa(h)}"
+        resolved_hostname = "#{:inet.ntoa(h)}"
+
+        if resolved_hostname != hostname,
+          do: Logger.info("Resolved #{hostname} as #{resolved_hostname}")
+
+        resolved_hostname
 
       {:error, reason} ->
         raise """
