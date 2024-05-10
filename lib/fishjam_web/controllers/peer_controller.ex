@@ -2,6 +2,7 @@ defmodule FishjamWeb.PeerController do
   use FishjamWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
+  require Logger
   alias Fishjam.Peer
   alias Fishjam.Room
   alias Fishjam.RoomService
@@ -9,13 +10,13 @@ defmodule FishjamWeb.PeerController do
   alias FishjamWeb.PeerToken
   alias OpenApiSpex.{Response, Schema}
 
-  action_fallback FishjamWeb.FallbackController
+  action_fallback(FishjamWeb.FallbackController)
 
-  tags [:room]
+  tags([:room])
 
   security(%{"authorization" => []})
 
-  operation :create,
+  operation(:create,
     operation_id: "add_peer",
     summary: "Create peer",
     parameters: [
@@ -42,8 +43,9 @@ defmodule FishjamWeb.PeerController do
       service_unavailable: ApiSpec.error("Peer limit has been reached"),
       unauthorized: ApiSpec.error("Unauthorized")
     ]
+  )
 
-  operation :delete,
+  operation(:delete,
     operation_id: "delete_peer",
     summary: "Delete peer",
     parameters: [
@@ -63,8 +65,12 @@ defmodule FishjamWeb.PeerController do
       not_found: ApiSpec.error("Room ID or Peer ID references a resource that doesn't exist"),
       unauthorized: ApiSpec.error("Unauthorized")
     ]
+  )
 
   def create(conn, %{"room_id" => room_id} = params) do
+    # TODO: change to debug
+    Logger.info("Start adding peer in room: #{room_id}")
+
     # the room may crash between fetching its
     # pid and adding a new peer to it
     # in such a case, the controller will fail
@@ -86,19 +92,30 @@ defmodule FishjamWeb.PeerController do
       |> render("show.json", assigns)
     else
       :error ->
-        {:error, :bad_request, "Invalid request body structure"}
+        msg = "Invalid request body structure"
+        Logger.warning(msg)
+
+        {:error, :bad_request, msg}
 
       {:error, :room_not_found} ->
-        {:error, :not_found, "Room #{room_id} does not exist"}
+        msg = "Room #{room_id} does not exist"
+        Logger.warning(msg)
+        {:error, :not_found, msg}
 
       {:error, :invalid_type} ->
-        {:error, :bad_request, "Invalid peer type"}
+        msg = "Invalid peer type"
+        Logger.warning(msg)
+        {:error, :bad_request, msg}
 
       {:error, {:peer_disabled_globally, type}} ->
-        {:error, :bad_request, "Peers of type #{type} are disabled on this Fishjam"}
+        msg = "Peers of type #{type} are disabled on this Fishjam"
+        Logger.warning(msg)
+        {:error, :bad_request, msg}
 
-      {:error, {:reached_peers_limit, type}} ->
-        {:error, :service_unavailable, "Reached #{type} peers limit in room #{room_id}"}
+      {:error, :reached_peers_limit} ->
+        msg = "Reached peer limit in room #{room_id}"
+        Logger.warning(msg)
+        {:error, :service_unavailable, msg}
     end
   end
 

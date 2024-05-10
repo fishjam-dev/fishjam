@@ -24,7 +24,9 @@ defmodule Fishjam.RoomService do
       [{room_pid, _value}] ->
         {:ok, room_pid}
 
-      _not_found ->
+      not_found ->
+        # TODO: Remove this line or debug
+        Logger.warning("Room not found because of: #{inspect(not_found)}")
         {:error, :room_not_found}
     end
   end

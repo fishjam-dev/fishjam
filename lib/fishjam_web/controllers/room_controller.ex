@@ -2,26 +2,28 @@ defmodule FishjamWeb.RoomController do
   use FishjamWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
+  require Logger
   alias Fishjam.Room
   alias Fishjam.RoomService
   alias FishjamWeb.ApiSpec
   alias OpenApiSpex.Response
 
-  action_fallback FishjamWeb.FallbackController
+  action_fallback(FishjamWeb.FallbackController)
 
-  tags [:room]
+  tags([:room])
 
   security(%{"authorization" => []})
 
-  operation :index,
+  operation(:index,
     operation_id: "get_all_rooms",
     summary: "Show information about all rooms",
     responses: [
       ok: ApiSpec.data("Success", ApiSpec.RoomsListingResponse),
       unauthorized: ApiSpec.error("Unauthorized")
     ]
+  )
 
-  operation :create,
+  operation(:create,
     operation_id: "create_room",
     summary: "Creates a room",
     request_body: {"Room configuration", "application/json", ApiSpec.Room.Config},
@@ -30,8 +32,9 @@ defmodule FishjamWeb.RoomController do
       bad_request: ApiSpec.error("Invalid request structure"),
       unauthorized: ApiSpec.error("Unauthorized")
     ]
+  )
 
-  operation :show,
+  operation(:show,
     operation_id: "get_room",
     summary: "Shows information about the room",
     parameters: [
@@ -46,8 +49,9 @@ defmodule FishjamWeb.RoomController do
       not_found: ApiSpec.error("Room doesn't exist"),
       unauthorized: ApiSpec.error("Unauthorized")
     ]
+  )
 
-  operation :delete,
+  operation(:delete,
     operation_id: "delete_room",
     summary: "Delete the room",
     parameters: [
@@ -62,6 +66,7 @@ defmodule FishjamWeb.RoomController do
       not_found: ApiSpec.error("Room doesn't exist"),
       unauthorized: ApiSpec.error("Unauthorized")
     ]
+  )
 
   def index(conn, _params) do
     rooms =
@@ -74,6 +79,9 @@ defmodule FishjamWeb.RoomController do
   end
 
   def create(conn, params) do
+    # TODO: change to debug
+    Logger.info("Start creating room")
+
     with {:ok, config} <- Room.Config.from_params(params),
          {:ok, room, fishjam_address} <- RoomService.create_room(config) do
       conn
