@@ -136,6 +136,8 @@ defmodule Jellyfish.RoomService do
 
   @impl true
   def handle_call({:create_room, config}, _from, state) do
+    Logger.info("Start create room")
+
     with {:ok, room_pid, room_id} <- Room.start(config) do
       room = Room.get_state(room_id)
       Process.monitor(room_pid)
@@ -152,6 +154,10 @@ defmodule Jellyfish.RoomService do
     else
       {:error, :room_already_exists} = error ->
         {:reply, error, state}
+
+      reason ->
+        Logger.warning("Room creation failed with reason: #{inspect(reason)}")
+        {:reply, :room_doesnt_start, state}
     end
   end
 
