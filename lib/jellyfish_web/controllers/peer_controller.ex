@@ -2,6 +2,8 @@ defmodule JellyfishWeb.PeerController do
   use JellyfishWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
+  require Logger
+
   alias Jellyfish.Peer
   alias Jellyfish.Room
   alias Jellyfish.RoomService
@@ -65,6 +67,9 @@ defmodule JellyfishWeb.PeerController do
     ]
 
   def create(conn, %{"room_id" => room_id} = params) do
+    # TODO: change to debug
+    Logger.info("Start adding peer in room: #{room_id}")
+
     # the room may crash between fetching its
     # pid and adding a new peer to it
     # in such a case, the controller will fail
@@ -86,16 +91,25 @@ defmodule JellyfishWeb.PeerController do
       |> render("show.json", assigns)
     else
       :error ->
-        {:error, :bad_request, "Invalid request body structure"}
+        msg = "Invalid request body structure"
+        Logger.warning(msg)
+
+        {:error, :bad_request, msg}
 
       {:error, :invalid_type} ->
-        {:error, :bad_request, "Invalid peer type"}
+        msg = "Invalid peer type"
+        Logger.warning(msg)
+        {:error, :bad_request, msg}
 
       {:error, :room_not_found} ->
-        {:error, :not_found, "Room #{room_id} does not exist"}
+        msg = "Room #{room_id} does not exist"
+        Logger.warning(msg)
+        {:error, :not_found, msg}
 
       {:error, :reached_peers_limit} ->
-        {:error, :service_unavailable, "Reached peer limit in room #{room_id}"}
+        msg = "Reached peer limit in room #{room_id}"
+        Logger.warning(msg)
+        {:error, :service_unavailable, msg}
     end
   end
 

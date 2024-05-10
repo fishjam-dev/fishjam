@@ -2,6 +2,8 @@ defmodule JellyfishWeb.RoomController do
   use JellyfishWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
+  require Logger
+
   alias Jellyfish.Room
   alias Jellyfish.RoomService
   alias JellyfishWeb.ApiSpec
@@ -74,6 +76,9 @@ defmodule JellyfishWeb.RoomController do
   end
 
   def create(conn, params) do
+    # TODO: change to debug
+    Logger.info("Start creating room")
+
     with {:ok, config} <- Room.Config.from_params(params),
          {:ok, room, jellyfish_address} <- RoomService.create_room(config) do
       conn
