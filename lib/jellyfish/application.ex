@@ -117,7 +117,7 @@ defmodule Jellyfish.Application do
       _exit_or_error, _e ->
         raise """
         Couldn't start epmd daemon.
-        Epmd is required to run Jellyfish in a distributed mode.
+        Epmd is required to run Jellyfish in distributed mode.
         You can try to start it manually with:
 
           epmd -daemon
