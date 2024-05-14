@@ -7,8 +7,12 @@ defmodule Jellyfish.Application do
 
   require Logger
 
-  # seconds
+  # in seconds
   @resource_manager_opts %{interval: 600, recording_timeout: 3_600}
+
+  # in milliseconds
+  @epmd_timeout 5_000
+  @epmd_pgrep_interval 500
 
   @impl true
   def start(_type, _args) do
@@ -104,20 +108,38 @@ defmodule Jellyfish.Application do
   end
 
   defp ensure_epmd_started!() do
-    case System.cmd("epmd", ["-daemon"]) do
-      {_output, 0} ->
-        :ok
+    try do
+      {_output, 0} = System.cmd("epmd", ["-daemon"])
+      :ok = Task.async(&ensure_epmd_running/0) |> Task.await(@epmd_timeout)
 
-      _other ->
+      :ok
+    catch
+      _exit_or_error, _e ->
         raise """
         Couldn't start epmd daemon.
-        Epmd is required to run Jellyfish in a distributed mode.
+        Epmd is required to run Jellyfish in distributed mode.
         You can try to start it manually with:
 
           epmd -daemon
 
         and run Jellyfish again.
         """
+    end
+
+    :ok
+  end
+
+  defp ensure_epmd_running() do
+    with {:pgrep, {_output, 0}} <- {:pgrep, System.cmd("pgrep", ["epmd"])},
+         {:epmd, {_output, 0}} <- {:epmd, System.cmd("epmd", ["-names"])} do
+      :ok
+    else
+      {:pgrep, _other} ->
+        Process.sleep(@epmd_pgrep_interval)
+        ensure_epmd_running()
+
+      {:epmd, _other} ->
+        :error
     end
   end
 end
