@@ -41,7 +41,9 @@ config :jellyfish,
   divo: "docker-compose.yaml",
   divo_wait: [dwell: 1_500, max_tries: 50]
 
-config :ex_aws, :http_client, Jellyfish.Component.HLS.HTTPoison
+config :ex_aws,
+  http_client: Jellyfish.Component.HLS.HTTPoison,
+  normalize_path: false
 
 config :bundlex, :disable_precompiled_os_deps, apps: [:membrane_h264_ffmpeg_plugin, :ex_libsrtp]
 
