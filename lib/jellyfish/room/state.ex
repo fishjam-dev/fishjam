@@ -382,32 +382,32 @@ defmodule Jellyfish.Room.State do
     )
   end
 
-  def check_component_allowed(type, %{
-        config: %{video_codec: video_codec},
-        components: components
-      })
-      when type in [HLS, Recording] do
+  @spec check_peer_allowed(Peer.peer(), t()) ::
+          :ok | {:error, :peer_disabled_globally | :reached_peers_limit}
+  def check_peer_allowed(Peer.WebRTC, state) do
     cond do
-      video_codec != :h264 ->
-        {:error, :incompatible_codec}
+      not Application.fetch_env!(:jellyfish, :webrtc_config)[:webrtc_used?] ->
+        {:error, :peer_disabled_globally}
 
-      component_already_present?(type, components) ->
-        {:error, :reached_components_limit}
+      Enum.count(state.peers) >= state.config.max_peers ->
+        {:error, :reached_peers_limit}
 
       true ->
         :ok
     end
   end
 
-  def check_component_allowed(RTSP, %{config: %{video_codec: video_codec}}) do
-    # Right now, RTSP component can only publish H264, so there's no point adding it
-    # to a room which allows another video codec, e.g. VP8
-    if video_codec == :h264,
-      do: :ok,
-      else: {:error, :incompatible_codec}
+  @spec check_component_allowed(Component.component(), t()) ::
+          :ok
+          | {:error,
+             :component_disabled_globally | :incompatible_codec | :reached_components_limit}
+  def check_component_allowed(type, state) do
+    if type in Application.fetch_env!(:jellyfish, :components_used) do
+      check_component_allowed_in_room(type, state)
+    else
+      {:error, :component_disabled_globally}
+    end
   end
-
-  def check_component_allowed(_component_type, _state), do: :ok
 
   @spec get_endpoint_id_type(state :: t(), endpoint_id :: endpoint_id()) ::
           :peer_id | :component_id
@@ -434,6 +434,33 @@ defmodule Jellyfish.Room.State do
 
   def validate_subscription_mode(%{properties: %{subscribe_mode: :manual}}), do: :ok
   def validate_subscription_mode(_not_properties), do: {:error, :invalid_component_type}
+
+  defp check_component_allowed_in_room(type, %{
+         config: %{video_codec: video_codec},
+         components: components
+       })
+       when type in [HLS, Recording] do
+    cond do
+      video_codec != :h264 ->
+        {:error, :incompatible_codec}
+
+      component_already_present?(type, components) ->
+        {:error, :reached_components_limit}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp check_component_allowed_in_room(RTSP, %{config: %{video_codec: video_codec}}) do
+    # Right now, RTSP component can only publish H264, so there's no point adding it
+    # to a room which allows another video codec, e.g. VP8
+    if video_codec == :h264,
+      do: :ok,
+      else: {:error, :incompatible_codec}
+  end
+
+  defp check_component_allowed_in_room(_component_type, _state), do: :ok
 
   defp component_already_present?(type, components),
     do: components |> Map.values() |> Enum.any?(&(&1.type == type))

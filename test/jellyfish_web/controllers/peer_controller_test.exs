@@ -76,7 +76,7 @@ defmodule JellyfishWeb.PeerControllerTest do
       conn = post(conn, ~p"/room/#{room_id}/peer", type: @peer_type)
 
       assert json_response(conn, :service_unavailable)["errors"] ==
-               "Reached peer limit in room #{room_id}"
+               "Reached webrtc peers limit in room #{room_id}"
     end
 
     test "renders errors when room doesn't exist", %{conn: conn} do
@@ -88,6 +88,19 @@ defmodule JellyfishWeb.PeerControllerTest do
     test "renders errors when request body structure is invalid", %{conn: conn, room_id: room_id} do
       conn = post(conn, ~p"/room/#{room_id}/peer", invalid_param: @peer_type)
       assert json_response(conn, :bad_request)["errors"] == "Invalid request body structure"
+    end
+
+    test "renders errors when peer isn't allowed globally", %{conn: conn, room_id: room_id} do
+      Application.put_env(:jellyfish, :webrtc_config, webrtc_used?: false)
+
+      on_exit(fn ->
+        Application.put_env(:jellyfish, :webrtc_config, webrtc_used?: true)
+      end)
+
+      conn = post(conn, ~p"/room/#{room_id}/peer", type: @peer_type)
+
+      assert json_response(conn, :bad_request)["errors"] ==
+               "Peers of type webrtc are disabled on this Jellyfish"
     end
   end
 

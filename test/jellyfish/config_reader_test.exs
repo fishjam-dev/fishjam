@@ -152,33 +152,34 @@ defmodule Jellyfish.ConfigReaderTest do
   end
 
   test "read_components_used/0" do
-    with_env ["JF_HLS_USED", "JF_RTSP_USED", "JF_FILE_USED", "JF_SIP_USED", "JF_RECORDING_USED"] do
-      assert ConfigReader.read_components_used()
-             |> Enum.all?(fn {_type, used?} -> used? == false end)
+    with_env ["JF_COMPONENTS_USED"] do
+      assert ConfigReader.read_components_used() == []
 
-      System.put_env("JF_HLS_USED", "true")
-      System.put_env("JF_RTSP_USED", "false")
+      System.put_env("JF_COMPONENTS_USED", "hls")
+      assert ConfigReader.read_components_used() == [Jellyfish.Component.HLS]
 
-      assert ConfigReader.read_components_used()
-             |> Enum.all?(fn
-               {:hls, used?} -> used? == true
-               {_type, used?} -> used? == false
-             end)
+      System.put_env("JF_COMPONENTS_USED", "recording rtsp    sip ")
+
+      assert ConfigReader.read_components_used() |> Enum.sort() ==
+               [Jellyfish.Component.Recording, Jellyfish.Component.RTSP, Jellyfish.Component.SIP]
+               |> Enum.sort()
+
+      System.put_env("JF_COMPONENTS_USED", "file rtsp    invalid_component")
+      assert_raise RuntimeError, fn -> ConfigReader.read_components_used() end
     end
   end
 
-  test "read_sip_config/0" do
-    with_env ["JF_SIP_USED", "JF_SIP_IP"] do
-      assert ConfigReader.read_sip_config() == [sip_external_ip: nil]
+  test "read_sip_config/1" do
+    with_env ["JF_SIP_IP"] do
+      assert ConfigReader.read_sip_config(false) == [sip_external_ip: nil]
 
-      System.put_env("JF_SIP_USED", "true")
-      assert_raise RuntimeError, fn -> ConfigReader.read_sip_config() end
+      assert_raise RuntimeError, fn -> ConfigReader.read_sip_config(true) end
 
       System.put_env("JF_SIP_IP", "abcdefg")
-      assert_raise RuntimeError, fn -> ConfigReader.read_sip_config() end
+      assert_raise RuntimeError, fn -> ConfigReader.read_sip_config(true) end
 
       System.put_env("JF_SIP_IP", "127.0.0.1")
-      assert ConfigReader.read_sip_config() == [sip_external_ip: "127.0.0.1"]
+      assert ConfigReader.read_sip_config(true) == [sip_external_ip: "127.0.0.1"]
     end
   end
 

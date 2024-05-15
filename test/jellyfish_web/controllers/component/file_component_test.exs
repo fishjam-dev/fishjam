@@ -21,7 +21,7 @@ defmodule JellyfishWeb.Component.FileComponentTest do
   @auth_response %Authenticated{}
 
   setup_all _tags do
-    Application.put_env(:jellyfish, :component_used?, file: true)
+    Application.put_env(:jellyfish, :components_used, [Jellyfish.Component.File])
 
     media_sources_directory =
       Application.fetch_env!(:jellyfish, :media_files_path)
@@ -34,7 +34,7 @@ defmodule JellyfishWeb.Component.FileComponentTest do
 
     on_exit(fn ->
       :file.del_dir_r(media_sources_directory)
-      Application.put_env(:jellyfish, :component_used?, file: false)
+      Application.put_env(:jellyfish, :components_used, [])
     end)
 
     {:ok, %{media_sources_directory: media_sources_directory}}

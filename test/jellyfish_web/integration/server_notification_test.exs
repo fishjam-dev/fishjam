@@ -9,6 +9,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
 
   alias Membrane.RTC.Engine
 
+  alias Jellyfish.Component
   alias Jellyfish.Component.HLS
   alias Jellyfish.Component.HLS.Manager
   alias Jellyfish.{PeerMessage, Room, RoomService, ServerMessage}
@@ -95,22 +96,16 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   setup_all do
     Application.put_env(:jellyfish, :sip_config, sip_external_ip: "127.0.0.1")
 
-    Application.put_env(:jellyfish, :component_used?,
-      sip: true,
-      hls: true,
-      rtsp: true,
-      file: true
-    )
+    Application.put_env(:jellyfish, :components_used, [
+      Component.SIP,
+      Component.HLS,
+      Component.RTSP,
+      Component.File
+    ])
 
     on_exit(fn ->
       Application.put_env(:jellyfish, :sip_config, sip_external_ip: nil)
-
-      Application.put_env(:jellyfish, :component_used?,
-        sip: false,
-        hls: false,
-        rtsp: false,
-        file: false
-      )
+      Application.put_env(:jellyfish, :components_used, [])
     end)
 
     assert {:ok, _pid} = Endpoint.start_link()

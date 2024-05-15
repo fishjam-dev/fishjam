@@ -76,6 +76,37 @@ defmodule JellyfishWeb.ComponentController do
       :error ->
         {:error, :bad_request, "Invalid request body structure"}
 
+      {:error, :room_not_found} ->
+        {:error, :not_found, "Room #{room_id} does not exist"}
+
+      {:error, :invalid_type} ->
+        {:error, :bad_request, "Invalid component type"}
+
+      {:error, {:component_disabled_globally, type}} ->
+        {:error, :bad_request, "Components of type #{type} are disabled on this Jellyfish"}
+
+      {:error, :incompatible_codec} ->
+        {:error, :bad_request, "Incompatible video codec enforced in room #{room_id}"}
+
+      {:error, {:reached_components_limit, type}} ->
+        {:error, :bad_request, "Reached #{type} components limit in room #{room_id}"}
+
+      {:error, :file_does_not_exist} ->
+        {:error, :not_found, "File not found"}
+
+      {:error, :bad_parameter_framerate_for_audio} ->
+        {:error, :bad_request,
+         "Attempted to set framerate for audio component which is not supported."}
+
+      {:error, :invalid_framerate} ->
+        {:error, :bad_request, "Invalid framerate passed"}
+
+      {:error, :invalid_file_path} ->
+        {:error, :bad_request, "Invalid file path"}
+
+      {:error, :unsupported_file_type} ->
+        {:error, :bad_request, "Unsupported file type"}
+
       {:error, {:missing_parameter, name}} ->
         {:error, :bad_request, "Required field \"#{Atom.to_string(name)}\" missing"}
 
@@ -90,35 +121,6 @@ defmodule JellyfishWeb.ComponentController do
       {:error, :overridding_path_prefix} ->
         {:error, :bad_request,
          "Conflicting S3 path prefix supplied via environment variables and the REST API. Overrides on existing values are disallowed"}
-
-      {:error, :invalid_type} ->
-        {:error, :bad_request, "Invalid component type"}
-
-      {:error, :room_not_found} ->
-        {:error, :not_found, "Room #{room_id} does not exist"}
-
-      {:error, :incompatible_codec} ->
-        {:error, :bad_request, "Incompatible video codec enforced in room #{room_id}"}
-
-      {:error, :invalid_framerate} ->
-        {:error, :bad_request, "Invalid framerate passed"}
-
-      {:error, :bad_parameter_framerate_for_audio} ->
-        {:error, :bad_request,
-         "Attempted to set framerate for audio component which is not supported."}
-
-      {:error, :invalid_file_path} ->
-        {:error, :bad_request, "Invalid file path"}
-
-      {:error, :file_does_not_exist} ->
-        {:error, :not_found, "File not found"}
-
-      {:error, :unsupported_file_type} ->
-        {:error, :bad_request, "Unsupported file type"}
-
-      {:error, {:reached_components_limit, type}} ->
-        {:error, :bad_request,
-         "Reached #{type} components limit for component in room #{room_id}"}
     end
   end
 

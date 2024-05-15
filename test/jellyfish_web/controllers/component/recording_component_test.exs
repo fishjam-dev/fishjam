@@ -16,10 +16,10 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
   @path_prefix "path_prefix"
 
   setup_all do
-    Application.put_env(:jellyfish, :component_used?, recording: true)
+    Application.put_env(:jellyfish, :components_used, [Jellyfish.Component.Recording])
 
     on_exit(fn ->
-      Application.put_env(:jellyfish, :component_used?, recording: false)
+      Application.put_env(:jellyfish, :components_used, [])
     end)
   end
 
@@ -57,7 +57,7 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
       conn = post(conn, ~p"/room/#{room_id}/component", type: "recording")
 
       assert model_response(conn, :bad_request, "Error")["errors"] ==
-               "Reached recording components limit for component in room #{room_id}"
+               "Reached recording components limit in room #{room_id}"
     end
 
     setup :set_mox_from_context

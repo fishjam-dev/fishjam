@@ -129,17 +129,24 @@ defmodule Jellyfish.ConfigReader do
   end
 
   def read_components_used() do
-    [
-      hls: read_boolean("JF_HLS_USED") == true,
-      rtsp: read_boolean("JF_RTSP_USED") == true,
-      file: read_boolean("JF_FILE_USED") == true,
-      sip: read_boolean("JF_SIP_USED") == true,
-      recording: read_boolean("JF_RECORDING_USED") == true
-    ]
+    components_used = System.get_env("JF_COMPONENTS_USED") || ""
+
+    components_used
+    |> String.split(" ", trim: true)
+    |> Enum.map(fn type ->
+      case Jellyfish.Component.parse_type(type) do
+        {:ok, component} ->
+          component
+
+        {:error, :invalid_type} ->
+          raise(
+            "Invalid value in JF_COMPONENTS_USED. Expected a lowercase component name, got: #{type}"
+          )
+      end
+    end)
   end
 
-  def read_sip_config() do
-    sip_used? = read_boolean("JF_SIP_USED")
+  def read_sip_config(sip_used?) do
     sip_ip = System.get_env("JF_SIP_IP") || ""
 
     cond do
@@ -155,7 +162,7 @@ defmodule Jellyfish.ConfigReader do
 
       true ->
         raise """
-        JF_SIP_USED has been set to true but incorrect IP address was provided as `JF_SIP_IP`
+        SIP components are allowed, but incorrect IP address was provided as `JF_SIP_IP`
         """
     end
   end

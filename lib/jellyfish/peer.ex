@@ -51,6 +51,14 @@ defmodule Jellyfish.Peer do
     end
   end
 
+  @spec to_string!(module()) :: String.t()
+  def to_string!(peer) do
+    case peer do
+      WebRTC -> "webrtc"
+      _other -> raise "Invalid peer"
+    end
+  end
+
   @spec new(peer(), map()) :: {:ok, t()} | {:error, term()}
   def new(type, options) do
     id = UUID.uuid4()

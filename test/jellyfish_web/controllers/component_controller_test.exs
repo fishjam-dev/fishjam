@@ -5,10 +5,13 @@ defmodule JellyfishWeb.ComponentControllerTest do
   @source_uri "rtsp://placeholder-19inrifjbsjb.it:12345/afwefae"
 
   setup_all do
-    Application.put_env(:jellyfish, :component_used?, rtsp: true, hls: true)
+    Application.put_env(:jellyfish, :components_used, [
+      Jellyfish.Component.RTSP,
+      Jellyfish.Component.HLS
+    ])
 
     on_exit(fn ->
-      Application.put_env(:jellyfish, :component_used?, rtsp: false, hls: false)
+      Application.put_env(:jellyfish, :components_used, [])
     end)
   end
 
@@ -26,6 +29,22 @@ defmodule JellyfishWeb.ComponentControllerTest do
 
       response = model_response(conn, :not_found, "Error")
       assert response["errors"] == "Room #{room_id} does not exist"
+    end
+
+    test "renders errors when component isn't allowed globally", %{conn: conn, room_id: room_id} do
+      Application.put_env(:jellyfish, :components_used, [])
+
+      on_exit(fn ->
+        Application.put_env(:jellyfish, :components_used, [
+          Jellyfish.Component.RTSP,
+          Jellyfish.Component.HLS
+        ])
+      end)
+
+      conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
+
+      response = model_response(conn, :bad_request, "Error")
+      assert response["errors"] == "Components of type hls are disabled on this Jellyfish"
     end
   end
 

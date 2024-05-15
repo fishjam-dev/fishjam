@@ -15,11 +15,11 @@ defmodule JellyfishWeb.Component.SIPComponentTest do
 
   setup_all do
     Application.put_env(:jellyfish, :sip_config, sip_external_ip: "127.0.0.1")
-    Application.put_env(:jellyfish, :component_used?, sip: true)
+    Application.put_env(:jellyfish, :components_used, [Jellyfish.Component.SIP])
 
     on_exit(fn ->
       Application.put_env(:jellyfish, :sip_config, sip_external_ip: nil)
-      Application.put_env(:jellyfish, :component_used?, sip: false)
+      Application.put_env(:jellyfish, :components_used, [])
     end)
   end
 

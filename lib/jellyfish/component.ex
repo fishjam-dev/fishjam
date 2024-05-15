@@ -123,8 +123,7 @@ defmodule Jellyfish.Component do
 
   @spec new(component(), map()) :: {:ok, t()} | {:error, term()}
   def new(type, options) do
-    with true <- component_allowed?(type),
-         {:ok, %{endpoint: endpoint, properties: properties}} <-
+    with {:ok, %{endpoint: endpoint, properties: properties}} <-
            type.config(options) do
       {:ok,
        %__MODULE__{
@@ -134,17 +133,7 @@ defmodule Jellyfish.Component do
          properties: properties
        }}
     else
-      false ->
-        raise("""
-          #{inspect(type)} can only be used if JF_#{type |> to_string!() |> String.upcase()}_USED environmental variable is set to \"true\"
-        """)
-
-      {:error, _reason} = error ->
-        error
+      {:error, _reason} = error -> error
     end
-  end
-
-  defp component_allowed?(type) do
-    Application.fetch_env!(:jellyfish, :component_used?)[:"#{to_string!(type)}"]
   end
 end
