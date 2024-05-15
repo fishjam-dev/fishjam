@@ -16,10 +16,12 @@ defmodule Jellyfish.Application do
     dist_config = Application.fetch_env!(:jellyfish, :dist_config)
     webrtc_config = Application.fetch_env!(:jellyfish, :webrtc_config)
     git_commit = Application.get_env(:jellyfish, :git_commit)
+    components_used = Application.get_env(:jellyfish, :components_used)
 
     Logger.info("Starting Jellyfish v#{Jellyfish.version()} (#{git_commit})")
     Logger.info("Distribution config: #{inspect(Keyword.delete(dist_config, :cookie))}")
     Logger.info("WebRTC config: #{inspect(webrtc_config)}")
+    Logger.info("Allowed components: #{inspect(components_used)}")
 
     children =
       [
