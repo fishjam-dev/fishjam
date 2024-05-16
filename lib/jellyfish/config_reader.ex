@@ -246,6 +246,10 @@ defmodule Fishjam.ConfigReader do
     get_env("FJ_GIT_COMMIT", "dev")
   end
 
+  def read_server_api_token() do
+    get_env("FJ_SERVER_API_TOKEN", nil)
+  end
+
   defp do_read_nodes_list_config(node_name_value, cookie, mode) do
     nodes_value = get_env("FJ_DIST_NODES", "")
 

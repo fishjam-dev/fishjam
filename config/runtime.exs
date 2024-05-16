@@ -42,7 +42,7 @@ config :fishjam,
   s3_config: ConfigReader.read_s3_config(),
   git_commit: ConfigReader.read_git_commit()
 
-case System.get_env("FJ_SERVER_API_TOKEN") do
+case ConfigReader.read_server_api_token() do
   nil when prod? == true ->
     raise """
     environment variable FJ_SERVER_API_TOKEN is missing.
