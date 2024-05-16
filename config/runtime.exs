@@ -25,6 +25,9 @@ host =
     other -> other
   end
 
+components_used = ConfigReader.read_components_used()
+sip_used? = Jellyfish.Component.SIP in components_used
+
 config :jellyfish,
   jwt_max_age: 24 * 3600,
   media_files_path:
@@ -34,8 +37,8 @@ config :jellyfish,
   metrics_port: ConfigReader.read_port("JF_METRICS_PORT") || 9568,
   dist_config: ConfigReader.read_dist_config(),
   webrtc_config: ConfigReader.read_webrtc_config(),
-  sip_config: ConfigReader.read_sip_config(),
-  recording_config: ConfigReader.read_recording_config(),
+  components_used: components_used,
+  sip_config: ConfigReader.read_sip_config(sip_used?),
   s3_config: ConfigReader.read_s3_config(),
   git_commit: ConfigReader.read_git_commit()
 

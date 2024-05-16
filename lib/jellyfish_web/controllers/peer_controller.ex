@@ -88,14 +88,17 @@ defmodule JellyfishWeb.PeerController do
       :error ->
         {:error, :bad_request, "Invalid request body structure"}
 
-      {:error, :invalid_type} ->
-        {:error, :bad_request, "Invalid peer type"}
-
       {:error, :room_not_found} ->
         {:error, :not_found, "Room #{room_id} does not exist"}
 
-      {:error, :reached_peers_limit} ->
-        {:error, :service_unavailable, "Reached peer limit in room #{room_id}"}
+      {:error, :invalid_type} ->
+        {:error, :bad_request, "Invalid peer type"}
+
+      {:error, {:peer_disabled_globally, type}} ->
+        {:error, :bad_request, "Peers of type #{type} are disabled on this Jellyfish"}
+
+      {:error, {:reached_peers_limit, type}} ->
+        {:error, :service_unavailable, "Reached #{type} peers limit in room #{room_id}"}
     end
   end
 

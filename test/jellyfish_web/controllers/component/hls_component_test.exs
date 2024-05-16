@@ -21,6 +21,14 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
                   }
                   |> map_keys_to_string()
 
+  setup_all do
+    Application.put_env(:jellyfish, :components_used, [HLS])
+
+    on_exit(fn ->
+      Application.put_env(:jellyfish, :components_used, [])
+    end)
+  end
+
   describe "create hls component" do
     setup [:create_h264_room]
 
@@ -46,7 +54,7 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
 
       assert model_response(conn, :bad_request, "Error")["errors"] ==
-               "Reached hls components limit for component in room #{room_id}"
+               "Reached hls components limit in room #{room_id}"
 
       conn = delete(conn, ~p"/room/#{room_id}")
       assert response(conn, :no_content)

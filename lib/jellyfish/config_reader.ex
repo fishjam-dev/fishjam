@@ -128,34 +128,43 @@ defmodule Jellyfish.ConfigReader do
     end
   end
 
-  def read_sip_config() do
-    sip_used? = read_boolean("JF_SIP_USED")
+  def read_components_used() do
+    components_used = System.get_env("JF_COMPONENTS_USED") || ""
+
+    components_used
+    |> String.split(" ", trim: true)
+    |> Enum.map(fn type ->
+      case Jellyfish.Component.parse_type(type) do
+        {:ok, component} ->
+          component
+
+        {:error, :invalid_type} ->
+          raise(
+            "Invalid value in JF_COMPONENTS_USED. Expected a lowercase component name, got: #{type}"
+          )
+      end
+    end)
+  end
+
+  def read_sip_config(sip_used?) do
     sip_ip = System.get_env("JF_SIP_IP") || ""
 
     cond do
       sip_used? != true ->
         [
-          sip_used?: false,
           sip_external_ip: nil
         ]
 
       ip_address?(sip_ip) ->
         [
-          sip_used?: true,
           sip_external_ip: sip_ip
         ]
 
       true ->
         raise """
-        JF_SIP_USED has been set to true but incorrect IP address was provided as `JF_SIP_IP`
+        SIP components are allowed, but incorrect IP address was provided as `JF_SIP_IP`
         """
     end
-  end
-
-  def read_recording_config() do
-    [
-      recording_used?: read_boolean("JF_RECORDING_USED") != false
-    ]
   end
 
   def read_s3_config() do

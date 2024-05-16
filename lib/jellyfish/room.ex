@@ -67,7 +67,9 @@ defmodule Jellyfish.Room do
   end
 
   @spec add_peer(id(), Peer.peer(), map()) ::
-          {:ok, Peer.t()} | :error | {:error, :reached_peers_limit}
+          {:ok, Peer.t()}
+          | :error
+          | {:error, {:peer_disabled_globally, String.t()} | {:reached_peers_limit, String.t()}}
   def add_peer(room_id, peer_type, options \\ %{}) do
     GenServer.call(registry_id(room_id), {:add_peer, peer_type, options})
   end
@@ -92,7 +94,19 @@ defmodule Jellyfish.Room do
   @spec add_component(id(), Component.component(), map()) ::
           {:ok, Component.t()}
           | :error
-          | {:error, :incompatible_codec | :reached_components_limit_hls}
+          | {:error,
+             {:component_disabled_globally, String.t()}
+             | :incompatible_codec
+             | {:reached_components_limit, String.t()}
+             | :file_does_not_exist
+             | :bad_parameter_framerate_for_audio
+             | :invalid_framerate
+             | :invalid_file_path
+             | :unsupported_file_type
+             | {:missing_parameter, term()}
+             | :missing_s3_credentials
+             | :overriding_credentials
+             | :overriding_path_prefix}
   def add_component(room_id, component_type, options \\ %{}) do
     GenServer.call(registry_id(room_id), {:add_component, component_type, options})
   end
@@ -142,15 +156,22 @@ defmodule Jellyfish.Room do
 
   @impl true
   def handle_call({:add_peer, peer_type, override_options}, _from, state) do
-    with false <- State.reached_peers_limit?(state),
+    with :ok <- State.check_peer_allowed(peer_type, state),
          options <- State.generate_peer_options(state, override_options),
          {:ok, peer} <- Peer.new(peer_type, options) do
       state = State.add_peer(state, peer)
 
       {:reply, {:ok, peer}, state}
     else
-      true ->
-        {:reply, {:error, :reached_peers_limit}, state}
+      {:error, :peer_disabled_globally} ->
+        type = Peer.to_string!(peer_type)
+        Logger.warning("Unable to add peer: #{type} peers are disabled globally")
+        {:reply, {:error, {:peer_disabled_globally, type}}, state}
+
+      {:error, :reached_peers_limit} ->
+        type = Peer.to_string!(peer_type)
+        Logger.warning("Unable to add peer: Reached #{type} peers limit")
+        {:reply, {:error, {:reached_peers_limit, type}}, state}
 
       {:error, reason} ->
         Logger.warning("Unable to add peer: #{inspect(reason)}")
@@ -214,7 +235,7 @@ defmodule Jellyfish.Room do
         options
       )
 
-    with :ok <- check_component_allowed(component_type, state),
+    with :ok <- State.check_component_allowed(component_type, state),
          {:ok, component} <- Component.new(component_type, options) do
       state = State.put_component(state, component)
 
@@ -226,13 +247,18 @@ defmodule Jellyfish.Room do
 
       {:reply, {:ok, component}, state}
     else
+      {:error, :component_disabled_globally} ->
+        type = Component.to_string!(component_type)
+        Logger.warning("Unable to add component: #{type} components are disabled globally")
+        {:reply, {:error, {:component_disabled_globally, type}}, state}
+
       {:error, :incompatible_codec} ->
         Logger.warning("Unable to add component: incompatible codec")
         {:reply, {:error, :incompatible_codec}, state}
 
       {:error, :reached_components_limit} ->
         type = Component.to_string!(component_type)
-        Logger.warning("Unable to add component: reached components limit #{type}")
+        Logger.warning("Unable to add component: reached #{type} components limit")
         {:reply, {:error, {:reached_components_limit, type}}, state}
 
       {:error, :file_does_not_exist} ->
@@ -240,13 +266,12 @@ defmodule Jellyfish.Room do
         {:reply, {:error, :file_does_not_exist}, state}
 
       {:error, :bad_parameter_framerate_for_audio} ->
-        Logger.warning("Attempted to set framerate for audio component which is not supported.")
-
+        Logger.warning("Unable to add component: attempted to set framerate for audio component")
         {:reply, {:error, :bad_parameter_framerate_for_audio}, state}
 
       {:error, {:invalid_framerate, passed_framerate}} ->
         Logger.warning(
-          "Invalid framerate value: #{passed_framerate}.  It has to be a positivie integer."
+          "Unable to add component: expected framerate to be a positive integer, got: #{passed_framerate}"
         )
 
         {:reply, {:error, :invalid_framerate}, state}
@@ -256,7 +281,7 @@ defmodule Jellyfish.Room do
         {:reply, {:error, :invalid_file_path}, state}
 
       {:error, :unsupported_file_type} ->
-        Logger.warning("Unable to add component: unsupported file path")
+        Logger.warning("Unable to add component: unsupported file type")
         {:reply, {:error, :unsupported_file_type}, state}
 
       {:error, {:missing_parameter, name}} ->

@@ -14,6 +14,21 @@ defmodule JellyfishWeb.SubscriptionControllerTest do
     password: "pass-word"
   }
 
+  setup_all do
+    Application.put_env(:jellyfish, :sip_config, sip_external_ip: "127.0.0.1")
+
+    Application.put_env(:jellyfish, :components_used, [
+      Jellyfish.Component.SIP,
+      Jellyfish.Component.HLS,
+      Jellyfish.Component.Recording
+    ])
+
+    on_exit(fn ->
+      Application.put_env(:jellyfish, :sip_config, sip_external_ip: nil)
+      Application.put_env(:jellyfish, :components_used, [])
+    end)
+  end
+
   setup %{conn: conn} do
     server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
@@ -54,12 +69,6 @@ defmodule JellyfishWeb.SubscriptionControllerTest do
       conn: conn,
       room_id: room_id
     } do
-      Application.put_env(:jellyfish, :sip_config, sip_used?: true, sip_external_ip: "127.0.0.1")
-
-      on_exit(fn ->
-        Application.put_env(:jellyfish, :sip_config, sip_used?: false, sip_external_ip: nil)
-      end)
-
       conn =
         post(conn, ~p"/room/#{room_id}/component",
           type: "sip",

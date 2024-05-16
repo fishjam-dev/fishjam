@@ -22,6 +22,14 @@ defmodule JellyfishWeb.Component.RTSPComponentTest do
   }
   @rtsp_custom_properties @rtsp_custom_options |> map_keys_to_string()
 
+  setup_all do
+    Application.put_env(:jellyfish, :components_used, [Jellyfish.Component.RTSP])
+
+    on_exit(fn ->
+      Application.put_env(:jellyfish, :components_used, [])
+    end)
+  end
+
   describe "create rtsp component" do
     setup [:create_h264_room]
 
