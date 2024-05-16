@@ -4,9 +4,6 @@ import Config
 # to something meaningful, Phoenix uses this information
 # when generating URLs.
 
-# Do not print debug messages in production
-config :logger, level: :info
-
 config :fishjam,
   ip: {127, 0, 0, 1},
   port: 8080
