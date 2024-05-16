@@ -1,7 +1,7 @@
-defmodule JellyfishWeb.ApiSpec.Room do
+defmodule FishjamWeb.ApiSpec.Room do
   require OpenApiSpex
 
-  alias JellyfishWeb.ApiSpec.{Component, Peer}
+  alias FishjamWeb.ApiSpec.{Component, Peer}
   alias OpenApiSpex.Schema
 
   defmodule Config do
@@ -17,7 +17,7 @@ defmodule JellyfishWeb.ApiSpec.Room do
         roomId: %Schema{
           type: :string,
           description:
-            "Custom id used for identifying room within Jellyfish. Must be unique across all rooms. If not provided, random UUID is generated.",
+            "Custom id used for identifying room within Fishjam. Must be unique across all rooms. If not provided, random UUID is generated.",
           nullable: true
         },
         maxPeers: %Schema{
@@ -34,9 +34,9 @@ defmodule JellyfishWeb.ApiSpec.Room do
           nullable: true
         },
         webhookUrl: %Schema{
-          description: "URL where Jellyfish notifications will be sent",
+          description: "URL where Fishjam notifications will be sent",
           type: :string,
-          example: "https://backend.address.com/jellyfish-notifications-endpoint",
+          example: "https://backend.address.com/fishjam-notifications-endpoint",
           nullable: true
         },
         peerlessPurgeTimeout: %Schema{

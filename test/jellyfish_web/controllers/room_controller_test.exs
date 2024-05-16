@@ -1,15 +1,15 @@
-defmodule JellyfishWeb.RoomControllerTest do
-  use JellyfishWeb.ConnCase, async: false
+defmodule FishjamWeb.RoomControllerTest do
+  use FishjamWeb.ConnCase, async: false
 
   import OpenApiSpex.TestAssertions
 
   alias __MODULE__.Endpoint
 
-  alias Jellyfish.PeerMessage.Authenticated
-  alias Jellyfish.RoomService
-  alias JellyfishWeb.{PeerSocket, WS}
+  alias Fishjam.PeerMessage.Authenticated
+  alias Fishjam.RoomService
+  alias FishjamWeb.{PeerSocket, WS}
 
-  @schema JellyfishWeb.ApiSpec.spec()
+  @schema FishjamWeb.ApiSpec.spec()
 
   @purge_timeout_s 3
   @purge_timeout_ms @purge_timeout_s * 1000
@@ -19,7 +19,7 @@ defmodule JellyfishWeb.RoomControllerTest do
   @auth_response %Authenticated{}
 
   Application.put_env(
-    :jellyfish,
+    :fishjam,
     Endpoint,
     https: false,
     http: [port: @port],
@@ -27,9 +27,9 @@ defmodule JellyfishWeb.RoomControllerTest do
   )
 
   defmodule Endpoint do
-    use Phoenix.Endpoint, otp_app: :jellyfish
+    use Phoenix.Endpoint, otp_app: :fishjam
 
-    alias JellyfishWeb.PeerSocket
+    alias FishjamWeb.PeerSocket
 
     socket "/socket/peer", PeerSocket,
       websocket: true,
@@ -43,7 +43,7 @@ defmodule JellyfishWeb.RoomControllerTest do
   end
 
   setup %{conn: conn} do
-    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+    server_api_token = Application.fetch_env!(:fishjam, :server_api_token)
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
     Klotho.Mock.reset()
@@ -62,7 +62,7 @@ defmodule JellyfishWeb.RoomControllerTest do
 
     test "invalid token", %{conn: conn} do
       invalid_server_api_token =
-        "invalid" <> Application.fetch_env!(:jellyfish, :server_api_token)
+        "invalid" <> Application.fetch_env!(:fishjam, :server_api_token)
 
       conn = put_req_header(conn, "authorization", "Bearer " <> invalid_server_api_token)
 
@@ -82,7 +82,7 @@ defmodule JellyfishWeb.RoomControllerTest do
     end
 
     test "correct token", %{conn: conn} do
-      server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+      server_api_token = Application.fetch_env!(:fishjam, :server_api_token)
       conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
       conn = post(conn, ~p"/room", maxPeers: 10)
@@ -506,7 +506,7 @@ defmodule JellyfishWeb.RoomControllerTest do
   end
 
   defp delete_all_rooms() do
-    token = Application.fetch_env!(:jellyfish, :server_api_token)
+    token = Application.fetch_env!(:fishjam, :server_api_token)
     headers = [Authorization: "Bearer #{token}", Accept: "Application/json; Charset=utf-8"]
 
     assert {:ok, %HTTPoison.Response{status_code: 200, body: body}} =

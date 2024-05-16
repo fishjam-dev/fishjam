@@ -1,4 +1,4 @@
-defmodule JellyfishWeb.RecordingJSON do
+defmodule FishjamWeb.RecordingJSON do
   @moduledoc false
 
   def show(%{recordings: recordings}) do

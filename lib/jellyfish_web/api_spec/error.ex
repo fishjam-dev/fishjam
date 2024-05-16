@@ -1,4 +1,4 @@
-defmodule JellyfishWeb.ApiSpec.Error do
+defmodule FishjamWeb.ApiSpec.Error do
   @moduledoc false
 
   require OpenApiSpex

@@ -1,36 +1,36 @@
 Mix.install([
-  # Keep in mind that you should lock onto a specific version of Jellyfish
-  # and the Jellyfish Server SDK in production code
-  {:jellyfish_server_sdk, github: "jellyfish-dev/elixir_server_sdk"}
+  # Keep in mind that you should lock onto a specific version of Fishjam
+  # and the Fishjam Server SDK in production code
+  {:fishjam_server_sdk, github: "fishjam-dev/elixir_server_sdk"}
 ])
 
 defmodule Example do
   require Logger
 
-  @jellyfish_hostname "localhost"
-  @jellyfish_port 5002
-  @jellyfish_token "development"
+  @fishjam_hostname "localhost"
+  @fishjam_port 5002
+  @fishjam_token "development"
 
   def run(stream_uri) do
     client =
-      Jellyfish.Client.new(
-        server_address: "#{@jellyfish_hostname}:#{@jellyfish_port}",
-        server_api_token: @jellyfish_token
+      Fishjam.Client.new(
+        server_address: "#{@fishjam_hostname}:#{@fishjam_port}",
+        server_api_token: @fishjam_token
       )
 
-    with {:ok, %Jellyfish.Room{id: room_id}, _jellyfish_address} <-
-           Jellyfish.Room.create(client, video_codec: :h264),
-         {:ok, %Jellyfish.Component{id: _hls_component_id}} <-
-           Jellyfish.Room.add_component(client, room_id, Jellyfish.Component.HLS),
-         {:ok, %Jellyfish.Component{id: _rtsp_component_id}} <-
-           Jellyfish.Room.add_component(client, room_id, %Jellyfish.Component.RTSP{
+    with {:ok, %Fishjam.Room{id: room_id}, _fishjam_address} <-
+           Fishjam.Room.create(client, video_codec: :h264),
+         {:ok, %Fishjam.Component{id: _hls_component_id}} <-
+           Fishjam.Room.add_component(client, room_id, Fishjam.Component.HLS),
+         {:ok, %Fishjam.Component{id: _rtsp_component_id}} <-
+           Fishjam.Room.add_component(client, room_id, %Fishjam.Component.RTSP{
              source_uri: stream_uri
            }) do
       Logger.info("Components added successfully")
     else
       {:error, reason} ->
         Logger.error("""
-        Error when attempting to communicate with Jellyfish: #{inspect(reason)}
+        Error when attempting to communicate with Fishjam: #{inspect(reason)}
         Make sure you have started it by running `mix phx.server`
         """)
     end

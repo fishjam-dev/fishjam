@@ -1,4 +1,4 @@
-defmodule Jellyfish.Endpoint.Config do
+defmodule Fishjam.Endpoint.Config do
   @moduledoc """
   An interface for RTC Engine endpoint configuration.
   """

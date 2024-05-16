@@ -4,7 +4,7 @@
 
 - **CL** - client
 - **BE** - business logic (backend) implemented by the user
-- **JF** - Jellyfish
+- **JF** - Fishjam
 
 ## Approaches
 
@@ -68,12 +68,12 @@ In that case we need a way to identify the sender of signaling messages, we thou
 
 **Advantages:**
 
-- Easy to implement (from our, Jellyfish developers, perspective).
+- Easy to implement (from our, Fishjam developers, perspective).
 - **CL** does not require additional connection and authentication, everything is handled by **BE**.
 
 **Disadvantages:**
 
-- Harder to implement by the user, much more error-prone (isn't that the point of Jellyfish to make it as simple as possible?).
+- Harder to implement by the user, much more error-prone (isn't that the point of Fishjam to make it as simple as possible?).
 - Encourages the user to implement logic that relies on content of signaling messages (at least while it's JSON) which they should treat as a "black box".
 
 ### Mixed approach

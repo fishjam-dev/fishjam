@@ -1,12 +1,12 @@
 version: "3"
 
-x-jellyfish-template: &jellyfish-template
+x-fishjam-template: &fishjam-template
   build: .
-  environment: &jellyfish-environment
-    JF_SERVER_API_TOKEN: "development"
-    JF_DIST_ENABLED: "true"
-    JF_DIST_MODE: "name"
-    JF_DIST_STRATEGY_NAME: "DNS"
+  environment: &fishjam-environment
+    FJ_SERVER_API_TOKEN: "development"
+    FJ_DIST_ENABLED: "true"
+    FJ_DIST_MODE: "name"
+    FJ_DIST_STRATEGY_NAME: "DNS"
   restart: on-failure
 
 services:
@@ -28,12 +28,12 @@ services:
       - app2
 
   app1:
-    <<: *jellyfish-template
+    <<: *fishjam-template
     environment:
-      <<: *jellyfish-environment
-      JF_HOST: "localhost:4001"
-      JF_PORT: 4001
-      JF_DIST_QUERY: app.dns-network
+      <<: *fishjam-environment
+      FJ_HOST: "localhost:4001"
+      FJ_PORT: 4001
+      FJ_DIST_QUERY: app.dns-network
     ports:
       - 4001:4001
     networks:
@@ -42,12 +42,12 @@ services:
           - app.dns-network
 
   app2:
-    <<: *jellyfish-template
+    <<: *fishjam-template
     environment:
-      <<: *jellyfish-environment
-      JF_HOST: "localhost:4002"
-      JF_PORT: 4002
-      JF_DIST_QUERY: app.dns-network
+      <<: *fishjam-environment
+      FJ_HOST: "localhost:4002"
+      FJ_PORT: 4002
+      FJ_DIST_QUERY: app.dns-network
     ports:
       - 4002:4002
     networks:

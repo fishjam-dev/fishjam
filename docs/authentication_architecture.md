@@ -4,7 +4,7 @@
 
 - **CL** - client
 - **BE** - business logic (backend) implemented by the user
-- **JF** - Jellyfish
+- **JF** - Fishjam
 
 ## Approaches and connection with signaling architecture
 
@@ -65,7 +65,7 @@ In this approach **JF** creates the tokens (when using `add_peer`, token is send
 You also might need to pass expected token presmissions to **JF**.
 Despite that, we still need a way to authenticate **BE** - **JF** connection. Possible solutions:
 
-- create JWT on **BE** side anyway (in such case you might as well use the first approach in order not to split logic responsible for token generation between Server SDK and Jellyfish),
+- create JWT on **BE** side anyway (in such case you might as well use the first approach in order not to split logic responsible for token generation between Server SDK and Fishjam),
 - create JWT (or some other token type) once and use it in configuration (makes it easier to change **BE** permissions, if that's ever necessary, but the token never expires, I'm not sure whether that's a problem, also **BE** doesn't need to know the secret).
 
 No matter who generates the tokens, effort from the user comes to passing the token to **CL** (in direct signaling, otherwise no need to do anything except for creating the signalling connection).

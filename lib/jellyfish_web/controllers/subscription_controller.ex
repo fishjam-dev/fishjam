@@ -1,13 +1,13 @@
-defmodule JellyfishWeb.SubscriptionController do
-  use JellyfishWeb, :controller
+defmodule FishjamWeb.SubscriptionController do
+  use FishjamWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Jellyfish.Room
-  alias Jellyfish.RoomService
-  alias JellyfishWeb.ApiSpec
+  alias Fishjam.Room
+  alias Fishjam.RoomService
+  alias FishjamWeb.ApiSpec
   alias OpenApiSpex.Response
 
-  action_fallback JellyfishWeb.FallbackController
+  action_fallback FishjamWeb.FallbackController
 
   tags [:room]
 

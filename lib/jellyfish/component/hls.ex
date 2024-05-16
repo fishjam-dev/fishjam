@@ -1,12 +1,12 @@
-defmodule Jellyfish.Component.HLS do
+defmodule Fishjam.Component.HLS do
   @moduledoc """
   Module representing HLS component.
   """
 
-  @behaviour Jellyfish.Endpoint.Config
-  use Jellyfish.Component
+  @behaviour Fishjam.Endpoint.Config
+  use Fishjam.Component
 
-  alias Jellyfish.Component.HLS.{
+  alias Fishjam.Component.HLS.{
     EtsHelper,
     LLStorage,
     Manager,
@@ -15,9 +15,9 @@ defmodule Jellyfish.Component.HLS do
     Storage
   }
 
-  alias Jellyfish.Room
+  alias Fishjam.Room
 
-  alias JellyfishWeb.ApiSpec.Component.HLS.Options
+  alias FishjamWeb.ApiSpec.Component.HLS.Options
 
   alias Membrane.RTC.Engine.Endpoint.HLS
   alias Membrane.RTC.Engine.Endpoint.HLS.{CompositorConfig, HLSConfig, MixerConfig}
@@ -97,7 +97,7 @@ defmodule Jellyfish.Component.HLS do
   end
 
   def output_dir(room_id, persistent: false) do
-    base_path = Application.fetch_env!(:jellyfish, :media_files_path)
+    base_path = Application.fetch_env!(:fishjam, :media_files_path)
     Path.join([base_path, "temporary_hls", "#{room_id}"])
   end
 

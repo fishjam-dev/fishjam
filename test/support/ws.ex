@@ -1,10 +1,10 @@
-defmodule JellyfishWeb.WS do
+defmodule FishjamWeb.WS do
   @moduledoc false
 
   use WebSockex
 
-  alias Jellyfish.PeerMessage
-  alias Jellyfish.ServerMessage
+  alias Fishjam.PeerMessage
+  alias Fishjam.ServerMessage
 
   @spec start(String.t(), :server | :peer) :: {:ok, pid()} | {:error, term()}
   def start(url, type) do

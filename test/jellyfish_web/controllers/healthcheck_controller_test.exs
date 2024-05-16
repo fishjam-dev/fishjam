@@ -1,14 +1,14 @@
-defmodule JellyfishWeb.HealthcheckControllerTest do
-  use JellyfishWeb.ConnCase, async: true
+defmodule FishjamWeb.HealthcheckControllerTest do
+  use FishjamWeb.ConnCase, async: true
 
   import OpenApiSpex.TestAssertions
 
-  @schema JellyfishWeb.ApiSpec.spec()
+  @schema FishjamWeb.ApiSpec.spec()
 
   @commit_hash_length 7
 
   setup %{conn: conn} do
-    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+    server_api_token = Application.fetch_env!(:fishjam, :server_api_token)
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
     [conn: conn]
@@ -19,7 +19,7 @@ defmodule JellyfishWeb.HealthcheckControllerTest do
     response = json_response(conn, :ok)
     assert_response_schema(response, "HealthcheckResponse", @schema)
 
-    version = Jellyfish.version()
+    version = Fishjam.version()
 
     assert %{
              "status" => "UP",

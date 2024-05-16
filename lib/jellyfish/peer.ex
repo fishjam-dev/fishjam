@@ -1,12 +1,12 @@
-defmodule Jellyfish.Peer do
+defmodule Fishjam.Peer do
   @moduledoc """
   Peer is an entity that connects to the server to publish, subscribe or publish and subscribe to tracks published by
   producers or other peers. Peer process is spawned after peer connects to the server.
   """
   use Bunch.Access
 
-  alias Jellyfish.Peer.WebRTC
-  alias Jellyfish.Track
+  alias Fishjam.Peer.WebRTC
+  alias Fishjam.Track
 
   @enforce_keys [
     :id,

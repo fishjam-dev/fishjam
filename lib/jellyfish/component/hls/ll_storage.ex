@@ -1,10 +1,10 @@
-defmodule Jellyfish.Component.HLS.LLStorage do
+defmodule Fishjam.Component.HLS.LLStorage do
   @moduledoc false
 
   @behaviour Membrane.HTTPAdaptiveStream.Storage
 
-  alias Jellyfish.Component.HLS.{EtsHelper, RequestHandler}
-  alias Jellyfish.Room
+  alias Fishjam.Component.HLS.{EtsHelper, RequestHandler}
+  alias Fishjam.Room
 
   @enforce_keys [:directory, :room_id]
   defstruct @enforce_keys ++

@@ -1,4 +1,4 @@
-defmodule Jellyfish.Component.HLS.Storage do
+defmodule Fishjam.Component.HLS.Storage do
   @moduledoc false
 
   @behaviour Membrane.HTTPAdaptiveStream.Storage
@@ -27,7 +27,7 @@ defmodule Jellyfish.Component.HLS.Storage do
           write_to_file(directory, name, content, [:binary])
 
         %{mode: :binary, type: :partial_segment} ->
-          raise "This storage doesn't support ll-hls. Use `Jellyfish.Component.HLS.LLStorage` instead"
+          raise "This storage doesn't support ll-hls. Use `Fishjam.Component.HLS.LLStorage` instead"
 
         %{mode: :binary, type: :header} ->
           write_to_file(directory, name, content, [:binary])

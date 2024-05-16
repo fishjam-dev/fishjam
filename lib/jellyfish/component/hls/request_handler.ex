@@ -1,12 +1,12 @@
-defmodule Jellyfish.Component.HLS.RequestHandler do
+defmodule Fishjam.Component.HLS.RequestHandler do
   @moduledoc false
 
   use GenServer
   use Bunch.Access
 
-  alias Jellyfish.Utils.PathValidation
-  alias Jellyfish.Component.HLS.{EtsHelper, Recording}
-  alias Jellyfish.Room
+  alias Fishjam.Utils.PathValidation
+  alias Fishjam.Component.HLS.{EtsHelper, Recording}
+  alias Fishjam.Room
 
   @enforce_keys [:room_id, :room_pid]
   defstruct @enforce_keys ++
@@ -300,7 +300,7 @@ defmodule Jellyfish.Component.HLS.RequestHandler do
     |> List.to_tuple()
   end
 
-  defp registry_id(room_id), do: {:via, Registry, {Jellyfish.RequestHandlerRegistry, room_id}}
+  defp registry_id(room_id), do: {:via, Registry, {Fishjam.RequestHandlerRegistry, room_id}}
 
   defp send_partial_ready(waiting_pids) do
     Enum.each(waiting_pids, fn pid -> send(pid, :manifest_ready) end)

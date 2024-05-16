@@ -1,11 +1,11 @@
-defmodule JellyfishWeb.Endpoint do
-  use Phoenix.Endpoint, otp_app: :jellyfish
+defmodule FishjamWeb.Endpoint do
+  use Phoenix.Endpoint, otp_app: :fishjam
 
-  socket "/socket/peer", JellyfishWeb.PeerSocket,
+  socket "/socket/peer", FishjamWeb.PeerSocket,
     websocket: true,
     longpoll: false
 
-  socket "/socket/server", JellyfishWeb.ServerSocket,
+  socket "/socket/server", FishjamWeb.ServerSocket,
     websocket: true,
     longpoll: false
 
@@ -14,7 +14,7 @@ defmodule JellyfishWeb.Endpoint do
   # Set :encryption_salt if you would also like to encrypt it.
   @session_options [
     store: :cookie,
-    key: "_jellyfish_key",
+    key: "_fishjam_key",
     signing_salt: "ojOkSTjg",
     same_site: "Lax"
   ]
@@ -27,9 +27,9 @@ defmodule JellyfishWeb.Endpoint do
   # when deploying your static files in production.
   plug Plug.Static,
     at: "/",
-    from: :jellyfish,
+    from: :fishjam,
     gzip: false,
-    only: JellyfishWeb.static_paths()
+    only: FishjamWeb.static_paths()
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
@@ -53,6 +53,6 @@ defmodule JellyfishWeb.Endpoint do
   plug Plug.Head
   plug Plug.Session, @session_options
   plug CORSPlug, origin: ["*"]
-  plug JellyfishWeb.TrafficMetricsPlug
-  plug JellyfishWeb.Router
+  plug FishjamWeb.TrafficMetricsPlug
+  plug FishjamWeb.Router
 end

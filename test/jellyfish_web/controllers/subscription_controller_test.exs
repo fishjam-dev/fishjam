@@ -1,5 +1,5 @@
-defmodule JellyfishWeb.SubscriptionControllerTest do
-  use JellyfishWeb.ConnCase
+defmodule FishjamWeb.SubscriptionControllerTest do
+  use FishjamWeb.ConnCase
 
   @s3_credentials %{
     accessKeyId: "access_key_id",
@@ -15,22 +15,22 @@ defmodule JellyfishWeb.SubscriptionControllerTest do
   }
 
   setup_all do
-    Application.put_env(:jellyfish, :sip_config, sip_external_ip: "127.0.0.1")
+    Application.put_env(:fishjam, :sip_config, sip_external_ip: "127.0.0.1")
 
-    Application.put_env(:jellyfish, :components_used, [
-      Jellyfish.Component.SIP,
-      Jellyfish.Component.HLS,
-      Jellyfish.Component.Recording
+    Application.put_env(:fishjam, :components_used, [
+      Fishjam.Component.SIP,
+      Fishjam.Component.HLS,
+      Fishjam.Component.Recording
     ])
 
     on_exit(fn ->
-      Application.put_env(:jellyfish, :sip_config, sip_external_ip: nil)
-      Application.put_env(:jellyfish, :components_used, [])
+      Application.put_env(:fishjam, :sip_config, sip_external_ip: nil)
+      Application.put_env(:fishjam, :components_used, [])
     end)
   end
 
   setup %{conn: conn} do
-    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+    server_api_token = Application.fetch_env!(:fishjam, :server_api_token)
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
     conn = put_req_header(conn, "accept", "application/json")
 

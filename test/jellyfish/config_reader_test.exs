@@ -1,10 +1,10 @@
-defmodule Jellyfish.ConfigReaderTest do
+defmodule Fishjam.ConfigReaderTest do
   use ExUnit.Case
 
   # run this test synchronously as we use
   # official env vars in read_dist_config test
 
-  alias Jellyfish.ConfigReader
+  alias Fishjam.ConfigReader
 
   defmacrop with_env(env, do: body) do
     # get current env(s) value(s),
@@ -31,7 +31,7 @@ defmodule Jellyfish.ConfigReaderTest do
   end
 
   test "read_ip/1" do
-    env_name = "JF_CONF_READER_TEST_IP"
+    env_name = "FJ_CONF_READER_TEST_IP"
 
     with_env env_name do
       System.put_env(env_name, "127.0.0.1")
@@ -44,7 +44,7 @@ defmodule Jellyfish.ConfigReaderTest do
   end
 
   test "read_and_resolve_hostname/1" do
-    env_name = "JF_CONF_READER_TEST_HOSTNAME"
+    env_name = "FJ_CONF_READER_TEST_HOSTNAME"
 
     with_env env_name do
       System.put_env(env_name, "127.0.0.1")
@@ -67,7 +67,7 @@ defmodule Jellyfish.ConfigReaderTest do
   end
 
   test "read_port/1" do
-    env_name = "JF_CONF_READER_TEST_PORT"
+    env_name = "FJ_CONF_READER_TEST_PORT"
 
     with_env env_name do
       System.put_env(env_name, "20000")
@@ -82,7 +82,7 @@ defmodule Jellyfish.ConfigReaderTest do
   end
 
   test "read_boolean/1" do
-    env_name = "JF_CONF_READER_TEST_BOOL"
+    env_name = "FJ_CONF_READER_TEST_BOOL"
 
     with_env env_name do
       System.put_env(env_name, "false")
@@ -95,19 +95,19 @@ defmodule Jellyfish.ConfigReaderTest do
   end
 
   test "read_check_origin/1" do
-    env_name = "JF_CHECK_ORIGIN"
+    env_name = "FJ_CHECK_ORIGIN"
 
     with_env env_name do
       System.put_env(env_name, "false")
       assert ConfigReader.read_check_origin(env_name) == false
       System.put_env(env_name, "true")
       assert ConfigReader.read_check_origin(env_name) == true
-      System.put_env(env_name, "jellyfish.ovh jellyfish2.ovh jellyfish3.ovh")
+      System.put_env(env_name, "fishjam.ovh fishjam2.ovh fishjam3.ovh")
 
       assert ConfigReader.read_check_origin(env_name) == [
-               "jellyfish.ovh",
-               "jellyfish2.ovh",
-               "jellyfish3.ovh"
+               "fishjam.ovh",
+               "fishjam2.ovh",
+               "fishjam3.ovh"
              ]
 
       # Case from phoenix documentation
@@ -123,7 +123,7 @@ defmodule Jellyfish.ConfigReaderTest do
   end
 
   test "read_port_range/1" do
-    env_name = "JF_CONF_READER_TEST_PORT_RANGE"
+    env_name = "FJ_CONF_READER_TEST_PORT_RANGE"
 
     with_env env_name do
       System.put_env(env_name, "50000-60000")
@@ -136,17 +136,17 @@ defmodule Jellyfish.ConfigReaderTest do
   end
 
   test "read_ssl_config/0" do
-    with_env ["JF_SSL_KEY_PATH", "JF_SSL_CERT_PATH"] do
+    with_env ["FJ_SSL_KEY_PATH", "FJ_SSL_CERT_PATH"] do
       assert ConfigReader.read_ssl_config() == nil
 
-      System.put_env("JF_SSL_KEY_PATH", "/some/key/path")
+      System.put_env("FJ_SSL_KEY_PATH", "/some/key/path")
       assert_raise RuntimeError, fn -> ConfigReader.read_ssl_config() end
-      System.delete_env("JF_SSL_KEY_PATH")
+      System.delete_env("FJ_SSL_KEY_PATH")
 
-      System.put_env("JF_SSL_CERT_PATH", "/some/cert/path")
+      System.put_env("FJ_SSL_CERT_PATH", "/some/cert/path")
       assert_raise RuntimeError, fn -> ConfigReader.read_ssl_config() end
 
-      System.put_env("JF_SSL_KEY_PATH", "/some/key/path")
+      System.put_env("FJ_SSL_KEY_PATH", "/some/key/path")
       assert ConfigReader.read_ssl_config() == {"/some/key/path", "/some/cert/path"}
     end
   end
@@ -156,12 +156,12 @@ defmodule Jellyfish.ConfigReaderTest do
       assert ConfigReader.read_components_used() == []
 
       System.put_env("JF_COMPONENTS_USED", "hls")
-      assert ConfigReader.read_components_used() == [Jellyfish.Component.HLS]
+      assert ConfigReader.read_components_used() == [Fishjam.Component.HLS]
 
       System.put_env("JF_COMPONENTS_USED", "recording rtsp    sip ")
 
       assert ConfigReader.read_components_used() |> Enum.sort() ==
-               [Jellyfish.Component.Recording, Jellyfish.Component.RTSP, Jellyfish.Component.SIP]
+               [Fishjam.Component.Recording, Fishjam.Component.RTSP, Fishjam.Component.SIP]
                |> Enum.sort()
 
       System.put_env("JF_COMPONENTS_USED", "file rtsp    invalid_component")
@@ -185,23 +185,23 @@ defmodule Jellyfish.ConfigReaderTest do
 
   test "read_s3_config/0" do
     with_env [
-      "JF_S3_BUCKET",
-      "JF_S3_ACCESS_KEY_ID",
-      "JF_S3_SECRET_ACCESS_KEY",
-      "JF_S3_REGION",
-      "JF_S3_PATH_PREFIX"
+      "FJ_S3_BUCKET",
+      "FJ_S3_ACCESS_KEY_ID",
+      "FJ_S3_SECRET_ACCESS_KEY",
+      "FJ_S3_REGION",
+      "FJ_S3_PATH_PREFIX"
     ] do
       assert ConfigReader.read_s3_config() == [path_prefix: nil, credentials: nil]
 
-      System.put_env("JF_S3_PATH_PREFIX", "path_prefix")
+      System.put_env("FJ_S3_PATH_PREFIX", "path_prefix")
       assert ConfigReader.read_s3_config() == [path_prefix: "path_prefix", credentials: nil]
 
-      System.put_env("JF_S3_BUCKET", "bucket")
+      System.put_env("FJ_S3_BUCKET", "bucket")
       assert_raise RuntimeError, fn -> ConfigReader.read_s3_config() end
 
-      System.put_env("JF_S3_ACCESS_KEY_ID", "id")
-      System.put_env("JF_S3_SECRET_ACCESS_KEY", "key")
-      System.put_env("JF_S3_REGION", "region")
+      System.put_env("FJ_S3_ACCESS_KEY_ID", "id")
+      System.put_env("FJ_S3_SECRET_ACCESS_KEY", "key")
+      System.put_env("FJ_S3_REGION", "region")
 
       assert ConfigReader.read_s3_config() == [
                path_prefix: "path_prefix",
@@ -217,12 +217,12 @@ defmodule Jellyfish.ConfigReaderTest do
 
   test "read_dist_config/0 NODES_LIST" do
     with_env [
-      "JF_DIST_ENABLED",
-      "JF_DIST_MODE",
-      "JF_DIST_COOKIE",
-      "JF_DIST_NODE_NAME",
-      "JF_DIST_NODES",
-      "JF_DIST_POLLING_INTERVAL"
+      "FJ_DIST_ENABLED",
+      "FJ_DIST_MODE",
+      "FJ_DIST_COOKIE",
+      "FJ_DIST_NODE_NAME",
+      "FJ_DIST_NODES",
+      "FJ_DIST_POLLING_INTERVAL"
     ] do
       {:ok, hostname} = :inet.gethostname()
 
@@ -235,30 +235,30 @@ defmodule Jellyfish.ConfigReaderTest do
                strategy_config: nil
              ]
 
-      System.put_env("JF_DIST_ENABLED", "true")
+      System.put_env("FJ_DIST_ENABLED", "true")
 
       assert ConfigReader.read_dist_config() == [
                enabled: true,
                mode: :shortnames,
                strategy: Cluster.Strategy.Epmd,
-               node_name: :"jellyfish@#{hostname}",
-               cookie: :jellyfish_cookie,
+               node_name: :"fishjam@#{hostname}",
+               cookie: :fishjam_cookie,
                strategy_config: [hosts: []]
              ]
 
-      System.put_env("JF_DIST_NODE_NAME", "testnodename@abc@def")
+      System.put_env("FJ_DIST_NODE_NAME", "testnodename@abc@def")
       assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
-      System.put_env("JF_DIST_NODE_NAME", "testnodename")
+      System.put_env("FJ_DIST_NODE_NAME", "testnodename")
       assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
-      System.delete_env("JF_DIST_NODE_NAME")
+      System.delete_env("FJ_DIST_NODE_NAME")
       assert ConfigReader.read_dist_config()
-      System.put_env("JF_DIST_MODE", "invalid")
+      System.put_env("FJ_DIST_MODE", "invalid")
       assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
 
-      System.put_env("JF_DIST_MODE", "name")
-      System.put_env("JF_DIST_COOKIE", "testcookie")
-      System.put_env("JF_DIST_NODE_NAME", "testnodename@127.0.0.1")
-      System.put_env("JF_DIST_NODES", "testnodename1@127.0.0.1 testnodename2@127.0.0.1")
+      System.put_env("FJ_DIST_MODE", "name")
+      System.put_env("FJ_DIST_COOKIE", "testcookie")
+      System.put_env("FJ_DIST_NODE_NAME", "testnodename@127.0.0.1")
+      System.put_env("FJ_DIST_NODES", "testnodename1@127.0.0.1 testnodename2@127.0.0.1")
 
       assert ConfigReader.read_dist_config() == [
                enabled: true,
@@ -273,13 +273,13 @@ defmodule Jellyfish.ConfigReaderTest do
 
   test "read_dist_config/0 DNS" do
     with_env [
-      "JF_DIST_ENABLED",
-      "JF_DIST_MODE",
-      "JF_DIST_COOKIE",
-      "JF_DIST_NODE_NAME",
-      "JF_DIST_NODES",
-      "JF_DIST_STRATEGY_NAME",
-      "JF_DIST_POLLING_INTERVAL"
+      "FJ_DIST_ENABLED",
+      "FJ_DIST_MODE",
+      "FJ_DIST_COOKIE",
+      "FJ_DIST_NODE_NAME",
+      "FJ_DIST_NODES",
+      "FJ_DIST_STRATEGY_NAME",
+      "FJ_DIST_POLLING_INTERVAL"
     ] do
       assert ConfigReader.read_dist_config() == [
                enabled: false,
@@ -290,27 +290,27 @@ defmodule Jellyfish.ConfigReaderTest do
                strategy_config: nil
              ]
 
-      System.put_env("JF_DIST_ENABLED", "true")
-      System.put_env("JF_DIST_MODE", "name")
-      System.put_env("JF_DIST_STRATEGY_NAME", "DNS")
+      System.put_env("FJ_DIST_ENABLED", "true")
+      System.put_env("FJ_DIST_MODE", "name")
+      System.put_env("FJ_DIST_STRATEGY_NAME", "DNS")
       assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
-      System.put_env("JF_DIST_QUERY", "my-app.example.com")
+      System.put_env("FJ_DIST_QUERY", "my-app.example.com")
 
       assert [
                enabled: true,
                mode: :longnames,
                strategy: Cluster.Strategy.DNSPoll,
                node_name: _node_name,
-               cookie: :jellyfish_cookie,
+               cookie: :fishjam_cookie,
                strategy_config: [
                  polling_interval: 5_000,
                  query: "my-app.example.com",
-                 node_basename: "jellyfish"
+                 node_basename: "fishjam"
                ]
              ] = ConfigReader.read_dist_config()
 
-      System.put_env("JF_DIST_COOKIE", "testcookie")
-      System.put_env("JF_DIST_NODE_NAME", "testnodename@127.0.0.1")
+      System.put_env("FJ_DIST_COOKIE", "testcookie")
+      System.put_env("FJ_DIST_NODE_NAME", "testnodename@127.0.0.1")
 
       assert ConfigReader.read_dist_config() == [
                enabled: true,
@@ -326,12 +326,12 @@ defmodule Jellyfish.ConfigReaderTest do
              ]
 
       System.put_env(
-        "JF_DIST_POLLING_INTERVAL",
+        "FJ_DIST_POLLING_INTERVAL",
         "10000"
       )
 
       # check if hostname is resolved correctly
-      System.put_env("JF_DIST_NODE_NAME", "testnodename@localhost")
+      System.put_env("FJ_DIST_NODE_NAME", "testnodename@localhost")
 
       assert ConfigReader.read_dist_config() == [
                enabled: true,
@@ -346,9 +346,9 @@ defmodule Jellyfish.ConfigReaderTest do
                ]
              ]
 
-      System.put_env("JF_DIST_POLLING_INTERVAL", "abcd")
+      System.put_env("FJ_DIST_POLLING_INTERVAL", "abcd")
       assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
-      System.put_env("JF_DIST_POLLING_INTERVAL", "-25")
+      System.put_env("FJ_DIST_POLLING_INTERVAL", "-25")
       assert_raise RuntimeError, fn -> ConfigReader.read_dist_config() end
     end
   end

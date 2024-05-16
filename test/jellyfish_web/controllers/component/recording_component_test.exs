@@ -1,10 +1,10 @@
-defmodule JellyfishWeb.Component.RecordingComponentTest do
-  use JellyfishWeb.ConnCase
-  use JellyfishWeb.ComponentCase
+defmodule FishjamWeb.Component.RecordingComponentTest do
+  use FishjamWeb.ConnCase
+  use FishjamWeb.ComponentCase
 
   import Mox
 
-  alias Jellyfish.RoomService
+  alias Fishjam.RoomService
 
   @s3_credentials %{
     accessKeyId: "access_key_id",
@@ -16,10 +16,10 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
   @path_prefix "path_prefix"
 
   setup_all do
-    Application.put_env(:jellyfish, :components_used, [Jellyfish.Component.Recording])
+    Application.put_env(:fishjam, :components_used, [Fishjam.Component.Recording])
 
     on_exit(fn ->
-      Application.put_env(:jellyfish, :components_used, [])
+      Application.put_env(:fishjam, :components_used, [])
     end)
   end
 
@@ -265,14 +265,14 @@ defmodule JellyfishWeb.Component.RecordingComponentTest do
   end
 
   defp put_s3_envs(path_prefix: path_prefix, credentials: credentials) do
-    Application.put_env(:jellyfish, :s3_config,
+    Application.put_env(:fishjam, :s3_config,
       path_prefix: path_prefix,
       credentials: credentials
     )
   end
 
   defp clean_s3_envs() do
-    Application.put_env(:jellyfish, :s3_config, path_prefix: nil, credentials: nil)
+    Application.put_env(:fishjam, :s3_config, path_prefix: nil, credentials: nil)
   end
 
   defp get_recording_path_prefix(room_id, component_id) do

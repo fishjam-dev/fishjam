@@ -1,7 +1,7 @@
-defmodule Jellyfish.Component.HLS.EtsHelper do
+defmodule Fishjam.Component.HLS.EtsHelper do
   @moduledoc false
 
-  alias Jellyfish.Room
+  alias Fishjam.Room
 
   @rooms_to_tables :rooms_to_tables
 

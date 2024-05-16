@@ -1,9 +1,9 @@
-defmodule JellyfishWeb.ApiSpec.Component do
+defmodule FishjamWeb.ApiSpec.Component do
   @moduledoc false
 
   require OpenApiSpex
 
-  alias JellyfishWeb.ApiSpec.Component.{File, HLS, Recording, RTSP, SIP}
+  alias FishjamWeb.ApiSpec.Component.{File, HLS, Recording, RTSP, SIP}
 
   defmodule Type do
     @moduledoc false

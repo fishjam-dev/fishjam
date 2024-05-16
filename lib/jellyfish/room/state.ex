@@ -1,13 +1,13 @@
-defmodule Jellyfish.Room.State do
+defmodule Fishjam.Room.State do
   @moduledoc false
 
   use Bunch.Access
 
   require Logger
 
-  alias Jellyfish.{Component, Event, Peer, Room, Track}
-  alias Jellyfish.Component.{HLS, Recording, RTSP}
-  alias Jellyfish.Room.Config
+  alias Fishjam.{Component, Event, Peer, Room, Track}
+  alias Fishjam.Component.{HLS, Recording, RTSP}
+  alias Fishjam.Room.Config
   alias Membrane.ICE.TURNManager
   alias Membrane.RTC.Engine
 
@@ -64,7 +64,7 @@ defmodule Jellyfish.Room.State do
     {:ok, pid} = Engine.start_link(rtc_engine_options, [])
     Engine.register(pid, self())
 
-    webrtc_config = Application.fetch_env!(:jellyfish, :webrtc_config)
+    webrtc_config = Application.fetch_env!(:fishjam, :webrtc_config)
 
     turn_options =
       if webrtc_config[:webrtc_used?] do
@@ -232,7 +232,7 @@ defmodule Jellyfish.Room.State do
 
     Logger.info("Peer #{inspect(peer.id)} connected")
 
-    :telemetry.execute([:jellyfish, :room], %{peer_connects: 1}, %{room_id: state.id})
+    :telemetry.execute([:fishjam, :room], %{peer_connects: 1}, %{room_id: state.id})
 
     state
   end
@@ -247,7 +247,7 @@ defmodule Jellyfish.Room.State do
         :ok = Engine.remove_endpoint(state.engine_pid, peer_id)
 
         Event.broadcast_server_notification({:peer_disconnected, state.id, peer_id})
-        :telemetry.execute([:jellyfish, :room], %{peer_disconnects: 1}, %{room_id: state.id})
+        :telemetry.execute([:fishjam, :room], %{peer_disconnects: 1}, %{room_id: state.id})
 
         peer.tracks
         |> Map.values()
@@ -289,13 +289,13 @@ defmodule Jellyfish.Room.State do
 
     if peer.status == :connected and reason == :peer_removed do
       Event.broadcast_server_notification({:peer_disconnected, state.id, peer_id})
-      :telemetry.execute([:jellyfish, :room], %{peer_disconnects: 1}, %{room_id: state.id})
+      :telemetry.execute([:fishjam, :room], %{peer_disconnects: 1}, %{room_id: state.id})
     end
 
     case reason do
       {:peer_crashed, crash_reason} ->
         Event.broadcast_server_notification({:peer_crashed, state.id, peer_id, crash_reason})
-        :telemetry.execute([:jellyfish, :room], %{peer_crashes: 1}, %{room_id: state.id})
+        :telemetry.execute([:fishjam, :room], %{peer_crashes: 1}, %{room_id: state.id})
 
       _other ->
         Event.broadcast_server_notification({:peer_deleted, state.id, peer.id})
@@ -386,7 +386,7 @@ defmodule Jellyfish.Room.State do
           :ok | {:error, :peer_disabled_globally | :reached_peers_limit}
   def check_peer_allowed(Peer.WebRTC, state) do
     cond do
-      not Application.fetch_env!(:jellyfish, :webrtc_config)[:webrtc_used?] ->
+      not Application.fetch_env!(:fishjam, :webrtc_config)[:webrtc_used?] ->
         {:error, :peer_disabled_globally}
 
       Enum.count(state.peers) >= state.config.max_peers ->
@@ -402,7 +402,7 @@ defmodule Jellyfish.Room.State do
           | {:error,
              :component_disabled_globally | :incompatible_codec | :reached_components_limit}
   def check_component_allowed(type, state) do
-    if type in Application.fetch_env!(:jellyfish, :components_used) do
+    if type in Application.fetch_env!(:fishjam, :components_used) do
       check_component_allowed_in_room(type, state)
     else
       {:error, :component_disabled_globally}

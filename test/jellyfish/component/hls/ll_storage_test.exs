@@ -1,9 +1,9 @@
-defmodule Jellyfish.Component.HLS.LLStorageTest do
+defmodule Fishjam.Component.HLS.LLStorageTest do
   @moduledoc false
 
   use ExUnit.Case, async: true
 
-  alias Jellyfish.Component.HLS.{EtsHelper, LLStorage, RequestHandler}
+  alias Fishjam.Component.HLS.{EtsHelper, LLStorage, RequestHandler}
 
   @segment_name "segment"
   @segment_content <<1, 2, 3>>

@@ -1,14 +1,14 @@
-defmodule JellyfishWeb.ComponentController do
-  use JellyfishWeb, :controller
+defmodule FishjamWeb.ComponentController do
+  use FishjamWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Jellyfish.Component
-  alias Jellyfish.Room
-  alias Jellyfish.RoomService
-  alias JellyfishWeb.ApiSpec
+  alias Fishjam.Component
+  alias Fishjam.Room
+  alias Fishjam.RoomService
+  alias FishjamWeb.ApiSpec
   alias OpenApiSpex.{Response, Schema}
 
-  action_fallback JellyfishWeb.FallbackController
+  action_fallback FishjamWeb.FallbackController
 
   tags [:room]
 
@@ -83,7 +83,7 @@ defmodule JellyfishWeb.ComponentController do
         {:error, :bad_request, "Invalid component type"}
 
       {:error, {:component_disabled_globally, type}} ->
-        {:error, :bad_request, "Components of type #{type} are disabled on this Jellyfish"}
+        {:error, :bad_request, "Components of type #{type} are disabled on this Fishjam"}
 
       {:error, :incompatible_codec} ->
         {:error, :bad_request, "Incompatible video codec enforced in room #{room_id}"}

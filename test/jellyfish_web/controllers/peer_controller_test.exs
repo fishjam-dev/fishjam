@@ -1,13 +1,13 @@
-defmodule JellyfishWeb.PeerControllerTest do
-  use JellyfishWeb.ConnCase
+defmodule FishjamWeb.PeerControllerTest do
+  use FishjamWeb.ConnCase
 
   import OpenApiSpex.TestAssertions
 
-  @schema JellyfishWeb.ApiSpec.spec()
+  @schema FishjamWeb.ApiSpec.spec()
   @peer_type "webrtc"
 
   setup %{conn: conn} do
-    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+    server_api_token = Application.fetch_env!(:fishjam, :server_api_token)
 
     conn =
       conn
@@ -22,7 +22,7 @@ defmodule JellyfishWeb.PeerControllerTest do
       assert response(conn, :no_content)
     end)
 
-    peer_ws_url = Jellyfish.peer_websocket_address()
+    peer_ws_url = Fishjam.peer_websocket_address()
 
     {:ok, %{conn: conn, room_id: id, peer_ws_url: peer_ws_url}}
   end
@@ -58,8 +58,8 @@ defmodule JellyfishWeb.PeerControllerTest do
 
       assert {:ok, %{peer_id: ^peer_id, room_id: ^room_id}} =
                Phoenix.Token.verify(
-                 JellyfishWeb.Endpoint,
-                 Application.fetch_env!(:jellyfish, JellyfishWeb.Endpoint)[:secret_key_base],
+                 FishjamWeb.Endpoint,
+                 Application.fetch_env!(:fishjam, FishjamWeb.Endpoint)[:secret_key_base],
                  token
                )
     end
@@ -91,16 +91,16 @@ defmodule JellyfishWeb.PeerControllerTest do
     end
 
     test "renders errors when peer isn't allowed globally", %{conn: conn, room_id: room_id} do
-      Application.put_env(:jellyfish, :webrtc_config, webrtc_used?: false)
+      Application.put_env(:fishjam, :webrtc_config, webrtc_used?: false)
 
       on_exit(fn ->
-        Application.put_env(:jellyfish, :webrtc_config, webrtc_used?: true)
+        Application.put_env(:fishjam, :webrtc_config, webrtc_used?: true)
       end)
 
       conn = post(conn, ~p"/room/#{room_id}/peer", type: @peer_type)
 
       assert json_response(conn, :bad_request)["errors"] ==
-               "Peers of type webrtc are disabled on this Jellyfish"
+               "Peers of type webrtc are disabled on this Fishjam"
     end
   end
 

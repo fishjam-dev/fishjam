@@ -1,8 +1,8 @@
-defmodule Jellyfish.ResourceManagerTest do
-  use JellyfishWeb.ComponentCase, async: true
+defmodule Fishjam.ResourceManagerTest do
+  use FishjamWeb.ComponentCase, async: true
 
-  alias Jellyfish.Component.Recording
-  alias Jellyfish.ResourceManager
+  alias Fishjam.Component.Recording
+  alias Fishjam.ResourceManager
 
   @hour 3_600
 

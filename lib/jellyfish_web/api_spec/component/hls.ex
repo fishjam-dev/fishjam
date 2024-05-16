@@ -1,4 +1,4 @@
-defmodule JellyfishWeb.ApiSpec.Component.HLS do
+defmodule FishjamWeb.ApiSpec.Component.HLS do
   @moduledoc false
 
   require OpenApiSpex
@@ -129,7 +129,7 @@ defmodule JellyfishWeb.ApiSpec.Component.HLS do
       properties: Properties,
       tracks: %Schema{
         type: :array,
-        items: JellyfishWeb.ApiSpec.Track,
+        items: FishjamWeb.ApiSpec.Track,
         description: "List of all component's tracks"
       }
     },

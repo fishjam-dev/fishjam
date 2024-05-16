@@ -1,20 +1,20 @@
-defmodule JellyfishWeb.Integration.ServerNotificationTest do
-  use JellyfishWeb.ConnCase
+defmodule FishjamWeb.Integration.ServerNotificationTest do
+  use FishjamWeb.ConnCase
 
   import Mox
 
-  import JellyfishWeb.WS, only: [subscribe: 2]
+  import FishjamWeb.WS, only: [subscribe: 2]
 
   alias __MODULE__.Endpoint
 
   alias Membrane.RTC.Engine
 
-  alias Jellyfish.Component
-  alias Jellyfish.Component.HLS
-  alias Jellyfish.Component.HLS.Manager
-  alias Jellyfish.{PeerMessage, Room, RoomService, ServerMessage}
+  alias Fishjam.Component
+  alias Fishjam.Component.HLS
+  alias Fishjam.Component.HLS.Manager
+  alias Fishjam.{PeerMessage, Room, RoomService, ServerMessage}
 
-  alias Jellyfish.ServerMessage.{
+  alias Fishjam.ServerMessage.{
     Authenticated,
     ComponentCrashed,
     HlsPlayable,
@@ -34,7 +34,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     TrackRemoved
   }
 
-  alias JellyfishWeb.{PeerSocket, ServerSocket, WS}
+  alias FishjamWeb.{PeerSocket, ServerSocket, WS}
   alias Phoenix.PubSub
 
   @port 5907
@@ -42,7 +42,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   @webhook_url "http://127.0.0.1:#{@webhook_port}/"
   @path "ws://127.0.0.1:#{@port}/socket/server/websocket"
   @auth_response %Authenticated{}
-  @pubsub Jellyfish.PubSub
+  @pubsub Fishjam.PubSub
 
   @file_component_directory "file_component_sources"
   @fixtures_directory "test/fixtures"
@@ -70,7 +70,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   @purge_timeout_ms @purge_timeout_s * 1000
 
   Application.put_env(
-    :jellyfish,
+    :fishjam,
     Endpoint,
     https: false,
     http: [port: @port],
@@ -78,9 +78,9 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   )
 
   defmodule Endpoint do
-    use Phoenix.Endpoint, otp_app: :jellyfish
+    use Phoenix.Endpoint, otp_app: :fishjam
 
-    alias JellyfishWeb.ServerSocket
+    alias FishjamWeb.ServerSocket
 
     socket("/socket/server", ServerSocket,
       websocket: true,
@@ -94,9 +94,9 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   end
 
   setup_all do
-    Application.put_env(:jellyfish, :sip_config, sip_external_ip: "127.0.0.1")
+    Application.put_env(:fishjam, :sip_config, sip_external_ip: "127.0.0.1")
 
-    Application.put_env(:jellyfish, :components_used, [
+    Application.put_env(:fishjam, :components_used, [
       Component.SIP,
       Component.HLS,
       Component.RTSP,
@@ -104,8 +104,8 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     ])
 
     on_exit(fn ->
-      Application.put_env(:jellyfish, :sip_config, sip_external_ip: nil)
-      Application.put_env(:jellyfish, :components_used, [])
+      Application.put_env(:fishjam, :sip_config, sip_external_ip: nil)
+      Application.put_env(:fishjam, :components_used, [])
     end)
 
     assert {:ok, _pid} = Endpoint.start_link()
@@ -120,7 +120,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   setup(%{conn: conn}) do
     :ok = PubSub.subscribe(@pubsub, "webhook")
 
-    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+    server_api_token = Application.fetch_env!(:fishjam, :server_api_token)
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
     Klotho.Mock.reset()
@@ -145,7 +145,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   describe "establishing connection" do
     test "invalid token" do
       {:ok, ws} = WS.start_link(@path, :server)
-      server_api_token = "invalid" <> Application.fetch_env!(:jellyfish, :server_api_token)
+      server_api_token = "invalid" <> Application.fetch_env!(:fishjam, :server_api_token)
       WS.send_auth_request(ws, server_api_token)
 
       assert_receive {:disconnected, {:remote, 1000, "invalid token"}}, 1000
@@ -190,7 +190,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   end
 
   test "sends a message when room gets created and deleted", %{conn: conn} do
-    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+    server_api_token = Application.fetch_env!(:fishjam, :server_api_token)
     ws = create_and_authenticate()
 
     subscribe(ws, :server_notification)
@@ -211,7 +211,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   end
 
   test "sends a message when room gets created and deleted by peerless purge", %{conn: conn} do
-    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+    server_api_token = Application.fetch_env!(:fishjam, :server_api_token)
     ws = create_and_authenticate()
 
     subscribe(ws, :server_notification)
@@ -287,7 +287,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
 
     test "sends a message when peer connects and room crashes", %{conn: conn} do
       {room_id, peer_id, _conn, _ws} = subscribe_on_notifications_and_connect_peer(conn)
-      {:ok, room_pid} = Jellyfish.RoomService.find_room(room_id)
+      {:ok, room_pid} = Fishjam.RoomService.find_room(room_id)
 
       Process.exit(room_pid, :kill)
 
@@ -305,7 +305,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     test "sends a message when peer connects and it crashes", %{conn: conn} do
       {room_id, peer_id, conn, _ws} = subscribe_on_notifications_and_connect_peer(conn)
 
-      {:ok, room_pid} = Jellyfish.RoomService.find_room(room_id)
+      {:ok, room_pid} = Fishjam.RoomService.find_room(room_id)
 
       state = :sys.get_state(room_pid)
 
@@ -357,7 +357,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
       {:ok, config} = Room.Config.from_params(%{"webhookUrl" => @webhook_url})
 
       {:ok, room_pid, room_id} = Room.start(config)
-      Jellyfish.WebhookNotifier.add_webhook(room_id, config.webhook_url)
+      Fishjam.WebhookNotifier.add_webhook(room_id, config.webhook_url)
 
       {peer_id, token, _conn} = add_peer(conn, room_id)
       {:ok, peer_ws} = WS.start("ws://127.0.0.1:#{@port}/socket/peer/websocket", :peer)
@@ -418,7 +418,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
     end
 
     test "sends a message when peer gets created and deleted by disconnected purge", %{conn: conn} do
-      server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+      server_api_token = Application.fetch_env!(:fishjam, :server_api_token)
       ws = create_and_authenticate()
 
       subscribe(ws, :server_notification)
@@ -469,7 +469,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
 
   test "sends message when File adds or removes tracks", %{conn: conn} do
     media_sources_directory =
-      Application.fetch_env!(:jellyfish, :media_files_path)
+      Application.fetch_env!(:fishjam, :media_files_path)
       |> Path.join(@file_component_directory)
       |> Path.expand()
 
@@ -607,7 +607,7 @@ defmodule JellyfishWeb.Integration.ServerNotificationTest do
   end
 
   def create_and_authenticate() do
-    token = Application.fetch_env!(:jellyfish, :server_api_token)
+    token = Application.fetch_env!(:fishjam, :server_api_token)
 
     {:ok, ws} = WS.start_link(@path, :server)
     WS.send_auth_request(ws, token)

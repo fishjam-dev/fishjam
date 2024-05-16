@@ -1,18 +1,18 @@
-defmodule JellyfishWeb.Integration.PeerSocketTest do
-  use JellyfishWeb.ConnCase
+defmodule FishjamWeb.Integration.PeerSocketTest do
+  use FishjamWeb.ConnCase
 
   alias __MODULE__.Endpoint
-  alias Jellyfish.PeerMessage
-  alias Jellyfish.PeerMessage.{Authenticated, MediaEvent}
-  alias Jellyfish.RoomService
-  alias JellyfishWeb.{PeerSocket, WS}
+  alias Fishjam.PeerMessage
+  alias Fishjam.PeerMessage.{Authenticated, MediaEvent}
+  alias Fishjam.RoomService
+  alias FishjamWeb.{PeerSocket, WS}
 
   @port 5908
   @path "ws://127.0.0.1:#{@port}/socket/peer/websocket"
   @auth_response %Authenticated{}
 
   Application.put_env(
-    :jellyfish,
+    :fishjam,
     Endpoint,
     https: false,
     http: [port: @port],
@@ -20,9 +20,9 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
   )
 
   defmodule Endpoint do
-    use Phoenix.Endpoint, otp_app: :jellyfish
+    use Phoenix.Endpoint, otp_app: :fishjam
 
-    alias JellyfishWeb.PeerSocket
+    alias FishjamWeb.PeerSocket
 
     socket "/socket/peer", PeerSocket,
       websocket: true,
@@ -35,7 +35,7 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
   end
 
   setup %{conn: conn} do
-    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+    server_api_token = Application.fetch_env!(:fishjam, :server_api_token)
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
     conn = post(conn, ~p"/room", maxPeers: 1)
@@ -74,7 +74,7 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
   test "valid token but peer doesn't exist", %{room_id: room_id} do
     {:ok, ws} = WS.start_link(@path, :peer)
 
-    unadded_peer_token = JellyfishWeb.PeerToken.generate(%{peer_id: "peer_id", room_id: room_id})
+    unadded_peer_token = FishjamWeb.PeerToken.generate(%{peer_id: "peer_id", room_id: room_id})
     WS.send_auth_request(ws, unadded_peer_token)
 
     assert_receive {:disconnected, {:remote, 1000, "peer not found"}}, 1000
@@ -169,13 +169,13 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
     assert %{} = get_peers_room_metrics()
     create_and_authenticate(token)
 
-    peers_in_room_key = "jellyfish_room_peers{room_id=\"#{room_id}\"}"
-    peers_in_room_time_key = "jellyfish_room_peer_time_total_seconds{room_id=\"#{room_id}\"}"
+    peers_in_room_key = "fishjam_room_peers{room_id=\"#{room_id}\"}"
+    peers_in_room_time_key = "fishjam_room_peer_time_total_seconds{room_id=\"#{room_id}\"}"
 
     metrics_after_one_tick = %{
       peers_in_room_key => "1",
       peers_in_room_time_key => "1",
-      "jellyfish_rooms" => "1"
+      "fishjam_rooms" => "1"
     }
 
     Process.sleep(1_000)
@@ -194,7 +194,7 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
     metrics_after_removal = %{
       peers_in_room_key => "0",
       peers_in_room_time_key => "1",
-      "jellyfish_rooms" => "0"
+      "fishjam_rooms" => "0"
     }
 
     metrics_to_compare = get_peers_room_metrics()
@@ -227,7 +227,7 @@ defmodule JellyfishWeb.Integration.PeerSocketTest do
       end
     end)
     |> Enum.filter(fn {key, _value} ->
-      String.starts_with?(key, "jellyfish_room")
+      String.starts_with?(key, "fishjam_room")
     end)
     |> Map.new()
   end

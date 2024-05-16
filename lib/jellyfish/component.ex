@@ -1,4 +1,4 @@
-defmodule Jellyfish.Component do
+defmodule Fishjam.Component do
   @moduledoc """
   Component is a server side entity that can publish a track, subscribe to tracks and process them.
 
@@ -10,9 +10,9 @@ defmodule Jellyfish.Component do
 
   use Bunch.Access
 
-  alias Jellyfish.Room
-  alias Jellyfish.Component.{File, HLS, Recording, RTSP, SIP}
-  alias Jellyfish.Track
+  alias Fishjam.Room
+  alias Fishjam.Component.{File, HLS, Recording, RTSP, SIP}
+  alias Fishjam.Track
 
   @enforce_keys [
     :id,
@@ -67,7 +67,7 @@ defmodule Jellyfish.Component do
 
   defmacro __using__(_opts) do
     quote location: :keep do
-      @behaviour Jellyfish.Component
+      @behaviour Fishjam.Component
 
       @impl true
       def after_init(_room_state, _component, _component_options), do: :ok

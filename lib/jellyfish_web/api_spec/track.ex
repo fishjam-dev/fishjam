@@ -1,4 +1,4 @@
-defmodule JellyfishWeb.ApiSpec.Track do
+defmodule FishjamWeb.ApiSpec.Track do
   @moduledoc false
   require OpenApiSpex
 

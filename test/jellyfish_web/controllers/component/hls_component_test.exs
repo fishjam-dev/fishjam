@@ -1,12 +1,12 @@
-defmodule JellyfishWeb.Component.HlsComponentTest do
-  use JellyfishWeb.ConnCase
-  use JellyfishWeb.ComponentCase
+defmodule FishjamWeb.Component.HlsComponentTest do
+  use FishjamWeb.ConnCase
+  use FishjamWeb.ComponentCase
 
   import Mox
 
-  alias Jellyfish.RoomService
+  alias Fishjam.RoomService
 
-  alias Jellyfish.Component.HLS
+  alias Fishjam.Component.HLS
 
   @files ["manifest.m3u8", "header.mp4", "segment_1.m3u8", "segment_2.m3u8"]
   @body <<1, 2, 3, 4>>
@@ -22,10 +22,10 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
                   |> map_keys_to_string()
 
   setup_all do
-    Application.put_env(:jellyfish, :components_used, [HLS])
+    Application.put_env(:fishjam, :components_used, [HLS])
 
     on_exit(fn ->
-      Application.put_env(:jellyfish, :components_used, [])
+      Application.put_env(:fishjam, :components_used, [])
     end)
   end
 
@@ -154,7 +154,7 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
     end
 
     test "renders component with ll-hls enabled", %{conn: conn, room_id: room_id} do
-      assert Registry.lookup(Jellyfish.RequestHandlerRegistry, room_id) |> Enum.empty?()
+      assert Registry.lookup(Fishjam.RequestHandlerRegistry, room_id) |> Enum.empty?()
 
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls", options: %{lowLatency: true})
 
@@ -165,7 +165,7 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
 
       assert_component_created(conn, room_id, id, "hls")
 
-      [{request_handler, _value}] = Registry.lookup(Jellyfish.RequestHandlerRegistry, room_id)
+      [{request_handler, _value}] = Registry.lookup(Fishjam.RequestHandlerRegistry, room_id)
       assert Process.alive?(request_handler)
       Process.monitor(request_handler)
 
@@ -183,7 +183,7 @@ defmodule JellyfishWeb.Component.HlsComponentTest do
       assert_receive {:DOWN, _ref, :process, ^engine_pid, :normal}, 10_000
       assert_receive {:DOWN, _ref, :process, ^request_handler, :normal}
 
-      assert Registry.lookup(Jellyfish.RequestHandlerRegistry, room_id) |> Enum.empty?()
+      assert Registry.lookup(Fishjam.RequestHandlerRegistry, room_id) |> Enum.empty?()
     end
 
     test "renders errors when video codec is different than h264 - vp8", %{conn: conn} do

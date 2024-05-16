@@ -1,16 +1,16 @@
-defmodule Jellyfish.Component.File do
+defmodule Fishjam.Component.File do
   @moduledoc """
   Module representing the File component.
   """
 
-  @behaviour Jellyfish.Endpoint.Config
-  use Jellyfish.Component
+  @behaviour Fishjam.Endpoint.Config
+  use Fishjam.Component
 
   alias ExSDP.Attribute.FMTP
   alias Membrane.RTC.Engine.Endpoint.File, as: FileEndpoint
 
-  alias Jellyfish.Utils.PathValidation
-  alias JellyfishWeb.ApiSpec.Component.File.Options
+  alias Fishjam.Utils.PathValidation
+  alias FishjamWeb.ApiSpec.Component.File.Options
 
   @type properties :: %{
           file_path: Path.t(),
@@ -61,7 +61,7 @@ defmodule Jellyfish.Component.File do
 
   defp validate_file_path(file_path) do
     base_path =
-      Application.fetch_env!(:jellyfish, :media_files_path)
+      Application.fetch_env!(:fishjam, :media_files_path)
       |> Path.join(@files_location)
       |> Path.expand()
 
@@ -75,7 +75,7 @@ defmodule Jellyfish.Component.File do
   end
 
   defp expand_file_path(file_path) do
-    media_files_path = Application.fetch_env!(:jellyfish, :media_files_path)
+    media_files_path = Application.fetch_env!(:fishjam, :media_files_path)
     [media_files_path, @files_location, file_path] |> Path.join() |> Path.expand()
   end
 

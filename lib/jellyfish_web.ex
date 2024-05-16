@@ -1,11 +1,11 @@
-defmodule JellyfishWeb do
+defmodule FishjamWeb do
   @moduledoc """
   The entrypoint for defining your web interface, such
   as controllers, components, channels, and so on.
 
   This can be used in your application as:
 
-      use JellyfishWeb, :controller
+      use FishjamWeb, :controller
 
   The definitions below will be executed for every controller,
   component, etc, so keep them short and clean, focused
@@ -48,9 +48,9 @@ defmodule JellyfishWeb do
   def verified_routes do
     quote do
       use Phoenix.VerifiedRoutes,
-        endpoint: JellyfishWeb.Endpoint,
-        router: JellyfishWeb.Router,
-        statics: JellyfishWeb.static_paths()
+        endpoint: FishjamWeb.Endpoint,
+        router: FishjamWeb.Router,
+        statics: FishjamWeb.static_paths()
     end
   end
 

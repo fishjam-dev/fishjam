@@ -1,9 +1,9 @@
-defmodule Jellyfish.Component.HLS.Recording do
+defmodule Fishjam.Component.HLS.Recording do
   @moduledoc false
 
-  alias Jellyfish.Component.HLS.EtsHelper
-  alias Jellyfish.Room
-  alias Jellyfish.Utils.PathValidation
+  alias Fishjam.Component.HLS.EtsHelper
+  alias Fishjam.Room
+  alias Fishjam.Utils.PathValidation
 
   @recordings_folder "recordings"
 
@@ -45,7 +45,7 @@ defmodule Jellyfish.Component.HLS.Recording do
   end
 
   defp root_directory() do
-    Application.fetch_env!(:jellyfish, :media_files_path)
+    Application.fetch_env!(:fishjam, :media_files_path)
     |> Path.join(@recordings_folder)
     |> Path.expand()
   end

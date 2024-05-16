@@ -1,4 +1,4 @@
-defmodule Jellyfish.Component.HLS.HTTPoison do
+defmodule Fishjam.Component.HLS.HTTPoison do
   @moduledoc false
 
   @behaviour ExAws.Request.HttpClient

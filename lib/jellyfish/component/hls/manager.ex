@@ -1,4 +1,4 @@
-defmodule Jellyfish.Component.HLS.Manager do
+defmodule Fishjam.Component.HLS.Manager do
   @moduledoc """
   Module responsible for HLS processing.
   It:
@@ -11,8 +11,8 @@ defmodule Jellyfish.Component.HLS.Manager do
 
   require Logger
 
-  alias Jellyfish.Event
-  alias Jellyfish.Room
+  alias Fishjam.Event
+  alias Fishjam.Room
 
   @hls_extensions [".m4s", ".m3u8", ".mp4"]
   @playlist_content_type "application/vnd.apple.mpegurl"
@@ -27,7 +27,7 @@ defmodule Jellyfish.Component.HLS.Manager do
   @spec start(Room.id(), pid(), String.t(), map()) :: {:ok, pid()} | {:error, term()}
   def start(room_id, engine_pid, hls_dir, hls_options) do
     DynamicSupervisor.start_child(
-      Jellyfish.HLS.ManagerSupervisor,
+      Fishjam.HLS.ManagerSupervisor,
       {__MODULE__,
        %{room_id: room_id, engine_pid: engine_pid, hls_dir: hls_dir, hls_options: hls_options}}
     )

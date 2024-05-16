@@ -1,10 +1,10 @@
-defmodule JellyfishWeb.HLSControllerTest do
-  use JellyfishWeb.ConnCase, async: true
+defmodule FishjamWeb.HLSControllerTest do
+  use FishjamWeb.ConnCase, async: true
 
   import OpenApiSpex.TestAssertions
 
-  alias Jellyfish.Component.HLS
-  alias Jellyfish.Component.HLS.{EtsHelper, RequestHandler}
+  alias Fishjam.Component.HLS
+  alias Fishjam.Component.HLS.{EtsHelper, RequestHandler}
 
   @room_id "hls_controller_test"
   @wrong_room_id "wrong_id"
@@ -28,7 +28,7 @@ defmodule JellyfishWeb.HLSControllerTest do
 
   @outside_manifest "../outside_manifest.m3u8"
 
-  @schema JellyfishWeb.ApiSpec.spec()
+  @schema FishjamWeb.ApiSpec.spec()
 
   setup_all do
     output_path = HLS.output_dir(@room_id, persistent: false)

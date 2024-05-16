@@ -1,4 +1,4 @@
-defmodule JellyfishWeb.HealthcheckJSON do
+defmodule FishjamWeb.HealthcheckJSON do
   @moduledoc false
 
   def show(%{report: report}) do

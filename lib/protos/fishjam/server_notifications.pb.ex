@@ -1,4 +1,4 @@
-defmodule Jellyfish.ServerMessage.EventType do
+defmodule Fishjam.ServerMessage.EventType do
   @moduledoc false
 
   use Protobuf, enum: true, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
@@ -8,7 +8,7 @@ defmodule Jellyfish.ServerMessage.EventType do
   field :EVENT_TYPE_METRICS, 2
 end
 
-defmodule Jellyfish.ServerMessage.TrackType do
+defmodule Fishjam.ServerMessage.TrackType do
   @moduledoc false
 
   use Protobuf, enum: true, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
@@ -18,7 +18,7 @@ defmodule Jellyfish.ServerMessage.TrackType do
   field :TRACK_TYPE_AUDIO, 2
 end
 
-defmodule Jellyfish.ServerMessage.RoomCrashed do
+defmodule Fishjam.ServerMessage.RoomCrashed do
   @moduledoc false
 
   use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
@@ -26,16 +26,7 @@ defmodule Jellyfish.ServerMessage.RoomCrashed do
   field :room_id, 1, type: :string, json_name: "roomId"
 end
 
-defmodule Jellyfish.ServerMessage.PeerAdded do
-  @moduledoc false
-
-  use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
-
-  field :room_id, 1, type: :string, json_name: "roomId"
-  field :peer_id, 2, type: :string, json_name: "peerId"
-end
-
-defmodule Jellyfish.ServerMessage.PeerDeleted do
+defmodule Fishjam.ServerMessage.PeerAdded do
   @moduledoc false
 
   use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
@@ -44,7 +35,7 @@ defmodule Jellyfish.ServerMessage.PeerDeleted do
   field :peer_id, 2, type: :string, json_name: "peerId"
 end
 
-defmodule Jellyfish.ServerMessage.PeerConnected do
+defmodule Fishjam.ServerMessage.PeerDeleted do
   @moduledoc false
 
   use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
@@ -53,7 +44,7 @@ defmodule Jellyfish.ServerMessage.PeerConnected do
   field :peer_id, 2, type: :string, json_name: "peerId"
 end
 
-defmodule Jellyfish.ServerMessage.PeerDisconnected do
+defmodule Fishjam.ServerMessage.PeerConnected do
   @moduledoc false
 
   use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
@@ -62,7 +53,16 @@ defmodule Jellyfish.ServerMessage.PeerDisconnected do
   field :peer_id, 2, type: :string, json_name: "peerId"
 end
 
-defmodule Jellyfish.ServerMessage.PeerCrashed do
+defmodule Fishjam.ServerMessage.PeerDisconnected do
+  @moduledoc false
+
+  use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
+
+  field :room_id, 1, type: :string, json_name: "roomId"
+  field :peer_id, 2, type: :string, json_name: "peerId"
+end
+
+defmodule Fishjam.ServerMessage.PeerCrashed do
   @moduledoc false
 
   use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
@@ -72,7 +72,7 @@ defmodule Jellyfish.ServerMessage.PeerCrashed do
   field :reason, 3, type: :string
 end
 
-defmodule Jellyfish.ServerMessage.ComponentCrashed do
+defmodule Fishjam.ServerMessage.ComponentCrashed do
   @moduledoc false
 
   use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
@@ -81,13 +81,13 @@ defmodule Jellyfish.ServerMessage.ComponentCrashed do
   field :component_id, 2, type: :string, json_name: "componentId"
 end
 
-defmodule Jellyfish.ServerMessage.Authenticated do
+defmodule Fishjam.ServerMessage.Authenticated do
   @moduledoc false
 
   use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
 end
 
-defmodule Jellyfish.ServerMessage.AuthRequest do
+defmodule Fishjam.ServerMessage.AuthRequest do
   @moduledoc false
 
   use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
@@ -95,29 +95,23 @@ defmodule Jellyfish.ServerMessage.AuthRequest do
   field :token, 1, type: :string
 end
 
-defmodule Jellyfish.ServerMessage.SubscribeRequest do
+defmodule Fishjam.ServerMessage.SubscribeRequest do
   @moduledoc false
 
   use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
 
-  field :event_type, 1,
-    type: Jellyfish.ServerMessage.EventType,
-    json_name: "eventType",
-    enum: true
+  field :event_type, 1, type: Fishjam.ServerMessage.EventType, json_name: "eventType", enum: true
 end
 
-defmodule Jellyfish.ServerMessage.SubscribeResponse do
+defmodule Fishjam.ServerMessage.SubscribeResponse do
   @moduledoc false
 
   use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
 
-  field :event_type, 1,
-    type: Jellyfish.ServerMessage.EventType,
-    json_name: "eventType",
-    enum: true
+  field :event_type, 1, type: Fishjam.ServerMessage.EventType, json_name: "eventType", enum: true
 end
 
-defmodule Jellyfish.ServerMessage.RoomCreated do
+defmodule Fishjam.ServerMessage.RoomCreated do
   @moduledoc false
 
   use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
@@ -125,7 +119,7 @@ defmodule Jellyfish.ServerMessage.RoomCreated do
   field :room_id, 1, type: :string, json_name: "roomId"
 end
 
-defmodule Jellyfish.ServerMessage.RoomDeleted do
+defmodule Fishjam.ServerMessage.RoomDeleted do
   @moduledoc false
 
   use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
@@ -133,7 +127,7 @@ defmodule Jellyfish.ServerMessage.RoomDeleted do
   field :room_id, 1, type: :string, json_name: "roomId"
 end
 
-defmodule Jellyfish.ServerMessage.MetricsReport do
+defmodule Fishjam.ServerMessage.MetricsReport do
   @moduledoc false
 
   use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
@@ -141,7 +135,7 @@ defmodule Jellyfish.ServerMessage.MetricsReport do
   field :metrics, 1, type: :string
 end
 
-defmodule Jellyfish.ServerMessage.HlsPlayable do
+defmodule Fishjam.ServerMessage.HlsPlayable do
   @moduledoc false
 
   use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
@@ -150,7 +144,7 @@ defmodule Jellyfish.ServerMessage.HlsPlayable do
   field :component_id, 2, type: :string, json_name: "componentId"
 end
 
-defmodule Jellyfish.ServerMessage.HlsUploaded do
+defmodule Fishjam.ServerMessage.HlsUploaded do
   @moduledoc false
 
   use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
@@ -158,7 +152,7 @@ defmodule Jellyfish.ServerMessage.HlsUploaded do
   field :room_id, 1, type: :string, json_name: "roomId"
 end
 
-defmodule Jellyfish.ServerMessage.HlsUploadCrashed do
+defmodule Fishjam.ServerMessage.HlsUploadCrashed do
   @moduledoc false
 
   use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
@@ -166,7 +160,7 @@ defmodule Jellyfish.ServerMessage.HlsUploadCrashed do
   field :room_id, 1, type: :string, json_name: "roomId"
 end
 
-defmodule Jellyfish.ServerMessage.PeerMetadataUpdated do
+defmodule Fishjam.ServerMessage.PeerMetadataUpdated do
   @moduledoc false
 
   use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
@@ -176,17 +170,17 @@ defmodule Jellyfish.ServerMessage.PeerMetadataUpdated do
   field :metadata, 3, type: :string
 end
 
-defmodule Jellyfish.ServerMessage.Track do
+defmodule Fishjam.ServerMessage.Track do
   @moduledoc false
 
   use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
 
   field :id, 1, type: :string
-  field :type, 2, type: Jellyfish.ServerMessage.TrackType, enum: true
+  field :type, 2, type: Fishjam.ServerMessage.TrackType, enum: true
   field :metadata, 3, type: :string
 end
 
-defmodule Jellyfish.ServerMessage.TrackAdded do
+defmodule Fishjam.ServerMessage.TrackAdded do
   @moduledoc false
 
   use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
@@ -196,10 +190,10 @@ defmodule Jellyfish.ServerMessage.TrackAdded do
   field :room_id, 1, type: :string, json_name: "roomId"
   field :peer_id, 2, type: :string, json_name: "peerId", oneof: 0
   field :component_id, 3, type: :string, json_name: "componentId", oneof: 0
-  field :track, 4, type: Jellyfish.ServerMessage.Track
+  field :track, 4, type: Fishjam.ServerMessage.Track
 end
 
-defmodule Jellyfish.ServerMessage.TrackRemoved do
+defmodule Fishjam.ServerMessage.TrackRemoved do
   @moduledoc false
 
   use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
@@ -209,10 +203,10 @@ defmodule Jellyfish.ServerMessage.TrackRemoved do
   field :room_id, 1, type: :string, json_name: "roomId"
   field :peer_id, 2, type: :string, json_name: "peerId", oneof: 0
   field :component_id, 3, type: :string, json_name: "componentId", oneof: 0
-  field :track, 4, type: Jellyfish.ServerMessage.Track
+  field :track, 4, type: Fishjam.ServerMessage.Track
 end
 
-defmodule Jellyfish.ServerMessage.TrackMetadataUpdated do
+defmodule Fishjam.ServerMessage.TrackMetadataUpdated do
   @moduledoc false
 
   use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
@@ -222,10 +216,10 @@ defmodule Jellyfish.ServerMessage.TrackMetadataUpdated do
   field :room_id, 1, type: :string, json_name: "roomId"
   field :peer_id, 2, type: :string, json_name: "peerId", oneof: 0
   field :component_id, 3, type: :string, json_name: "componentId", oneof: 0
-  field :track, 4, type: Jellyfish.ServerMessage.Track
+  field :track, 4, type: Fishjam.ServerMessage.Track
 end
 
-defmodule Jellyfish.ServerMessage do
+defmodule Fishjam.ServerMessage do
   @moduledoc false
 
   use Protobuf, syntax: :proto3, protoc_gen_elixir_version: "0.12.0"
@@ -233,101 +227,101 @@ defmodule Jellyfish.ServerMessage do
   oneof :content, 0
 
   field :room_crashed, 1,
-    type: Jellyfish.ServerMessage.RoomCrashed,
+    type: Fishjam.ServerMessage.RoomCrashed,
     json_name: "roomCrashed",
     oneof: 0
 
   field :peer_connected, 2,
-    type: Jellyfish.ServerMessage.PeerConnected,
+    type: Fishjam.ServerMessage.PeerConnected,
     json_name: "peerConnected",
     oneof: 0
 
   field :peer_disconnected, 3,
-    type: Jellyfish.ServerMessage.PeerDisconnected,
+    type: Fishjam.ServerMessage.PeerDisconnected,
     json_name: "peerDisconnected",
     oneof: 0
 
   field :peer_crashed, 4,
-    type: Jellyfish.ServerMessage.PeerCrashed,
+    type: Fishjam.ServerMessage.PeerCrashed,
     json_name: "peerCrashed",
     oneof: 0
 
   field :component_crashed, 5,
-    type: Jellyfish.ServerMessage.ComponentCrashed,
+    type: Fishjam.ServerMessage.ComponentCrashed,
     json_name: "componentCrashed",
     oneof: 0
 
-  field :authenticated, 6, type: Jellyfish.ServerMessage.Authenticated, oneof: 0
+  field :authenticated, 6, type: Fishjam.ServerMessage.Authenticated, oneof: 0
 
   field :auth_request, 7,
-    type: Jellyfish.ServerMessage.AuthRequest,
+    type: Fishjam.ServerMessage.AuthRequest,
     json_name: "authRequest",
     oneof: 0
 
   field :subscribe_request, 8,
-    type: Jellyfish.ServerMessage.SubscribeRequest,
+    type: Fishjam.ServerMessage.SubscribeRequest,
     json_name: "subscribeRequest",
     oneof: 0
 
   field :subscribe_response, 9,
-    type: Jellyfish.ServerMessage.SubscribeResponse,
+    type: Fishjam.ServerMessage.SubscribeResponse,
     json_name: "subscribeResponse",
     oneof: 0
 
   field :room_created, 10,
-    type: Jellyfish.ServerMessage.RoomCreated,
+    type: Fishjam.ServerMessage.RoomCreated,
     json_name: "roomCreated",
     oneof: 0
 
   field :room_deleted, 11,
-    type: Jellyfish.ServerMessage.RoomDeleted,
+    type: Fishjam.ServerMessage.RoomDeleted,
     json_name: "roomDeleted",
     oneof: 0
 
   field :metrics_report, 12,
-    type: Jellyfish.ServerMessage.MetricsReport,
+    type: Fishjam.ServerMessage.MetricsReport,
     json_name: "metricsReport",
     oneof: 0
 
   field :hls_playable, 13,
-    type: Jellyfish.ServerMessage.HlsPlayable,
+    type: Fishjam.ServerMessage.HlsPlayable,
     json_name: "hlsPlayable",
     oneof: 0
 
   field :hls_uploaded, 14,
-    type: Jellyfish.ServerMessage.HlsUploaded,
+    type: Fishjam.ServerMessage.HlsUploaded,
     json_name: "hlsUploaded",
     oneof: 0
 
   field :hls_upload_crashed, 15,
-    type: Jellyfish.ServerMessage.HlsUploadCrashed,
+    type: Fishjam.ServerMessage.HlsUploadCrashed,
     json_name: "hlsUploadCrashed",
     oneof: 0
 
   field :peer_metadata_updated, 16,
-    type: Jellyfish.ServerMessage.PeerMetadataUpdated,
+    type: Fishjam.ServerMessage.PeerMetadataUpdated,
     json_name: "peerMetadataUpdated",
     oneof: 0
 
   field :track_added, 17,
-    type: Jellyfish.ServerMessage.TrackAdded,
+    type: Fishjam.ServerMessage.TrackAdded,
     json_name: "trackAdded",
     oneof: 0
 
   field :track_removed, 18,
-    type: Jellyfish.ServerMessage.TrackRemoved,
+    type: Fishjam.ServerMessage.TrackRemoved,
     json_name: "trackRemoved",
     oneof: 0
 
   field :track_metadata_updated, 19,
-    type: Jellyfish.ServerMessage.TrackMetadataUpdated,
+    type: Fishjam.ServerMessage.TrackMetadataUpdated,
     json_name: "trackMetadataUpdated",
     oneof: 0
 
-  field :peer_added, 20, type: Jellyfish.ServerMessage.PeerAdded, json_name: "peerAdded", oneof: 0
+  field :peer_added, 20, type: Fishjam.ServerMessage.PeerAdded, json_name: "peerAdded", oneof: 0
 
   field :peer_deleted, 21,
-    type: Jellyfish.ServerMessage.PeerDeleted,
+    type: Fishjam.ServerMessage.PeerDeleted,
     json_name: "peerDeleted",
     oneof: 0
 end

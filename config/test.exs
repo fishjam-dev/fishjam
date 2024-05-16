@@ -1,13 +1,13 @@
 import Config
 
-config :jellyfish,
+config :fishjam,
   ip: {127, 0, 0, 1},
   port: 4002,
   server_api_token: "development",
   webrtc_metrics_scrape_interval: 50,
   room_metrics_scrape_interval: 1
 
-config :jellyfish, JellyfishWeb.Endpoint,
+config :fishjam, FishjamWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
   server: true
 

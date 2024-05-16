@@ -1,4 +1,4 @@
-defmodule JellyfishWeb.ConnCase do
+defmodule FishjamWeb.ConnCase do
   @moduledoc """
   This module defines the test case to be used by
   tests that require setting up a connection.
@@ -11,7 +11,7 @@ defmodule JellyfishWeb.ConnCase do
   we enable the SQL sandbox, so changes done to the database
   are reverted at the end of every test. If you are using
   PostgreSQL, you can even run database tests asynchronously
-  by setting `use JellyfishWeb.ConnCase, async: true`, although
+  by setting `use FishjamWeb.ConnCase, async: true`, although
   this option is not recommended for other databases.
   """
 
@@ -19,17 +19,17 @@ defmodule JellyfishWeb.ConnCase do
 
   using do
     quote do
-      use JellyfishWeb, :verified_routes
+      use FishjamWeb, :verified_routes
 
       # Import conveniences for testing with connections
       import Plug.Conn
       import Phoenix.ConnTest
-      import JellyfishWeb.ConnCase
+      import FishjamWeb.ConnCase
 
-      alias JellyfishWeb.Router.Helpers, as: Routes
+      alias FishjamWeb.Router.Helpers, as: Routes
 
       # The default endpoint for testing
-      @endpoint JellyfishWeb.Endpoint
+      @endpoint FishjamWeb.Endpoint
     end
   end
 

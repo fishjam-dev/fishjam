@@ -11,10 +11,10 @@ log_debug() {
 if [ "$(id -u)" = '0' ]; then
 
     log_debug "Running as root. Fixing permissions for: \ 
-    $(find . \! -user jellyfish -exec echo '{} \n' \;)"
+    $(find . \! -user fishjam -exec echo '{} \n' \;)"
         
-    find . \! -user jellyfish -exec chown jellyfish '{}' +
-    exec gosu jellyfish "$0" "$@"
+    find . \! -user fishjam -exec chown fishjam '{}' +
+    exec gosu fishjam "$0" "$@"
 fi
 
 log_debug "Running as user with UID: $(id -u) GID: $(id -g)"
