@@ -368,6 +368,17 @@ defmodule Fishjam.ConfigReader do
     fj_name = name
     jf_name = "JF_" <> rest
 
-    System.get_env(fj_name) || System.get_env(jf_name) || default
+    fj_var = System.get_env(fj_name)
+    jf_var = System.get_env(jf_name)
+
+    if jf_var != nil do
+      Logger.warning("""
+      It looks like you have still an env variable prefixed with JF_ set.
+      Support for those variables will be removed in version 0.8.0.
+      Variable: #{jf_name}
+      """)
+    end
+
+    fj_var || jf_var || default
   end
 end
