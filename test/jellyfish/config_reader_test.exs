@@ -353,20 +353,20 @@ defmodule Fishjam.ConfigReaderTest do
     end
   end
 
-  # test "read_logger_level/0" do
-  #   with_env ["JF_LOG_LEVEL"] do
-  #     env_value_to_log_level = %{
-  #       "info" => :info,
-  #       "debug" => :debug,
-  #       "warning" => :warning,
-  #       "error" => :error,
-  #       "other_env_value" => :info
-  #     }
+  test "read_logger_level/0" do
+    with_env ["FJ_LOG_LEVEL"] do
+      env_value_to_log_level = %{
+        "info" => :info,
+        "debug" => :debug,
+        "warning" => :warning,
+        "error" => :error,
+        "other_env_value" => :info
+      }
 
-  #     for {env_value, log_level} <- env_value_to_log_level do
-  #       System.put_env("JF_LOG_LEVEL", env_value)
-  #       assert ConfigReader.read_logger_level() == log_level
-  #     end
-  #   end
-  # end
+      for {env_value, log_level} <- env_value_to_log_level do
+        System.put_env("FJ_LOG_LEVEL", env_value)
+        assert ConfigReader.read_logger_level() == log_level
+      end
+    end
+  end
 end

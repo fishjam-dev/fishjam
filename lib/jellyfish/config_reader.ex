@@ -251,7 +251,7 @@ defmodule Fishjam.ConfigReader do
   end
 
   def read_logger_level() do
-    log_level = System.get_env("JF_LOG_LEVEL", "info")
+    log_level = System.get_env("FJ_LOG_LEVEL", "info")
 
     if log_level in ["info", "debug", "warning", "error"] do
       String.to_atom(log_level)
