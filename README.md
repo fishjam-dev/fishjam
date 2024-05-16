@@ -35,7 +35,7 @@ Dashboard makes HTTP requests to Fishjam that need to be authorized and requires
 
 Everything you need to get started with Fishjam is available in the [Fishjam docs](https://fishjam-dev.github.io/fishjam-docs/).
 
-You can read about theoretical concepts and problems we encountered in the [Fishjambook](https://fishjam-dev.github.io/book/).
+You can read about theoretical concepts and problems we encountered in the [Fishjam book](https://fishjam-dev.github.io/book/).
 
 ## Copyright and License
 
