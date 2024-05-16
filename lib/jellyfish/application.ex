@@ -84,7 +84,7 @@ defmodule Fishjam.Application do
   defp config_distribution(dist_config) do
     :ok = ensure_epmd_started!()
 
-    # When running JF not in a cluster and using
+    # When running FJ not in a cluster and using
     # mix release, it starts in the distributed mode
     # automatically
     unless Node.alive?() do

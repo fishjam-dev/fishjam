@@ -152,33 +152,33 @@ defmodule Fishjam.ConfigReaderTest do
   end
 
   test "read_components_used/0" do
-    with_env ["JF_COMPONENTS_USED"] do
+    with_env ["FJ_COMPONENTS_USED"] do
       assert ConfigReader.read_components_used() == []
 
-      System.put_env("JF_COMPONENTS_USED", "hls")
+      System.put_env("FJ_COMPONENTS_USED", "hls")
       assert ConfigReader.read_components_used() == [Fishjam.Component.HLS]
 
-      System.put_env("JF_COMPONENTS_USED", "recording rtsp    sip ")
+      System.put_env("FJ_COMPONENTS_USED", "recording rtsp    sip ")
 
       assert ConfigReader.read_components_used() |> Enum.sort() ==
                [Fishjam.Component.Recording, Fishjam.Component.RTSP, Fishjam.Component.SIP]
                |> Enum.sort()
 
-      System.put_env("JF_COMPONENTS_USED", "file rtsp    invalid_component")
+      System.put_env("FJ_COMPONENTS_USED", "file rtsp    invalid_component")
       assert_raise RuntimeError, fn -> ConfigReader.read_components_used() end
     end
   end
 
   test "read_sip_config/1" do
-    with_env ["JF_SIP_IP"] do
+    with_env ["FJ_SIP_IP"] do
       assert ConfigReader.read_sip_config(false) == [sip_external_ip: nil]
 
       assert_raise RuntimeError, fn -> ConfigReader.read_sip_config(true) end
 
-      System.put_env("JF_SIP_IP", "abcdefg")
+      System.put_env("FJ_SIP_IP", "abcdefg")
       assert_raise RuntimeError, fn -> ConfigReader.read_sip_config(true) end
 
-      System.put_env("JF_SIP_IP", "127.0.0.1")
+      System.put_env("FJ_SIP_IP", "127.0.0.1")
       assert ConfigReader.read_sip_config(true) == [sip_external_ip: "127.0.0.1"]
     end
   end

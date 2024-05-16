@@ -4,67 +4,67 @@
 
 - **CL** - client
 - **BE** - business logic (backend) implemented by the user
-- **JF** - Fishjam
+- **FJ** - Fishjam
 
 ## Approaches
 
 Currently we consider three approaches to the signaling implementation:
 
-- direct connection between **CL** and **JF** bypassing **BE**,
+- direct connection between **CL** and **FJ** bypassing **BE**,
 - using **BE** as a middleman to pass signaling messages,
 - ability to use either of the options above, but providing some default implementation (i.e provide default implementation of direct signaling, but
 let the user replace it with his own implementation).
 
 ### Direct connection
 
-**CL** must be able to open connection to **JF** (e.g. WebSocket). For that **CL** requires **JF** address and some form of authentication.
+**CL** must be able to open connection to **FJ** (e.g. WebSocket). For that **CL** requires **FJ** address and some form of authentication.
 
 **Example:**
 
 1) **CL** sends request to **BE** to join some room (meeting, webinar etc.).
-2) **BE** sends request to **JF** (*add_peer*).
-3) **JF** responds positively.
+2) **BE** sends request to **FJ** (*add_peer*).
+3) **FJ** responds positively.
 4) **BE** responds to client positively with generated token.
-5) **CL** opens WebSocket connection to **JF**, flow of signaling messages begins.
+5) **CL** opens WebSocket connection to **FJ**, flow of signaling messages begins.
 
-**JF** can diferentiate between the clients by the opened WebSocket connection. It knows
+**FJ** can diferentiate between the clients by the opened WebSocket connection. It knows
 who is the sender of incoming Media Events and where to send generated Media Events.
 
 **Advantages:**
 
 - Easier option, the user doesn't have to do much more than passing authentication token to **CL**, client SDK handles the rest.
-- Both **CL** and **JF** can tell when signaling connection was broken. That prevents situation when signaling connection between **CL** and **BE** was broken, but **BE**
-did not notify **JF** of such occurence, is that case media is still flowing with no signaling (when new peer joins, tracks are not renegotiated, etc.).
+- Both **CL** and **FJ** can tell when signaling connection was broken. That prevents situation when signaling connection between **CL** and **BE** was broken, but **BE**
+did not notify **FJ** of such occurence, is that case media is still flowing with no signaling (when new peer joins, tracks are not renegotiated, etc.).
 
 **Disadvantages:**
 
 - **CL** has to participate in the authentication process (so they probably need to be
-authenticated by **BE** and then authenticated again to open connection to **JF**).
-- Some events can get desynchronized. Imagine scenerio where **JF** sent notification to
+authenticated by **BE** and then authenticated again to open connection to **FJ**).
+- Some events can get desynchronized. Imagine scenerio where **FJ** sent notification to
 **BE** that recording has begun (it is **BE**'s responibility
 to propagate this information to clients so they can show some icon indicator). At
 the same time, media and signaling connections were broken for some reason.
-For a brief moment (until **JF** passes that information to **BE** and **BE** passes
+For a brief moment (until **FJ** passes that information to **BE** and **BE** passes
 it to **CL**) **CL** might think that their screen is being recorded
 even though that is not the case (situation in this example can be prevented, but I hope
 you get the gist).
 
 ### Using **BE** as a middleman
 
-Client SDK generates signaling messages, but requires the user to implement logic that handles forwarding them to **JF** (using **BE** in described scenario).
+Client SDK generates signaling messages, but requires the user to implement logic that handles forwarding them to **FJ** (using **BE** in described scenario).
 
 **Exmaple:**
 
 1) **CL** sends request to **BE** to join some room (meeting, webinar etc.).
-2) **BE** sends request to **JF** (*add_peer*).
-3) **JF** responds positively.
+2) **BE** sends request to **FJ** (*add_peer*).
+3) **FJ** responds positively.
 4) **BE** responds to client positively.
-5) **CL** starts generating signaling messages which are forwarded to **JF** by **BE**.
+5) **CL** starts generating signaling messages which are forwarded to **FJ** by **BE**.
 
 In that case we need a way to identify the sender of signaling messages, we thought of 2 approaches (you'r welcome to suggest a better one):
 
-- make **BE** open WebSocket connection to **JF** for every client (here seems like a very bad idea, makes a bit more sense in the mixed approach described later),
-- tag every signaling message with something like `peer_id`, requires only one WebSocket connection between **BE** and **JF** (should SDK do this, or should it be the users responsibility?).
+- make **BE** open WebSocket connection to **FJ** for every client (here seems like a very bad idea, makes a bit more sense in the mixed approach described later),
+- tag every signaling message with something like `peer_id`, requires only one WebSocket connection between **BE** and **FJ** (should SDK do this, or should it be the users responsibility?).
 
 **Advantages:**
 
@@ -83,7 +83,7 @@ We assume that only one approach is being used at once (there cannot be a situat
 
 Now the problem with identifying signaling messages becomes much more apparent.
 
-If signaling messages are individually tagged, when using direct connection approach there's some redundancy (**JF** doesn't need the "tag", it can tell who
+If signaling messages are individually tagged, when using direct connection approach there's some redundancy (**FJ** doesn't need the "tag", it can tell who
 is who by the WebSocket connection),
 but the tags are necessary when using **BE** as a middleman. Obviously, we can handle each situation differently and not tag messages passed in
 direct connection, but that makes the implementation much more complicated.
@@ -105,5 +105,5 @@ On the other hand, when tags are not used, there's everything alright with direc
 
 The approach that we are going to use is the **direct connection**, mostly because it's a lot easier for the user to implement (which outweights benefits like the flexibility of the other approach).
 Also, the drawbacks seem not to be very severe: some of the information about the state of rooms and peers (like the fact that recording has begun) can be
-kept and shared by **JF** via the signalling connection.
+kept and shared by **FJ** via the signalling connection.
 Mixed approach is not considered at the moment (as it brings some difficulties) but can be added in the future if there's need.

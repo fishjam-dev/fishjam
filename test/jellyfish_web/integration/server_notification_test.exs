@@ -328,7 +328,7 @@ defmodule FishjamWeb.Integration.ServerNotificationTest do
     test "sends message when peer metadata is updated", %{conn: conn} do
       {room_id, peer_id, _conn, peer_ws} = subscribe_on_notifications_and_connect_peer(conn)
 
-      metadata = %{name: "Jellyuser"}
+      metadata = %{name: "FishjamUser"}
       metadata_encoded = Jason.encode!(metadata)
 
       media_event = %PeerMessage.MediaEvent{
