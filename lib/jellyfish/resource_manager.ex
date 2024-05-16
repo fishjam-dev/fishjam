@@ -1,4 +1,4 @@
-defmodule Jellyfish.ResourceManager do
+defmodule Fishjam.ResourceManager do
   @moduledoc """
   Module responsible for deleting outdated resources.
   Right now it only removes outdated resources created by recording component.
@@ -8,8 +8,8 @@ defmodule Jellyfish.ResourceManager do
 
   require Logger
 
-  alias Jellyfish.Component.Recording
-  alias Jellyfish.RoomService
+  alias Fishjam.Component.Recording
+  alias Fishjam.RoomService
 
   @type seconds :: pos_integer()
   @type opts :: %{interval: seconds(), recording_timeout: seconds()}

@@ -1,10 +1,10 @@
-defmodule JellyfishWeb.ApiSpec.Peer do
+defmodule FishjamWeb.ApiSpec.Peer do
   @moduledoc false
 
   require OpenApiSpex
   alias OpenApiSpex.Schema
 
-  alias JellyfishWeb.ApiSpec.Peer.WebRTC
+  alias FishjamWeb.ApiSpec.Peer.WebRTC
 
   defmodule Type do
     @moduledoc false
@@ -70,7 +70,7 @@ defmodule JellyfishWeb.ApiSpec.Peer do
       title: "WebsocketURL",
       description: "Websocket URL to which peer has to connect",
       type: :string,
-      example: "www.jellyfish.org/socket/peer"
+      example: "www.fishjam.org/socket/peer"
     })
   end
 
@@ -82,7 +82,7 @@ defmodule JellyfishWeb.ApiSpec.Peer do
     OpenApiSpex.schema(%{
       title: "PeerMetadata",
       description: "Custom metadata set by the peer",
-      example: %{name: "JellyfishUser"},
+      example: %{name: "FishjamUser"},
       nullable: true
     })
   end
@@ -97,7 +97,7 @@ defmodule JellyfishWeb.ApiSpec.Peer do
       status: Status,
       tracks: %Schema{
         type: :array,
-        items: JellyfishWeb.ApiSpec.Track,
+        items: FishjamWeb.ApiSpec.Track,
         description: "List of all peer's tracks"
       },
       metadata: PeerMetadata

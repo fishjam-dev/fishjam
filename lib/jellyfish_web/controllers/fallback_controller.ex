@@ -1,5 +1,5 @@
-defmodule JellyfishWeb.FallbackController do
-  use JellyfishWeb, :controller
+defmodule FishjamWeb.FallbackController do
+  use FishjamWeb, :controller
 
   def call(conn, {:error, status, reason}) do
     conn

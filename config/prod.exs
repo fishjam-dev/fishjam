@@ -7,12 +7,12 @@ import Config
 # Do not print debug messages in production
 config :logger, level: :info
 
-config :jellyfish,
+config :fishjam,
   ip: {127, 0, 0, 1},
   port: 8080
 
 # run the server automatically when using prod release
-config :jellyfish, JellyfishWeb.Endpoint, server: true
+config :fishjam, FishjamWeb.Endpoint, server: true
 
 # Runtime production configuration, including reading
 # of environment variables, is done on config/runtime.exs.

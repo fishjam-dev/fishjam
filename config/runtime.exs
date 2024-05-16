@@ -1,6 +1,6 @@
 import Config
 
-alias Jellyfish.ConfigReader
+alias Fishjam.ConfigReader
 
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
@@ -10,31 +10,31 @@ alias Jellyfish.ConfigReader
 # The block below contains prod specific runtime configuration.
 config :ex_dtls, impl: :nif
 
-structured_logging? = ConfigReader.read_boolean("JF_STRUCTURED_LOGGING") || false
+structured_logging? = ConfigReader.read_boolean("FJ_STRUCTURED_LOGGING") || false
 config :logger, backends: [if(structured_logging?, do: LoggerJSON, else: :console)]
 
 prod? = config_env() == :prod
 
-ip = ConfigReader.read_ip("JF_IP") || Application.fetch_env!(:jellyfish, :ip)
+ip = ConfigReader.read_ip("FJ_IP") || Application.fetch_env!(:fishjam, :ip)
 
-port = ConfigReader.read_port("JF_PORT") || Application.fetch_env!(:jellyfish, :port)
+port = ConfigReader.read_port("FJ_PORT") || Application.fetch_env!(:fishjam, :port)
 
 host =
-  case System.get_env("JF_HOST") do
+  case System.get_env("FJ_HOST") do
     nil -> "#{:inet.ntoa(ip)}:#{port}"
     other -> other
   end
 
 components_used = ConfigReader.read_components_used()
-sip_used? = Jellyfish.Component.SIP in components_used
+sip_used? = Fishjam.Component.SIP in components_used
 
-config :jellyfish,
+config :fishjam,
   jwt_max_age: 24 * 3600,
   media_files_path:
-    System.get_env("JF_RESOURCES_BASE_PATH", "jellyfish_resources") |> Path.expand(),
+    System.get_env("FJ_RESOURCES_BASE_PATH", "fishjam_resources") |> Path.expand(),
   address: host,
-  metrics_ip: ConfigReader.read_ip("JF_METRICS_IP") || {127, 0, 0, 1},
-  metrics_port: ConfigReader.read_port("JF_METRICS_PORT") || 9568,
+  metrics_ip: ConfigReader.read_ip("FJ_METRICS_IP") || {127, 0, 0, 1},
+  metrics_port: ConfigReader.read_port("FJ_METRICS_PORT") || 9568,
   dist_config: ConfigReader.read_dist_config(),
   webrtc_config: ConfigReader.read_webrtc_config(),
   components_used: components_used,
@@ -42,11 +42,11 @@ config :jellyfish,
   s3_config: ConfigReader.read_s3_config(),
   git_commit: ConfigReader.read_git_commit()
 
-case System.get_env("JF_SERVER_API_TOKEN") do
+case System.get_env("FJ_SERVER_API_TOKEN") do
   nil when prod? == true ->
     raise """
-    environment variable JF_SERVER_API_TOKEN is missing.
-    JF_SERVER_API_TOKEN is used for HTTP requests and
+    environment variable FJ_SERVER_API_TOKEN is missing.
+    FJ_SERVER_API_TOKEN is used for HTTP requests and
     server WebSocket authorization.
     """
 
@@ -54,14 +54,14 @@ case System.get_env("JF_SERVER_API_TOKEN") do
     :ok
 
   token ->
-    config :jellyfish, server_api_token: token
+    config :fishjam, server_api_token: token
 end
 
 external_uri = URI.parse("//" <> host)
 
-config :jellyfish, JellyfishWeb.Endpoint,
+config :fishjam, FishjamWeb.Endpoint,
   secret_key_base:
-    System.get_env("JF_SECRET_KEY_BASE") || Base.encode64(:crypto.strong_rand_bytes(48)),
+    System.get_env("FJ_SECRET_KEY_BASE") || Base.encode64(:crypto.strong_rand_bytes(48)),
   url: [
     host: external_uri.host,
     port: external_uri.port || 443,
@@ -73,7 +73,7 @@ config :jellyfish, JellyfishWeb.Endpoint,
 # Mix task: mix phx.gen.cert
 case ConfigReader.read_ssl_config() do
   {ssl_key_path, ssl_cert_path} ->
-    config :jellyfish, JellyfishWeb.Endpoint,
+    config :fishjam, FishjamWeb.Endpoint,
       https: [
         ip: ip,
         port: port,
@@ -83,15 +83,15 @@ case ConfigReader.read_ssl_config() do
       ]
 
   nil ->
-    config :jellyfish, JellyfishWeb.Endpoint, http: [ip: ip, port: port]
+    config :fishjam, FishjamWeb.Endpoint, http: [ip: ip, port: port]
 end
 
-check_origin = ConfigReader.read_check_origin("JF_CHECK_ORIGIN")
+check_origin = ConfigReader.read_check_origin("FJ_CHECK_ORIGIN")
 
 if check_origin != nil do
-  config :jellyfish, JellyfishWeb.Endpoint, check_origin: check_origin
+  config :fishjam, FishjamWeb.Endpoint, check_origin: check_origin
 end
 
 if prod? do
-  config :jellyfish, JellyfishWeb.Endpoint, url: [scheme: "https"]
+  config :fishjam, FishjamWeb.Endpoint, url: [scheme: "https"]
 end

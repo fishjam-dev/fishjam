@@ -1,10 +1,10 @@
-defmodule Jellyfish.Component.HLS.RequestHandlerTest do
+defmodule Fishjam.Component.HLS.RequestHandlerTest do
   @moduledoc false
 
   use ExUnit.Case, async: true
 
-  alias Jellyfish.Component.HLS
-  alias Jellyfish.Component.HLS.{EtsHelper, RequestHandler}
+  alias Fishjam.Component.HLS
+  alias Fishjam.Component.HLS.{EtsHelper, RequestHandler}
 
   @wrong_room_id "321"
 

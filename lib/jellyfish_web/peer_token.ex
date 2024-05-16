@@ -1,12 +1,12 @@
-defmodule JellyfishWeb.PeerToken do
+defmodule FishjamWeb.PeerToken do
   @moduledoc false
-  alias JellyfishWeb.Endpoint
+  alias FishjamWeb.Endpoint
 
   @spec generate(map()) :: nonempty_binary
   def generate(data) do
     Phoenix.Token.sign(
       Endpoint,
-      Application.fetch_env!(:jellyfish, Endpoint)[:secret_key_base],
+      Application.fetch_env!(:fishjam, Endpoint)[:secret_key_base],
       data
     )
   end
@@ -15,9 +15,9 @@ defmodule JellyfishWeb.PeerToken do
   def verify(token) do
     Phoenix.Token.verify(
       Endpoint,
-      Application.fetch_env!(:jellyfish, Endpoint)[:secret_key_base],
+      Application.fetch_env!(:fishjam, Endpoint)[:secret_key_base],
       token,
-      max_age: Application.fetch_env!(:jellyfish, :jwt_max_age)
+      max_age: Application.fetch_env!(:fishjam, :jwt_max_age)
     )
   end
 end

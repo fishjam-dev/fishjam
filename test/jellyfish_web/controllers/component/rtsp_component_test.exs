@@ -1,6 +1,6 @@
-defmodule JellyfishWeb.Component.RTSPComponentTest do
-  use JellyfishWeb.ConnCase
-  use JellyfishWeb.ComponentCase
+defmodule FishjamWeb.Component.RTSPComponentTest do
+  use FishjamWeb.ConnCase
+  use FishjamWeb.ComponentCase
 
   @source_uri "rtsp://placeholder-19inrifjbsjb.it:12345/afwefae"
 
@@ -23,10 +23,10 @@ defmodule JellyfishWeb.Component.RTSPComponentTest do
   @rtsp_custom_properties @rtsp_custom_options |> map_keys_to_string()
 
   setup_all do
-    Application.put_env(:jellyfish, :components_used, [Jellyfish.Component.RTSP])
+    Application.put_env(:fishjam, :components_used, [Fishjam.Component.RTSP])
 
     on_exit(fn ->
-      Application.put_env(:jellyfish, :components_used, [])
+      Application.put_env(:fishjam, :components_used, [])
     end)
   end
 

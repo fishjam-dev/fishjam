@@ -1,9 +1,9 @@
-defmodule JellyfishWeb.ApiSpec.Component.Recording do
+defmodule FishjamWeb.ApiSpec.Component.Recording do
   @moduledoc false
 
   require OpenApiSpex
 
-  alias JellyfishWeb.ApiSpec.Component.HLS.S3
+  alias FishjamWeb.ApiSpec.Component.HLS.S3
   alias OpenApiSpex.Schema
 
   defmodule Properties do
@@ -73,7 +73,7 @@ defmodule JellyfishWeb.ApiSpec.Component.Recording do
       properties: Properties,
       tracks: %Schema{
         type: :array,
-        items: JellyfishWeb.ApiSpec.Track,
+        items: FishjamWeb.ApiSpec.Track,
         description: "List of all component's tracks"
       }
     },

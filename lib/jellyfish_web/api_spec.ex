@@ -1,4 +1,4 @@
-defmodule JellyfishWeb.ApiSpec do
+defmodule FishjamWeb.ApiSpec do
   @moduledoc false
   @behaviour OpenApiSpex.OpenApi
 
@@ -10,14 +10,14 @@ defmodule JellyfishWeb.ApiSpec do
   def spec() do
     %OpenApiSpex.OpenApi{
       info: %Info{
-        title: "Jellyfish Media Server",
-        version: Jellyfish.version(),
+        title: "Fishjam Media Server",
+        version: Fishjam.version(),
         license: %License{
           name: "Apache 2.0",
           url: "https://www.apache.org/licenses/LICENSE-2.0"
         }
       },
-      paths: Paths.from_router(JellyfishWeb.Router),
+      paths: Paths.from_router(FishjamWeb.Router),
       components: %Components{
         securitySchemes: %{"authorization" => %SecurityScheme{type: "http", scheme: "bearer"}}
       }
@@ -32,6 +32,6 @@ defmodule JellyfishWeb.ApiSpec do
 
   @spec error(String.t()) :: {String.t(), String.t(), module()}
   def error(description) do
-    {description, "application/json", JellyfishWeb.ApiSpec.Error}
+    {description, "application/json", FishjamWeb.ApiSpec.Error}
   end
 end

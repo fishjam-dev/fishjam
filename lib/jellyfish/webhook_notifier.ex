@@ -1,4 +1,4 @@
-defmodule Jellyfish.WebhookNotifier do
+defmodule Fishjam.WebhookNotifier do
   @moduledoc """
   Module responsible for sending notifications through webhooks.
   """
@@ -7,8 +7,8 @@ defmodule Jellyfish.WebhookNotifier do
 
   require Logger
 
-  alias Jellyfish.Event
-  alias Jellyfish.ServerMessage
+  alias Fishjam.Event
+  alias Fishjam.ServerMessage
 
   def start_link(args) do
     GenServer.start_link(__MODULE__, args, name: __MODULE__)

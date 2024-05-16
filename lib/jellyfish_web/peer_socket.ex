@@ -1,13 +1,13 @@
-defmodule JellyfishWeb.PeerSocket do
+defmodule FishjamWeb.PeerSocket do
   @moduledoc false
   @behaviour Phoenix.Socket.Transport
   require Logger
 
-  alias Jellyfish.Event
-  alias Jellyfish.PeerMessage
-  alias Jellyfish.PeerMessage.{Authenticated, AuthRequest, MediaEvent}
-  alias Jellyfish.{Room, RoomService}
-  alias JellyfishWeb.PeerToken
+  alias Fishjam.Event
+  alias Fishjam.PeerMessage
+  alias Fishjam.PeerMessage.{Authenticated, AuthRequest, MediaEvent}
+  alias Fishjam.{Room, RoomService}
+  alias FishjamWeb.PeerToken
 
   @heartbeat_interval 30_000
 
@@ -33,7 +33,7 @@ defmodule JellyfishWeb.PeerSocket do
         with {:ok, %{peer_id: peer_id, room_id: room_id}} <- PeerToken.verify(token),
              {:ok, room_pid} <- RoomService.find_room(room_id),
              :ok <- Room.set_peer_connected(room_id, peer_id),
-             :ok <- Phoenix.PubSub.subscribe(Jellyfish.PubSub, room_id) do
+             :ok <- Phoenix.PubSub.subscribe(Fishjam.PubSub, room_id) do
           Process.send_after(self(), :send_ping, @heartbeat_interval)
 
           encoded_message =

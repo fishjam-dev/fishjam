@@ -1,4 +1,4 @@
-defmodule Jellyfish.RoomService do
+defmodule Fishjam.RoomService do
   @moduledoc """
   Module responsible for managing rooms.
   """
@@ -7,9 +7,9 @@ defmodule Jellyfish.RoomService do
 
   require Logger
 
-  alias Jellyfish.{Event, Room, WebhookNotifier}
+  alias Fishjam.{Event, Room, WebhookNotifier}
 
-  @metric_interval_in_seconds Application.compile_env!(:jellyfish, :room_metrics_scrape_interval)
+  @metric_interval_in_seconds Application.compile_env!(:fishjam, :room_metrics_scrape_interval)
   @metric_interval_in_milliseconds @metric_interval_in_seconds * 1_000
 
   def start_link(args) do
@@ -18,7 +18,7 @@ defmodule Jellyfish.RoomService do
 
   @spec find_room(Room.id()) :: {:ok, pid()} | {:error, :room_not_found}
   def find_room(room_id) do
-    case Registry.lookup(Jellyfish.RoomRegistry, room_id) do
+    case Registry.lookup(Fishjam.RoomRegistry, room_id) do
       [{room_pid, _value}] ->
         {:ok, room_pid}
 
@@ -59,7 +59,7 @@ defmodule Jellyfish.RoomService do
   @spec create_room(Room.Config.t()) :: {:ok, Room.t(), String.t()} | {:error, atom()}
   def create_room(config) do
     {node_resources, failed_nodes} =
-      :rpc.multicall(Jellyfish.RoomService, :get_resource_usage, [])
+      :rpc.multicall(Fishjam.RoomService, :get_resource_usage, [])
 
     if Enum.count(failed_nodes) > 0 do
       Logger.warning(
@@ -102,7 +102,7 @@ defmodule Jellyfish.RoomService do
 
     room_ids
     |> Enum.map(fn room_id ->
-      Task.Supervisor.async_nolink(Jellyfish.TaskSupervisor, fn ->
+      Task.Supervisor.async_nolink(Fishjam.TaskSupervisor, fn ->
         Room.get_num_forwarded_tracks(room_id)
       end)
     end)
@@ -128,7 +128,7 @@ defmodule Jellyfish.RoomService do
   @impl true
   def handle_continue(_continue_arg, state) do
     Process.send_after(self(), :rooms_metrics, @metric_interval_in_milliseconds)
-    :ok = Phoenix.PubSub.subscribe(Jellyfish.PubSub, "jellyfishes")
+    :ok = Phoenix.PubSub.subscribe(Fishjam.PubSub, "fishjams")
     {:noreply, state}
   end
 
@@ -146,7 +146,7 @@ defmodule Jellyfish.RoomService do
 
       Event.broadcast_server_notification({:room_created, room_id})
 
-      {:reply, {:ok, room, Jellyfish.address()}, state}
+      {:reply, {:ok, room, Fishjam.address()}, state}
     else
       {:error, :room_already_exists} = error ->
         {:reply, error, state}
@@ -173,7 +173,7 @@ defmodule Jellyfish.RoomService do
     rooms = list_rooms()
 
     :telemetry.execute(
-      [:jellyfish],
+      [:fishjam],
       %{
         rooms: Enum.count(rooms)
       }
@@ -183,7 +183,7 @@ defmodule Jellyfish.RoomService do
       peer_count = room.peers |> Enum.count()
 
       :telemetry.execute(
-        [:jellyfish, :room],
+        [:fishjam, :room],
         %{
           peers: peer_count,
           peer_time: peer_count * @metric_interval_in_seconds,
@@ -204,7 +204,7 @@ defmodule Jellyfish.RoomService do
 
     Logger.debug("Room #{room_id} is down with reason: normal")
 
-    Phoenix.PubSub.broadcast(Jellyfish.PubSub, room_id, :room_stopped)
+    Phoenix.PubSub.broadcast(Fishjam.PubSub, room_id, :room_stopped)
     Event.broadcast_server_notification({:room_deleted, room_id})
     clear_room_metrics(room_id)
 
@@ -217,7 +217,7 @@ defmodule Jellyfish.RoomService do
 
     Logger.warning("Process #{room_id} is down with reason: #{inspect(reason)}")
 
-    Phoenix.PubSub.broadcast(Jellyfish.PubSub, room_id, :room_crashed)
+    Phoenix.PubSub.broadcast(Fishjam.PubSub, room_id, :room_crashed)
     Event.broadcast_server_notification({:room_crashed, room_id})
     clear_room_metrics(room_id)
 
@@ -225,7 +225,7 @@ defmodule Jellyfish.RoomService do
   end
 
   defp clear_room_metrics(room_id) do
-    :telemetry.execute([:jellyfish, :room], %{peers: 0}, %{room_id: room_id})
+    :telemetry.execute([:fishjam, :room], %{peers: 0}, %{room_id: room_id})
   end
 
   defp find_best_node(node_resources) do
@@ -247,7 +247,7 @@ defmodule Jellyfish.RoomService do
   end
 
   defp get_rooms_ids() do
-    Jellyfish.RoomRegistry
+    Fishjam.RoomRegistry
     |> Registry.select([{{:"$1", :_, :_}, [], [:"$1"]}])
   end
 

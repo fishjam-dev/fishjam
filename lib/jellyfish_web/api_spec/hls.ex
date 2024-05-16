@@ -1,4 +1,4 @@
-defmodule JellyfishWeb.ApiSpec.HLS do
+defmodule FishjamWeb.ApiSpec.HLS do
   require OpenApiSpex
 
   defmodule Params do

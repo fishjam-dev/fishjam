@@ -1,5 +1,5 @@
-defmodule JellyfishWeb.DialControllerTest do
-  use JellyfishWeb.ConnCase
+defmodule FishjamWeb.DialControllerTest do
+  use FishjamWeb.ConnCase
 
   @source_uri "rtsp://placeholder-19inrifjbsjb.it:12345/afwefae"
 
@@ -10,21 +10,21 @@ defmodule JellyfishWeb.DialControllerTest do
   }
 
   setup_all do
-    Application.put_env(:jellyfish, :sip_config, sip_external_ip: "127.0.0.1")
+    Application.put_env(:fishjam, :sip_config, sip_external_ip: "127.0.0.1")
 
-    Application.put_env(:jellyfish, :components_used, [
-      Jellyfish.Component.SIP,
-      Jellyfish.Component.RTSP
+    Application.put_env(:fishjam, :components_used, [
+      Fishjam.Component.SIP,
+      Fishjam.Component.RTSP
     ])
 
     on_exit(fn ->
-      Application.put_env(:jellyfish, :sip_config, sip_external_ip: nil)
-      Application.put_env(:jellyfish, :components_used, [])
+      Application.put_env(:fishjam, :sip_config, sip_external_ip: nil)
+      Application.put_env(:fishjam, :components_used, [])
     end)
   end
 
   setup %{conn: conn} do
-    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+    server_api_token = Application.fetch_env!(:fishjam, :server_api_token)
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
     conn = put_req_header(conn, "accept", "application/json")
 

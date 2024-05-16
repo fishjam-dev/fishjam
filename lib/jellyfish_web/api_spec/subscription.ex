@@ -1,4 +1,4 @@
-defmodule JellyfishWeb.ApiSpec.Subscription do
+defmodule FishjamWeb.ApiSpec.Subscription do
   require OpenApiSpex
 
   alias OpenApiSpex.Schema

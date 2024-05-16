@@ -1,6 +1,6 @@
-defmodule JellyfishWeb.Component.SIPComponentTest do
-  use JellyfishWeb.ConnCase
-  use JellyfishWeb.ComponentCase
+defmodule FishjamWeb.Component.SIPComponentTest do
+  use FishjamWeb.ConnCase
+  use FishjamWeb.ComponentCase
 
   @sip_credentials %{
     address: "my-sip-registrar.net",
@@ -14,12 +14,12 @@ defmodule JellyfishWeb.Component.SIPComponentTest do
                           |> map_keys_to_string()
 
   setup_all do
-    Application.put_env(:jellyfish, :sip_config, sip_external_ip: "127.0.0.1")
-    Application.put_env(:jellyfish, :components_used, [Jellyfish.Component.SIP])
+    Application.put_env(:fishjam, :sip_config, sip_external_ip: "127.0.0.1")
+    Application.put_env(:fishjam, :components_used, [Fishjam.Component.SIP])
 
     on_exit(fn ->
-      Application.put_env(:jellyfish, :sip_config, sip_external_ip: nil)
-      Application.put_env(:jellyfish, :components_used, [])
+      Application.put_env(:fishjam, :sip_config, sip_external_ip: nil)
+      Application.put_env(:fishjam, :components_used, [])
     end)
   end
 

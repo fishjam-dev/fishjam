@@ -1,7 +1,7 @@
-defmodule Jellyfish.Event do
+defmodule Fishjam.Event do
   @moduledoc false
 
-  alias Jellyfish.ServerMessage.{
+  alias Fishjam.ServerMessage.{
     ComponentCrashed,
     HlsPlayable,
     HlsUploadCrashed,
@@ -24,7 +24,7 @@ defmodule Jellyfish.Event do
 
   alias Membrane.RTC.Engine.Message
 
-  @pubsub Jellyfish.PubSub
+  @pubsub Fishjam.PubSub
   @valid_topics [:server_notification, :metrics]
 
   def broadcast_metrics(message), do: broadcast(:metrics, message)
@@ -115,7 +115,7 @@ defmodule Jellyfish.Event do
   defp to_proto_server_notification({:hls_upload_crashed, room_id}),
     do: {:hls_upload_crashed, %HlsUploadCrashed{room_id: room_id}}
 
-  defp to_proto_track(%Jellyfish.Track{} = track) do
+  defp to_proto_track(%Fishjam.Track{} = track) do
     %Track{
       id: track.id,
       type: to_proto_track_type(track.type),

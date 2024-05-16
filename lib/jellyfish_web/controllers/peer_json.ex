@@ -1,6 +1,6 @@
-defmodule JellyfishWeb.PeerJSON do
+defmodule FishjamWeb.PeerJSON do
   @moduledoc false
-  alias Jellyfish.Peer.WebRTC
+  alias Fishjam.Peer.WebRTC
 
   def show(%{peer: peer, token: token, peer_websocket_url: ws_url}) do
     %{data: %{peer: data(peer), token: token, peer_websocket_url: ws_url}}

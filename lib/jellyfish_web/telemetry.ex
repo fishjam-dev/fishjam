@@ -1,4 +1,4 @@
-defmodule JellyfishWeb.Telemetry do
+defmodule FishjamWeb.Telemetry do
   @moduledoc false
 
   use Supervisor
@@ -7,8 +7,8 @@ defmodule JellyfishWeb.Telemetry do
 
   @ice_received_event [Membrane.ICE, :ice, :payload, :received]
   @ice_sent_event [Membrane.ICE, :ice, :payload, :sent]
-  @http_request_event [:jellyfish_web, :request]
-  @http_response_event [:jellyfish_web, :response]
+  @http_request_event [:fishjam_web, :request]
+  @http_response_event [:fishjam_web, :response]
 
   def start_link(arg) do
     Supervisor.start_link(__MODULE__, arg, name: __MODULE__)
@@ -16,8 +16,8 @@ defmodule JellyfishWeb.Telemetry do
 
   @impl true
   def init(_arg) do
-    metrics_ip = Application.fetch_env!(:jellyfish, :metrics_ip)
-    metrics_port = Application.fetch_env!(:jellyfish, :metrics_port)
+    metrics_ip = Application.fetch_env!(:fishjam, :metrics_ip)
+    metrics_port = Application.fetch_env!(:fishjam, :metrics_port)
 
     Logger.info(
       "Starting prometheus metrics endpoint at: http://#{:inet.ntoa(metrics_ip)}:#{metrics_port}"
@@ -98,70 +98,70 @@ defmodule JellyfishWeb.Telemetry do
       metric_type.("vm.total_run_queue_lengths.io", [])
     ] ++
       [
-        # Jellyfish Metrics
+        # Fishjam Metrics
 
         # FIXME: At the moment, the traffic metrics track:
-        #   - Most HTTP traffic (Jellyfish API, HLS)
+        #   - Most HTTP traffic (Fishjam API, HLS)
         #   - ICE events (WebRTC)
         #
         # which means they don't count:
         #   - WebSocket traffic
         #   - RTP events (RTSP components don't use ICE)
         #   - HTTP traffic related to metrics (not handled by Phoenix)
-        sum("jellyfish.traffic.ingress.webrtc.total.bytes",
+        sum("fishjam.traffic.ingress.webrtc.total.bytes",
           event_name: @ice_received_event,
           description: "Total WebRTC traffic received (bytes)"
         ),
-        sum("jellyfish.traffic.egress.webrtc.total.bytes",
+        sum("fishjam.traffic.egress.webrtc.total.bytes",
           event_name: @ice_sent_event,
           description: "Total WebRTC traffic sent (bytes)"
         ),
-        sum("jellyfish.traffic.ingress.http.total.bytes",
+        sum("fishjam.traffic.ingress.http.total.bytes",
           event_name: @http_request_event,
           description: "Total HTTP traffic received (bytes)"
         ),
-        sum("jellyfish.traffic.egress.http.total.bytes",
+        sum("fishjam.traffic.egress.http.total.bytes",
           event_name: @http_response_event,
           description: "Total HTTP traffic sent (bytes)"
         ),
-        last_value("jellyfish.rooms",
-          description: "Number of rooms currently present in Jellyfish"
+        last_value("fishjam.rooms",
+          description: "Number of rooms currently present in Fishjam"
         ),
 
         # FIXME: Prometheus warns about using labels to store dimensions with high cardinality,
         # such as UUIDs. For more information refer here: https://prometheus.io/docs/practices/naming/#labels
-        last_value("jellyfish.room.peers",
+        last_value("fishjam.room.peers",
           tags: [:room_id],
           description: "Number of peers currently present in a given room"
         ),
-        sum("jellyfish.room.peer_time.total.seconds",
-          event_name: [:jellyfish, :room],
+        sum("fishjam.room.peer_time.total.seconds",
+          event_name: [:fishjam, :room],
           measurement: :peer_time,
           tags: [:room_id],
           description: "Total peer time accumulated for a given room (seconds)"
         ),
-        sum("jellyfish.room.duration.seconds",
-          event_name: [:jellyfish, :room],
+        sum("fishjam.room.duration.seconds",
+          event_name: [:fishjam, :room],
           measurement: :duration,
           tags: [:room_id],
           description: "Duration of a given room (seconds)"
         ),
-        sum("jellyfish.room.peer_connects.total",
-          event_name: [:jellyfish, :room],
+        sum("fishjam.room.peer_connects.total",
+          event_name: [:fishjam, :room],
           measurement: :peer_connects,
           tags: [:room_id],
           description:
             "Number of PeerConnected events emitted during the lifetime of a given room"
         ),
-        sum("jellyfish.room.peer_disconnects.total",
-          event_name: [:jellyfish, :room],
+        sum("fishjam.room.peer_disconnects.total",
+          event_name: [:fishjam, :room],
           measurement: :peer_disconnects,
           tags: [:room_id],
           description:
             "Number of PeerDisconnected events emitted during the lifetime of a given room"
         ),
-        sum("jellyfish.room.peer_crashes.total",
-          event_name: [:jellyfish, :room],
+        sum("fishjam.room.peer_crashes.total",
+          event_name: [:fishjam, :room],
           measurement: :peer_crashes,
           tags: [:room_id],
           description: "Number of PeerCrashed events emitted during the lifetime of a given room"

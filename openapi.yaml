@@ -13,16 +13,16 @@ components:
       example: disconnected
       title: PeerStatus
       type: string
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.Status
+      x-struct: Elixir.FishjamWeb.ApiSpec.Peer.Status
     HealthReportStatus:
-      description: Informs about the status of Jellyfish or a specific service
+      description: Informs about the status of Fishjam or a specific service
       enum:
         - UP
         - DOWN
       example: UP
       title: HealthReportStatus
       type: string
-      x-struct: Elixir.JellyfishWeb.ApiSpec.HealthReport.Status
+      x-struct: Elixir.FishjamWeb.ApiSpec.HealthReport.Status
     RoomDetailsResponse:
       description: Response containing room details
       properties:
@@ -32,7 +32,7 @@ components:
         - data
       title: RoomDetailsResponse
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.RoomDetailsResponse
+      x-struct: Elixir.FishjamWeb.ApiSpec.RoomDetailsResponse
     ComponentOptionsRTSP:
       description: Options specific to the RTSP component
       properties:
@@ -64,7 +64,7 @@ components:
         - sourceUri
       title: ComponentOptionsRTSP
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.RTSP.Options
+      x-struct: Elixir.FishjamWeb.ApiSpec.Component.RTSP.Options
     ComponentOptionsSIP:
       description: Options specific to the SIP component
       properties:
@@ -87,12 +87,12 @@ components:
             - password
           title: SIPCredentials
           type: object
-          x-struct: Elixir.JellyfishWeb.ApiSpec.Component.SIP.SIPCredentials
+          x-struct: Elixir.FishjamWeb.ApiSpec.Component.SIP.SIPCredentials
       required:
         - registrarCredentials
       title: ComponentOptionsSIP
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.SIP.Options
+      x-struct: Elixir.FishjamWeb.ApiSpec.Component.SIP.Options
     ComponentPropertiesHLS:
       description: Properties specific to the HLS component
       properties:
@@ -123,7 +123,7 @@ components:
         - subscribeMode
       title: ComponentPropertiesHLS
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS.Properties
+      x-struct: Elixir.FishjamWeb.ApiSpec.Component.HLS.Properties
     Room:
       description: Description of the room state
       properties:
@@ -150,7 +150,7 @@ components:
         - peers
       title: Room
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Room
+      x-struct: Elixir.FishjamWeb.ApiSpec.Room
     ComponentOptionsRecording:
       description: Options specific to the Recording component
       properties:
@@ -173,7 +173,7 @@ components:
           type: string
       title: ComponentOptionsRecording
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Recording.Options
+      x-struct: Elixir.FishjamWeb.ApiSpec.Component.Recording.Options
     Component:
       description: Describes component
       discriminator:
@@ -192,7 +192,7 @@ components:
         - $ref: '#/components/schemas/ComponentRecording'
       title: Component
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component
+      x-struct: Elixir.FishjamWeb.ApiSpec.Component
     PeerOptionsWebRTC:
       description: Options specific to the WebRTC peer
       properties:
@@ -202,9 +202,9 @@ components:
           type: boolean
       title: PeerOptionsWebRTC
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.WebRTC
+      x-struct: Elixir.FishjamWeb.ApiSpec.Peer.WebRTC
     HealthcheckResponse:
-      description: Response containing health report of Jellyfish
+      description: Response containing health report of Fishjam
       properties:
         data:
           $ref: '#/components/schemas/HealthReport'
@@ -212,7 +212,7 @@ components:
         - data
       title: HealthcheckResponse
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.HealthcheckResponse
+      x-struct: Elixir.FishjamWeb.ApiSpec.HealthcheckResponse
     ComponentSIP:
       description: Describes the SIP component
       properties:
@@ -238,7 +238,7 @@ components:
         - tracks
       title: ComponentSIP
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.SIP
+      x-struct: Elixir.FishjamWeb.ApiSpec.Component.SIP
     ComponentHLS:
       description: Describes the HLS component
       properties:
@@ -264,21 +264,21 @@ components:
         - tracks
       title: ComponentHLS
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS
+      x-struct: Elixir.FishjamWeb.ApiSpec.Component.HLS
     HlsSkip:
       description: Set to "YES" if delta manifest should be requested
       example: YES
       nullable: true
       title: HlsSkip
       type: string
-      x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Params.HlsSkip
+      x-struct: Elixir.FishjamWeb.ApiSpec.HLS.Params.HlsSkip
     PeerMetadata:
       description: Custom metadata set by the peer
       example:
-        name: JellyfishUser
+        name: FishjamUser
       nullable: true
       title: PeerMetadata
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.PeerMetadata
+      x-struct: Elixir.FishjamWeb.ApiSpec.Peer.PeerMetadata
     ComponentPropertiesFile:
       description: Properties specific to the File component
       properties:
@@ -295,7 +295,7 @@ components:
         - framerate
       title: ComponentPropertiesFile
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.File.Properties
+      x-struct: Elixir.FishjamWeb.ApiSpec.Component.File.Properties
     ComponentFile:
       description: Describes the File component
       properties:
@@ -320,7 +320,7 @@ components:
         - tracks
       title: ComponentFile
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.File
+      x-struct: Elixir.FishjamWeb.ApiSpec.Component.File
     SubscriptionConfig:
       description: Subscription config
       properties:
@@ -331,7 +331,7 @@ components:
           type: array
       title: SubscriptionConfig
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Subscription.Origins
+      x-struct: Elixir.FishjamWeb.ApiSpec.Subscription.Origins
     HlsMsn:
       description: Segment sequence number
       example: 10
@@ -339,7 +339,7 @@ components:
       nullable: true
       title: HlsMsn
       type: integer
-      x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Params.HlsMsn
+      x-struct: Elixir.FishjamWeb.ApiSpec.HLS.Params.HlsMsn
     ComponentPropertiesRecording:
       description: Properties specific to the Recording component
       properties:
@@ -353,7 +353,7 @@ components:
         - subscribeMode
       title: ComponentPropertiesRecording
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Recording.Properties
+      x-struct: Elixir.FishjamWeb.ApiSpec.Component.Recording.Properties
     DialConfig:
       description: Dial config
       properties:
@@ -362,7 +362,7 @@ components:
           type: string
       title: DialConfig
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Dial.PhoneNumber
+      x-struct: Elixir.FishjamWeb.ApiSpec.Dial.PhoneNumber
     ComponentRTSP:
       description: Describes the RTSP component
       properties:
@@ -388,7 +388,7 @@ components:
         - tracks
       title: ComponentRTSP
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.RTSP
+      x-struct: Elixir.FishjamWeb.ApiSpec.Component.RTSP
     HlsPart:
       description: Partial segment sequence number
       example: 10
@@ -396,13 +396,13 @@ components:
       nullable: true
       title: HlsPart
       type: integer
-      x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Params.HlsPart
+      x-struct: Elixir.FishjamWeb.ApiSpec.HLS.Params.HlsPart
     WebsocketURL:
       description: Websocket URL to which peer has to connect
-      example: www.jellyfish.org/socket/peer
+      example: www.fishjam.org/socket/peer
       title: WebsocketURL
       type: string
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.WebSocketUrl
+      x-struct: Elixir.FishjamWeb.ApiSpec.Peer.WebSocketUrl
     ComponentDetailsResponse:
       description: Response containing component details
       properties:
@@ -412,7 +412,7 @@ components:
         - data
       title: ComponentDetailsResponse
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.ComponentDetailsResponse
+      x-struct: Elixir.FishjamWeb.ApiSpec.ComponentDetailsResponse
     ComponentOptionsHLS:
       description: Options specific to the HLS component
       properties:
@@ -443,7 +443,7 @@ components:
           type: integer
       title: ComponentOptionsHLS
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS.Options
+      x-struct: Elixir.FishjamWeb.ApiSpec.Component.HLS.Options
     SIPCredentials:
       description: Credentials used to authorize in SIP Provider service
       properties:
@@ -463,7 +463,7 @@ components:
         - password
       title: SIPCredentials
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.SIP.SIPCredentials
+      x-struct: Elixir.FishjamWeb.ApiSpec.Component.SIP.SIPCredentials
     S3Credentials:
       description: An AWS S3 credential that will be used to send HLS stream. The stream will only be uploaded if credentials are provided
       properties:
@@ -486,7 +486,7 @@ components:
         - bucket
       title: S3Credentials
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.HLS.S3
+      x-struct: Elixir.FishjamWeb.ApiSpec.Component.HLS.S3
     RecordingListResponse:
       description: Response containing list of all recording
       properties:
@@ -498,7 +498,7 @@ components:
         - data
       title: RecordingListResponse
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.RecordingListResponse
+      x-struct: Elixir.FishjamWeb.ApiSpec.RecordingListResponse
     ComponentOptions:
       description: Component-specific options
       oneOf:
@@ -509,7 +509,7 @@ components:
         - $ref: '#/components/schemas/ComponentOptionsRecording'
       title: ComponentOptions
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Options
+      x-struct: Elixir.FishjamWeb.ApiSpec.Component.Options
     Track:
       description: Describes media track of a Peer or Component
       properties:
@@ -524,24 +524,24 @@ components:
           type: string
       title: Track
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Track
+      x-struct: Elixir.FishjamWeb.ApiSpec.Track
     HealthReportDistribution:
-      description: Informs about the status of Jellyfish distribution
+      description: Informs about the status of Fishjam distribution
       properties:
         enabled:
-          description: Whether distribution is enabled on this Jellyfish
+          description: Whether distribution is enabled on this Fishjam
           type: boolean
         nodeStatus:
           $ref: '#/components/schemas/HealthReportStatus'
         nodesInCluster:
-          description: Amount of nodes (including this Jellyfish's node) in the distribution cluster
+          description: Amount of nodes (including this Fishjam's node) in the distribution cluster
           type: integer
       required:
         - nodeStatus
         - nodesInCluster
       title: HealthReportDistribution
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.HealthReport.Distribution
+      x-struct: Elixir.FishjamWeb.ApiSpec.HealthReport.Distribution
     ComponentPropertiesRTSP:
       description: Properties specific to the RTSP component
       properties:
@@ -568,16 +568,16 @@ components:
         - pierceNat
       title: ComponentPropertiesRTSP
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.RTSP.Properties
+      x-struct: Elixir.FishjamWeb.ApiSpec.Component.RTSP.Properties
     PeerOptions:
       description: Peer-specific options
       oneOf:
         - $ref: '#/components/schemas/PeerOptionsWebRTC'
       title: PeerOptions
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.Options
+      x-struct: Elixir.FishjamWeb.ApiSpec.Peer.Options
     HealthReport:
-      description: Describes overall Jellyfish health
+      description: Describes overall Fishjam health
       properties:
         distribution:
           $ref: '#/components/schemas/HealthReportDistribution'
@@ -587,10 +587,10 @@ components:
         status:
           $ref: '#/components/schemas/HealthReportStatus'
         uptime:
-          description: Uptime of Jellyfish (in seconds)
+          description: Uptime of Fishjam (in seconds)
           type: integer
         version:
-          description: Version of Jellyfish
+          description: Version of Fishjam
           type: string
       required:
         - status
@@ -600,7 +600,7 @@ components:
         - gitCommit
       title: HealthReport
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.HealthReport
+      x-struct: Elixir.FishjamWeb.ApiSpec.HealthReport
     Peer:
       description: Describes peer status
       properties:
@@ -627,19 +627,19 @@ components:
         - metadata
       title: Peer
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer
+      x-struct: Elixir.FishjamWeb.ApiSpec.Peer
     ComponentType:
       description: Component type
       example: hls
       title: ComponentType
       type: string
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Type
+      x-struct: Elixir.FishjamWeb.ApiSpec.Component.Type
     AuthToken:
       description: Token for authorizing websocket connection
       example: 5cdac726-57a3-4ecb-b1d5-72a3d62ec242
       title: AuthToken
       type: string
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.Token
+      x-struct: Elixir.FishjamWeb.ApiSpec.Peer.Token
     RoomsListingResponse:
       description: Response containing list of all rooms
       properties:
@@ -651,7 +651,7 @@ components:
         - data
       title: RoomsListingResponse
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.RoomsListingResponse
+      x-struct: Elixir.FishjamWeb.ApiSpec.RoomsListingResponse
     ComponentPropertiesSIP:
       description: Properties specific to the SIP component
       properties:
@@ -674,12 +674,12 @@ components:
             - password
           title: SIPCredentials
           type: object
-          x-struct: Elixir.JellyfishWeb.ApiSpec.Component.SIP.SIPCredentials
+          x-struct: Elixir.FishjamWeb.ApiSpec.Component.SIP.SIPCredentials
       required:
         - registrarCredentials
       title: ComponentPropertiesSIP
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.SIP.Properties
+      x-struct: Elixir.FishjamWeb.ApiSpec.Component.SIP.Properties
     PeerDetailsResponse:
       description: Response containing peer details and their token
       properties:
@@ -699,12 +699,12 @@ components:
         - data
       title: PeerDetailsResponse
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.PeerDetailsResponse
+      x-struct: Elixir.FishjamWeb.ApiSpec.PeerDetailsResponse
     HlsResponse:
       description: Requested file
       title: HlsResponse
       type: string
-      x-struct: Elixir.JellyfishWeb.ApiSpec.HLS.Response
+      x-struct: Elixir.FishjamWeb.ApiSpec.HLS.Response
     ComponentRecording:
       description: Describes the Recording component
       properties:
@@ -730,33 +730,33 @@ components:
         - tracks
       title: ComponentRecording
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.Recording
+      x-struct: Elixir.FishjamWeb.ApiSpec.Component.Recording
     PeerType:
       description: Peer type
       example: webrtc
       title: PeerType
       type: string
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Peer.Type
+      x-struct: Elixir.FishjamWeb.ApiSpec.Peer.Type
     RoomCreateDetailsResponse:
       description: Response containing room details
       properties:
         data:
           properties:
-            jellyfish_address:
-              description: Jellyfish instance address where the room was created. This might be different than the address of Jellyfish where the request was sent only when running a cluster of Jellyfishes.
-              example: jellyfish1:5003
+            fishjam_address:
+              description: Fishjam instance address where the room was created. This might be different than the address of Fishjam where the request was sent only when running a cluster of Fishjams.
+              example: fishjam1:5003
               type: string
             room:
               $ref: '#/components/schemas/Room'
           required:
             - room
-            - jellyfish_address
+            - fishjam_address
           type: object
       required:
         - data
       title: RoomCreateDetailsResponse
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.RoomCreateDetailsResponse
+      x-struct: Elixir.FishjamWeb.ApiSpec.RoomCreateDetailsResponse
     ComponentOptionsFile:
       description: Options specific to the File component
       properties:
@@ -773,7 +773,7 @@ components:
         - filePath
       title: ComponentOptionsFile
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Component.File.Options
+      x-struct: Elixir.FishjamWeb.ApiSpec.Component.File.Options
     Error:
       description: Error message
       properties:
@@ -785,7 +785,7 @@ components:
         - errors
       title: Error
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Error
+      x-struct: Elixir.FishjamWeb.ApiSpec.Error
     RoomConfig:
       description: Room configuration
       properties:
@@ -808,7 +808,7 @@ components:
           nullable: true
           type: integer
         roomId:
-          description: Custom id used for identifying room within Jellyfish. Must be unique across all rooms. If not provided, random UUID is generated.
+          description: Custom id used for identifying room within Fishjam. Must be unique across all rooms. If not provided, random UUID is generated.
           nullable: true
           type: string
         videoCodec:
@@ -819,13 +819,13 @@ components:
           nullable: true
           type: string
         webhookUrl:
-          description: URL where Jellyfish notifications will be sent
-          example: https://backend.address.com/jellyfish-notifications-endpoint
+          description: URL where Fishjam notifications will be sent
+          example: https://backend.address.com/fishjam-notifications-endpoint
           nullable: true
           type: string
       title: RoomConfig
       type: object
-      x-struct: Elixir.JellyfishWeb.ApiSpec.Room.Config
+      x-struct: Elixir.FishjamWeb.ApiSpec.Room.Config
   securitySchemes:
     authorization:
       scheme: bearer
@@ -834,8 +834,8 @@ info:
   license:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0
-  title: Jellyfish Media Server
-  version: 0.5.0
+  title: Fishjam Media Server
+  version: 0.6.0-dev
 openapi: 3.0.0
 paths:
   /health:
@@ -858,7 +858,7 @@ paths:
           description: Unauthorized
       security:
         - authorization: []
-      summary: Describes the health of Jellyfish
+      summary: Describes the health of Fishjam
       tags:
         - health
   /hls/{room_id}/{filename}:

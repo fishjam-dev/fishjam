@@ -1,4 +1,4 @@
-Application.put_env(:jellyfish, :media_files_path, "tmp/jellyfish_resources/")
+Application.put_env(:fishjam, :media_files_path, "tmp/fishjam_resources/")
 
 Mox.defmock(ExAws.Request.HttpMock, for: ExAws.Request.HttpClient)
 

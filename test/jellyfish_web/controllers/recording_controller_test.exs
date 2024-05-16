@@ -1,12 +1,12 @@
-defmodule JellyfishWeb.RecordingControllerTest do
-  use JellyfishWeb.ConnCase, async: true
+defmodule FishjamWeb.RecordingControllerTest do
+  use FishjamWeb.ConnCase, async: true
 
   import OpenApiSpex.TestAssertions
 
-  doctest Jellyfish.Utils.PathValidation
+  doctest Fishjam.Utils.PathValidation
 
-  alias Jellyfish.Component.HLS
-  alias Jellyfish.Component.HLS.{EtsHelper, Recording}
+  alias Fishjam.Component.HLS
+  alias Fishjam.Component.HLS.{EtsHelper, Recording}
 
   @recording_id "recording_id"
   @live_stream_id "live_stream_id"
@@ -21,7 +21,7 @@ defmodule JellyfishWeb.RecordingControllerTest do
   @wrong_manifest_name "wrong_manifest_name.m3u8"
   @manifest_content <<3>>
 
-  @schema JellyfishWeb.ApiSpec.spec()
+  @schema FishjamWeb.ApiSpec.spec()
 
   setup_all do
     recording_path = Recording.directory(@recording_id)
@@ -127,7 +127,7 @@ defmodule JellyfishWeb.RecordingControllerTest do
   end
 
   defp inject_auth_headers(conn) do
-    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+    server_api_token = Application.fetch_env!(:fishjam, :server_api_token)
 
     conn
     |> put_req_header("authorization", "Bearer " <> server_api_token)

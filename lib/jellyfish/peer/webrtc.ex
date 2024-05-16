@@ -1,16 +1,16 @@
-defmodule Jellyfish.Peer.WebRTC do
+defmodule Fishjam.Peer.WebRTC do
   @moduledoc """
   Module representing WebRTC peer.
   """
 
-  @behaviour Jellyfish.Endpoint.Config
+  @behaviour Fishjam.Endpoint.Config
 
   alias Membrane.RTC.Engine.Endpoint.WebRTC
   alias Membrane.RTC.Engine.Endpoint.WebRTC.SimulcastConfig
   alias Membrane.WebRTC.Extension.{Mid, RepairedRid, Rid, TWCC, VAD}
   alias Membrane.WebRTC.Track.Encoding
 
-  alias JellyfishWeb.ApiSpec
+  alias FishjamWeb.ApiSpec
 
   @impl true
   def config(options) do

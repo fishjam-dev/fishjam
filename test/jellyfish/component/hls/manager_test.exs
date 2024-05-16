@@ -1,12 +1,12 @@
-defmodule Jellyfish.Component.HLS.ManagerTest do
+defmodule Fishjam.Component.HLS.ManagerTest do
   @moduledoc false
 
   use ExUnit.Case
 
   import Mox
 
-  alias Jellyfish.Component.HLS
-  alias Jellyfish.Component.HLS.Manager
+  alias Fishjam.Component.HLS
+  alias Fishjam.Component.HLS.Manager
 
   @files ["manifest.m3u8", "header.mp4", "segment_1.m3u8", "segment_2.m3u8"]
   @s3_credentials %{

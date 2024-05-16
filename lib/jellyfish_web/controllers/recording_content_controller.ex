@@ -1,15 +1,15 @@
-defmodule JellyfishWeb.RecordingContentController do
-  use JellyfishWeb, :controller
+defmodule FishjamWeb.RecordingContentController do
+  use FishjamWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
   require Logger
 
-  alias Jellyfish.Component.HLS.RequestHandler
-  alias JellyfishWeb.ApiSpec
+  alias Fishjam.Component.HLS.RequestHandler
+  alias FishjamWeb.ApiSpec
 
   alias Plug.Conn
 
-  action_fallback JellyfishWeb.FallbackController
+  action_fallback FishjamWeb.FallbackController
 
   @playlist_content_type "application/vnd.apple.mpegurl"
   @recording_id_spec [in: :path, description: "Recording id", type: :string]

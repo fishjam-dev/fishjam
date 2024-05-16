@@ -1,4 +1,4 @@
-defmodule JellyfishWeb.ApiSpec.Dial do
+defmodule FishjamWeb.ApiSpec.Dial do
   @moduledoc false
   require OpenApiSpex
 

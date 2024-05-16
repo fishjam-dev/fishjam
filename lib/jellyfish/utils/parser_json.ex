@@ -1,4 +1,4 @@
-defmodule Jellyfish.Utils.ParserJSON do
+defmodule Fishjam.Utils.ParserJSON do
   @moduledoc """
   A utility module for converting controller responses into JSON format.
   """

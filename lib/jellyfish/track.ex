@@ -1,4 +1,4 @@
-defmodule Jellyfish.Track do
+defmodule Fishjam.Track do
   @moduledoc """
   Represents a media track send from Component or Peer.
   """

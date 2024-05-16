@@ -1,4 +1,4 @@
-defmodule Jellyfish.Room.Config do
+defmodule Fishjam.Room.Config do
   @moduledoc """
   Room configuration
   """

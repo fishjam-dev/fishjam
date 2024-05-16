@@ -26,9 +26,9 @@ ENV MIX_ENV=prod
 # The order of the following commands is important.
 # It ensures that:
 # * any changes in the `lib` directory will only trigger
-# jellyfish compilation
+# fishjam compilation
 # * any changes in the `config` directory will
-# trigger both jellyfish and deps compilation
+# trigger both fishjam and deps compilation
 # but not deps fetching
 # * any changes in the `config/runtime.exs` won't trigger 
 # anything
@@ -51,10 +51,10 @@ RUN mix release
 
 FROM alpine:3.17 AS app
 
-ARG JF_GIT_COMMIT
-ENV JF_GIT_COMMIT=$JF_GIT_COMMIT
+ARG FJ_GIT_COMMIT
+ENV FJ_GIT_COMMIT=$FJ_GIT_COMMIT
 
-RUN addgroup -S jellyfish && adduser -S jellyfish -G jellyfish
+RUN addgroup -S fishjam && adduser -S fishjam -G fishjam
 
 # We run the whole image as root, fix permissions in
 # the docker-entrypoint.sh and then use gosu to step-down
@@ -104,33 +104,33 @@ RUN \
 
 WORKDIR /app
 
-# base path where jellyfish media files are stored
-ENV JF_RESOURCES_BASE_PATH=./jellyfish_resources
+# base path where fishjam media files are stored
+ENV FJ_RESOURCES_BASE_PATH=./fishjam_resources
 
 # override default (127, 0, 0, 1) IP by 0.0.0.0 
 # as docker doesn't allow for connections outside the
 # container when we listen to 127.0.0.1
-ENV JF_IP=0.0.0.0
-ENV JF_METRICS_IP=0.0.0.0
+ENV FJ_IP=0.0.0.0
+ENV FJ_METRICS_IP=0.0.0.0
 
-ENV JF_DIST_MIN_PORT=9000
-ENV JF_DIST_MAX_PORT=9000
+ENV FJ_DIST_MIN_PORT=9000
+ENV FJ_DIST_MAX_PORT=9000
 
-RUN mkdir ${JF_RESOURCES_BASE_PATH} && chown jellyfish:jellyfish ${JF_RESOURCES_BASE_PATH}
+RUN mkdir ${FJ_RESOURCES_BASE_PATH} && chown fishjam:fishjam ${FJ_RESOURCES_BASE_PATH}
 
 # Create directory for File Component sources
-RUN mkdir ${JF_RESOURCES_BASE_PATH}/file_component_sources \
- && chown jellyfish:jellyfish ${JF_RESOURCES_BASE_PATH}/file_component_sources
+RUN mkdir ${FJ_RESOURCES_BASE_PATH}/file_component_sources \
+ && chown fishjam:fishjam ${FJ_RESOURCES_BASE_PATH}/file_component_sources
 
-COPY --from=build /app/_build/prod/rel/jellyfish ./
+COPY --from=build /app/_build/prod/rel/fishjam ./
 
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x docker-entrypoint.sh
 
 ENV HOME=/app
 
-HEALTHCHECK CMD curl --fail -H "authorization: Bearer ${JF_SERVER_API_TOKEN}" http://localhost:${JF_PORT:-8080}/health || exit 1
+HEALTHCHECK CMD curl --fail -H "authorization: Bearer ${FJ_SERVER_API_TOKEN}" http://localhost:${FJ_PORT:-8080}/health || exit 1
 
 ENTRYPOINT ["./docker-entrypoint.sh"]
 
-CMD ["bin/jellyfish", "start"]
+CMD ["bin/fishjam", "start"]

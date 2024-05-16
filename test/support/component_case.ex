@@ -1,22 +1,22 @@
-defmodule JellyfishWeb.ComponentCase do
+defmodule FishjamWeb.ComponentCase do
   @moduledoc """
   This module defines the test case to be used by
-  Jellyfish Component tests.
+  Fishjam Component tests.
   """
 
   use ExUnit.CaseTemplate
-  use JellyfishWeb.ConnCase
+  use FishjamWeb.ConnCase
 
-  alias Jellyfish.RoomService
+  alias Fishjam.RoomService
 
   using do
     quote do
-      import JellyfishWeb.ComponentCase
+      import FishjamWeb.ComponentCase
     end
   end
 
   setup %{conn: conn} do
-    server_api_token = Application.fetch_env!(:jellyfish, :server_api_token)
+    server_api_token = Application.fetch_env!(:fishjam, :server_api_token)
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
     conn = put_req_header(conn, "accept", "application/json")
 
@@ -44,8 +44,8 @@ defmodule JellyfishWeb.ComponentCase do
 
   @spec assert_component_created(
           Plug.Conn.t(),
-          Jellyfish.Room.id(),
-          Jellyfish.Component.id(),
+          Fishjam.Room.id(),
+          Fishjam.Component.id(),
           String.t()
         ) :: map()
   def assert_component_created(conn, room_id, component_id, component_type) do
@@ -70,7 +70,7 @@ defmodule JellyfishWeb.ComponentCase do
     OpenApiSpex.TestAssertions.assert_response_schema(
       response,
       model,
-      JellyfishWeb.ApiSpec.spec()
+      FishjamWeb.ApiSpec.spec()
     )
   end
 

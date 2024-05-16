@@ -1,10 +1,10 @@
-defmodule Jellyfish.ConfigReader do
+defmodule Fishjam.ConfigReader do
   @moduledoc false
 
   require Logger
 
   def read_port_range(env) do
-    if value = System.get_env(env) do
+    if value = get_env(env) do
       with [str1, str2] <- String.split(value, "-"),
            from when from in 0..65_535 <- String.to_integer(str1),
            to when to in from..65_535 and from <= to <- String.to_integer(str2) do
@@ -21,7 +21,7 @@ defmodule Jellyfish.ConfigReader do
   end
 
   def read_ip(env) do
-    if value = System.get_env(env) do
+    if value = get_env(env) do
       value = value |> to_charlist()
 
       case :inet.parse_address(value) do
@@ -37,7 +37,7 @@ defmodule Jellyfish.ConfigReader do
   end
 
   def read_and_resolve_hostname(env) do
-    if value = System.get_env(env) do
+    if value = get_env(env) do
       # resolve_hostname will raise if address is invalid/unresolvable
       {:ok, resolved_ip} = value |> resolve_hostname() |> to_charlist() |> :inet.parse_address()
 
@@ -46,7 +46,7 @@ defmodule Jellyfish.ConfigReader do
   end
 
   def read_port(env) do
-    if value = System.get_env(env) do
+    if value = get_env(env) do
       case Integer.parse(value) do
         {port, _sufix} when port in 1..65_535 ->
           port
@@ -70,7 +70,7 @@ defmodule Jellyfish.ConfigReader do
   end
 
   def read_boolean(env, fallback \\ nil) do
-    if value = System.get_env(env) do
+    if value = get_env(env) do
       case String.downcase(value) do
         "true" ->
           true
@@ -88,18 +88,18 @@ defmodule Jellyfish.ConfigReader do
   end
 
   def read_ssl_config() do
-    ssl_key_path = System.get_env("JF_SSL_KEY_PATH")
-    ssl_cert_path = System.get_env("JF_SSL_CERT_PATH")
+    ssl_key_path = get_env("FJ_SSL_KEY_PATH")
+    ssl_cert_path = get_env("FJ_SSL_CERT_PATH")
 
     case {ssl_key_path, ssl_cert_path} do
       {nil, nil} ->
         nil
 
       {nil, ssl_cert_path} when ssl_cert_path != nil ->
-        raise "JF_SSL_CERT_PATH has been set but JF_SSL_KEY_PATH remains unset"
+        raise "FJ_SSL_CERT_PATH has been set but FJ_SSL_KEY_PATH remains unset"
 
       {ssl_key_path, nil} when ssl_key_path != nil ->
-        raise "JF_SSL_KEY_PATH has been set but JF_SSL_CERT_PATH remains unset"
+        raise "FJ_SSL_KEY_PATH has been set but FJ_SSL_CERT_PATH remains unset"
 
       other ->
         other
@@ -107,15 +107,15 @@ defmodule Jellyfish.ConfigReader do
   end
 
   def read_webrtc_config() do
-    webrtc_used? = read_boolean("JF_WEBRTC_USED")
+    webrtc_used? = read_boolean("FJ_WEBRTC_USED")
 
     if webrtc_used? != false do
       [
         webrtc_used?: true,
-        turn_ip: read_ip("JF_WEBRTC_TURN_IP") || {127, 0, 0, 1},
-        turn_listen_ip: read_and_resolve_hostname("JF_WEBRTC_TURN_LISTEN_IP") || {127, 0, 0, 1},
-        turn_port_range: read_port_range("JF_WEBRTC_TURN_PORT_RANGE") || {50_000, 59_999},
-        turn_tcp_port: read_port("JF_WEBRTC_TURN_TCP_PORT")
+        turn_ip: read_ip("FJ_WEBRTC_TURN_IP") || {127, 0, 0, 1},
+        turn_listen_ip: read_and_resolve_hostname("FJ_WEBRTC_TURN_LISTEN_IP") || {127, 0, 0, 1},
+        turn_port_range: read_port_range("FJ_WEBRTC_TURN_PORT_RANGE") || {50_000, 59_999},
+        turn_tcp_port: read_port("FJ_WEBRTC_TURN_TCP_PORT")
       ]
     else
       [
@@ -129,25 +129,25 @@ defmodule Jellyfish.ConfigReader do
   end
 
   def read_components_used() do
-    components_used = System.get_env("JF_COMPONENTS_USED") || ""
+    components_used = get_env("FJ_COMPONENTS_USED") || ""
 
     components_used
     |> String.split(" ", trim: true)
     |> Enum.map(fn type ->
-      case Jellyfish.Component.parse_type(type) do
+      case Fishjam.Component.parse_type(type) do
         {:ok, component} ->
           component
 
         {:error, :invalid_type} ->
           raise(
-            "Invalid value in JF_COMPONENTS_USED. Expected a lowercase component name, got: #{type}"
+            "Invalid value in FJ_COMPONENTS_USED. Expected a lowercase component name, got: #{type}"
           )
       end
     end)
   end
 
   def read_sip_config(sip_used?) do
-    sip_ip = System.get_env("JF_SIP_IP") || ""
+    sip_ip = get_env("FJ_SIP_IP") || ""
 
     cond do
       sip_used? != true ->
@@ -162,20 +162,20 @@ defmodule Jellyfish.ConfigReader do
 
       true ->
         raise """
-        SIP components are allowed, but incorrect IP address was provided as `JF_SIP_IP`
+        SIP components are allowed, but incorrect IP address was provided as `FJ_SIP_IP`
         """
     end
   end
 
   def read_s3_config() do
     credentials = [
-      bucket: System.get_env("JF_S3_BUCKET"),
-      region: System.get_env("JF_S3_REGION"),
-      access_key_id: System.get_env("JF_S3_ACCESS_KEY_ID"),
-      secret_access_key: System.get_env("JF_S3_SECRET_ACCESS_KEY")
+      bucket: get_env("FJ_S3_BUCKET"),
+      region: get_env("FJ_S3_REGION"),
+      access_key_id: get_env("FJ_S3_ACCESS_KEY_ID"),
+      secret_access_key: get_env("FJ_S3_SECRET_ACCESS_KEY")
     ]
 
-    path_prefix = System.get_env("JF_S3_PATH_PREFIX")
+    path_prefix = get_env("FJ_S3_PATH_PREFIX")
 
     credentials =
       cond do
@@ -190,11 +190,11 @@ defmodule Jellyfish.ConfigReader do
             credentials
             |> Enum.filter(fn {_key, val} -> val == nil end)
             |> Enum.map(fn {key, _val} ->
-              "JF_" <> (key |> Atom.to_string() |> String.upcase())
+              "FJ_" <> (key |> Atom.to_string() |> String.upcase())
             end)
 
           raise """
-          Either all S3 credentials have to be set: `JF_S3_BUCKET`, `JF_S3_REGION`, `JF_S3_ACCESS_KEY_ID`, `JF_S3_SECRET_ACCESS_KEY`, or none must be set.
+          Either all S3 credentials have to be set: `FJ_S3_BUCKET`, `FJ_S3_REGION`, `FJ_S3_ACCESS_KEY_ID`, `FJ_S3_SECRET_ACCESS_KEY`, or none must be set.
           Currently, the following required credentials are missing: #{inspect(missing_envs)}.
           """
       end
@@ -206,13 +206,13 @@ defmodule Jellyfish.ConfigReader do
   end
 
   def read_dist_config() do
-    dist_enabled? = read_boolean("JF_DIST_ENABLED")
-    dist_strategy = System.get_env("JF_DIST_STRATEGY_NAME")
-    mode_value = System.get_env("JF_DIST_MODE", "sname")
-    cookie_value = System.get_env("JF_DIST_COOKIE", "jellyfish_cookie")
+    dist_enabled? = read_boolean("FJ_DIST_ENABLED")
+    dist_strategy = get_env("FJ_DIST_STRATEGY_NAME")
+    mode_value = get_env("FJ_DIST_MODE", "sname")
+    cookie_value = get_env("FJ_DIST_COOKIE", "fishjam_cookie")
 
     {:ok, hostname} = :inet.gethostname()
-    node_name_value = System.get_env("JF_DIST_NODE_NAME", "jellyfish@#{hostname}")
+    node_name_value = get_env("FJ_DIST_NODE_NAME", "fishjam@#{hostname}")
 
     cookie = parse_cookie(cookie_value)
     mode = parse_mode(mode_value)
@@ -236,26 +236,26 @@ defmodule Jellyfish.ConfigReader do
 
       true ->
         raise """
-        JF_DIST_ENABLED has been set but unknown JF_DIST_STRATEGY was provided.
+        FJ_DIST_ENABLED has been set but unknown FJ_DIST_STRATEGY was provided.
         Availabile strategies are EPMD or DNS, provided strategy name was: "#{dist_strategy}"
         """
     end
   end
 
   def read_git_commit() do
-    System.get_env("JF_GIT_COMMIT", "dev")
+    get_env("FJ_GIT_COMMIT", "dev")
   end
 
   defp do_read_nodes_list_config(node_name_value, cookie, mode) do
-    nodes_value = System.get_env("JF_DIST_NODES", "")
+    nodes_value = get_env("FJ_DIST_NODES", "")
 
     node_name = parse_node_name(node_name_value)
     nodes = parse_nodes(nodes_value)
 
     if nodes == [] do
       Logger.warning("""
-      NODES_LIST strategy requires JF_DIST_NODES to be set
-      by at least one Jellyfish instace. This instance has JF_DIST_NODES unset.
+      NODES_LIST strategy requires FJ_DIST_NODES to be set
+      by at least one Fishjam instace. This instance has FJ_DIST_NODES unset.
       """)
     end
 
@@ -270,17 +270,17 @@ defmodule Jellyfish.ConfigReader do
   end
 
   defp do_read_dns_config(_node_name_value, _cookie, :shortnames) do
-    raise "DNS strategy requires `JF_DIST_MODE` to be `name`"
+    raise "DNS strategy requires `FJ_DIST_MODE` to be `name`"
   end
 
   defp do_read_dns_config(node_name_value, cookie, mode) do
     # Verify the node name is formatted correctly
     _node_name = parse_node_name(node_name_value)
 
-    query_value = System.get_env("JF_DIST_QUERY")
+    query_value = get_env("FJ_DIST_QUERY")
 
     unless query_value do
-      raise "JF_DIST_QUERY is required by DNS strategy"
+      raise "FJ_DIST_QUERY is required by DNS strategy"
     end
 
     [node_basename, hostname | []] = String.split(node_name_value, "@")
@@ -309,7 +309,7 @@ defmodule Jellyfish.ConfigReader do
         String.to_atom(node_name)
 
       _other ->
-        raise "JF_DIST_NODE_NAME has to be in form of <nodename>@<hostname>. Got: #{node_name}"
+        raise "FJ_DIST_NODE_NAME has to be in form of <nodename>@<hostname>. Got: #{node_name}"
     end
   end
 
@@ -322,20 +322,20 @@ defmodule Jellyfish.ConfigReader do
   end
 
   defp parse_polling_interval() do
-    env_value = System.get_env("JF_DIST_POLLING_INTERVAL", "5000")
+    env_value = get_env("FJ_DIST_POLLING_INTERVAL", "5000")
 
     case Integer.parse(env_value) do
       {polling_interval, ""} when polling_interval > 0 ->
         polling_interval
 
       _other ->
-        raise "`JF_DIST_POLLING_INTERVAL` must be a positivie integer. Got: #{env_value}"
+        raise "`FJ_DIST_POLLING_INTERVAL` must be a positivie integer. Got: #{env_value}"
     end
   end
 
   defp parse_mode("name"), do: :longnames
   defp parse_mode("sname"), do: :shortnames
-  defp parse_mode(other), do: raise("Invalid JF_DIST_MODE. Expected sname or name, got: #{other}")
+  defp parse_mode(other), do: raise("Invalid FJ_DIST_MODE. Expected sname or name, got: #{other}")
 
   defp ip_address?(hostname) do
     case :inet.parse_address(String.to_charlist(hostname)) do
@@ -362,5 +362,23 @@ defmodule Jellyfish.ConfigReader do
         Couldn't resolve #{hostname}, reason: #{reason}.
         """
     end
+  end
+
+  defp get_env("FJ_" <> rest = name, default \\ nil) do
+    fj_name = name
+    jf_name = "JF_" <> rest
+
+    fj_var = System.get_env(fj_name)
+    jf_var = System.get_env(jf_name)
+
+    if jf_var != nil do
+      Logger.warning("""
+      It looks like you have still an env variable prefixed with JF_ set.
+      Support for those variables will be removed in version 0.8.0.
+      Variable: #{jf_name}
+      """)
+    end
+
+    fj_var || jf_var || default
   end
 end

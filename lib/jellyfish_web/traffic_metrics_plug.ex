@@ -1,4 +1,4 @@
-defmodule JellyfishWeb.TrafficMetricsPlug do
+defmodule FishjamWeb.TrafficMetricsPlug do
   @moduledoc false
 
   import Plug.Conn
@@ -24,13 +24,13 @@ defmodule JellyfishWeb.TrafficMetricsPlug do
 
   def call(conn, _opts) do
     :telemetry.execute(
-      [:jellyfish_web, :request],
+      [:fishjam_web, :request],
       %{bytes: request_size(conn)}
     )
 
     register_before_send(conn, fn conn ->
       :telemetry.execute(
-        [:jellyfish_web, :response],
+        [:fishjam_web, :response],
         %{bytes: response_size(conn)}
       )
 

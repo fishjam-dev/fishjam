@@ -1,17 +1,17 @@
-defmodule JellyfishWeb.RoomJSON do
+defmodule FishjamWeb.RoomJSON do
   @moduledoc false
 
-  alias JellyfishWeb.ComponentJSON
-  alias JellyfishWeb.PeerJSON
+  alias FishjamWeb.ComponentJSON
+  alias FishjamWeb.PeerJSON
 
-  alias Jellyfish.Utils.ParserJSON
+  alias Fishjam.Utils.ParserJSON
 
   def index(%{rooms: rooms}) do
     %{data: rooms |> Enum.map(&data/1)}
   end
 
-  def show(%{room: room, jellyfish_address: jellyfish_address}) do
-    %{data: data(room, jellyfish_address)}
+  def show(%{room: room, fishjam_address: fishjam_address}) do
+    %{data: data(room, fishjam_address)}
   end
 
   def show(%{room: room}) do
@@ -20,8 +20,8 @@ defmodule JellyfishWeb.RoomJSON do
 
   def data(room), do: room_data(room)
 
-  def data(room, jellyfish_address) do
-    %{room: room_data(room), jellyfish_address: jellyfish_address}
+  def data(room, fishjam_address) do
+    %{room: room_data(room), fishjam_address: fishjam_address}
   end
 
   defp room_data(room) do

@@ -1,15 +1,15 @@
-defmodule JellyfishWeb.PeerController do
-  use JellyfishWeb, :controller
+defmodule FishjamWeb.PeerController do
+  use FishjamWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Jellyfish.Peer
-  alias Jellyfish.Room
-  alias Jellyfish.RoomService
-  alias JellyfishWeb.ApiSpec
-  alias JellyfishWeb.PeerToken
+  alias Fishjam.Peer
+  alias Fishjam.Room
+  alias Fishjam.RoomService
+  alias FishjamWeb.ApiSpec
+  alias FishjamWeb.PeerToken
   alias OpenApiSpex.{Response, Schema}
 
-  action_fallback JellyfishWeb.FallbackController
+  action_fallback FishjamWeb.FallbackController
 
   tags [:room]
 
@@ -77,7 +77,7 @@ defmodule JellyfishWeb.PeerController do
       assigns = [
         peer: peer,
         token: PeerToken.generate(%{peer_id: peer.id, room_id: room_id}),
-        peer_websocket_url: Jellyfish.peer_websocket_address()
+        peer_websocket_url: Fishjam.peer_websocket_address()
       ]
 
       conn
@@ -95,7 +95,7 @@ defmodule JellyfishWeb.PeerController do
         {:error, :bad_request, "Invalid peer type"}
 
       {:error, {:peer_disabled_globally, type}} ->
-        {:error, :bad_request, "Peers of type #{type} are disabled on this Jellyfish"}
+        {:error, :bad_request, "Peers of type #{type} are disabled on this Fishjam"}
 
       {:error, {:reached_peers_limit, type}} ->
         {:error, :service_unavailable, "Reached #{type} peers limit in room #{room_id}"}

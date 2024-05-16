@@ -1,6 +1,6 @@
-defmodule Jellyfish do
+defmodule Fishjam do
   @moduledoc """
-  Jellyfish keeps the contexts that define your domain
+  Fishjam keeps the contexts that define your domain
   and business logic.
 
   Contexts are also responsible for managing your data, regardless
@@ -13,11 +13,11 @@ defmodule Jellyfish do
 
   @spec address() :: binary()
   def address() do
-    Application.fetch_env!(:jellyfish, :address)
+    Application.fetch_env!(:fishjam, :address)
   end
 
   @spec peer_websocket_address() :: binary()
   def peer_websocket_address() do
-    Application.fetch_env!(:jellyfish, :address) <> "/socket/peer/websocket"
+    Application.fetch_env!(:fishjam, :address) <> "/socket/peer/websocket"
   end
 end

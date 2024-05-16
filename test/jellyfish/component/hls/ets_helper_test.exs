@@ -1,9 +1,9 @@
-defmodule Jellyfish.Component.HLS.EtsHelperTest do
+defmodule Fishjam.Component.HLS.EtsHelperTest do
   @moduledoc false
 
   use ExUnit.Case, async: false
 
-  alias Jellyfish.Component.HLS.EtsHelper
+  alias Fishjam.Component.HLS.EtsHelper
 
   @partial <<1, 2, 3>>
   @partial_name "partial_1"

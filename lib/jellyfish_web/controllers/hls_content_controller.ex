@@ -1,16 +1,16 @@
-defmodule JellyfishWeb.HLSContentController do
-  use JellyfishWeb, :controller
+defmodule FishjamWeb.HLSContentController do
+  use FishjamWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
   require Logger
 
-  alias Jellyfish.Component.HLS.RequestHandler
-  alias JellyfishWeb.ApiSpec
-  alias JellyfishWeb.ApiSpec.HLS.{Params, Response}
+  alias Fishjam.Component.HLS.RequestHandler
+  alias FishjamWeb.ApiSpec
+  alias FishjamWeb.ApiSpec.HLS.{Params, Response}
 
   alias Plug.Conn
 
-  action_fallback JellyfishWeb.FallbackController
+  action_fallback FishjamWeb.FallbackController
 
   tags [:hls]
 

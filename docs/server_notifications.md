@@ -1,6 +1,6 @@
 # Server notifications
 
-Client SDKs communicate with Jellyfish using so called Control Messages (CM), which are messages exchanged using Websockets.
+Client SDKs communicate with Fishjam using so called Control Messages (CM), which are messages exchanged using Websockets.
 
 A few examples when Control Messages are sent:
 * `join` - sent when peer joins WebRTC room
@@ -15,7 +15,7 @@ In general we have two major options here:
 
 ### JSON
 
-JSON has been used for a long time in [membrane_rtc_engine](https://github.com/jellyfish-dev/membrane_rtc_engine).
+JSON has been used for a long time in [membrane_rtc_engine](https://github.com/fishjam-dev/membrane_rtc_engine).
 
 This solution has several drawbacks:
 * there is no versioning so it’s hard to track which version of CM is used on the server side and which one on the client side
@@ -136,7 +136,7 @@ AsyncAPI and JsonSchema would be quite difficult to implement since we would hav
 
 GraphQL in general could be useful in our case, however there are a couple issues which overall would probably cause us headaches:
 * No code generator for Elixir - we would have to implement schema using `Absinthe.Schema`. From Elixir code we could generate GraphQL Schema and use it for generating code in other languages.
-* No single code generator for all languages. This means we would have to find and integrate a separate code generator for each SDK. This may not be a problem for 2-3 SDK but would also likely discourage external developers from using Jellyfish.
+* No single code generator for all languages. This means we would have to find and integrate a separate code generator for each SDK. This may not be a problem for 2-3 SDK but would also likely discourage external developers from using Fishjam.
 * Issues with maintaining signalling connection - so far we haven't found simple or non-hacky way of monitoring whether the client-server websocket connection is alive. Absinthe doesn't allow for access to the tcp socket.
 
 Overall it feels like our requirements are very specific in the context of GraphQL use-case and we would be be using it on the edge of what it was designed for in the first place. 

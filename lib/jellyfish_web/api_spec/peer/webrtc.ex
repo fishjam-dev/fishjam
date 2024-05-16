@@ -1,4 +1,4 @@
-defmodule JellyfishWeb.ApiSpec.Peer.WebRTC do
+defmodule FishjamWeb.ApiSpec.Peer.WebRTC do
   @moduledoc false
 
   require OpenApiSpex

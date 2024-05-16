@@ -1,18 +1,18 @@
-defmodule JellyfishWeb.ServerSocket do
+defmodule FishjamWeb.ServerSocket do
   @moduledoc false
   @behaviour Phoenix.Socket.Transport
   require Logger
 
-  alias Jellyfish.ServerMessage
+  alias Fishjam.ServerMessage
 
-  alias Jellyfish.ServerMessage.{
+  alias Fishjam.ServerMessage.{
     Authenticated,
     AuthRequest,
     SubscribeRequest,
     SubscribeResponse
   }
 
-  alias Jellyfish.Event
+  alias Fishjam.Event
 
   @heartbeat_interval 30_000
 
@@ -42,7 +42,7 @@ defmodule JellyfishWeb.ServerSocket do
   def handle_in({encoded_message, [opcode: :binary]}, %{authenticated?: false} = state) do
     case ServerMessage.decode(encoded_message) do
       %ServerMessage{content: {:auth_request, %AuthRequest{token: token}}} ->
-        if token == Application.fetch_env!(:jellyfish, :server_api_token) do
+        if token == Application.fetch_env!(:fishjam, :server_api_token) do
           Process.send_after(self(), :send_ping, @heartbeat_interval)
 
           encoded_message =

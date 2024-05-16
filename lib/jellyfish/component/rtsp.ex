@@ -1,14 +1,14 @@
-defmodule Jellyfish.Component.RTSP do
+defmodule Fishjam.Component.RTSP do
   @moduledoc """
   Module representing the RTSP component.
   """
 
-  @behaviour Jellyfish.Endpoint.Config
-  use Jellyfish.Component
+  @behaviour Fishjam.Endpoint.Config
+  use Fishjam.Component
 
   alias Membrane.RTC.Engine.Endpoint.RTSP
 
-  alias JellyfishWeb.ApiSpec.Component.RTSP.Options
+  alias FishjamWeb.ApiSpec.Component.RTSP.Options
 
   @type properties :: %{
           sourceUri: String.t(),

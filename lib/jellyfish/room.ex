@@ -1,4 +1,4 @@
-defmodule Jellyfish.Room do
+defmodule Fishjam.Room do
   @moduledoc """
   Module representing room.
   """
@@ -6,14 +6,14 @@ defmodule Jellyfish.Room do
   use Bunch.Access
   use GenServer
 
-  import Jellyfish.Room.State
+  import Fishjam.Room.State
 
   require Logger
 
-  alias Jellyfish.Component
-  alias Jellyfish.Component.{HLS, Recording, SIP}
-  alias Jellyfish.Peer
-  alias Jellyfish.Room.{Config, State}
+  alias Fishjam.Component
+  alias Fishjam.Component.{HLS, Recording, SIP}
+  alias Fishjam.Peer
+  alias Fishjam.Room.{Config, State}
 
   alias Membrane.RTC.Engine
   alias Membrane.RTC.Engine.Endpoint
@@ -32,7 +32,7 @@ defmodule Jellyfish.Room do
   @type id :: String.t()
   @type t :: State.t()
 
-  def registry_id(room_id), do: {:via, Registry, {Jellyfish.RoomRegistry, room_id}}
+  def registry_id(room_id), do: {:via, Registry, {Fishjam.RoomRegistry, room_id}}
 
   @spec start(Config.t()) :: {:ok, pid(), id()}
   def start(%Config{room_id: id} = config) do

@@ -1,13 +1,13 @@
-defmodule JellyfishWeb.RoomController do
-  use JellyfishWeb, :controller
+defmodule FishjamWeb.RoomController do
+  use FishjamWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Jellyfish.Room
-  alias Jellyfish.RoomService
-  alias JellyfishWeb.ApiSpec
+  alias Fishjam.Room
+  alias Fishjam.RoomService
+  alias FishjamWeb.ApiSpec
   alias OpenApiSpex.Response
 
-  action_fallback JellyfishWeb.FallbackController
+  action_fallback FishjamWeb.FallbackController
 
   tags [:room]
 
@@ -75,11 +75,11 @@ defmodule JellyfishWeb.RoomController do
 
   def create(conn, params) do
     with {:ok, config} <- Room.Config.from_params(params),
-         {:ok, room, jellyfish_address} <- RoomService.create_room(config) do
+         {:ok, room, fishjam_address} <- RoomService.create_room(config) do
       conn
       |> put_resp_content_type("application/json")
       |> put_status(:created)
-      |> render("show.json", room: room, jellyfish_address: jellyfish_address)
+      |> render("show.json", room: room, fishjam_address: fishjam_address)
     else
       {:error, :invalid_max_peers} ->
         max_peers = Map.get(params, "maxPeers")

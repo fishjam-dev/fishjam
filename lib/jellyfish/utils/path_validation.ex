@@ -1,4 +1,4 @@
-defmodule Jellyfish.Utils.PathValidation do
+defmodule Fishjam.Utils.PathValidation do
   @moduledoc """
   A helper module for validating file and directory paths.
   This module is mainly used to validate filenames and paths embedded in requests.
@@ -14,10 +14,10 @@ defmodule Jellyfish.Utils.PathValidation do
 
   ## Example:
 
-      iex> Jellyfish.Utils.PathValidation.inside_directory?("relative/path/to/file", "relative/path")
+      iex> Fishjam.Utils.PathValidation.inside_directory?("relative/path/to/file", "relative/path")
       true
 
-      iex> Jellyfish.Utils.PathValidation.inside_directory?("/absolute/path/to/file", "relative/path")
+      iex> Fishjam.Utils.PathValidation.inside_directory?("/absolute/path/to/file", "relative/path")
       false
 
   """

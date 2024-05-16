@@ -1,10 +1,10 @@
-defmodule Jellyfish.MixProject do
+defmodule Fishjam.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :jellyfish,
-      version: "0.5.0",
+      app: :fishjam,
+      version: "0.6.0-dev",
       elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -13,8 +13,7 @@ defmodule Jellyfish.MixProject do
       dialyzer: dialyzer(),
 
       # hex
-      description: "Jellyfish media server",
-      package: package(),
+      description: "Fishjam media server",
 
       # test coverage
       test_coverage: [tool: ExCoveralls],
@@ -35,7 +34,7 @@ defmodule Jellyfish.MixProject do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {Jellyfish.Application, []},
+      mod: {Fishjam.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end
@@ -132,17 +131,6 @@ defmodule Jellyfish.MixProject do
     end
   end
 
-  defp package do
-    [
-      maintainers: ["Membrane Team"],
-      licenses: ["Apache-2.0"],
-      links: %{
-        "GitHub" => "https://github.com/jellyfish-dev/jellyfish",
-        "Membrane Framework Homepage" => "https://membrane.stream"
-      }
-    ]
-  end
-
   defp generate_api_spec(_args) do
     output_filename = "openapi.yaml"
     generated_filename = "openapi-gen.yaml"
@@ -156,7 +144,7 @@ defmodule Jellyfish.MixProject do
           "openapi.spec.yaml",
           "--start-app=false",
           "--spec",
-          "JellyfishWeb.ApiSpec",
+          "FishjamWeb.ApiSpec",
           generated_filename
         ],
         into: IO.stream()

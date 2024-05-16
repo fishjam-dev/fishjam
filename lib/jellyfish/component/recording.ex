@@ -1,19 +1,19 @@
-defmodule Jellyfish.Component.Recording do
+defmodule Fishjam.Component.Recording do
   @moduledoc """
   Module representing the Recording component.
   """
 
-  @behaviour Jellyfish.Endpoint.Config
-  use Jellyfish.Component
+  @behaviour Fishjam.Endpoint.Config
+  use Fishjam.Component
 
-  alias JellyfishWeb.ApiSpec.Component.Recording.Options
+  alias FishjamWeb.ApiSpec.Component.Recording.Options
   alias Membrane.RTC.Engine.Endpoint.Recording
 
   @type properties :: %{path_prefix: Path.t()}
 
   @impl true
   def config(%{engine_pid: engine} = options) do
-    sink_config = Application.fetch_env!(:jellyfish, :s3_config)
+    sink_config = Application.fetch_env!(:fishjam, :s3_config)
 
     with {:ok, serialized_opts} <- serialize_options(options, Options.schema()),
          result_opts <- parse_subscribe_mode(serialized_opts),
@@ -52,7 +52,7 @@ defmodule Jellyfish.Component.Recording do
   end
 
   def get_base_path(),
-    do: :jellyfish |> Application.fetch_env!(:media_files_path) |> Path.join("raw_recordings")
+    do: :fishjam |> Application.fetch_env!(:media_files_path) |> Path.join("raw_recordings")
 
   defp parse_subscribe_mode(opts) do
     Map.update!(opts, :subscribe_mode, &String.to_atom/1)

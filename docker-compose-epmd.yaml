@@ -1,11 +1,11 @@
 version: "3"
 
-x-jellyfish-template: &jellyfish-template
+x-fishjam-template: &fishjam-template
   build: .
-  environment: &jellyfish-environment
-    JF_SERVER_API_TOKEN: "development"
-    JF_DIST_ENABLED: "true"
-    JF_DIST_NODES: "app@app1 app@app2"
+  environment: &fishjam-environment
+    FJ_SERVER_API_TOKEN: "development"
+    FJ_DIST_ENABLED: "true"
+    FJ_DIST_NODES: "app@app1 app@app2"
   restart: on-failure
 
 services:
@@ -27,21 +27,21 @@ services:
       - app2
 
   app1:
-    <<: *jellyfish-template
+    <<: *fishjam-template
     environment:
-      <<: *jellyfish-environment
-      JF_HOST: "localhost:4001"
-      JF_PORT: 4001
-      JF_DIST_NODE_NAME: app@app1
+      <<: *fishjam-environment
+      FJ_HOST: "localhost:4001"
+      FJ_PORT: 4001
+      FJ_DIST_NODE_NAME: app@app1
     ports:
       - 4001:4001
 
   app2:
-    <<: *jellyfish-template
+    <<: *fishjam-template
     environment:
-      <<: *jellyfish-environment
-      JF_HOST: "localhost:4002"
-      JF_PORT: 4002
-      JF_DIST_NODE_NAME: app@app2
+      <<: *fishjam-environment
+      FJ_HOST: "localhost:4002"
+      FJ_PORT: 4002
+      FJ_DIST_NODE_NAME: app@app2
     ports:
       - 4002:4002

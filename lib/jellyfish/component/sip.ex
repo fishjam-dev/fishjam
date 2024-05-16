@@ -1,15 +1,15 @@
-defmodule Jellyfish.Component.SIP do
+defmodule Fishjam.Component.SIP do
   @moduledoc """
   Module representing the SIP component.
   """
 
-  @behaviour Jellyfish.Endpoint.Config
-  use Jellyfish.Component
+  @behaviour Fishjam.Endpoint.Config
+  use Fishjam.Component
 
   alias Membrane.RTC.Engine.Endpoint.SIP
   alias Membrane.RTC.Engine.Endpoint.SIP.RegistrarCredentials
 
-  alias JellyfishWeb.ApiSpec.Component.SIP.Options
+  alias FishjamWeb.ApiSpec.Component.SIP.Options
 
   @type properties :: %{
           registrar_credentials: %{
@@ -21,7 +21,7 @@ defmodule Jellyfish.Component.SIP do
 
   @impl true
   def config(%{engine_pid: engine} = options) do
-    external_ip = Application.fetch_env!(:jellyfish, :sip_config)[:sip_external_ip]
+    external_ip = Application.fetch_env!(:fishjam, :sip_config)[:sip_external_ip]
 
     with {:ok, serialized_opts} <- serialize_options(options, Options.schema()) do
       endpoint_spec = %SIP{

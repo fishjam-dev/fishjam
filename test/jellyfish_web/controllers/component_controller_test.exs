@@ -1,17 +1,17 @@
-defmodule JellyfishWeb.ComponentControllerTest do
-  use JellyfishWeb.ConnCase
-  use JellyfishWeb.ComponentCase
+defmodule FishjamWeb.ComponentControllerTest do
+  use FishjamWeb.ConnCase
+  use FishjamWeb.ComponentCase
 
   @source_uri "rtsp://placeholder-19inrifjbsjb.it:12345/afwefae"
 
   setup_all do
-    Application.put_env(:jellyfish, :components_used, [
-      Jellyfish.Component.RTSP,
-      Jellyfish.Component.HLS
+    Application.put_env(:fishjam, :components_used, [
+      Fishjam.Component.RTSP,
+      Fishjam.Component.HLS
     ])
 
     on_exit(fn ->
-      Application.put_env(:jellyfish, :components_used, [])
+      Application.put_env(:fishjam, :components_used, [])
     end)
   end
 
@@ -32,19 +32,19 @@ defmodule JellyfishWeb.ComponentControllerTest do
     end
 
     test "renders errors when component isn't allowed globally", %{conn: conn, room_id: room_id} do
-      Application.put_env(:jellyfish, :components_used, [])
+      Application.put_env(:fishjam, :components_used, [])
 
       on_exit(fn ->
-        Application.put_env(:jellyfish, :components_used, [
-          Jellyfish.Component.RTSP,
-          Jellyfish.Component.HLS
+        Application.put_env(:fishjam, :components_used, [
+          Fishjam.Component.RTSP,
+          Fishjam.Component.HLS
         ])
       end)
 
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
 
       response = model_response(conn, :bad_request, "Error")
-      assert response["errors"] == "Components of type hls are disabled on this Jellyfish"
+      assert response["errors"] == "Components of type hls are disabled on this Fishjam"
     end
   end
 

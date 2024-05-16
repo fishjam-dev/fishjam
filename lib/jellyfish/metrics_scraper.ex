@@ -1,9 +1,9 @@
-defmodule Jellyfish.MetricsScraper do
+defmodule Fishjam.MetricsScraper do
   @moduledoc false
 
   use GenServer, restart: :temporary
 
-  alias Jellyfish.Event
+  alias Fishjam.Event
   alias Membrane.TelemetryMetrics.Reporter
 
   @metrics_to_derive [
@@ -41,7 +41,7 @@ defmodule Jellyfish.MetricsScraper do
 
   @impl true
   def handle_info(:scrape, state) do
-    report = Reporter.scrape(JellyfishMetricsReporter)
+    report = Reporter.scrape(FishjamMetricsReporter)
 
     report
     |> prepare_report(state)

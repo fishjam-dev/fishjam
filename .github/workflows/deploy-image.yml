@@ -51,4 +51,4 @@ jobs:
           tags: ${{  steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: JF_GIT_COMMIT=${{ env.sha_short }}
+          build-args: FJ_GIT_COMMIT=${{ env.sha_short }}
