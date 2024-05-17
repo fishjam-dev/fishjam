@@ -20,7 +20,7 @@ ip = ConfigReader.read_ip("FJ_IP") || Application.fetch_env!(:fishjam, :ip)
 port = ConfigReader.read_port("FJ_PORT") || Application.fetch_env!(:fishjam, :port)
 
 host =
-  case System.get_env("FJ_HOST") do
+  case ConfigReader.read_string("FJ_HOST") do
     nil -> "#{:inet.ntoa(ip)}:#{port}"
     other -> other
   end
@@ -31,7 +31,7 @@ sip_used? = Fishjam.Component.SIP in components_used
 config :fishjam,
   jwt_max_age: 24 * 3600,
   media_files_path:
-    System.get_env("FJ_RESOURCES_BASE_PATH", "fishjam_resources") |> Path.expand(),
+    ConfigReader.read_string("FJ_RESOURCES_BASE_PATH", "fishjam_resources") |> Path.expand(),
   address: host,
   metrics_ip: ConfigReader.read_ip("FJ_METRICS_IP") || {127, 0, 0, 1},
   metrics_port: ConfigReader.read_port("FJ_METRICS_PORT") || 9568,
@@ -42,7 +42,7 @@ config :fishjam,
   s3_config: ConfigReader.read_s3_config(),
   git_commit: ConfigReader.read_git_commit()
 
-case System.get_env("FJ_SERVER_API_TOKEN") do
+case ConfigReader.read_string("FJ_SERVER_API_TOKEN") do
   nil when prod? == true ->
     raise """
     environment variable FJ_SERVER_API_TOKEN is missing.
@@ -61,7 +61,7 @@ external_uri = URI.parse("//" <> host)
 
 config :fishjam, FishjamWeb.Endpoint,
   secret_key_base:
-    System.get_env("FJ_SECRET_KEY_BASE") || Base.encode64(:crypto.strong_rand_bytes(48)),
+    ConfigReader.read_string("FJ_SECRET_KEY_BASE") || Base.encode64(:crypto.strong_rand_bytes(48)),
   url: [
     host: external_uri.host,
     port: external_uri.port || 443,
