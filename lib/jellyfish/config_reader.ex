@@ -253,11 +253,13 @@ defmodule Fishjam.ConfigReader do
   def read_logger_level() do
     log_level = System.get_env("FJ_LOG_LEVEL", "info")
 
-    if log_level in ["info", "debug", "warning", "error"] do
+    log_levels_string = ["info", "debug", "warning", "error"]
+
+    if log_level in log_levels_string do
       String.to_atom(log_level)
     else
       Logger.warning("""
-      Provided unknown level of logs: #{log_level}. Valid values are info, debug, warning and error.
+      Provided unknown level of logs: #{log_level}. Valid values are #{Enum.join(log_levels_string, ", ")}.
       Set value to default - info.
       """)
 
