@@ -1,18 +1,19 @@
 ---
-status: decided
-date: 17-05-2024
-deciders: Kamil Kołodziej
+status: accepted
+date: 2024-05-17
+deciders: Fishjam team
 ---
 # Start using ADRs to document any major (non)architectural decisions for the project
 
 ## Context and Problem Statement
 
-Right now, we don't have any place where we keep decisions about the project.
-We would like to keep a log of any major decisions made which affect the application.
+- Right now, we don't write down architecture decisions in any standardized format.
+- We would like to keep a log of any major decisions made which affect the application.
 
 ## Decision Drivers
 
 * One place to keep all the decisions made
+* One format to follow
 * Easy to read and write
 * Close to the code
 
