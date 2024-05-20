@@ -250,6 +250,23 @@ defmodule Fishjam.ConfigReader do
     get_env(string, default)
   end
 
+  def read_logger_level() do
+    log_level = get_env("FJ_LOG_LEVEL", "info")
+
+    log_levels_string = ["info", "debug", "warning", "error"]
+
+    if log_level in log_levels_string do
+      String.to_existing_atom(log_level)
+    else
+      Logger.warning("""
+      Provided unknown level of logs: #{log_level}. Valid values are #{Enum.join(log_levels_string, ", ")}.
+      Set value to default - info.
+      """)
+
+      :info
+    end
+  end
+
   defp do_read_nodes_list_config(node_name_value, cookie, mode) do
     nodes_value = get_env("FJ_DIST_NODES", "")
 

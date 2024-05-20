@@ -13,6 +13,8 @@ config :ex_dtls, impl: :nif
 structured_logging? = ConfigReader.read_boolean("FJ_STRUCTURED_LOGGING") || false
 config :logger, backends: [if(structured_logging?, do: LoggerJSON, else: :console)]
 
+config :logger, level: ConfigReader.read_logger_level()
+
 prod? = config_env() == :prod
 
 ip = ConfigReader.read_ip("FJ_IP") || Application.fetch_env!(:fishjam, :ip)
