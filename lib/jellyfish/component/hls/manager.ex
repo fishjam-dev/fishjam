@@ -76,11 +76,7 @@ defmodule Fishjam.Component.HLS.Manager do
 
     broadcast_notification(result, room_id)
 
-    if is_tuple(result) do
-      Logger.info("Finished uploading to s3 with result: #{inspect(result)}, room: #{room_id}")
-    else
-      Logger.info("Finished uploading to s3 with result: #{result}, room: #{room_id}")
-    end
+    Logger.info("Finished uploading to s3 with result: #{inspect(result)}, room: #{room_id}")
   end
 
   defp upload_file_to_s3(content, s3_path, opts, config, credentials) do
