@@ -54,7 +54,7 @@ defmodule Fishjam.MixProject do
       {:plug_cowboy, "~> 2.5"},
       {:elixir_uuid, "~> 1.2"},
       {:cors_plug, "~> 3.0"},
-      {:open_api_spex, "~> 3.16"},
+      {:open_api_spex, "~> 3.19"},
       {:ymlr, "~> 3.0"},
       {:bunch, "~> 1.6"},
       {:logger_json, "~> 5.1"},

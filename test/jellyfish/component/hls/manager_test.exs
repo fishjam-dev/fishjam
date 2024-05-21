@@ -43,6 +43,7 @@ defmodule Fishjam.Component.HLS.ManagerTest do
     {:ok, manager} = Manager.start(room_id, pid, hls_dir, options)
     ref = Process.monitor(manager)
 
+    assert Process.alive?(pid)
     MockManager.kill_mock_engine(pid)
 
     assert_receive {:DOWN, ^ref, :process, ^manager, :normal}

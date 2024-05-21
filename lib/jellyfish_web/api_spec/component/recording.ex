@@ -44,12 +44,7 @@ defmodule FishjamWeb.ApiSpec.Component.Recording do
           default: nil,
           nullable: true
         },
-        credentials: %Schema{
-          type: :object,
-          description: "Credentials to AWS S3 bucket.",
-          oneOf: [S3],
-          nullable: true
-        },
+        credentials: S3.schema(),
         subscribeMode: %Schema{
           type: :string,
           description:
