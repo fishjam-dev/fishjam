@@ -47,8 +47,8 @@ defmodule FishjamWeb.ApiSpec.Component.HLS do
     @moduledoc false
 
     require OpenApiSpex
-    alias OpenApiSpex.Schema
     alias FishjamWeb.ApiSpec.Component.HLS.S3
+    alias OpenApiSpex.Schema
 
     OpenApiSpex.schema(%{
       title: "ComponentOptionsHLS",
