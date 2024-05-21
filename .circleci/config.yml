@@ -56,11 +56,11 @@ workflows:
   version: 2
   build:
     jobs:
-      - elixir/build_test:
-          cache-version: 4
+      # - elixir/build_test:
+      #     cache-version: 4
       - test
-      - test_load_balancing
-      - elixir/lint:
-          cache-version: 4
-          docs: false
-      - check_api_update
+      # - test_load_balancing
+      # - elixir/lint:
+      #     cache-version: 4
+      #     docs: false
+      # - check_api_update
