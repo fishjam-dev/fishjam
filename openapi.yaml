@@ -835,7 +835,7 @@ info:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0
   title: Fishjam Media Server
-  version: 0.6.1
+  version: 0.6.2
 openapi: 3.0.0
 paths:
   /health:
