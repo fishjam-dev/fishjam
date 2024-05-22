@@ -58,8 +58,7 @@ defmodule Fishjam.RoomService do
 
   @spec create_room(Room.Config.t()) :: {:ok, Room.t(), String.t()} | {:error, atom()}
   def create_room(config) do
-    {node_resources, failed_nodes} =
-      :rpc.multicall(Fishjam.RoomService, :get_resource_usage, [])
+    {node_resources, failed_nodes} = :rpc.multicall(Fishjam.RoomService, :get_resource_usage, [])
 
     if Enum.count(failed_nodes) > 0 do
       Logger.warning(
