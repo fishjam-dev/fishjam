@@ -32,6 +32,23 @@ defmodule Fishjam.Component.HLS.ManagerTest do
   setup :verify_on_exit!
   setup :set_mox_from_context
 
+  defmodule Adapter do
+    @moduledoc false
+
+    @behaviour ExAws.Config.AuthCache.AuthConfigAdapter
+
+    @config %{
+      access_key_id: "AKIAIOSFODNN7EXAMPLE",
+      secret_access_key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+      region: "us-east-1"
+    }
+
+    @impl true
+    def adapt_auth_config(_config, _profile, _expiration) do
+      @config
+    end
+  end
+
   test "Spawn manager without credentials", %{
     room_id: room_id,
     hls_dir: hls_dir,
@@ -51,16 +68,18 @@ defmodule Fishjam.Component.HLS.ManagerTest do
   end
 
   test "Spawn manager with credentials", %{room_id: room_id, hls_dir: hls_dir, options: options} do
-    MockManager.http_mock_expect(4, status_code: 200)
+    Application.put_env(:ex_aws, :awscli_auth_adapter, Adapter)
+
+    MockManager.http_mock_stub(status_code: 200)
     pid = MockManager.start_mock_engine()
 
     {:ok, manager} = Manager.start(room_id, pid, hls_dir, %{options | s3: @s3_credentials})
     ref = Process.monitor(manager)
-
     MockManager.kill_mock_engine(pid)
 
     assert_receive {:DOWN, ^ref, :process, ^manager, :normal}
     assert length(File.ls!(hls_dir)) == 4
+    Application.delete_env(:ex_aws, :awscli_auth_adapter)
   end
 
   test "Spawn manager with persistent false", %{

@@ -24,9 +24,10 @@ defmodule FishjamWeb.Integration.PeerSocketTest do
 
     alias FishjamWeb.PeerSocket
 
-    socket "/socket/peer", PeerSocket,
+    socket("/socket/peer", PeerSocket,
       websocket: true,
       longpoll: false
+    )
   end
 
   setup_all do
@@ -178,13 +179,26 @@ defmodule FishjamWeb.Integration.PeerSocketTest do
       "fishjam_rooms" => "1"
     }
 
-    Process.sleep(1_000)
+    assert Enum.reduce_while(0..15, false, fn _num, _acc ->
+             Process.sleep(100)
+             metrics_to_compare = get_peers_room_metrics()
 
-    metrics_to_compare = get_peers_room_metrics()
+             all_metrics_present? =
+               Enum.all?(metrics_after_one_tick, fn {k, _v} ->
+                 is_map_key(metrics_to_compare, k)
+               end)
 
-    for {k, v} <- metrics_after_one_tick do
-      assert Map.fetch!(metrics_to_compare, k) == v
-    end
+             if all_metrics_present? do
+               for {k, v} <- metrics_after_one_tick do
+                 assert Map.fetch!(metrics_to_compare, k) == v
+               end
+
+               {:halt, true}
+             else
+               {:cont, false}
+             end
+           end),
+           "Metrics isn't present after 1,5 second"
 
     conn = delete(conn, ~p"/room/#{room_id}/")
     response(conn, :no_content)

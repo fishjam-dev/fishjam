@@ -385,9 +385,10 @@ defmodule FishjamWeb.Integration.ServerNotificationTest do
                            type: :TRACK_TYPE_VIDEO,
                            metadata: "\"myvideo\""
                          } = track_info
-                     } = track_added
+                     } = track_added,
+                     1_000
 
-      assert_receive {:webhook_notification, ^track_added}, 1000
+      assert_receive {:webhook_notification, ^track_added}
 
       GenServer.stop(peer_ws)
 
