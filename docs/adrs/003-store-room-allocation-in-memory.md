@@ -3,7 +3,7 @@ status: accepted
 date: 2024-05-21
 deciders: Kamil Kołodziej, Jakub Pisarek, Radosław Szuma
 consulted: Michał Śledź
-informed: Fishjam Team
+informed: Fishjam Team, Cloud Team
 ---
 # Route incoming traffic within the cluster without a need to provide room_id
 
@@ -24,7 +24,7 @@ We would like to hide information about internal architecture of the cluster and
 
 * Store room allocation across the cluster using in-memory ETS
 * Store room allocation across the cluster using database
-* Leave it as it is and update the SKDs
+* Leave it as it is and update the SDKs
 
 ## Decision Outcome
 
