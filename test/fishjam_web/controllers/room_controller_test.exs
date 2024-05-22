@@ -124,7 +124,7 @@ defmodule FishjamWeb.RoomControllerTest do
 
     test "renders room when data is valid, custom room_id + max_peers and peerless_purge_timeout not present",
          %{conn: conn} do
-      room_id = UUID.uuid4()
+      room_id = UUID.uuid4() <> "_ABCD-123_xyz"
 
       conn = post(conn, ~p"/room", roomId: room_id)
       json_response(conn, :created)
