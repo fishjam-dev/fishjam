@@ -87,7 +87,12 @@ defmodule Fishjam.Application do
     # When running FJ not in a cluster and using
     # mix release, it starts in the distributed mode
     # automatically
-    unless Node.alive?() do
+    if Node.alive?() do
+      Logger.info("""
+      Not starting Fishjam node as it is already alive. \
+      Node name: #{Node.self()}.\
+      """)
+    else
       case Node.start(dist_config[:node_name], dist_config[:mode]) do
         {:ok, _} ->
           :ok

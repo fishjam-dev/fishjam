@@ -4,7 +4,7 @@ defmodule Fishjam.MixProject do
   def project do
     [
       app: :fishjam,
-      version: "0.6.2",
+      version: "0.6.3",
       elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -22,9 +22,7 @@ defmodule Fishjam.MixProject do
         "coveralls.detail": :test,
         "coveralls.post": :test,
         "coveralls.html": :test,
-        "coveralls.json": :test,
-        "test.cluster": :test,
-        "test.cluster.ci": :test
+        "coveralls.json": :test
       ]
     ]
   end
@@ -40,7 +38,7 @@ defmodule Fishjam.MixProject do
   end
 
   # Specifies which paths to compile per environment.
-  defp elixirc_paths(env) when env in [:test, :ci], do: ["lib", "test/support"]
+  defp elixirc_paths(env) when env in [:test, :test_cluster], do: ["lib", "test/support"]
   defp elixirc_paths(_env), do: ["lib"]
 
   defp deps do
@@ -94,12 +92,9 @@ defmodule Fishjam.MixProject do
       {:klotho, "~> 0.1.0"},
 
       # Test deps
-      {:websockex, "~> 0.4.3", only: [:test, :ci], runtime: false},
+      {:websockex, "~> 0.4.3", only: [:test, :test_cluster], runtime: false},
       {:excoveralls, "~> 0.15.0", only: :test, runtime: false},
-      {:mox, "~> 1.0", only: [:test, :ci]},
-
-      # Load balancing tests
-      {:divo, "~> 1.3.1", only: [:test, :ci]}
+      {:mox, "~> 1.0", only: [:test, :test_cluster]}
     ]
   end
 
@@ -108,11 +103,10 @@ defmodule Fishjam.MixProject do
       setup: ["deps.get"],
       "api.spec": &generate_api_spec/1,
       test: ["test --exclude cluster"],
-      "test.cluster": ["test --only cluster"],
-      "test.cluster.ci": [
+      "test.cluster.epmd": [
         "cmd docker compose -f docker-compose-epmd.yaml up test; docker compose -f docker-compose-epmd.yaml down"
       ],
-      "test.cluster.dns.ci": [
+      "test.cluster.dns": [
         "cmd docker compose -f docker-compose-dns.yaml up test; docker compose -f docker-compose-dns.yaml down"
       ]
     ]
