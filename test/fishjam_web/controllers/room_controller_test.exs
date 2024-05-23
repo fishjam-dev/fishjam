@@ -466,6 +466,7 @@ defmodule FishjamWeb.RoomControllerTest do
 
       :erlang.trace(Process.whereis(RoomService), true, [:receive])
 
+      assert Process.alive?(engine_pid)
       assert true = Process.exit(room_pid, :error)
 
       assert_receive({:trace, _pid, :receive, {:DOWN, _ref, :process, ^room_pid, :error}})

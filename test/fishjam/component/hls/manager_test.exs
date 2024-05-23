@@ -54,7 +54,8 @@ defmodule Fishjam.Component.HLS.ManagerTest do
     hls_dir: hls_dir,
     options: options
   } do
-    MockManager.http_mock_expect(0, status_code: 200)
+    Application.put_env(:ex_aws, :awscli_auth_adapter, Adapter)
+
     pid = MockManager.start_mock_engine()
 
     {:ok, manager} = Manager.start(room_id, pid, hls_dir, options)
