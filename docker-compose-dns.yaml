@@ -18,7 +18,7 @@ services:
       - |
         cd app/ 
         mix deps.get 
-        MIX_ENV=ci mix test --only cluster
+        MIX_ENV=test_cluster mix test --only cluster
     volumes:
       - .:/app
       - /app/_build

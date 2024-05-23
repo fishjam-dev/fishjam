@@ -37,10 +37,6 @@ config :logger,
     [application: :membrane_rtc_engine_sip, level_lower_than: :warning]
   ]
 
-config :fishjam,
-  divo: "docker-compose.yaml",
-  divo_wait: [dwell: 1_500, max_tries: 50]
-
 config :ex_aws,
   http_client: Fishjam.Component.HLS.HTTPoison,
   normalize_path: false

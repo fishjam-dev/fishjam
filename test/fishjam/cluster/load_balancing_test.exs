@@ -1,10 +1,10 @@
 defmodule Fishjam.Cluster.LoadBalancingTest do
   @moduledoc false
 
+  # These tests can only be run with `mix test.cluster.epmd` or `mix test.cluster.dns`.
+
   use ExUnit.Case, async: false
 
-  @node1 "localhost:4001"
-  @node2 "localhost:4002"
   @token Application.compile_env(:fishjam, :server_api_token)
   @headers [Authorization: "Bearer #{@token}", Accept: "Application/json; Charset=utf-8"]
 
@@ -17,14 +17,11 @@ defmodule Fishjam.Cluster.LoadBalancingTest do
 
   @tag timeout: @max_test_duration
   test "spawning tasks on a cluster" do
-    [node1, node2] =
-      if Mix.env() == :ci do
-        # On CI we don't use Divo, because we don't want to run Docker in Docker
-        ["app1:4001", "app2:4002"]
-      else
-        Divo.Suite.start(services: [:app1, :app2]) |> on_exit()
-        [@node1, @node2]
-      end
+    if Mix.env() != :test_cluster do
+      raise "Load balancing tests can only be run with MIX_ENV=test_cluster"
+    end
+
+    [node1, node2] = ["app1:4001", "app2:4002"]
 
     response_body1 = add_room(node1)
 
@@ -70,16 +67,12 @@ defmodule Fishjam.Cluster.LoadBalancingTest do
     body
   end
 
-  if Mix.env() == :test do
-    defp map_fishjam_address(fishjam), do: fishjam
-  else
-    defp map_fishjam_address(fishjam) do
-      %{
-        @node1 => "app1:4001",
-        @node2 => "app2:4002"
-      }
-      |> Map.get(fishjam)
-    end
+  defp map_fishjam_address(fishjam) do
+    %{
+      "localhost:4001" => "app1:4001",
+      "localhost:4002" => "app2:4002"
+    }
+    |> Map.get(fishjam)
   end
 
   defp get_fishjam_address(response_body) do
