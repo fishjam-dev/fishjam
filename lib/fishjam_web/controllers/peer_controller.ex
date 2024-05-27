@@ -10,13 +10,13 @@ defmodule FishjamWeb.PeerController do
   alias FishjamWeb.PeerToken
   alias OpenApiSpex.{Response, Schema}
 
-  action_fallback(FishjamWeb.FallbackController)
+  action_fallback FishjamWeb.FallbackController
 
-  tags([:room])
+  tags [:room]
 
   security(%{"authorization" => []})
 
-  operation(:create,
+  operation :create,
     operation_id: "add_peer",
     summary: "Create peer",
     parameters: [
@@ -43,9 +43,8 @@ defmodule FishjamWeb.PeerController do
       service_unavailable: ApiSpec.error("Peer limit has been reached"),
       unauthorized: ApiSpec.error("Unauthorized")
     ]
-  )
 
-  operation(:delete,
+  operation :delete,
     operation_id: "delete_peer",
     summary: "Delete peer",
     parameters: [
@@ -65,7 +64,6 @@ defmodule FishjamWeb.PeerController do
       not_found: ApiSpec.error("Room ID or Peer ID references a resource that doesn't exist"),
       unauthorized: ApiSpec.error("Unauthorized")
     ]
-  )
 
   def create(conn, %{"room_id" => room_id} = params) do
     Logger.debug("Start adding peer in room: #{room_id}")

@@ -4,8 +4,7 @@ defmodule FishjamWeb.FallbackController do
   require Logger
 
   def call(conn, {:error, status, reason}) do
-    # TODO FIXME
-    Logger.warning("Generic error handler status: #{status}, reason: #{reason}")
+    Logger.debug("Generic error handler status: #{status}, reason: #{reason}")
 
     conn
     |> put_resp_content_type("application/json")

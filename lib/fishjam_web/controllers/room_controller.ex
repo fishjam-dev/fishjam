@@ -8,22 +8,21 @@ defmodule FishjamWeb.RoomController do
   alias FishjamWeb.ApiSpec
   alias OpenApiSpex.Response
 
-  action_fallback(FishjamWeb.FallbackController)
+  action_fallback FishjamWeb.FallbackController
 
-  tags([:room])
+  tags [:room]
 
   security(%{"authorization" => []})
 
-  operation(:index,
+  operation :index,
     operation_id: "get_all_rooms",
     summary: "Show information about all rooms",
     responses: [
       ok: ApiSpec.data("Success", ApiSpec.RoomsListingResponse),
       unauthorized: ApiSpec.error("Unauthorized")
     ]
-  )
 
-  operation(:create,
+  operation :create,
     operation_id: "create_room",
     summary: "Creates a room",
     request_body: {"Room configuration", "application/json", ApiSpec.Room.Config},
@@ -32,9 +31,8 @@ defmodule FishjamWeb.RoomController do
       bad_request: ApiSpec.error("Invalid request structure"),
       unauthorized: ApiSpec.error("Unauthorized")
     ]
-  )
 
-  operation(:show,
+  operation :show,
     operation_id: "get_room",
     summary: "Shows information about the room",
     parameters: [
@@ -49,9 +47,8 @@ defmodule FishjamWeb.RoomController do
       not_found: ApiSpec.error("Room doesn't exist"),
       unauthorized: ApiSpec.error("Unauthorized")
     ]
-  )
 
-  operation(:delete,
+  operation :delete,
     operation_id: "delete_room",
     summary: "Delete the room",
     parameters: [
@@ -66,7 +63,6 @@ defmodule FishjamWeb.RoomController do
       not_found: ApiSpec.error("Room doesn't exist"),
       unauthorized: ApiSpec.error("Unauthorized")
     ]
-  )
 
   def index(conn, _params) do
     rooms =

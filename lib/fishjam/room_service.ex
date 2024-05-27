@@ -135,6 +135,8 @@ defmodule Fishjam.RoomService do
       {:reply, {:ok, room, Fishjam.address()}, state}
     else
       {:error, :room_already_exists} = error ->
+        Logger.warning("Room creation failed, because it already exists")
+
         {:reply, error, state}
 
       reason ->
