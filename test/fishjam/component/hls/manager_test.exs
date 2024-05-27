@@ -16,7 +16,9 @@ defmodule Fishjam.Component.HLS.ManagerTest do
     bucket: "bucket"
   }
 
-  setup do
+  setup %{test: name} do
+    IO.inspect("\n\nTEST_STARTED: #{name}")
+
     room_id = UUID.uuid4()
     hls_dir = HLS.output_dir(room_id, persistent: false)
     options = %{s3: nil, persistent: true}
@@ -24,7 +26,11 @@ defmodule Fishjam.Component.HLS.ManagerTest do
     File.mkdir_p!(hls_dir)
     for filename <- @files, do: :ok = hls_dir |> Path.join(filename) |> File.touch!()
 
-    on_exit(fn -> File.rm_rf!(hls_dir) end)
+    on_exit(fn ->
+      File.rm_rf!(hls_dir)
+
+      IO.inspect("TEST_ENDED: #{name}\n\n")
+    end)
 
     {:ok, %{room_id: room_id, hls_dir: hls_dir, options: options}}
   end
@@ -32,29 +38,12 @@ defmodule Fishjam.Component.HLS.ManagerTest do
   setup :verify_on_exit!
   setup :set_mox_from_context
 
-  defmodule Adapter do
-    @moduledoc false
-
-    @behaviour ExAws.Config.AuthCache.AuthConfigAdapter
-
-    @config %{
-      access_key_id: "AKIAIOSFODNN7EXAMPLE",
-      secret_access_key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
-      region: "us-east-1"
-    }
-
-    @impl true
-    def adapt_auth_config(_config, _profile, _expiration) do
-      @config
-    end
-  end
-
   test "Spawn manager without credentials", %{
     room_id: room_id,
     hls_dir: hls_dir,
     options: options
   } do
-    Application.put_env(:ex_aws, :awscli_auth_adapter, Adapter)
+    Application.put_env(:ex_aws, :awscli_auth_adapter, Fishjam.Adapter)
 
     pid = MockManager.start_mock_engine()
 
@@ -66,10 +55,11 @@ defmodule Fishjam.Component.HLS.ManagerTest do
 
     assert_receive {:DOWN, ^ref, :process, ^manager, :normal}
     assert length(File.ls!(hls_dir)) == 4
+    Application.delete_env(:ex_aws, :awscli_auth_adapter)
   end
 
   test "Spawn manager with credentials", %{room_id: room_id, hls_dir: hls_dir, options: options} do
-    Application.put_env(:ex_aws, :awscli_auth_adapter, Adapter)
+    Application.put_env(:ex_aws, :awscli_auth_adapter, Fishjam.Adapter)
 
     MockManager.http_mock_stub(status_code: 200)
     pid = MockManager.start_mock_engine()

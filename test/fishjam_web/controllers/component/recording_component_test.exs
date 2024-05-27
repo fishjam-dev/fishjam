@@ -18,8 +18,18 @@ defmodule FishjamWeb.Component.RecordingComponentTest do
   setup_all do
     Application.put_env(:fishjam, :components_used, [Fishjam.Component.Recording])
 
+    mock_http_request()
+
     on_exit(fn ->
       Application.put_env(:fishjam, :components_used, [])
+    end)
+  end
+
+  setup %{test: name} do
+    IO.inspect("\n\nTEST_STARTED: #{name}")
+
+    on_exit(fn ->
+      IO.inspect("TEST_ENDED: #{name}\n\n")
     end)
   end
 
@@ -28,8 +38,6 @@ defmodule FishjamWeb.Component.RecordingComponentTest do
     setup :set_mox_from_context
 
     test "renders component with required options", %{conn: conn, room_id: room_id} do
-      mock_http_request()
-
       conn =
         post(conn, ~p"/room/#{room_id}/component",
           type: "recording",
@@ -58,6 +66,8 @@ defmodule FishjamWeb.Component.RecordingComponentTest do
 
       assert model_response(conn, :bad_request, "Error")["errors"] ==
                "Reached recording components limit in room #{room_id}"
+
+      assert_component_removed(conn, room_id, id)
     end
 
     setup :set_mox_from_context
@@ -66,7 +76,6 @@ defmodule FishjamWeb.Component.RecordingComponentTest do
       conn: conn,
       room_id: room_id
     } do
-      mock_http_request()
       put_s3_envs(path_prefix: nil, credentials: @s3_credentials)
 
       conn =
@@ -91,6 +100,7 @@ defmodule FishjamWeb.Component.RecordingComponentTest do
       assert String.starts_with?(path_prefix, prefix)
 
       assert_component_created(conn, room_id, id, "recording")
+      assert_component_removed(conn, room_id, id)
 
       clean_s3_envs()
     end
@@ -100,7 +110,6 @@ defmodule FishjamWeb.Component.RecordingComponentTest do
            conn: conn,
            room_id: room_id
          } do
-      mock_http_request()
       put_s3_envs(path_prefix: nil, credentials: @s3_credentials)
 
       conn =
@@ -125,9 +134,7 @@ defmodule FishjamWeb.Component.RecordingComponentTest do
       assert String.starts_with?(path_prefix1, prefix)
 
       assert_component_created(conn, room_id, id, "recording")
-
-      conn = delete(conn, ~p"/room/#{room_id}/component/#{id}")
-      assert response(conn, :no_content)
+      assert_component_removed(conn, room_id, id)
 
       # Second recording
       conn =
@@ -153,7 +160,7 @@ defmodule FishjamWeb.Component.RecordingComponentTest do
       assert String.starts_with?(path_prefix2, prefix)
 
       assert path_prefix1 != path_prefix2
-
+      assert_component_removed(conn, room_id, id)
       clean_s3_envs()
     end
 
@@ -161,7 +168,6 @@ defmodule FishjamWeb.Component.RecordingComponentTest do
       conn: conn,
       room_id: room_id
     } do
-      mock_http_request()
       put_s3_envs(path_prefix: @path_prefix, credentials: nil)
 
       conn =
@@ -185,7 +191,7 @@ defmodule FishjamWeb.Component.RecordingComponentTest do
       assert String.starts_with?(path_prefix, @path_prefix)
 
       assert_component_created(conn, room_id, id, "recording")
-
+      assert_component_removed(conn, room_id, id)
       clean_s3_envs()
     end
 
@@ -255,11 +261,7 @@ defmodule FishjamWeb.Component.RecordingComponentTest do
   end
 
   defp mock_http_request() do
-    expect(ExAws.Request.HttpMock, :request, 4, fn _method,
-                                                   _url,
-                                                   _req_body,
-                                                   _headers,
-                                                   _http_opts ->
+    stub(ExAws.Request.HttpMock, :request, fn _method, _url, _req_body, _headers, _http_opts ->
       {:ok, %{status_code: 200, headers: %{}}}
     end)
   end
@@ -288,5 +290,12 @@ defmodule FishjamWeb.Component.RecordingComponentTest do
       end)
 
     path_prefix
+  end
+
+  defp assert_component_removed(conn, room_id, component_id) do
+    conn = delete(conn, ~p"/room/#{room_id}/component/#{component_id}")
+    assert response(conn, :no_content)
+
+    conn
   end
 end

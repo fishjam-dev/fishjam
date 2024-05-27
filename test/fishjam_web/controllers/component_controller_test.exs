@@ -15,6 +15,14 @@ defmodule FishjamWeb.ComponentControllerTest do
     end)
   end
 
+  setup %{test: name} do
+    IO.inspect("\n\nTEST_STARTED: #{name}")
+
+    on_exit(fn ->
+      IO.inspect("TEST_ENDED: #{name}\n\n")
+    end)
+  end
+
   describe "create component" do
     test "renders errors when component type is invalid", %{conn: conn, room_id: room_id} do
       conn = post(conn, ~p"/room/#{room_id}/component", type: "invalid_type")

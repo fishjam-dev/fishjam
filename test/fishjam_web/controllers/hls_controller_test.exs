@@ -41,6 +41,14 @@ defmodule FishjamWeb.HLSControllerTest do
     on_exit(fn -> :file.del_dir_r(output_path) end)
   end
 
+  setup %{test: name} do
+    IO.inspect("\n\nTEST_STARTED: #{name}")
+
+    on_exit(fn ->
+      IO.inspect("TEST_ENDED: #{name}\n\n")
+    end)
+  end
+
   defp custom_assert_error(conn) do
     conn
     |> json_response(:not_found)

@@ -117,7 +117,8 @@ defmodule FishjamWeb.Integration.ServerNotificationTest do
     :ok
   end
 
-  setup(%{conn: conn}) do
+  setup(%{conn: conn, test: name}) do
+    IO.inspect("\n\nTEST_STARTED: #{name}")
     :ok = PubSub.subscribe(@pubsub, "webhook")
 
     server_api_token = Application.fetch_env!(:fishjam, :server_api_token)
@@ -137,6 +138,8 @@ defmodule FishjamWeb.Integration.ServerNotificationTest do
       end)
 
       :ok = PubSub.unsubscribe(@pubsub, "webhook")
+
+      IO.inspect("TEST_ENDED: #{name}\n\n")
     end)
 
     %{conn: conn}

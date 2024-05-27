@@ -41,6 +41,14 @@ defmodule FishjamWeb.RecordingControllerTest do
     end)
   end
 
+  setup %{test: name} do
+    IO.inspect("\n\nTEST_STARTED: #{name}")
+
+    on_exit(fn ->
+      IO.inspect("TEST_ENDED: #{name}\n\n")
+    end)
+  end
+
   test "request manifest", %{conn: conn} do
     conn = get(conn, ~p"/recording/#{@recording_id}/#{@manifest_name}")
     assert @manifest_content == response(conn, 200)

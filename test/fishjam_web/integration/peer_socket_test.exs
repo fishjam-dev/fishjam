@@ -35,7 +35,17 @@ defmodule FishjamWeb.Integration.PeerSocketTest do
     :ok
   end
 
-  setup %{conn: conn} do
+  setup %{test: name} do
+    IO.inspect("\n\nTEST_STARTED: #{name}")
+
+    on_exit(fn ->
+      IO.inspect("TEST_ENDED: #{name}\n\n")
+    end)
+  end
+
+  setup %{conn: conn, test: name} do
+    IO.inspect("\n\nTEST_STARTED: #{name}")
+
     server_api_token = Application.fetch_env!(:fishjam, :server_api_token)
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
@@ -49,6 +59,7 @@ defmodule FishjamWeb.Integration.PeerSocketTest do
 
     on_exit(fn ->
       RoomService.delete_room(room_id)
+      IO.inspect("TEST_ENDED: #{name}\n\n")
     end)
 
     {:ok,

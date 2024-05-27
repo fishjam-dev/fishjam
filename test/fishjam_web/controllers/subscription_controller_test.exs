@@ -29,7 +29,9 @@ defmodule FishjamWeb.SubscriptionControllerTest do
     end)
   end
 
-  setup %{conn: conn} do
+  setup %{conn: conn, test: name} do
+    IO.inspect("\n\nTEST_STARTED: #{name}")
+
     server_api_token = Application.fetch_env!(:fishjam, :server_api_token)
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
     conn = put_req_header(conn, "accept", "application/json")
@@ -40,6 +42,8 @@ defmodule FishjamWeb.SubscriptionControllerTest do
     on_exit(fn ->
       conn = delete(conn, ~p"/room/#{id}")
       assert response(conn, :no_content)
+
+      IO.inspect("TEST_ENDED: #{name}\n\n")
     end)
 
     {:ok, %{conn: conn, room_id: id}}
@@ -137,10 +141,12 @@ defmodule FishjamWeb.SubscriptionControllerTest do
 
   describe "recording endpoint tests" do
     test "returns error when subscribe mode is :auto", %{conn: conn, room_id: room_id} do
+      MockManager.http_mock_stub(status_code: 200)
+
       conn =
         post(conn, ~p"/room/#{room_id}/component",
           type: "recording",
-          options: %{credentials: Enum.into(@s3_credentials, %{}), subscribeMode: "auto"}
+          options: %{credentials: @s3_credentials, subscribeMode: "auto"}
         )
 
       assert %{
@@ -159,10 +165,12 @@ defmodule FishjamWeb.SubscriptionControllerTest do
     end
 
     test "return success when subscribe mode is :manual", %{conn: conn, room_id: room_id} do
+      MockManager.http_mock_stub(status_code: 200)
+
       conn =
         post(conn, ~p"/room/#{room_id}/component",
           type: "recording",
-          options: %{credentials: Enum.into(@s3_credentials, %{}), subscribeMode: "manual"}
+          options: %{credentials: @s3_credentials, subscribeMode: "manual"}
         )
 
       assert %{

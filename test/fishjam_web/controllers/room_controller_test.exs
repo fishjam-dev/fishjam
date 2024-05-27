@@ -42,14 +42,19 @@ defmodule FishjamWeb.RoomControllerTest do
     :ok
   end
 
-  setup %{conn: conn} do
+  setup %{conn: conn, test: name} do
+    IO.inspect("\n\nTEST_STARTED: #{name}")
+
     server_api_token = Application.fetch_env!(:fishjam, :server_api_token)
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
     Klotho.Mock.reset()
     Klotho.Mock.freeze()
 
-    on_exit(fn -> delete_all_rooms() end)
+    on_exit(fn ->
+      delete_all_rooms()
+      IO.inspect("TEST_ENDED: #{name}\n\n")
+    end)
 
     [conn: conn]
   end
@@ -253,17 +258,18 @@ defmodule FishjamWeb.RoomControllerTest do
     end
 
     test "does not happen if peers rejoined quickly", %{conn: conn, id: id} do
+      timeout = 250
       conn = post(conn, ~p"/room/#{id}/peer", type: "webrtc")
       assert %{"token" => token} = json_response(conn, :created)["data"]
 
       ws = connect_peer(token)
 
-      Klotho.Mock.warp_by(@purge_timeout_ms + 10)
+      Klotho.Mock.warp_by(@purge_timeout_ms + timeout)
       conn = get(conn, ~p"/room/#{id}")
       assert response(conn, :ok)
 
       GenServer.stop(ws)
-      Process.sleep(10)
+      Process.sleep(timeout)
       conn = get(conn, ~p"/room/#{id}")
 
       assert %{"status" => "disconnected"} =
@@ -274,7 +280,7 @@ defmodule FishjamWeb.RoomControllerTest do
       assert response(conn, :ok)
 
       connect_peer(token)
-      Klotho.Mock.warp_by(@purge_timeout_ms + 10)
+      Klotho.Mock.warp_by(@purge_timeout_ms + timeout)
       conn = get(conn, ~p"/room/#{id}")
       assert response(conn, :ok)
     end

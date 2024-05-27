@@ -147,7 +147,7 @@ defmodule FishjamWeb.PeerSocket do
 
   @impl true
   def terminate(reason, _state) do
-    Logger.info("Peer socket terminates with reason #{reason}")
+    Logger.info("Peer socket terminates with reason #{inspect(reason)}")
     :ok
   end
 

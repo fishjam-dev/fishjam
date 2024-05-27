@@ -80,6 +80,8 @@ defmodule Fishjam.Component.HLS.Manager do
   end
 
   defp upload_file_to_s3(content, s3_path, opts, config, credentials) do
+    IO.inspect("Upload FUCKING HLS", label: :WTF)
+
     result =
       credentials.bucket
       |> ExAws.S3.put_object(s3_path, content, opts)
