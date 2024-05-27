@@ -67,13 +67,17 @@ defmodule Fishjam.MixProject do
 
       # Membrane deps
       {:membrane_core, "1.1.0-rc0", override: true},
-      {:membrane_rtc_engine, "~> 0.22.0"},
-      {:membrane_rtc_engine_webrtc, "~> 0.8.0"},
+      {:membrane_rtc_engine,
+       github: "fishjam-dev/membrane_rtc_engine", sparse: "engine", override: true},
+      {:membrane_rtc_engine_webrtc,
+       github: "fishjam-dev/membrane_rtc_engine", sparse: "webrtc", override: true},
       {:membrane_rtc_engine_hls, "~> 0.7.0"},
       {:membrane_rtc_engine_recording, "~> 0.1.0"},
-      {:membrane_rtc_engine_rtsp, "~> 0.7.0"},
+      {:membrane_rtc_engine_rtsp,
+       github: "fishjam-dev/membrane_rtc_engine", sparse: "rtsp", override: true},
       {:membrane_rtc_engine_file, "~> 0.5.0"},
-      {:membrane_rtc_engine_sip, "~> 0.3.0"},
+      {:membrane_rtc_engine_sip,
+       github: "fishjam-dev/membrane_rtc_engine", sparse: "sip", override: true},
       {:membrane_telemetry_metrics, "~> 0.1.0"},
 
       # HLS endpoints deps
