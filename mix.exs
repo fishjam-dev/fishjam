@@ -68,16 +68,17 @@ defmodule Fishjam.MixProject do
       # Membrane deps
       {:membrane_core, "1.1.0-rc0", override: true},
       {:membrane_rtc_engine,
-       github: "fishjam-dev/membrane_rtc_engine", sparse: "engine", override: true},
+       github: "fishjam-dev/membrane_rtc_engine", sparse: "engine", ref: "f97ca4e", override: true},
       {:membrane_rtc_engine_webrtc,
-       github: "fishjam-dev/membrane_rtc_engine", sparse: "webrtc", override: true},
+       github: "fishjam-dev/membrane_rtc_engine", sparse: "webrtc", ref: "f97ca4e", override: true},
       {:membrane_rtc_engine_hls, "~> 0.7.0"},
-      {:membrane_rtc_engine_recording, "~> 0.1.0"},
+      {:membrane_rtc_engine_recording,
+       github: "fishjam-dev/membrane_rtc_engine", sparse: "recording", ref: "f97ca4e"},
       {:membrane_rtc_engine_rtsp,
-       github: "fishjam-dev/membrane_rtc_engine", sparse: "rtsp", override: true},
+       github: "fishjam-dev/membrane_rtc_engine", sparse: "rtsp", ref: "f97ca4e", override: true},
       {:membrane_rtc_engine_file, "~> 0.5.0"},
       {:membrane_rtc_engine_sip,
-       github: "fishjam-dev/membrane_rtc_engine", sparse: "sip", override: true},
+       github: "fishjam-dev/membrane_rtc_engine", sparse: "sip", ref: "f97ca4e", override: true},
       {:membrane_telemetry_metrics, "~> 0.1.0"},
 
       # HLS endpoints deps
