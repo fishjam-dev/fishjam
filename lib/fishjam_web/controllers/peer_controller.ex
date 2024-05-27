@@ -109,8 +109,8 @@ defmodule FishjamWeb.PeerController do
         Logger.warning(msg)
         {:error, :bad_request, msg}
 
-      {:error, :reached_peers_limit} ->
-        msg = "Reached peer limit in room #{room_id}"
+      {:error, {:reached_peers_limit, type}} ->
+        msg = "Reached #{type} peers limit in room #{room_id}"
         Logger.warning(msg)
         {:error, :service_unavailable, msg}
     end
