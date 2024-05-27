@@ -79,8 +79,7 @@ defmodule FishjamWeb.RoomController do
   end
 
   def create(conn, params) do
-    # TODO: change to debug
-    Logger.info("Start creating room")
+    Logger.debug("Start creating room")
 
     with {:ok, config} <- Room.Config.from_params(params),
          {:ok, room, fishjam_address} <- RoomService.create_room(config) do

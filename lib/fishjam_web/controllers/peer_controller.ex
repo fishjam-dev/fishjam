@@ -68,8 +68,7 @@ defmodule FishjamWeb.PeerController do
   )
 
   def create(conn, %{"room_id" => room_id} = params) do
-    # TODO: change to debug
-    Logger.info("Start adding peer in room: #{room_id}")
+    Logger.debug("Start adding peer in room: #{room_id}")
 
     # the room may crash between fetching its
     # pid and adding a new peer to it
