@@ -118,7 +118,7 @@ defmodule Fishjam.RoomService do
 
   @impl true
   def handle_call({:create_room, config}, _from, state) do
-    Logger.info("Start create room")
+    Logger.debug("Start create room")
 
     with {:ok, room_pid, room_id} <- Room.start(config) do
       room = Room.get_state(room_id)
@@ -141,7 +141,7 @@ defmodule Fishjam.RoomService do
 
       reason ->
         Logger.warning("Room creation failed with reason: #{inspect(reason)}")
-        {:reply, :room_doesnt_start, state}
+        {:reply, {:error, :room_doesnt_start}, state}
     end
   end
 

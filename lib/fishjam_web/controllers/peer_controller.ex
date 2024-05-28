@@ -90,28 +90,28 @@ defmodule FishjamWeb.PeerController do
     else
       :error ->
         msg = "Invalid request body structure"
-        Logger.warning(msg)
+        log_warning(room_id, msg)
 
         {:error, :bad_request, msg}
 
       {:error, :room_not_found} ->
         msg = "Room #{room_id} does not exist"
-        Logger.warning(msg)
+        log_warning(room_id, msg)
         {:error, :not_found, msg}
 
       {:error, :invalid_type} ->
         msg = "Invalid peer type"
-        Logger.warning(msg)
+        log_warning(room_id, msg)
         {:error, :bad_request, msg}
 
       {:error, {:peer_disabled_globally, type}} ->
         msg = "Peers of type #{type} are disabled on this Fishjam"
-        Logger.warning(msg)
+        log_warning(room_id, msg)
         {:error, :bad_request, msg}
 
       {:error, {:reached_peers_limit, type}} ->
         msg = "Reached #{type} peers limit in room #{room_id}"
-        Logger.warning(msg)
+        log_warning(room_id, msg)
         {:error, :service_unavailable, msg}
     end
   end
@@ -124,5 +124,9 @@ defmodule FishjamWeb.PeerController do
       {:error, :room_not_found} -> {:error, :not_found, "Room #{room_id} does not exist"}
       {:error, :peer_not_found} -> {:error, :not_found, "Peer #{id} does not exist"}
     end
+  end
+
+  defp log_warning(room_id, msg) do
+    Logger.warning("Unable to add peer to room #{room_id}, because: #{msg}")
   end
 end

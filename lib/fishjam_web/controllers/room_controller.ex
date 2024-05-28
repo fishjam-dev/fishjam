@@ -107,6 +107,10 @@ defmodule FishjamWeb.RoomController do
         room_id = Map.get(params, "roomId")
         {:error, :bad_request, "Cannot add room with id \"#{room_id}\" - room already exists"}
 
+      {:error, :room_doesnt_start} ->
+        room_id = Map.get(params, "roomId")
+        {:error, :bad_request, "Cannot add room with id \"#{room_id}\" - adding failed"}
+
       {:error, :invalid_room_id} ->
         room_id = Map.get(params, "roomId")
 
