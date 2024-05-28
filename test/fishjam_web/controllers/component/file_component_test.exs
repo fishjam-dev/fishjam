@@ -40,14 +40,6 @@ defmodule FishjamWeb.Component.FileComponentTest do
     {:ok, %{media_sources_directory: media_sources_directory}}
   end
 
-  setup %{test: name} do
-    IO.inspect("\n\nTEST_STARTED: #{name}")
-
-    on_exit(fn ->
-      IO.inspect("TEST_ENDED: #{name}\n\n")
-    end)
-  end
-
   describe "Create File Component" do
     test "renders component with video as source", %{conn: conn, room_id: room_id} do
       start_notifier()

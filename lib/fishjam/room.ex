@@ -241,8 +241,6 @@ defmodule Fishjam.Room do
 
       component_type.after_init(state, component, options)
 
-      IO.inspect("add component", label: :WTF)
-
       :ok = Engine.add_endpoint(engine_pid, component.engine_endpoint, id: component.id)
 
       Logger.info("Added component #{inspect(component.id)}")

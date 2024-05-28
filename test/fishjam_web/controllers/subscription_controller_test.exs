@@ -29,9 +29,7 @@ defmodule FishjamWeb.SubscriptionControllerTest do
     end)
   end
 
-  setup %{conn: conn, test: name} do
-    IO.inspect("\n\nTEST_STARTED: #{name}")
-
+  setup %{conn: conn} do
     server_api_token = Application.fetch_env!(:fishjam, :server_api_token)
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
     conn = put_req_header(conn, "accept", "application/json")
@@ -42,8 +40,6 @@ defmodule FishjamWeb.SubscriptionControllerTest do
     on_exit(fn ->
       conn = delete(conn, ~p"/room/#{id}")
       assert response(conn, :no_content)
-
-      IO.inspect("TEST_ENDED: #{name}\n\n")
     end)
 
     {:ok, %{conn: conn, room_id: id}}

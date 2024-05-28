@@ -17,8 +17,6 @@ defmodule Fishjam.Component.HLS.ManagerTest do
   }
 
   setup %{test: name} do
-    IO.inspect("\n\nTEST_STARTED: #{name}")
-
     room_id = UUID.uuid4()
     hls_dir = HLS.output_dir(room_id, persistent: false)
     options = %{s3: nil, persistent: true}
@@ -28,8 +26,6 @@ defmodule Fishjam.Component.HLS.ManagerTest do
 
     on_exit(fn ->
       File.rm_rf!(hls_dir)
-
-      IO.inspect("TEST_ENDED: #{name}\n\n")
     end)
 
     {:ok, %{room_id: room_id, hls_dir: hls_dir, options: options}}

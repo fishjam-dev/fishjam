@@ -23,14 +23,6 @@ defmodule FishjamWeb.Component.SIPComponentTest do
     end)
   end
 
-  setup %{test: name} do
-    IO.inspect("\n\nTEST_STARTED: #{name}")
-
-    on_exit(fn ->
-      IO.inspect("TEST_ENDED: #{name}\n\n")
-    end)
-  end
-
   describe "create SIP component" do
     test "renders component with required options", %{conn: conn, room_id: room_id} do
       conn =

@@ -29,14 +29,6 @@ defmodule FishjamWeb.Component.HlsComponentTest do
     end)
   end
 
-  setup %{test: name} do
-    IO.inspect("\n\nTEST_STARTED: #{name}")
-
-    on_exit(fn ->
-      IO.inspect("TEST_ENDED: #{name}\n\n")
-    end)
-  end
-
   describe "create hls component" do
     setup [:create_h264_room]
 

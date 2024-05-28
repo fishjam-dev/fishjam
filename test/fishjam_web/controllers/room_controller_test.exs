@@ -42,9 +42,7 @@ defmodule FishjamWeb.RoomControllerTest do
     :ok
   end
 
-  setup %{conn: conn, test: name} do
-    IO.inspect("\n\nTEST_STARTED: #{name}")
-
+  setup %{conn: conn} do
     server_api_token = Application.fetch_env!(:fishjam, :server_api_token)
     conn = put_req_header(conn, "authorization", "Bearer " <> server_api_token)
 
@@ -53,7 +51,6 @@ defmodule FishjamWeb.RoomControllerTest do
 
     on_exit(fn ->
       delete_all_rooms()
-      IO.inspect("TEST_ENDED: #{name}\n\n")
     end)
 
     [conn: conn]

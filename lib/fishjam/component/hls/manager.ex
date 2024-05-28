@@ -55,6 +55,8 @@ defmodule Fishjam.Component.HLS.Manager do
     unless is_nil(hls_options.s3), do: upload_to_s3(hls_dir, room_id, hls_options.s3)
     unless hls_options.persistent, do: remove_hls(hls_dir, room_id)
 
+    Logger.info("Enginer is down and HLS manager finished uploading stream")
+
     {:stop, :normal, state}
   end
 
@@ -80,8 +82,6 @@ defmodule Fishjam.Component.HLS.Manager do
   end
 
   defp upload_file_to_s3(content, s3_path, opts, config, credentials) do
-    IO.inspect("Upload FUCKING HLS", label: :WTF)
-
     result =
       credentials.bucket
       |> ExAws.S3.put_object(s3_path, content, opts)
