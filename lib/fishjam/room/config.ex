@@ -2,6 +2,10 @@ defmodule Fishjam.Room.Config do
   @moduledoc """
   Room configuration
   """
+
+  alias Fishjam.FeatureFlags
+  alias Fishjam.Room.ID
+
   @enforce_keys [
     :room_id,
     :max_peers,
@@ -30,7 +34,11 @@ defmodule Fishjam.Room.Config do
 
   @spec from_params(map()) :: {:ok, __MODULE__.t()} | {:error, atom()}
   def from_params(params) do
-    room_id = Map.get(params, "roomId")
+    room_id =
+      if FeatureFlags.custom_room_name_disabled?(),
+        do: ID.generate(),
+        else: Map.get(params, "roomId")
+
     max_peers = Map.get(params, "maxPeers")
     video_codec = Map.get(params, "videoCodec")
     webhook_url = Map.get(params, "webhookUrl")
