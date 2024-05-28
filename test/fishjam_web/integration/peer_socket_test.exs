@@ -198,7 +198,7 @@ defmodule FishjamWeb.Integration.PeerSocketTest do
                {:cont, false}
              end
            end),
-           "Metrics isn't present after 1,5 second"
+           "Metrics aren't present after 1.5 seconds"
 
     conn = delete(conn, ~p"/room/#{room_id}/")
     response(conn, :no_content)
