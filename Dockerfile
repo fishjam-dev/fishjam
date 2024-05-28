@@ -35,6 +35,7 @@ ENV MIX_ENV=prod
 # * any changes in rel directory should only trigger
 # making a new release
 COPY mix.exs mix.lock ./
+RUN git config --global http.postBuffer 524288000 && git config --global http.maxRequestBuffer 524288000 && git config --global core.compression 0
 RUN mix deps.get --only $MIX_ENV
 
 COPY config/config.exs config/${MIX_ENV}.exs config/

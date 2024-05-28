@@ -93,7 +93,7 @@ defmodule FishjamWeb.PeerSocket do
   @impl true
   def handle_in({msg, [opcode: :text]}, state) do
     Logger.warning("""
-    Received unexpected text message #{msg} from #{inspect(state.peer_id)}, \
+    Received unexpected text message #{inspect(msg)} from #{inspect(state.peer_id)}, \
     room: #{inspect(state.room_id)}
     """)
 
@@ -129,7 +129,10 @@ defmodule FishjamWeb.PeerSocket do
   @impl true
   def handle_info({:stop_connection, {:peer_crashed, crash_reason}}, state)
       when crash_reason != nil do
-    Logger.warning("Peer socket stopped because peer crashed with reason: #{crash_reason}")
+    Logger.warning(
+      "Peer socket stopped because peer crashed with reason: #{inspect(crash_reason)}"
+    )
+
     {:stop, :closed, {1011, crash_reason}, state}
   end
 
@@ -147,7 +150,7 @@ defmodule FishjamWeb.PeerSocket do
 
   @impl true
   def terminate(reason, _state) do
-    Logger.info("Peer socket terminates with reason #{reason}")
+    Logger.info("Peer socket terminates with reason #{inspect(reason)}")
     :ok
   end
 
@@ -157,5 +160,5 @@ defmodule FishjamWeb.PeerSocket do
   defp reason_to_string(:room_not_found), do: "room not found"
   defp reason_to_string(:peer_not_found), do: "peer not found"
   defp reason_to_string(:peer_already_connected), do: "peer already connected"
-  defp reason_to_string(other), do: "#{other}"
+  defp reason_to_string(other), do: "#{inspect(other)}"
 end
