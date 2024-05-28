@@ -16,7 +16,7 @@ defmodule Fishjam.Component.HLS.ManagerTest do
     bucket: "bucket"
   }
 
-  setup %{test: name} do
+  setup do
     room_id = UUID.uuid4()
     hls_dir = HLS.output_dir(room_id, persistent: false)
     options = %{s3: nil, persistent: true}
