@@ -11,6 +11,7 @@ defmodule Fishjam.MixProject do
       aliases: aliases(),
       deps: deps(),
       dialyzer: dialyzer(),
+      # TODO: Remove once core fix bug
       consolidate_protocols: false,
 
       # hex
