@@ -64,7 +64,11 @@ defmodule Fishjam.Component.HLS.RequestHandler do
   def handle_recording_request(recording_id, filename) do
     with :ok <- Recording.validate_recording(recording_id) do
       recording_path = Recording.directory(recording_id)
-      file_path = Path.join(recording_path, filename) |> Path.expand()
+
+      file_path =
+        recording_path
+        |> Path.join(filename)
+        |> Path.expand()
 
       if PathValidation.inside_directory?(file_path, recording_path),
         do: File.read(file_path),

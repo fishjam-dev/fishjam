@@ -30,19 +30,23 @@ defmodule Fishjam.RPCClient do
   """
   @spec multicall(module(), atom(), term(), timeout()) :: list(term)
   def multicall(module, function, args, timeout \\ :infinity) do
-    :erpc.multicall(nodes(), module, function, args, timeout)
+    nodes()
+    |> :erpc.multicall(module, function, args, timeout)
     |> handle_result()
   end
 
   defp handle_result(result) when is_list(result) do
     result
-    |> Enum.reduce([], fn {status, res}, acc ->
-      if status == :ok do
+    |> Enum.reduce([], fn
+      {:ok, res}, acc ->
         [res | acc]
-      else
-        Logger.warning("RPC multicall to one of the nodes failed because of: #{inspect(res)}")
+
+      {status, res}, acc ->
+        Logger.warning(
+          "RPC multicall to one of the nodes failed with status: #{inspect(status)} because of: #{inspect(res)}"
+        )
+
         acc
-      end
     end)
   end
 

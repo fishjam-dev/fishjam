@@ -45,7 +45,8 @@ defmodule Fishjam.Component.HLS.Recording do
   end
 
   defp root_directory() do
-    Application.fetch_env!(:fishjam, :media_files_path)
+    :fishjam
+    |> Application.fetch_env!(:media_files_path)
     |> Path.join(@recordings_folder)
     |> Path.expand()
   end
@@ -58,7 +59,10 @@ defmodule Fishjam.Component.HLS.Recording do
   end
 
   defp do_delete(id) do
-    directory(id) |> File.rm_rf!()
+    id
+    |> directory()
+    |> File.rm_rf!()
+
     :ok
   end
 end

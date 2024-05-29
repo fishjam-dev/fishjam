@@ -154,7 +154,7 @@ defmodule FishjamWeb.Component.HlsComponentTest do
     end
 
     test "renders component with ll-hls enabled", %{conn: conn, room_id: room_id} do
-      assert Registry.lookup(Fishjam.RequestHandlerRegistry, room_id) |> Enum.empty?()
+      assert Fishjam.RequestHandlerRegistry |> Registry.lookup(room_id) |> Enum.empty?()
 
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls", options: %{lowLatency: true})
 
@@ -183,7 +183,7 @@ defmodule FishjamWeb.Component.HlsComponentTest do
       assert_receive {:DOWN, _ref, :process, ^engine_pid, :normal}, 10_000
       assert_receive {:DOWN, _ref, :process, ^request_handler, :normal}
 
-      assert Registry.lookup(Fishjam.RequestHandlerRegistry, room_id) |> Enum.empty?()
+      assert Fishjam.RequestHandlerRegistry |> Registry.lookup(room_id) |> Enum.empty?()
     end
 
     test "renders errors when video codec is different than h264 - vp8", %{conn: conn} do

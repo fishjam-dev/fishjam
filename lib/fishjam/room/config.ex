@@ -3,7 +3,6 @@ defmodule Fishjam.Room.Config do
   Room configuration
   """
 
-  alias Fishjam.FeatureFlags
   alias Fishjam.Room.ID
 
   @enforce_keys [
@@ -34,18 +33,14 @@ defmodule Fishjam.Room.Config do
 
   @spec from_params(map()) :: {:ok, __MODULE__.t()} | {:error, atom()}
   def from_params(params) do
-    room_id =
-      if FeatureFlags.custom_room_name_disabled?(),
-        do: ID.generate(),
-        else: Map.get(params, "roomId")
-
+    room_id = Map.get(params, "roomId")
     max_peers = Map.get(params, "maxPeers")
     video_codec = Map.get(params, "videoCodec")
     webhook_url = Map.get(params, "webhookUrl")
     peerless_purge_timeout = Map.get(params, "peerlessPurgeTimeout")
     peer_disconnected_timeout = Map.get(params, "peerDisconnectedTimeout")
 
-    with {:ok, room_id} <- parse_room_id(room_id),
+    with {:ok, room_id} <- ID.generate(room_id),
          :ok <- validate_max_peers(max_peers),
          {:ok, video_codec} <- codec_to_atom(video_codec),
          :ok <- validate_webhook_url(webhook_url),
@@ -62,18 +57,6 @@ defmodule Fishjam.Room.Config do
        }}
     end
   end
-
-  defp parse_room_id(nil), do: {:ok, UUID.uuid4()}
-
-  defp parse_room_id(room_id) when is_binary(room_id) do
-    if Regex.match?(~r/^[a-zA-Z0-9-_]+$/, room_id) do
-      {:ok, room_id}
-    else
-      {:error, :invalid_room_id}
-    end
-  end
-
-  defp parse_room_id(_room_id), do: {:error, :invalid_room_id}
 
   defp validate_max_peers(nil), do: :ok
   defp validate_max_peers(max_peers) when is_integer(max_peers) and max_peers >= 0, do: :ok

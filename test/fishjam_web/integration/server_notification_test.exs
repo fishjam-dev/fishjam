@@ -469,7 +469,8 @@ defmodule FishjamWeb.Integration.ServerNotificationTest do
 
   test "sends message when File adds or removes tracks", %{conn: conn} do
     media_sources_directory =
-      Application.fetch_env!(:fishjam, :media_files_path)
+      :fishjam
+      |> Application.fetch_env!(:media_files_path)
       |> Path.join(@file_component_directory)
       |> Path.expand()
 

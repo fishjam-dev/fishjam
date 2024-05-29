@@ -61,7 +61,8 @@ defmodule Fishjam.Component.File do
 
   defp validate_file_path(file_path) do
     base_path =
-      Application.fetch_env!(:fishjam, :media_files_path)
+      :fishjam
+      |> Application.fetch_env!(:media_files_path)
       |> Path.join(@files_location)
       |> Path.expand()
 

@@ -117,6 +117,7 @@ defmodule Fishjam.Application do
   defp ensure_epmd_started!() do
     try do
       {_output, 0} = System.cmd("epmd", ["-daemon"])
+      # credo:disable-for-next-line
       :ok = Task.async(&ensure_epmd_running/0) |> Task.await(@epmd_timeout)
 
       :ok
