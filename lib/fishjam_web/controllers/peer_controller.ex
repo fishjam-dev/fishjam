@@ -127,6 +127,6 @@ defmodule FishjamWeb.PeerController do
   end
 
   defp log_warning(room_id, msg) do
-    Logger.warning("Unable to add peer to room #{room_id}, because: #{msg}")
+    Logger.warning("Unable to add peer to room #{room_id}, reason: #{msg}")
   end
 end
