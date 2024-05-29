@@ -118,9 +118,10 @@ defmodule Fishjam.RoomService do
 
   @impl true
   def handle_call({:create_room, config}, _from, state) do
-    Logger.debug("Start create room")
+    Logger.debug("Creating a new room")
 
     with {:ok, room_pid, room_id} <- Room.start(config) do
+      Logger.debug("Room created successfully")
       room = Room.get_state(room_id)
       Process.monitor(room_pid)
 
