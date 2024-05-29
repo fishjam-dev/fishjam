@@ -25,7 +25,7 @@ defmodule Fishjam.RPCClient do
   end
 
   @doc """
-  Multicall to all nodes in cluster.
+  Multicall to all nodes in the cluster, including this node.
   It filters out any errors or exceptions from return so you may end up with empty list.
   """
   @spec multicall(module(), atom(), term(), timeout()) :: list(term)

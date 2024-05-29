@@ -11,5 +11,5 @@ defmodule Fishjam.FeatureFlags do
   Removal: Once we move on to generated room_ids permanently.
   """
   def custom_room_name_disabled?,
-    do: Application.get_env(:fishjam, :feature_flags)[:custom_room_name_disabled] || false
+    do: Application.get_env(:fishjam, :feature_flags)[:custom_room_name_disabled]
 end
