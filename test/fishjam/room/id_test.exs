@@ -5,27 +5,22 @@ defmodule Fishjam.Room.IDTest do
 
   describe "determine_node/1" do
     test "resolves node name from the provided room_id" do
-      Node.start(:"fishjam@10.0.0.1")
+      node_name = Node.self()
       room_id = Subject.generate()
 
-      assert {:ok, :"fishjam@10.0.0.1"} == Subject.determine_node(room_id)
+      assert {:ok, node_name} == Subject.determine_node(room_id)
     end
 
     test "returns error if node is not detected in cluster" do
-      Node.start(:"fishjam@10.0.0.1")
-      room_id = Subject.generate()
-      Node.stop()
-
-      assert {:error, :invalid_node} == Subject.determine_node(room_id)
+      invalid_room_id = Base.encode16("room_id-invalid_node", case: :lower)
+      assert {:error, :invalid_node} == Subject.determine_node(invalid_room_id)
     end
   end
 
   describe "generate/0" do
     test "room_id last part is based on the node name" do
-      Node.start(:"fishjam@10.0.0.1")
       room1_id = Subject.generate()
       room2_id = Subject.generate()
-      Node.stop()
 
       node_part_from_room1 = room1_id |> String.split("-") |> Enum.take(-1)
       node_part_from_room2 = room2_id |> String.split("-") |> Enum.take(-1)
