@@ -12,7 +12,8 @@ defmodule Fishjam.Room.IDTest do
     end
 
     test "returns error if node is not detected in cluster" do
-      invalid_room_id = Base.encode16("room_id-invalid_node", case: :lower)
+      invalid_node = :invalid_node |> Atom.to_string() |> Base.encode16(case: :lower)
+      invalid_room_id = "room-id-#{invalid_node}"
       assert {:error, :invalid_node} == Subject.determine_node(invalid_room_id)
     end
   end
