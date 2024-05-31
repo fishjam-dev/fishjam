@@ -7,7 +7,9 @@ defmodule Fishjam.RoomService do
 
   require Logger
 
-  alias Fishjam.{Event, Room, WebhookNotifier}
+  alias Fishjam.Event
+  alias Fishjam.Room
+  alias Fishjam.WebhookNotifier
 
   @metric_interval_in_seconds Application.compile_env!(:fishjam, :room_metrics_scrape_interval)
   @metric_interval_in_milliseconds @metric_interval_in_seconds * 1_000
@@ -58,31 +60,14 @@ defmodule Fishjam.RoomService do
 
   @spec create_room(Room.Config.t()) :: {:ok, Room.t(), String.t()} | {:error, atom()}
   def create_room(config) do
-    {node_resources, failed_nodes} = :rpc.multicall(Fishjam.RoomService, :get_resource_usage, [])
+    case Fishjam.RPCClient.multicall(Fishjam.RoomService, :get_resource_usage, []) do
+      [_only_self_resources] ->
+        GenServer.call(__MODULE__, {:create_room, config})
 
-    if Enum.count(failed_nodes) > 0 do
-      Logger.warning(
-        "Couldn't get resource usage of the following nodes. Reason: nodes don't exist. Nodes: #{inspect(failed_nodes)}"
-      )
-    end
-
-    {failed_rpcs, node_resources} =
-      Enum.split_with(node_resources, fn
-        {:badrpc, _info} -> true
-        _other -> false
-      end)
-
-    unless Enum.empty?(failed_rpcs) do
-      Logger.warning("These RPC calls fail: #{inspect(failed_rpcs)}")
-    end
-
-    min_node = find_best_node(node_resources)
-
-    if Enum.count(node_resources) > 1 do
-      Logger.info("Node with least used resources is #{inspect(min_node)}")
-      GenServer.call({__MODULE__, min_node}, {:create_room, config})
-    else
-      GenServer.call(__MODULE__, {:create_room, config})
+      nodes_resources ->
+        min_node = find_best_node(nodes_resources)
+        Logger.info("Node with least used resources is #{inspect(min_node)}")
+        GenServer.call({__MODULE__, min_node}, {:create_room, config})
     end
   end
 

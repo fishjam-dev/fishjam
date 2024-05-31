@@ -2,6 +2,9 @@ defmodule Fishjam.Room.Config do
   @moduledoc """
   Room configuration
   """
+
+  alias Fishjam.Room.ID
+
   @enforce_keys [
     :room_id,
     :max_peers,
@@ -37,7 +40,7 @@ defmodule Fishjam.Room.Config do
     peerless_purge_timeout = Map.get(params, "peerlessPurgeTimeout")
     peer_disconnected_timeout = Map.get(params, "peerDisconnectedTimeout")
 
-    with {:ok, room_id} <- parse_room_id(room_id),
+    with {:ok, room_id} <- ID.generate(room_id),
          :ok <- validate_max_peers(max_peers),
          {:ok, video_codec} <- codec_to_atom(video_codec),
          :ok <- validate_webhook_url(webhook_url),
@@ -54,18 +57,6 @@ defmodule Fishjam.Room.Config do
        }}
     end
   end
-
-  defp parse_room_id(nil), do: {:ok, UUID.uuid4()}
-
-  defp parse_room_id(room_id) when is_binary(room_id) do
-    if Regex.match?(~r/^[a-zA-Z0-9-_]+$/, room_id) do
-      {:ok, room_id}
-    else
-      {:error, :invalid_room_id}
-    end
-  end
-
-  defp parse_room_id(_room_id), do: {:error, :invalid_room_id}
 
   defp validate_max_peers(nil), do: :ok
   defp validate_max_peers(max_peers) when is_integer(max_peers) and max_peers >= 0, do: :ok

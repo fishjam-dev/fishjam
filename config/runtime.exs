@@ -88,6 +88,12 @@ case ConfigReader.read_ssl_config() do
     config :fishjam, FishjamWeb.Endpoint, http: [ip: ip, port: port]
 end
 
+config :fishjam,
+  feature_flags: [
+    custom_room_name_disabled:
+      ConfigReader.read_boolean("FJ_FEATURE_FLAG_CUSTOM_ROOM_NAME_DISABLED") || false
+  ]
+
 check_origin = ConfigReader.read_check_origin("FJ_CHECK_ORIGIN")
 
 if check_origin != nil do
