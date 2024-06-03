@@ -2,6 +2,7 @@ defmodule FishjamWeb.RoomController do
   use FishjamWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
+  require Logger
   alias Fishjam.Room
   alias Fishjam.RoomService
   alias FishjamWeb.ApiSpec
@@ -74,6 +75,8 @@ defmodule FishjamWeb.RoomController do
   end
 
   def create(conn, params) do
+    Logger.debug("Start creating room")
+
     with {:ok, config} <- Room.Config.from_params(params),
          {:ok, room, fishjam_address} <- RoomService.create_room(config) do
       conn
@@ -103,6 +106,10 @@ defmodule FishjamWeb.RoomController do
       {:error, :room_already_exists} ->
         room_id = Map.get(params, "roomId")
         {:error, :bad_request, "Cannot add room with id \"#{room_id}\" - room already exists"}
+
+      {:error, :room_doesnt_start} ->
+        room_id = Map.get(params, "roomId")
+        {:error, :bad_request, "Cannot add room with id \"#{room_id}\" - unexpected error"}
 
       {:error, :invalid_room_id} ->
         room_id = Map.get(params, "roomId")

@@ -1,7 +1,11 @@
 defmodule FishjamWeb.FallbackController do
   use FishjamWeb, :controller
 
+  require Logger
+
   def call(conn, {:error, status, reason}) do
+    Logger.debug("Generic error handler status: #{status}, reason: #{reason}")
+
     conn
     |> put_resp_content_type("application/json")
     |> put_status(status)

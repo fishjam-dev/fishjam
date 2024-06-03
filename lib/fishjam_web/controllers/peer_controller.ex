@@ -2,6 +2,7 @@ defmodule FishjamWeb.PeerController do
   use FishjamWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
+  require Logger
   alias Fishjam.Peer
   alias Fishjam.Room
   alias Fishjam.RoomService
@@ -74,6 +75,8 @@ defmodule FishjamWeb.PeerController do
          {:ok, peer_type} <- Peer.parse_type(peer_type_string),
          {:ok, _room_pid} <- RoomService.find_room(room_id),
          {:ok, peer} <- Room.add_peer(room_id, peer_type, peer_options) do
+      Logger.debug("Successfully added peer to room: #{room_id}")
+
       assigns = [
         peer: peer,
         token: PeerToken.generate(%{peer_id: peer.id, room_id: room_id}),
@@ -86,19 +89,30 @@ defmodule FishjamWeb.PeerController do
       |> render("show.json", assigns)
     else
       :error ->
-        {:error, :bad_request, "Invalid request body structure"}
+        msg = "Invalid request body structure"
+        log_warning(room_id, msg)
+
+        {:error, :bad_request, msg}
 
       {:error, :room_not_found} ->
-        {:error, :not_found, "Room #{room_id} does not exist"}
+        msg = "Room #{room_id} does not exist"
+        log_warning(room_id, msg)
+        {:error, :not_found, msg}
 
       {:error, :invalid_type} ->
-        {:error, :bad_request, "Invalid peer type"}
+        msg = "Invalid peer type"
+        log_warning(room_id, msg)
+        {:error, :bad_request, msg}
 
       {:error, {:peer_disabled_globally, type}} ->
-        {:error, :bad_request, "Peers of type #{type} are disabled on this Fishjam"}
+        msg = "Peers of type #{type} are disabled on this Fishjam"
+        log_warning(room_id, msg)
+        {:error, :bad_request, msg}
 
       {:error, {:reached_peers_limit, type}} ->
-        {:error, :service_unavailable, "Reached #{type} peers limit in room #{room_id}"}
+        msg = "Reached #{type} peers limit in room #{room_id}"
+        log_warning(room_id, msg)
+        {:error, :service_unavailable, msg}
     end
   end
 
@@ -110,5 +124,9 @@ defmodule FishjamWeb.PeerController do
       {:error, :room_not_found} -> {:error, :not_found, "Room #{room_id} does not exist"}
       {:error, :peer_not_found} -> {:error, :not_found, "Peer #{id} does not exist"}
     end
+  end
+
+  defp log_warning(room_id, msg) do
+    Logger.warning("Unable to add peer to room #{room_id}, reason: #{msg}")
   end
 end

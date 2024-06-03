@@ -118,7 +118,10 @@ defmodule Fishjam.RoomService do
 
   @impl true
   def handle_call({:create_room, config}, _from, state) do
+    Logger.debug("Creating a new room")
+
     with {:ok, room_pid, room_id} <- Room.start(config) do
+      Logger.debug("Room created successfully")
       room = Room.get_state(room_id)
       Process.monitor(room_pid)
 
@@ -133,7 +136,13 @@ defmodule Fishjam.RoomService do
       {:reply, {:ok, room, Fishjam.address()}, state}
     else
       {:error, :room_already_exists} = error ->
+        Logger.warning("Room creation failed, because it already exists")
+
         {:reply, error, state}
+
+      reason ->
+        Logger.warning("Room creation failed with reason: #{inspect(reason)}")
+        {:reply, {:error, :room_doesnt_start}, state}
     end
   end
 
