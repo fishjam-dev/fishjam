@@ -24,10 +24,9 @@ defmodule FishjamWeb.Integration.PeerSocketTest do
 
     alias FishjamWeb.PeerSocket
 
-    socket("/socket/peer", PeerSocket,
+    socket "/socket/peer", PeerSocket,
       websocket: true,
       longpoll: false
-    )
   end
 
   setup_all do

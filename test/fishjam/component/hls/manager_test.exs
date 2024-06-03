@@ -39,24 +39,18 @@ defmodule Fishjam.Component.HLS.ManagerTest do
     hls_dir: hls_dir,
     options: options
   } do
-    Application.put_env(:ex_aws, :awscli_auth_adapter, Fishjam.Adapter)
-
     pid = MockManager.start_mock_engine()
 
     {:ok, manager} = Manager.start(room_id, pid, hls_dir, options)
     ref = Process.monitor(manager)
 
-    assert Process.alive?(pid)
     MockManager.kill_mock_engine(pid)
 
     assert_receive {:DOWN, ^ref, :process, ^manager, :normal}
     assert length(File.ls!(hls_dir)) == 4
-    Application.delete_env(:ex_aws, :awscli_auth_adapter)
   end
 
   test "Spawn manager with credentials", %{room_id: room_id, hls_dir: hls_dir, options: options} do
-    Application.put_env(:ex_aws, :awscli_auth_adapter, Fishjam.Adapter)
-
     MockManager.http_mock_stub(status_code: 200)
     pid = MockManager.start_mock_engine()
 
@@ -66,7 +60,6 @@ defmodule Fishjam.Component.HLS.ManagerTest do
 
     assert_receive {:DOWN, ^ref, :process, ^manager, :normal}
     assert length(File.ls!(hls_dir)) == 4
-    Application.delete_env(:ex_aws, :awscli_auth_adapter)
   end
 
   test "Spawn manager with persistent false", %{
