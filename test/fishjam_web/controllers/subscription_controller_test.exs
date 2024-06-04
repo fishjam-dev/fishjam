@@ -137,10 +137,12 @@ defmodule FishjamWeb.SubscriptionControllerTest do
 
   describe "recording endpoint tests" do
     test "returns error when subscribe mode is :auto", %{conn: conn, room_id: room_id} do
+      MockManager.http_mock_stub(status_code: 200)
+
       conn =
         post(conn, ~p"/room/#{room_id}/component",
           type: "recording",
-          options: %{credentials: Enum.into(@s3_credentials, %{}), subscribeMode: "auto"}
+          options: %{credentials: @s3_credentials, subscribeMode: "auto"}
         )
 
       assert %{
@@ -159,10 +161,12 @@ defmodule FishjamWeb.SubscriptionControllerTest do
     end
 
     test "return success when subscribe mode is :manual", %{conn: conn, room_id: room_id} do
+      MockManager.http_mock_stub(status_code: 200)
+
       conn =
         post(conn, ~p"/room/#{room_id}/component",
           type: "recording",
-          options: %{credentials: Enum.into(@s3_credentials, %{}), subscribeMode: "manual"}
+          options: %{credentials: @s3_credentials, subscribeMode: "manual"}
         )
 
       assert %{

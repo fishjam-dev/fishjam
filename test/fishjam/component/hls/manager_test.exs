@@ -24,7 +24,9 @@ defmodule Fishjam.Component.HLS.ManagerTest do
     File.mkdir_p!(hls_dir)
     for filename <- @files, do: :ok = hls_dir |> Path.join(filename) |> File.touch!()
 
-    on_exit(fn -> File.rm_rf!(hls_dir) end)
+    on_exit(fn ->
+      File.rm_rf!(hls_dir)
+    end)
 
     {:ok, %{room_id: room_id, hls_dir: hls_dir, options: options}}
   end
@@ -37,7 +39,6 @@ defmodule Fishjam.Component.HLS.ManagerTest do
     hls_dir: hls_dir,
     options: options
   } do
-    MockManager.http_mock_expect(0, status_code: 200)
     pid = MockManager.start_mock_engine()
 
     {:ok, manager} = Manager.start(room_id, pid, hls_dir, options)
@@ -50,12 +51,11 @@ defmodule Fishjam.Component.HLS.ManagerTest do
   end
 
   test "Spawn manager with credentials", %{room_id: room_id, hls_dir: hls_dir, options: options} do
-    MockManager.http_mock_expect(4, status_code: 200)
+    MockManager.http_mock_stub(status_code: 200)
     pid = MockManager.start_mock_engine()
 
     {:ok, manager} = Manager.start(room_id, pid, hls_dir, %{options | s3: @s3_credentials})
     ref = Process.monitor(manager)
-
     MockManager.kill_mock_engine(pid)
 
     assert_receive {:DOWN, ^ref, :process, ^manager, :normal}

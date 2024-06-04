@@ -18,3 +18,5 @@ config :logger, level: :warning
 config :phoenix, :plug_init_mode, :runtime
 
 config :ex_aws, :http_client, ExAws.Request.HttpMock
+
+config :ex_aws, :awscli_auth_adapter, Fishjam.Adapter

@@ -345,7 +345,8 @@ defmodule FishjamWeb.Integration.ServerNotificationTest do
                        room_id: ^room_id,
                        peer_id: ^peer_id,
                        metadata: ^metadata_encoded
-                     } = peer_metadata_updated
+                     } = peer_metadata_updated,
+                     1_000
 
       assert_receive {:webhook_notification, ^peer_metadata_updated}, 1_000
     end
@@ -384,9 +385,10 @@ defmodule FishjamWeb.Integration.ServerNotificationTest do
                            type: :TRACK_TYPE_VIDEO,
                            metadata: "\"myvideo\""
                          } = track_info
-                     } = track_added
+                     } = track_added,
+                     1_000
 
-      assert_receive {:webhook_notification, ^track_added}, 1000
+      assert_receive {:webhook_notification, ^track_added}
 
       GenServer.stop(peer_ws)
 

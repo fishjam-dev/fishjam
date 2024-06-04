@@ -13,6 +13,12 @@ defmodule MockManager do
     end)
   end
 
+  def http_mock_stub(status_code: status_code) do
+    stub(ExAws.Request.HttpMock, :request, fn _method, _url, _req_body, _headers, _http_opts ->
+      {:ok, %{status_code: status_code, body: %{}}}
+    end)
+  end
+
   def start_mock_engine(),
     do:
       spawn(fn ->

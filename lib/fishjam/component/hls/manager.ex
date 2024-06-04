@@ -55,6 +55,8 @@ defmodule Fishjam.Component.HLS.Manager do
     unless is_nil(hls_options.s3), do: upload_to_s3(hls_dir, room_id, hls_options.s3)
     unless hls_options.persistent, do: remove_hls(hls_dir, room_id)
 
+    Logger.info("Engine is down and HLS manager finished uploading stream")
+
     {:stop, :normal, state}
   end
 

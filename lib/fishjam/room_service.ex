@@ -195,7 +195,7 @@ defmodule Fishjam.RoomService do
   def handle_info({:DOWN, _ref, :process, pid, :normal}, state) do
     {room_id, state} = pop_in(state, [:rooms, pid])
 
-    Logger.debug("Room #{room_id} is down with reason: normal")
+    Logger.debug("Room #{inspect(room_id)} is down with reason: normal")
 
     Phoenix.PubSub.broadcast(Fishjam.PubSub, room_id, :room_stopped)
     Event.broadcast_server_notification({:room_deleted, room_id})
