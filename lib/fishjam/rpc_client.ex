@@ -13,14 +13,14 @@ defmodule Fishjam.RPCClient do
   Function returns {:ok, result} tuple only if the execution succeeded.
   In case of any exceptions we are catching them logging and returning simple :error atom.
   """
-  @spec call(node(), module(), atom(), term(), timeout()) :: {:ok, term()} | :error
+  @spec call(node(), module(), atom(), term(), timeout()) :: {:ok, term()} | :error_rpc
   def call(node, module, function, args, timeout \\ :infinity) do
     try do
       {:ok, :erpc.call(node, module, function, args, timeout)}
     rescue
       e ->
         Logger.warning("RPC call to node #{node} failed with exception: #{inspect(e)}")
-        :error
+        :error_rpc
     end
   end
 

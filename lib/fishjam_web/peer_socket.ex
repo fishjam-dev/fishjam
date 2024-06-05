@@ -7,9 +7,12 @@ defmodule FishjamWeb.PeerSocket do
   alias Fishjam.PeerMessage
   alias Fishjam.PeerMessage.{Authenticated, AuthRequest, MediaEvent}
   alias Fishjam.{Room, RoomService}
+  alias FishjamWeb.PeerSocketHandler
   alias FishjamWeb.PeerToken
 
   @heartbeat_interval 30_000
+
+  defstruct authenticated?: false, peer_id: nil, room_id: nil, node_name: nil
 
   @impl true
   def child_spec(_opts), do: :ignore
@@ -22,8 +25,8 @@ defmodule FishjamWeb.PeerSocket do
   end
 
   @impl true
-  def init(state) do
-    {:ok, Map.put(state, :authenticated?, false)}
+  def init(_state) do
+    {:ok, %__MODULE__{}}
   end
 
   @impl true
@@ -31,8 +34,11 @@ defmodule FishjamWeb.PeerSocket do
     case PeerMessage.decode(encoded_message) do
       %PeerMessage{content: {:auth_request, %AuthRequest{token: token}}} ->
         with {:ok, %{peer_id: peer_id, room_id: room_id}} <- PeerToken.verify(token),
-             {:ok, room_pid} <- RoomService.find_room(room_id),
-             :ok <- Room.set_peer_connected(room_id, peer_id),
+             {:ok, node_name} <- get_node_name(room_id),
+             args = [room_id, peer_id, Node.self(), self()],
+             {:ok, connect_result} <-
+               Fishjam.RPCClient.call(node_name, PeerSocketHandler, :connect_peer, args),
+             :ok <- connect_result,
              :ok <- Phoenix.PubSub.subscribe(Fishjam.PubSub, room_id) do
           Process.send_after(self(), :send_ping, @heartbeat_interval)
 
@@ -45,7 +51,7 @@ defmodule FishjamWeb.PeerSocket do
               authenticated?: true,
               peer_id: peer_id,
               room_id: room_id,
-              room_pid: room_pid
+              node_name: node_name
             })
 
           Event.broadcast_server_notification({:peer_connected, room_id, peer_id})
@@ -62,6 +68,11 @@ defmodule FishjamWeb.PeerSocket do
             """)
 
             {:stop, :closed, {1000, reason}, state}
+
+          :error_rpc ->
+            Logger.warning("Couldn't connect with node on which room was created")
+
+            {:stop, :closed, {1000, "node not found"}}
         end
 
       _other ->
@@ -78,7 +89,8 @@ defmodule FishjamWeb.PeerSocket do
   def handle_in({encoded_message, [opcode: :binary]}, state) do
     case PeerMessage.decode(encoded_message) do
       %PeerMessage{content: {:media_event, %MediaEvent{data: data}}} ->
-        Room.receive_media_event(state.room_id, state.peer_id, data)
+        args = [state.room_id, state.peer_id, data]
+        Fishjam.RPCClient.call(state.node_name, PeerSocketHandler, :receive_media_event, args)
 
       other ->
         Logger.warning("""
@@ -158,4 +170,19 @@ defmodule FishjamWeb.PeerSocket do
   defp reason_to_string(:peer_not_found), do: "peer not found"
   defp reason_to_string(:peer_already_connected), do: "peer already connected"
   defp reason_to_string(other), do: "#{other}"
+
+  defp get_node_name(room_id) do
+    dist_config = Application.fetch_env!(:fishjam, :dist_config)
+
+    cond do
+      Fishjam.FeatureFlags.custom_room_name_disabled?() ->
+        Room.ID.determine_node(room_id)
+
+      dist_config[:enabled] ->
+        {:ok, Node.self()}
+
+      true ->
+        raise ""
+    end
+  end
 end

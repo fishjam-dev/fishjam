@@ -14,6 +14,8 @@ defmodule Fishjam.Room do
   alias Fishjam.Component.{HLS, Recording, SIP}
   alias Fishjam.Peer
   alias Fishjam.Room.{Config, State}
+  alias Fishjam.RPCClient
+  alias FishjamWeb.PeerSocketHandler
 
   alias Membrane.RTC.Engine
   alias Membrane.RTC.Engine.Endpoint
@@ -74,10 +76,10 @@ defmodule Fishjam.Room do
     GenServer.call(registry_id(room_id), {:add_peer, peer_type, options})
   end
 
-  @spec set_peer_connected(id(), Peer.id()) ::
+  @spec set_peer_connected(id(), Peer.id(), Node.t(), pid()) ::
           :ok | {:error, :peer_not_found | :peer_already_connected}
-  def set_peer_connected(room_id, peer_id) do
-    GenServer.call(registry_id(room_id), {:set_peer_connected, peer_id})
+  def set_peer_connected(room_id, peer_id, node_name, pid) do
+    GenServer.call(registry_id(room_id), {:set_peer_connected, peer_id, node_name, pid})
   end
 
   @spec get_peer_connection_status(id(), Peer.id()) ::
@@ -180,13 +182,16 @@ defmodule Fishjam.Room do
   end
 
   @impl true
-  def handle_call({:set_peer_connected, peer_id}, {socket_pid, _tag}, state) do
+  def handle_call({:set_peer_connected, peer_id, node_name, socket_pid}, _sender, state) do
     {reply, state} =
       case State.fetch_peer(state, peer_id) do
         {:ok, %{status: :disconnected} = peer} ->
-          Process.monitor(socket_pid)
+          if Node.self() == node_name do
+            # TODO: Properly handle when node is different
+            Process.monitor(socket_pid)
+          end
 
-          state = State.connect_peer(state, peer, socket_pid)
+          state = State.connect_peer(state, peer, socket_pid, node_name)
 
           {:ok, state}
 
@@ -401,13 +406,33 @@ defmodule Fishjam.Room do
   @impl true
   def handle_info(%EndpointMessage{endpoint_id: to, message: {:media_event, data}}, state) do
     with {:ok, peer} <- State.fetch_peer(state, to),
-         socket_pid when is_pid(socket_pid) <- Map.get(peer, :socket_pid) do
-      send(socket_pid, {:media_event, data})
+         socket_pid when is_pid(socket_pid) <- Map.get(peer, :socket_pid),
+         node_name when not is_nil(node_name) <- Map.get(peer, :node_name),
+         {:ok, rpc_result} <-
+           RPCClient.call(node_name, PeerSocketHandler, :send_media_event, [socket_pid, data]),
+         :ok <- rpc_result do
+      :ok
     else
+      :peer_socket_not_exists ->
+        Logger.warning(
+          "Received Media Event from RTC Engine to peer #{inspect(to)} which peer socket doesn't exist"
+        )
+
+        {:ok, peer} = State.fetch_peer(state, to)
+        send(self(), {:DOWN, :any_ref, peer.socket_pid, :peer_socket_not_exists})
+
       nil ->
         Logger.warning(
           "Received Media Event from RTC Engine to peer #{inspect(to)} without established signaling connection"
         )
+
+      :error_rpc ->
+        Logger.warning(
+          "Received Media Event from RTC Engine to peer #{inspect(to)} which was connected to different node and rpc to that node failed."
+        )
+
+        {:ok, peer} = State.fetch_peer(state, to)
+        send(self(), {:DOWN, :any_ref, peer.socket_pid, :peer_socket_not_exists})
 
       :error ->
         Logger.warning(

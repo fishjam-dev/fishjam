@@ -222,9 +222,10 @@ defmodule Fishjam.Room.State do
     state
   end
 
-  @spec connect_peer(state :: t(), peer :: Peer.t(), socket_pid :: pid()) :: t()
-  def connect_peer(state, peer, socket_pid) do
-    peer = %{peer | status: :connected, socket_pid: socket_pid}
+  @spec connect_peer(state :: t(), peer :: Peer.t(), socket_pid :: pid(), node_name :: Node.t()) ::
+          t()
+  def connect_peer(state, peer, socket_pid, node_name) do
+    peer = %{peer | status: :connected, socket_pid: socket_pid, node_name: node_name}
 
     state = put_peer(state, peer)
 
