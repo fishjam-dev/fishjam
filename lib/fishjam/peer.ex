@@ -17,6 +17,7 @@ defmodule Fishjam.Peer do
               [
                 status: :disconnected,
                 socket_pid: nil,
+                node_name: nil,
                 tracks: %{},
                 metadata: nil,
                 last_time_connected: nil

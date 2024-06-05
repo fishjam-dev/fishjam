@@ -16,7 +16,7 @@ defmodule Fishjam.Room do
                  | {:peer_disabled_globally, String.t()}
                  | {:reached_peers_limit, String.t()}}
 
-  @callback set_peer_connected(ID.id(), Peer.id()) ::
+  @callback set_peer_connected(ID.id(), Peer.id(), Node.t(), pid()) ::
               :ok | {:error, cluster_error() | :peer_not_found | :peer_already_connected}
 
   @callback get_peer_connection_status(ID.id(), Peer.id()) ::
