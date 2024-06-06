@@ -38,8 +38,7 @@ config :logger,
     [application: :membrane_rtc_engine_file, level_lower_than: :warning],
     [application: :membrane_rtc_engine_sip, level_lower_than: :warning],
     [module: Membrane.SRTP.Encryptor, level_lower_than: :error],
-    [module: Membrane.RTCP.Receiver, level_lower_than: :warning],
-
+    [module: Membrane.RTCP.Receiver, level_lower_than: :warning]
   ]
 
 config :ex_aws,
