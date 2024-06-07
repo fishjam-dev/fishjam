@@ -27,6 +27,7 @@ defmodule FishjamWeb.ApiSpec.Component.HLS.S3 do
         description: "The name of the S3 bucket where your data will be stored."
       }
     },
-    required: [:accessKeyId, :secretAccessKey, :region, :bucket]
+    required: [:accessKeyId, :secretAccessKey, :region, :bucket],
+    nullable: true
   })
 end
