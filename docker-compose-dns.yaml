@@ -13,6 +13,7 @@ x-fishjam-template: &fishjam-template
     MIX_ENV: "test"
     FJ_FEATURE_FLAG_REQUEST_ROUTING_ENABLED: "true"
     FJ_COMPONENTS_USED: "hls file"
+    FJ_SECRET_KEY_BASE: "secret"
   volumes:
     - ./test/fixtures:/app/fishjam_resources/file_component_sources
   restart: on-failure

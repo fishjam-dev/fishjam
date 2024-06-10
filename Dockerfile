@@ -124,7 +124,7 @@ RUN mkdir ${FJ_RESOURCES_BASE_PATH} && chown fishjam:fishjam ${FJ_RESOURCES_BASE
 
 # Create directory for File Component sources
 RUN mkdir ${FJ_RESOURCES_BASE_PATH}/file_component_sources \
- && chown fishjam:fishjam ${FJ_RESOURCES_BASE_PATH}/file_component_sources
+  && chown fishjam:fishjam ${FJ_RESOURCES_BASE_PATH}/file_component_sources
 
 COPY --from=build /app/_build/${MIX_ENV}/rel/fishjam ./
 

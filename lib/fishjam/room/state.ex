@@ -8,6 +8,8 @@ defmodule Fishjam.Room.State do
   alias Fishjam.{Component, Event, Peer, Track}
   alias Fishjam.Component.{HLS, Recording, RTSP}
   alias Fishjam.Room.{Config, ID}
+  alias Fishjam.RPCClient
+  alias FishjamWeb.PeerSocketHandler
   alias Membrane.ICE.TURNManager
   alias Membrane.RTC.Engine
 
@@ -277,8 +279,23 @@ defmodule Fishjam.Room.State do
     {peer, state} = pop_in(state, [:peers, peer_id])
     :ok = Engine.remove_endpoint(state.engine_pid, peer_id)
 
-    if is_pid(peer.socket_pid),
-      do: send(peer.socket_pid, {:stop_connection, reason})
+    msg = {:stop_connection, reason}
+
+    with true <- is_pid(peer.socket_pid),
+         {:ok, rpc_result} <-
+           RPCClient.call(peer.node_name, PeerSocketHandler, :send_message, [peer.socket_pid, msg]),
+         :ok <- rpc_result do
+      :ok
+    else
+      false ->
+        Logger.warning("Peer is not connected through websocket")
+
+      :peer_socket_not_exists ->
+        Logger.warning("Peer socket doesn't exist")
+
+      :error_rpc ->
+        nil
+    end
 
     peer.tracks
     |> Map.values()

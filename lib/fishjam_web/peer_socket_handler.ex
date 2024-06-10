@@ -20,9 +20,17 @@ defmodule FishjamWeb.PeerSocketHandler do
     Room.receive_media_event(room_id, peer_id, data)
   end
 
+  def send_message(socket_pid, msg) do
+    send_msg_if_pid_exists(socket_pid, msg)
+  end
+
   def send_media_event(socket_pid, data) do
+    send_msg_if_pid_exists(socket_pid, {:media_event, data})
+  end
+
+  defp send_msg_if_pid_exists(socket_pid, msg) do
     if Process.alive?(socket_pid) do
-      send(socket_pid, {:media_event, data})
+      send(socket_pid, msg)
       :ok
     else
       :peer_socket_not_exists

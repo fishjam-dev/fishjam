@@ -63,7 +63,7 @@ defmodule FishjamWeb.PeerSocket do
             reason = reason_to_string(reason)
 
             Logger.warning("""
-            Authentication failed, reason: #{reason}.
+            Peer authentication failed, reason: #{reason}.
             Closing the connection.
             """)
 
@@ -172,17 +172,10 @@ defmodule FishjamWeb.PeerSocket do
   defp reason_to_string(other), do: "#{other}"
 
   defp get_node_name(room_id) do
-    dist_config = Application.fetch_env!(:fishjam, :dist_config)
-
-    cond do
-      Fishjam.FeatureFlags.custom_room_name_disabled?() ->
-        Room.ID.determine_node(room_id)
-
-      dist_config[:enabled] ->
-        {:ok, Node.self()}
-
-      true ->
-        raise ""
+    if Fishjam.FeatureFlags.custom_room_name_disabled?() do
+      Room.ID.determine_node(room_id)
+    else
+      {:ok, Node.self()}
     end
   end
 end
