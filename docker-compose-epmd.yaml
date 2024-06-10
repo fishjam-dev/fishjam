@@ -6,6 +6,8 @@ x-fishjam-template: &fishjam-template
     FJ_SERVER_API_TOKEN: "development"
     FJ_DIST_ENABLED: "true"
     FJ_DIST_NODES: "app@app1 app@app2"
+    FJ_SECRET_KEY_BASE: "secret"
+    FJ_FEATURE_FLAG_CUSTOM_ROOM_NAME_DISABLED: "true"
   restart: on-failure
 
 services:

@@ -30,6 +30,7 @@ jobs:
       - checkout
       - run: mix deps.get
       - run: mix coveralls.json --warnings-as-errors
+      - run: FJ_FEATURE_FLAG_CUSTOM_ROOM_NAME_DISABLED=true mix coveralls.json --warnings-as-errors
       - codecov/upload
 
   check_api_update:

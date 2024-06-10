@@ -7,6 +7,8 @@ x-fishjam-template: &fishjam-template
     FJ_DIST_ENABLED: "true"
     FJ_DIST_MODE: "name"
     FJ_DIST_STRATEGY_NAME: "DNS"
+    FJ_SECRET_KEY_BASE: "secret"
+    FJ_FEATURE_FLAG_CUSTOM_ROOM_NAME_DISABLED: "true"
   restart: on-failure
 
 services:

@@ -124,35 +124,37 @@ defmodule FishjamWeb.RoomControllerTest do
              } = response["data"]
     end
 
-    test "renders room when data is valid, custom room_id + max_peers and peerless_purge_timeout not present",
-         %{conn: conn} do
-      room_id = UUID.uuid4() <> "_ABCD-123_xyz"
+    unless Fishjam.FeatureFlags.custom_room_name_disabled?() do
+      test "renders room when data is valid, custom room_id + max_peers and peerless_purge_timeout not present",
+           %{conn: conn} do
+        room_id = UUID.uuid4() <> "_ABCD-123_xyz"
 
-      conn = post(conn, ~p"/room", roomId: room_id)
-      json_response(conn, :created)
+        conn = post(conn, ~p"/room", roomId: room_id)
+        json_response(conn, :created)
 
-      conn = get(conn, ~p"/room/#{room_id}")
-      response = json_response(conn, :ok)
-      assert_response_schema(response, "RoomDetailsResponse", @schema)
+        conn = get(conn, ~p"/room/#{room_id}")
+        response = json_response(conn, :ok)
+        assert_response_schema(response, "RoomDetailsResponse", @schema)
 
-      assert %{
-               "id" => ^room_id,
-               "config" => %{"maxPeers" => nil, "peerlessPurgeTimeout" => nil},
-               "components" => [],
-               "peers" => []
-             } = response["data"]
-    end
+        assert %{
+                 "id" => ^room_id,
+                 "config" => %{"maxPeers" => nil, "peerlessPurgeTimeout" => nil},
+                 "components" => [],
+                 "peers" => []
+               } = response["data"]
+      end
 
-    test "renders error when adding two rooms with same room_id", %{conn: conn} do
-      room_id = UUID.uuid4()
+      test "renders error when adding two rooms with same room_id", %{conn: conn} do
+        room_id = UUID.uuid4()
 
-      conn = post(conn, ~p"/room", roomId: room_id)
-      json_response(conn, :created)
+        conn = post(conn, ~p"/room", roomId: room_id)
+        json_response(conn, :created)
 
-      conn = post(conn, ~p"/room", roomId: room_id)
+        conn = post(conn, ~p"/room", roomId: room_id)
 
-      assert json_response(conn, :bad_request)["errors"] ==
-               "Cannot add room with id \"#{room_id}\" - room already exists"
+        assert json_response(conn, :bad_request)["errors"] ==
+                 "Cannot add room with id \"#{room_id}\" - room already exists"
+      end
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
@@ -181,15 +183,17 @@ defmodule FishjamWeb.RoomControllerTest do
       assert json_response(conn, :bad_request)["errors"] ==
                "Expected peerDisconnectedTimeout to be a positive integer, got: nan"
 
-      conn = post(conn, ~p"/room", roomId: "test/path")
+      unless Fishjam.FeatureFlags.custom_room_name_disabled?() do
+        conn = post(conn, ~p"/room", roomId: "test/path")
 
-      assert json_response(conn, :bad_request)["errors"] ==
-               "Cannot add room with id \"test/path\" - roomId may contain only alphanumeric characters, hyphens and underscores"
+        assert json_response(conn, :bad_request)["errors"] ==
+                 "Cannot add room with id \"test/path\" - roomId may contain only alphanumeric characters, hyphens and underscores"
 
-      conn = post(conn, ~p"/room", roomId: "")
+        conn = post(conn, ~p"/room", roomId: "")
 
-      assert json_response(conn, :bad_request)["errors"] ==
-               "Cannot add room with id \"\" - roomId may contain only alphanumeric characters, hyphens and underscores"
+        assert json_response(conn, :bad_request)["errors"] ==
+                 "Cannot add room with id \"\" - roomId may contain only alphanumeric characters, hyphens and underscores"
+      end
     end
   end
 

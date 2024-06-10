@@ -51,6 +51,8 @@ RUN mix release
 
 FROM alpine:3.17 AS app
 
+ARG FJ_SECRET_KEY_BASE
+ARG FJ_FEATURE_FLAG_CUSTOM_ROOM_NAME_DISABLED
 ARG FJ_GIT_COMMIT
 ENV FJ_GIT_COMMIT=$FJ_GIT_COMMIT
 
@@ -120,7 +122,7 @@ RUN mkdir ${FJ_RESOURCES_BASE_PATH} && chown fishjam:fishjam ${FJ_RESOURCES_BASE
 
 # Create directory for File Component sources
 RUN mkdir ${FJ_RESOURCES_BASE_PATH}/file_component_sources \
- && chown fishjam:fishjam ${FJ_RESOURCES_BASE_PATH}/file_component_sources
+  && chown fishjam:fishjam ${FJ_RESOURCES_BASE_PATH}/file_component_sources
 
 COPY --from=build /app/_build/prod/rel/fishjam ./
 
