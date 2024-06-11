@@ -1,7 +1,5 @@
 import Config
 
-config :membrane_core, :enable_metrics, false
-
 config :fishjam, FishjamWeb.Endpoint,
   url: [host: "localhost"],
   render_errors: [
