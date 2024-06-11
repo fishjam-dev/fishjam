@@ -1,4 +1,5 @@
 defmodule FishjamWeb.PeerSocketHandler do
+  @moduledoc false
   require Logger
   alias Fishjam.{Room, RoomService}
 
