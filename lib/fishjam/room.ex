@@ -141,6 +141,12 @@ defmodule Fishjam.Room do
     GenServer.cast(registry_id(room_id), {:media_event, peer_id, event})
   end
 
+  @spec disconnect_peer(socket_pid :: pid(), room_pid :: pid(), reason :: atom()) :: :ok
+  def disconnect_peer(socket_pid, room_pid, reason) do
+    send(room_pid, {:DOWN, :any_ref, socket_pid, reason})
+    :ok
+  end
+
   @impl true
   def init([id, config]) do
     state = State.new(id, config)
@@ -186,10 +192,10 @@ defmodule Fishjam.Room do
     {reply, state} =
       case State.fetch_peer(state, peer_id) do
         {:ok, %{status: :disconnected} = peer} ->
-          if Node.self() == node_name do
-            # TODO: Properly handle when node is different
-            Process.monitor(socket_pid)
-          end
+          # if Node.self() == node_name do
+          # TODO: Properly handle when node is different
+          Process.monitor(socket_pid)
+          # end
 
           state = State.connect_peer(state, peer, socket_pid, node_name)
 
@@ -419,7 +425,7 @@ defmodule Fishjam.Room do
         )
 
         {:ok, peer} = State.fetch_peer(state, to)
-        send(self(), {:DOWN, :any_ref, peer.socket_pid, :peer_socket_not_exists})
+        disconnect_peer(peer.socket_pid, self(), :peer_socket_not_exists)
 
       nil ->
         Logger.warning(
@@ -432,7 +438,7 @@ defmodule Fishjam.Room do
         )
 
         {:ok, peer} = State.fetch_peer(state, to)
-        send(self(), {:DOWN, :any_ref, peer.socket_pid, :peer_socket_not_exists})
+        disconnect_peer(peer.socket_pid, self(), :peer_socket_not_exists)
 
       :error ->
         Logger.warning(

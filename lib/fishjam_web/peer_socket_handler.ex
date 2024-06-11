@@ -16,6 +16,20 @@ defmodule FishjamWeb.PeerSocketHandler do
     end
   end
 
+  def disconnect_peer(room_id, peer_id, socket_pid) do
+    with {:ok, room_pid} <- RoomService.find_room(room_id),
+         :ok <- Room.disconnect_peer(socket_pid, room_pid, :peer_disconnected) do
+      :ok
+    else
+      error ->
+        Logger.warning(
+          "Error when connecting peer #{peer_id} to room #{room_id}, because: #{inspect(error)}"
+        )
+
+        error
+    end
+  end
+
   def receive_media_event(room_id, peer_id, data) do
     Room.receive_media_event(room_id, peer_id, data)
   end

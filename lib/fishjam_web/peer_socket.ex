@@ -158,8 +158,12 @@ defmodule FishjamWeb.PeerSocket do
   end
 
   @impl true
-  def terminate(reason, _state) do
+  def terminate(reason, state) do
     Logger.info("Peer socket terminates with reason #{inspect(reason)}")
+
+    args = [state.room_id, state.peer_id, self()]
+    Fishjam.RPCClient.call(state.node_name, PeerSocketHandler, :disconnect_peer, args)
+
     :ok
   end
 
