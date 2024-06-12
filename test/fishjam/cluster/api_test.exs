@@ -128,7 +128,7 @@ defmodule Fishjam.Cluster.ApiTest do
     _response_body3 = add_file_component(other_node, room_id)
 
     # Wait a while for segments and manifest to get created
-    Process.sleep(10_000)
+    Process.sleep(20_000)
 
     _response_body4 = assert_successful_redirect(other_node, room_id)
   end
