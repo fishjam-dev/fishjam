@@ -6,7 +6,8 @@ defmodule FishjamWeb.RoomControllerTest do
   alias __MODULE__.Endpoint
 
   alias Fishjam.PeerMessage.Authenticated
-  alias Fishjam.RoomService
+  alias Fishjam.Room.ID
+  alias Fishjam.Local.RoomService
   alias FishjamWeb.{PeerSocket, WS}
 
   @schema FishjamWeb.ApiSpec.spec()
@@ -126,10 +127,19 @@ defmodule FishjamWeb.RoomControllerTest do
 
     test "renders room when data is valid, custom room_id + max_peers and peerless_purge_timeout not present",
          %{conn: conn} do
-      room_id = UUID.uuid4() <> "_ABCD-123_xyz"
+      room_id =
+        if Fishjam.FeatureFlags.request_routing_enabled?() do
+          conn = post(conn, ~p"/room")
+          assert %{"id" => id} = json_response(conn, :created)["data"]["room"]
 
-      conn = post(conn, ~p"/room", roomId: room_id)
-      json_response(conn, :created)
+          id
+        else
+          id = UUID.uuid4() <> "_ABCD-123_xyz"
+          conn = post(conn, ~p"/room", roomId: id)
+          json_response(conn, :created)
+
+          id
+        end
 
       conn = get(conn, ~p"/room/#{room_id}")
       response = json_response(conn, :ok)
@@ -143,16 +153,18 @@ defmodule FishjamWeb.RoomControllerTest do
              } = response["data"]
     end
 
-    test "renders error when adding two rooms with same room_id", %{conn: conn} do
-      room_id = UUID.uuid4()
+    unless Fishjam.FeatureFlags.request_routing_enabled?() do
+      test "renders error when adding two rooms with same room_id", %{conn: conn} do
+        room_id = UUID.uuid4()
 
-      conn = post(conn, ~p"/room", roomId: room_id)
-      json_response(conn, :created)
+        conn = post(conn, ~p"/room", roomId: room_id)
+        json_response(conn, :created)
 
-      conn = post(conn, ~p"/room", roomId: room_id)
+        conn = post(conn, ~p"/room", roomId: room_id)
 
-      assert json_response(conn, :bad_request)["errors"] ==
-               "Cannot add room with id \"#{room_id}\" - room already exists"
+        assert json_response(conn, :bad_request)["errors"] ==
+                 "Cannot add room with id \"#{room_id}\" - room already exists"
+      end
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
@@ -181,15 +193,17 @@ defmodule FishjamWeb.RoomControllerTest do
       assert json_response(conn, :bad_request)["errors"] ==
                "Expected peerDisconnectedTimeout to be a positive integer, got: nan"
 
-      conn = post(conn, ~p"/room", roomId: "test/path")
+      unless Fishjam.FeatureFlags.request_routing_enabled?() do
+        conn = post(conn, ~p"/room", roomId: "test/path")
 
-      assert json_response(conn, :bad_request)["errors"] ==
-               "Cannot add room with id \"test/path\" - roomId may contain only alphanumeric characters, hyphens and underscores"
+        assert json_response(conn, :bad_request)["errors"] ==
+                 "Cannot add room with id \"test/path\" - roomId may contain only alphanumeric characters, hyphens and underscores"
 
-      conn = post(conn, ~p"/room", roomId: "")
+        conn = post(conn, ~p"/room", roomId: "")
 
-      assert json_response(conn, :bad_request)["errors"] ==
-               "Cannot add room with id \"\" - roomId may contain only alphanumeric characters, hyphens and underscores"
+        assert json_response(conn, :bad_request)["errors"] ==
+                 "Cannot add room with id \"\" - roomId may contain only alphanumeric characters, hyphens and underscores"
+      end
     end
   end
 
@@ -430,7 +444,7 @@ defmodule FishjamWeb.RoomControllerTest do
     setup [:create_room]
 
     test "deletes chosen room", %{conn: conn, room_id: room_id} do
-      room_pid = RoomService.find_room!(room_id)
+      assert {:ok, room_pid} = RoomService.find_room(room_id)
       %{engine_pid: engine_pid} = :sys.get_state(room_pid)
 
       assert Process.alive?(room_pid)
@@ -450,7 +464,7 @@ defmodule FishjamWeb.RoomControllerTest do
     end
 
     test "returns 404 if room doesn't exists", %{conn: conn} do
-      conn = delete(conn, ~p"/room/#{"invalid_room"}")
+      conn = delete(conn, ~p"/room/#{ID.generate()}")
       assert response(conn, :not_found)
     end
   end
@@ -461,7 +475,7 @@ defmodule FishjamWeb.RoomControllerTest do
     test "roomService removes room on crash", %{room_id: room_id} = state do
       %{room_id: room2_id} = create_room(state)
 
-      room_pid = RoomService.find_room!(room_id)
+      assert {:ok, room_pid} = RoomService.find_room(room_id)
       %{engine_pid: engine_pid} = :sys.get_state(room_pid)
 
       assert Process.alive?(engine_pid)
@@ -484,7 +498,7 @@ defmodule FishjamWeb.RoomControllerTest do
     test "room closes on engine crash", %{room_id: room_id} = state do
       %{room_id: room2_id} = create_room(state)
 
-      room_pid = RoomService.find_room!(room_id)
+      assert {:ok, room_pid} = RoomService.find_room(room_id)
 
       :erlang.trace(Process.whereis(RoomService), true, [:receive])
 

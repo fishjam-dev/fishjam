@@ -90,8 +90,8 @@ end
 
 config :fishjam,
   feature_flags: [
-    custom_room_name_disabled:
-      ConfigReader.read_boolean("FJ_FEATURE_FLAG_CUSTOM_ROOM_NAME_DISABLED") || false
+    request_routing_enabled?:
+      ConfigReader.read_boolean("FJ_FEATURE_FLAG_REQUEST_ROUTING_ENABLED") || false
   ]
 
 check_origin = ConfigReader.read_check_origin("FJ_CHECK_ORIGIN")

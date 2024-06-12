@@ -12,7 +12,8 @@ defmodule FishjamWeb.Integration.ServerNotificationTest do
   alias Fishjam.Component
   alias Fishjam.Component.HLS
   alias Fishjam.Component.HLS.Manager
-  alias Fishjam.{PeerMessage, Room, RoomService, ServerMessage}
+  alias Fishjam.Local.RoomService
+  alias Fishjam.{PeerMessage, ServerMessage}
 
   alias Fishjam.ServerMessage.{
     Authenticated,
@@ -287,7 +288,7 @@ defmodule FishjamWeb.Integration.ServerNotificationTest do
 
     test "sends a message when peer connects and room crashes", %{conn: conn} do
       {room_id, peer_id, _conn, _ws} = subscribe_on_notifications_and_connect_peer(conn)
-      {:ok, room_pid} = Fishjam.RoomService.find_room(room_id)
+      {:ok, room_pid} = RoomService.find_room(room_id)
 
       Process.exit(room_pid, :kill)
 
@@ -305,7 +306,7 @@ defmodule FishjamWeb.Integration.ServerNotificationTest do
     test "sends a message when peer connects and it crashes", %{conn: conn} do
       {room_id, peer_id, conn, _ws} = subscribe_on_notifications_and_connect_peer(conn)
 
-      {:ok, room_pid} = Fishjam.RoomService.find_room(room_id)
+      {:ok, room_pid} = RoomService.find_room(room_id)
 
       state = :sys.get_state(room_pid)
 
@@ -355,9 +356,9 @@ defmodule FishjamWeb.Integration.ServerNotificationTest do
       ws = create_and_authenticate()
       subscribe(ws, :server_notification)
 
-      {:ok, config} = Room.Config.from_params(%{"webhookUrl" => @webhook_url})
+      {:ok, config} = Fishjam.Room.Config.from_params(%{"webhookUrl" => @webhook_url})
 
-      {:ok, room_pid, room_id} = Room.start(config)
+      {:ok, room_pid, room_id} = Fishjam.Local.Room.start(config)
       Fishjam.WebhookNotifier.add_webhook(room_id, config.webhook_url)
 
       {peer_id, token, _conn} = add_peer(conn, room_id)

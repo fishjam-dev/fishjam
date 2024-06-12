@@ -1,6 +1,8 @@
 defmodule FishjamWeb.SubscriptionControllerTest do
   use FishjamWeb.ConnCase
 
+  alias Fishjam.Room.ID
+
   @s3_credentials %{
     accessKeyId: "access_key_id",
     secretAccessKey: "secret_access_key",
@@ -47,12 +49,14 @@ defmodule FishjamWeb.SubscriptionControllerTest do
 
   describe "subscription overall" do
     test "returns error when room doesn't exist", %{conn: conn} do
+      invalid_room_id = ID.generate()
+
       conn =
-        post(conn, ~p"/room/invalid_room_id/component/invalid_component_id/subscribe/",
+        post(conn, ~p"/room/#{invalid_room_id}/component/invalid_component_id/subscribe/",
           origins: ["peer-1", "rtsp-2"]
         )
 
-      assert json_response(conn, :not_found)["errors"] == "Room invalid_room_id does not exist"
+      assert json_response(conn, :not_found)["errors"] == "Room #{invalid_room_id} does not exist"
     end
 
     test "returns error when hls component doesn't exist", %{conn: conn, room_id: room_id} do

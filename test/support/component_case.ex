@@ -7,7 +7,7 @@ defmodule FishjamWeb.ComponentCase do
   use ExUnit.CaseTemplate
   use FishjamWeb.ConnCase
 
-  alias Fishjam.RoomService
+  alias Fishjam.Local.RoomService
 
   using do
     quote do

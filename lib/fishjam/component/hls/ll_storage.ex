@@ -3,7 +3,8 @@ defmodule Fishjam.Component.HLS.LLStorage do
 
   @behaviour Membrane.HTTPAdaptiveStream.Storage
 
-  alias Fishjam.Component.HLS.{EtsHelper, RequestHandler}
+  alias Fishjam.Component.HLS.EtsHelper
+  alias Fishjam.Component.HLS.Local.RequestHandler
   alias Fishjam.Room
 
   @enforce_keys [:directory, :room_id]

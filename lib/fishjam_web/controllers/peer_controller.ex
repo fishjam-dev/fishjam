@@ -3,9 +3,10 @@ defmodule FishjamWeb.PeerController do
   use OpenApiSpex.ControllerSpecs
 
   require Logger
+
+  alias Fishjam.Cluster.Room
+  alias Fishjam.Cluster.RoomService
   alias Fishjam.Peer
-  alias Fishjam.Room
-  alias Fishjam.RoomService
   alias FishjamWeb.ApiSpec
   alias FishjamWeb.PeerToken
   alias OpenApiSpex.{Response, Schema}
@@ -40,8 +41,8 @@ defmodule FishjamWeb.PeerController do
       created: ApiSpec.data("Peer successfully created", ApiSpec.PeerDetailsResponse),
       bad_request: ApiSpec.error("Invalid request body structure"),
       not_found: ApiSpec.error("Room doesn't exist"),
-      service_unavailable: ApiSpec.error("Peer limit has been reached"),
-      unauthorized: ApiSpec.error("Unauthorized")
+      unauthorized: ApiSpec.error("Unauthorized"),
+      service_unavailable: ApiSpec.error("Service temporarily unavailable")
     ]
 
   operation :delete,
@@ -61,8 +62,10 @@ defmodule FishjamWeb.PeerController do
     ],
     responses: [
       no_content: %Response{description: "Peer successfully deleted"},
+      bad_request: ApiSpec.error("Invalid request body structure"),
       not_found: ApiSpec.error("Room ID or Peer ID references a resource that doesn't exist"),
-      unauthorized: ApiSpec.error("Unauthorized")
+      unauthorized: ApiSpec.error("Unauthorized"),
+      service_unavailable: ApiSpec.error("Service temporarily unavailable")
     ]
 
   def create(conn, %{"room_id" => room_id} = params) do
@@ -91,18 +94,27 @@ defmodule FishjamWeb.PeerController do
       :error ->
         msg = "Invalid request body structure"
         log_warning(room_id, msg)
-
         {:error, :bad_request, msg}
-
-      {:error, :room_not_found} ->
-        msg = "Room #{room_id} does not exist"
-        log_warning(room_id, msg)
-        {:error, :not_found, msg}
 
       {:error, :invalid_type} ->
         msg = "Invalid peer type"
         log_warning(room_id, msg)
         {:error, :bad_request, msg}
+
+      {:error, :invalid_room_id} ->
+        msg = "Invalid room ID: #{room_id}"
+        log_warning(room_id, msg)
+        {:error, :bad_request, msg}
+
+      {:error, not_found} when not_found in [:node_not_found, :room_not_found] ->
+        msg = "Room #{room_id} does not exist"
+        log_warning(room_id, msg)
+        {:error, :not_found, msg}
+
+      {:error, :rpc_failed} ->
+        msg = "Unable to reach Fishjam instance holding room #{room_id}"
+        log_warning(room_id, msg)
+        {:error, :service_unavailable, msg}
 
       {:error, {:peer_disabled_globally, type}} ->
         msg = "Peers of type #{type} are disabled on this Fishjam"
@@ -121,8 +133,17 @@ defmodule FishjamWeb.PeerController do
          :ok <- Room.remove_peer(room_id, id) do
       send_resp(conn, :no_content, "")
     else
-      {:error, :room_not_found} -> {:error, :not_found, "Room #{room_id} does not exist"}
-      {:error, :peer_not_found} -> {:error, :not_found, "Peer #{id} does not exist"}
+      {:error, :invalid_room_id} ->
+        {:error, :bad_request, "Invalid room ID: #{room_id}"}
+
+      {:error, not_found} when not_found in [:node_not_found, :room_not_found] ->
+        {:error, :not_found, "Room #{room_id} does not exist"}
+
+      {:error, :rpc_failed} ->
+        {:error, :service_unavailable, "Unable to reach Fishjam instance holding room #{room_id}"}
+
+      {:error, :peer_not_found} ->
+        {:error, :not_found, "Peer #{id} does not exist"}
     end
   end
 

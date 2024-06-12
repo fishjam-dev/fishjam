@@ -5,11 +5,22 @@ defmodule Fishjam.FeatureFlags do
   """
 
   @doc """
-  Flag for disabling custom room names, which will be replaced by the generated based on the node name.
+  Flag for enabling request routing within the cluster of Fishjams.
+  When toggled, it disallows setting custom room names - they will instead be generated based on the node name.
 
   Introduced: 28/05/2024
-  Removal: Once we move on to generated room_ids permanently.
+  Removal: Once we move on to generated room_ids and cluster-wide request routing permanently.
   """
-  def custom_room_name_disabled?,
-    do: Application.get_env(:fishjam, :feature_flags)[:custom_room_name_disabled]
+  def request_routing_enabled?(),
+    do: Application.get_env(:fishjam, :feature_flags)[:request_routing_enabled?]
+
+  @doc "Info about currently enabled feature flags"
+  def info() do
+    """
+    Feature flags:
+      * Request routing: #{status(request_routing_enabled?())}
+    """
+  end
+
+  defp status(flag), do: if(flag, do: "ENABLED", else: "disabled")
 end

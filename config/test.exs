@@ -5,7 +5,11 @@ config :fishjam,
   port: 4002,
   server_api_token: "development",
   webrtc_metrics_scrape_interval: 50,
-  room_metrics_scrape_interval: 1
+  room_metrics_scrape_interval: 1,
+  feature_flags: [
+    # TODO: Enable this flag here once we start using it in production
+    custom_room_name_disabled: false
+  ]
 
 config :fishjam, FishjamWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],

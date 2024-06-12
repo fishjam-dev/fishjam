@@ -2,9 +2,9 @@ defmodule FishjamWeb.ComponentController do
   use FishjamWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
+  alias Fishjam.Cluster.Room
+  alias Fishjam.Cluster.RoomService
   alias Fishjam.Component
-  alias Fishjam.Room
-  alias Fishjam.RoomService
   alias FishjamWeb.ApiSpec
   alias OpenApiSpex.{Response, Schema}
 
@@ -38,7 +38,8 @@ defmodule FishjamWeb.ComponentController do
       created: ApiSpec.data("Successfully added component", ApiSpec.ComponentDetailsResponse),
       bad_request: ApiSpec.error("Invalid request"),
       not_found: ApiSpec.error("Room doesn't exist"),
-      unauthorized: ApiSpec.error("Unauthorized")
+      unauthorized: ApiSpec.error("Unauthorized"),
+      service_unavailable: ApiSpec.error("Service temporarily unavailable")
     ]
 
   operation :delete,
@@ -58,8 +59,10 @@ defmodule FishjamWeb.ComponentController do
     ],
     responses: [
       no_content: %Response{description: "Successfully deleted"},
+      bad_request: ApiSpec.error("Invalid request"),
       not_found: ApiSpec.error("Either component or the room doesn't exist"),
-      unauthorized: ApiSpec.error("Unauthorized")
+      unauthorized: ApiSpec.error("Unauthorized"),
+      service_unavailable: ApiSpec.error("Service temporarily unavailable")
     ]
 
   def create(conn, %{"room_id" => room_id} = params) do
@@ -76,11 +79,17 @@ defmodule FishjamWeb.ComponentController do
       :error ->
         {:error, :bad_request, "Invalid request body structure"}
 
-      {:error, :room_not_found} ->
-        {:error, :not_found, "Room #{room_id} does not exist"}
-
       {:error, :invalid_type} ->
         {:error, :bad_request, "Invalid component type"}
+
+      {:error, :invalid_room_id} ->
+        {:error, :bad_request, "Invalid room ID: #{room_id}"}
+
+      {:error, not_found} when not_found in [:node_not_found, :room_not_found] ->
+        {:error, :not_found, "Room #{room_id} does not exist"}
+
+      {:error, :rpc_failed} ->
+        {:error, :service_unavailable, "Unable to reach Fishjam instance holding room #{room_id}"}
 
       {:error, {:component_disabled_globally, type}} ->
         {:error, :bad_request, "Components of type #{type} are disabled on this Fishjam"}
@@ -129,8 +138,17 @@ defmodule FishjamWeb.ComponentController do
          :ok <- Room.remove_component(room_id, id) do
       send_resp(conn, :no_content, "")
     else
-      {:error, :room_not_found} -> {:error, :not_found, "Room #{room_id} does not exist"}
-      {:error, :component_not_found} -> {:error, :not_found, "Component #{id} does not exist"}
+      {:error, :invalid_room_id} ->
+        {:error, :bad_request, "Invalid room ID: #{room_id}"}
+
+      {:error, not_found} when not_found in [:node_not_found, :room_not_found] ->
+        {:error, :not_found, "Room #{room_id} does not exist"}
+
+      {:error, :rpc_failed} ->
+        {:error, :service_unavailable, "Unable to reach Fishjam instance holding room #{room_id}"}
+
+      {:error, :component_not_found} ->
+        {:error, :not_found, "Component #{id} does not exist"}
     end
   end
 end

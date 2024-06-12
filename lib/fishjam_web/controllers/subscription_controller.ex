@@ -2,8 +2,7 @@ defmodule FishjamWeb.SubscriptionController do
   use FishjamWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Fishjam.Room
-  alias Fishjam.RoomService
+  alias Fishjam.Cluster.{Room, RoomService}
   alias FishjamWeb.ApiSpec
   alias OpenApiSpex.Response
 
@@ -25,7 +24,8 @@ defmodule FishjamWeb.SubscriptionController do
       created: %Response{description: "Tracks succesfully added."},
       bad_request: ApiSpec.error("Invalid request structure"),
       not_found: ApiSpec.error("Room doesn't exist"),
-      unauthorized: ApiSpec.error("Unauthorized")
+      unauthorized: ApiSpec.error("Unauthorized"),
+      service_unavailable: ApiSpec.error("Service temporarily unavailable")
     ]
 
   def create(conn, %{"room_id" => room_id, "component_id" => component_id} = params) do
@@ -37,8 +37,14 @@ defmodule FishjamWeb.SubscriptionController do
       :error ->
         {:error, :bad_request, "Invalid request body structure"}
 
-      {:error, :room_not_found} ->
+      {:error, :invalid_room_id} ->
+        {:error, :bad_request, "Invalid room ID: #{room_id}"}
+
+      {:error, not_found} when not_found in [:room_not_found, :node_not_found] ->
         {:error, :not_found, "Room #{room_id} does not exist"}
+
+      {:error, :rpc_failed} ->
+        {:error, :service_unavailable, "Unable to reach Fishjam instance holding room #{room_id}"}
 
       {:error, :component_not_exists} ->
         {:error, :bad_request, "Component #{component_id} does not exist"}

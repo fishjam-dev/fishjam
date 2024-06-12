@@ -4,7 +4,7 @@ defmodule FishjamWeb.Integration.PeerSocketTest do
   alias __MODULE__.Endpoint
   alias Fishjam.PeerMessage
   alias Fishjam.PeerMessage.{Authenticated, MediaEvent}
-  alias Fishjam.RoomService
+  alias Fishjam.Local.RoomService
   alias FishjamWeb.{PeerSocket, WS}
 
   @port 5908

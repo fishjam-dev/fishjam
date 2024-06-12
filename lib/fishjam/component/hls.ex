@@ -11,9 +11,10 @@ defmodule Fishjam.Component.HLS do
     LLStorage,
     Manager,
     Recording,
-    RequestHandler,
     Storage
   }
+
+  alias Fishjam.Component.HLS.Local.RequestHandler
 
   alias Fishjam.Room
 

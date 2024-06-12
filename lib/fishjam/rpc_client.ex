@@ -14,7 +14,7 @@ defmodule Fishjam.RPCClient do
   In case of any exceptions we are catching them logging and returning simple :error atom.
   """
   @spec call(node(), module(), atom(), term(), timeout()) :: {:ok, term()} | :error
-  def call(node, module, function, args, timeout \\ :infinity) do
+  def call(node, module, function, args \\ [], timeout \\ :infinity) do
     try do
       {:ok, :erpc.call(node, module, function, args, timeout)}
     rescue
@@ -29,7 +29,7 @@ defmodule Fishjam.RPCClient do
   It filters out any errors or exceptions from return so you may end up with empty list.
   """
   @spec multicall(module(), atom(), term(), timeout()) :: list(term)
-  def multicall(module, function, args, timeout \\ :infinity) do
+  def multicall(module, function, args \\ [], timeout \\ :infinity) do
     nodes()
     |> :erpc.multicall(module, function, args, timeout)
     |> handle_result()
@@ -48,6 +48,7 @@ defmodule Fishjam.RPCClient do
 
         acc
     end)
+    |> List.flatten()
   end
 
   defp nodes, do: [Node.self() | Node.list()]

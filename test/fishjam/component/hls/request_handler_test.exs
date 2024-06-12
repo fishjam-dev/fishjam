@@ -4,7 +4,8 @@ defmodule Fishjam.Component.HLS.RequestHandlerTest do
   use ExUnit.Case, async: true
 
   alias Fishjam.Component.HLS
-  alias Fishjam.Component.HLS.{EtsHelper, RequestHandler}
+  alias Fishjam.Component.HLS.EtsHelper
+  alias Fishjam.Component.HLS.Local.RequestHandler
 
   @wrong_room_id "321"
 
