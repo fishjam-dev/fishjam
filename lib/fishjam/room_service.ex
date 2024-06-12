@@ -3,7 +3,7 @@ defmodule Fishjam.RoomService do
   Behaviour for Fishjam.{Cluster, Local}.RoomService
   """
 
-  alias Fishjam.Room
+  alias Fishjam.Local.Room
   alias Fishjam.Room.{Config, ID}
 
   @type cluster_error :: :invalid_room_id | :node_not_found | :rpc_failed
