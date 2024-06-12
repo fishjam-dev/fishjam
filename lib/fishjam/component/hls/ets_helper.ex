@@ -1,7 +1,7 @@
 defmodule Fishjam.Component.HLS.EtsHelper do
   @moduledoc false
 
-  alias Fishjam.Room
+  alias Fishjam.Room.ID
 
   @rooms_to_tables :rooms_to_tables
 
@@ -19,7 +19,7 @@ defmodule Fishjam.Component.HLS.EtsHelper do
   ### ROOM MANAGMENT
   ###
 
-  @spec add_room(Room.id()) :: {:ok, reference()} | {:error, :already_exists}
+  @spec add_room(ID.id()) :: {:ok, reference()} | {:error, :already_exists}
   def add_room(room_id) do
     if room_exists?(room_id) do
       {:error, :already_exists}
@@ -37,7 +37,7 @@ defmodule Fishjam.Component.HLS.EtsHelper do
     end
   end
 
-  @spec remove_room(Room.id()) :: :ok | {:error, String.t()}
+  @spec remove_room(ID.id()) :: :ok | {:error, String.t()}
   def remove_room(room_id) do
     case :ets.lookup(@rooms_to_tables, room_id) do
       [{^room_id, _table}] ->
@@ -84,12 +84,12 @@ defmodule Fishjam.Component.HLS.EtsHelper do
     :ets.delete(table, filename)
   end
 
-  @spec add_hls_folder_path(Room.id(), String.t()) :: true
+  @spec add_hls_folder_path(ID.id(), String.t()) :: true
   def add_hls_folder_path(room_id, path) do
     :ets.insert(@hls_folder_path, {room_id, path})
   end
 
-  @spec delete_hls_folder_path(Room.id()) :: true
+  @spec delete_hls_folder_path(ID.id()) :: true
   def delete_hls_folder_path(room_id) do
     :ets.delete(@hls_folder_path, room_id)
   end
@@ -98,35 +98,35 @@ defmodule Fishjam.Component.HLS.EtsHelper do
   ### ETS GETTERS
   ###
 
-  @spec get_partial(Room.id(), String.t()) ::
+  @spec get_partial(ID.id(), String.t()) ::
           {:ok, binary()} | {:error, atom()}
   def get_partial(room_id, filename) do
     get_from_ets(room_id, filename)
   end
 
-  @spec get_recent_partial(Room.id()) ::
+  @spec get_recent_partial(ID.id()) ::
           {:ok, {non_neg_integer(), non_neg_integer()}} | {:error, atom()}
   def get_recent_partial(room_id) do
     get_from_ets(room_id, @recent_partial_key)
   end
 
-  @spec get_delta_recent_partial(Room.id()) ::
+  @spec get_delta_recent_partial(ID.id()) ::
           {:ok, {non_neg_integer(), non_neg_integer()}} | {:error, atom()}
   def get_delta_recent_partial(room_id) do
     get_from_ets(room_id, @delta_recent_partial_key)
   end
 
-  @spec get_manifest(Room.id()) :: {:ok, String.t()} | {:error, atom()}
+  @spec get_manifest(ID.id()) :: {:ok, String.t()} | {:error, atom()}
   def get_manifest(room_id) do
     get_from_ets(room_id, @manifest_key)
   end
 
-  @spec get_delta_manifest(Room.id()) :: {:ok, String.t()} | {:error, atom()}
+  @spec get_delta_manifest(ID.id()) :: {:ok, String.t()} | {:error, atom()}
   def get_delta_manifest(room_id) do
     get_from_ets(room_id, @delta_manifest_key)
   end
 
-  @spec get_hls_folder_path(Room.id()) :: {:ok, String.t()} | {:error, :room_not_found}
+  @spec get_hls_folder_path(ID.id()) :: {:ok, String.t()} | {:error, :room_not_found}
   def get_hls_folder_path(room_id) do
     get_path(room_id)
   end

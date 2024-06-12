@@ -16,7 +16,7 @@ defmodule Fishjam.Component.HLS do
 
   alias Fishjam.Component.HLS.Local.RequestHandler
 
-  alias Fishjam.Room
+  alias Fishjam.Room.ID
 
   alias FishjamWeb.ApiSpec.Component.HLS.Options
 
@@ -92,7 +92,7 @@ defmodule Fishjam.Component.HLS do
     if low_latency, do: remove_request_handler(room_id)
   end
 
-  @spec output_dir(Room.id(), persistent: boolean()) :: String.t()
+  @spec output_dir(ID.id(), persistent: boolean()) :: String.t()
   def output_dir(room_id, persistent: true) do
     Recording.directory(room_id)
   end

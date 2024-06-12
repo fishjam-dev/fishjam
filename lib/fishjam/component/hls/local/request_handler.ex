@@ -8,7 +8,7 @@ defmodule Fishjam.Component.HLS.Local.RequestHandler do
 
   alias Fishjam.Utils.PathValidation
   alias Fishjam.Component.HLS.{EtsHelper, Recording}
-  alias Fishjam.Room
+  alias Fishjam.Room.ID
 
   @enforce_keys [:room_id, :room_pid]
   defstruct @enforce_keys ++
@@ -24,7 +24,7 @@ defmodule Fishjam.Component.HLS.Local.RequestHandler do
   @type status :: %{waiting_pids: %{partial() => [pid()]}, last_partial: partial() | nil}
 
   @type t :: %__MODULE__{
-          room_id: Room.id(),
+          room_id: ID.id(),
           room_pid: pid(),
           manifest: status(),
           delta_manifest: status(),
@@ -59,7 +59,7 @@ defmodule Fishjam.Component.HLS.Local.RequestHandler do
   @doc """
   Handles VOD requests: master playlist, headers, regular segments
   """
-  @spec handle_recording_request(Room.id(), String.t()) :: {:ok, binary()} | {:error, atom()}
+  @spec handle_recording_request(ID.id(), String.t()) :: {:ok, binary()} | {:error, atom()}
   def handle_recording_request(recording_id, filename) do
     with :ok <- Recording.validate_recording(recording_id) do
       recording_path = Recording.directory(recording_id)
@@ -120,12 +120,12 @@ defmodule Fishjam.Component.HLS.Local.RequestHandler do
   ### STORAGE API
   ###
 
-  @spec update_recent_partial(Room.id(), partial()) :: :ok
+  @spec update_recent_partial(ID.id(), partial()) :: :ok
   def update_recent_partial(room_id, partial) do
     GenServer.cast(registry_id(room_id), {:update_recent_partial, partial, :manifest})
   end
 
-  @spec update_delta_recent_partial(Room.id(), partial()) :: :ok
+  @spec update_delta_recent_partial(ID.id(), partial()) :: :ok
   def update_delta_recent_partial(room_id, partial) do
     GenServer.cast(registry_id(room_id), {:update_recent_partial, partial, :delta_manifest})
   end

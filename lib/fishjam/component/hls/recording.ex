@@ -2,12 +2,12 @@ defmodule Fishjam.Component.HLS.Recording do
   @moduledoc false
 
   alias Fishjam.Component.HLS.EtsHelper
-  alias Fishjam.Room
+  alias Fishjam.Room.ID
   alias Fishjam.Utils.PathValidation
 
   @recordings_folder "recordings"
 
-  @spec validate_recording(Room.id()) :: :ok | {:error, :not_found} | {:error, :invalid_recording}
+  @spec validate_recording(ID.id()) :: :ok | {:error, :not_found} | {:error, :invalid_recording}
   def validate_recording(id) do
     path = directory(id)
 
@@ -18,7 +18,7 @@ defmodule Fishjam.Component.HLS.Recording do
     end
   end
 
-  @spec list_all() :: {:ok, [Room.id()]} | :error
+  @spec list_all() :: {:ok, [ID.id()]} | :error
   def list_all() do
     case File.ls(root_directory()) do
       {:ok, files} -> {:ok, Enum.filter(files, &exists?(&1))}
@@ -27,14 +27,14 @@ defmodule Fishjam.Component.HLS.Recording do
     end
   end
 
-  @spec delete(Room.id()) :: :ok | {:error, :not_found} | {:error, :invalid_recording}
+  @spec delete(ID.id()) :: :ok | {:error, :not_found} | {:error, :invalid_recording}
   def delete(id) do
     with :ok <- validate_recording(id) do
       do_delete(id)
     end
   end
 
-  @spec directory(Room.id()) :: String.t()
+  @spec directory(ID.id()) :: String.t()
   def directory(id) do
     root_directory() |> Path.join(id) |> Path.expand()
   end
