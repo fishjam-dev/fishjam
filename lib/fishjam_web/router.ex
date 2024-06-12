@@ -35,6 +35,10 @@ defmodule FishjamWeb.Router do
       delete "/:recording_id", RecordingController, :delete
       get "/", RecordingController, :show
     end
+
+    scope "/upload" do
+      post "/", UploadController, :create
+    end
   end
 
   # Paths which DO NOT require auth
