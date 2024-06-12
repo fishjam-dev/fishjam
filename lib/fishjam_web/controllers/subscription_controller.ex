@@ -37,15 +37,6 @@ defmodule FishjamWeb.SubscriptionController do
       :error ->
         {:error, :bad_request, "Invalid request body structure"}
 
-      {:error, :invalid_room_id} ->
-        {:error, :bad_request, "Invalid room ID: #{room_id}"}
-
-      {:error, not_found} when not_found in [:room_not_found, :node_not_found] ->
-        {:error, :not_found, "Room #{room_id} does not exist"}
-
-      {:error, :rpc_failed} ->
-        {:error, :service_unavailable, "Unable to reach Fishjam instance holding room #{room_id}"}
-
       {:error, :component_not_exists} ->
         {:error, :bad_request, "Component #{component_id} does not exist"}
 
@@ -56,6 +47,9 @@ defmodule FishjamWeb.SubscriptionController do
       {:error, :invalid_subscribe_mode} ->
         {:error, :bad_request,
          "Component #{component_id} option `subscribe_mode` is set to :auto"}
+
+      other ->
+        other
     end
   end
 end

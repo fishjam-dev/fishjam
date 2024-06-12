@@ -56,7 +56,7 @@ defmodule FishjamWeb.SubscriptionControllerTest do
           origins: ["peer-1", "rtsp-2"]
         )
 
-      assert json_response(conn, :not_found)["errors"] == "Room #{invalid_room_id} does not exist"
+      assert json_response(conn, :not_found)["errors"] == "Room with this ID does not exist"
     end
 
     test "returns error when hls component doesn't exist", %{conn: conn, room_id: room_id} do

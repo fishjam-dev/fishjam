@@ -4,8 +4,8 @@ defmodule FishjamWeb.RecordingController do
 
   require Logger
 
-  alias Fishjam.Component.HLS.Recording
   alias Fishjam.Component.HLS.Local.RequestHandler
+  alias Fishjam.Component.HLS.Recording
   alias FishjamWeb.ApiSpec
 
   alias Plug.Conn

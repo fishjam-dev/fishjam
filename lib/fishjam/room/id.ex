@@ -15,7 +15,7 @@ defmodule Fishjam.Room.ID do
     with {:ok, room_id} <- validate_room_id(room_id),
          {:ok, node_name} <- decode_node_name(room_id),
          true <- node_present_in_cluster?(node_name) do
-      {:ok, String.to_atom(node_name)}
+      {:ok, String.to_existing_atom(node_name)}
     else
       {:error, :invalid_room_id} -> {:error, :invalid_room_id}
       false -> {:error, :node_not_found}

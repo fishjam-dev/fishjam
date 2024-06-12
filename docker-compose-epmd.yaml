@@ -1,30 +1,43 @@
 version: "3"
 
 x-fishjam-template: &fishjam-template
-  build: .
+  build:
+    context: .
+    args:
+      - MIX_ENV=test
   environment: &fishjam-environment
     FJ_SERVER_API_TOKEN: "development"
     FJ_DIST_ENABLED: "true"
     FJ_DIST_NODES: "app@app1 app@app2"
+    MIX_ENV: "test"
+    FJ_FEATURE_FLAG_REQUEST_ROUTING_ENABLED: "true"
+    FJ_COMPONENTS_USED: "hls file"
+  volumes:
+    - ./test/fixtures:/app/fishjam_resources/file_component_sources
   restart: on-failure
+  healthcheck:
+    interval: 1s
+    timeout: 8s
+    retries: 16
 
 services:
   test:
-    image: membraneframeworklabs/docker_membrane:latest
+    build:
+      context: .
+      target: build
+      args:
+        - MIX_ENV=test_cluster
     command:
       - sh
       - -c
-      - |
-        cd app/ 
-        mix deps.get 
-        MIX_ENV=test_cluster mix test --only cluster
+      - mix test --only cluster
     volumes:
-      - .:/app
-      - /app/_build
-      - /app/deps
+      - ./test:/app/test
     depends_on:
-      - app1
-      - app2
+      app1:
+        condition: service_healthy
+      app2:
+        condition: service_healthy
 
   app1:
     <<: *fishjam-template

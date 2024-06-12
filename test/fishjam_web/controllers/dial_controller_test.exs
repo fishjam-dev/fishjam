@@ -45,7 +45,7 @@ defmodule FishjamWeb.DialControllerTest do
     test "returns error when room doesn't exist", %{conn: conn} do
       invalid_room_id = ID.generate()
       conn = post(conn, ~p"/sip/#{invalid_room_id}/component_id/call", phoneNumber: "+123456")
-      assert json_response(conn, :not_found)["errors"] == "Room #{invalid_room_id} does not exist"
+      assert json_response(conn, :not_found)["errors"] == "Room with this ID does not exist"
     end
 
     test "returns error when sip component doesn't exist", %{conn: conn, room_id: room_id} do

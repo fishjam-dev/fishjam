@@ -140,14 +140,8 @@ defmodule FishjamWeb.RoomController do
         |> put_resp_content_type("application/json")
         |> render("show.json", room: room)
 
-      {:error, :invalid_room_id} ->
-        {:error, :bad_request, "Invalid room ID: #{id}"}
-
-      {:error, not_found} when not_found in [:room_not_found, :node_not_found] ->
-        {:error, :not_found, "Room #{id} does not exist"}
-
-      {:error, :rpc_failed} ->
-        {:error, :service_unavailable, "Unable to reach Fishjam instance holding room #{id}"}
+      error ->
+        error
     end
   end
 
@@ -156,14 +150,8 @@ defmodule FishjamWeb.RoomController do
       :ok ->
         send_resp(conn, :no_content, "")
 
-      {:error, :invalid_room_id} ->
-        {:error, :bad_request, "Invalid room ID: #{id}"}
-
-      {:error, not_found} when not_found in [:room_not_found, :node_not_found] ->
-        {:error, :not_found, "Room #{id} does not exist"}
-
-      {:error, :rpc_failed} ->
-        {:error, :service_unavailable, "Unable to reach Fishjam instance holding room #{id}"}
+      error ->
+        error
     end
   end
 

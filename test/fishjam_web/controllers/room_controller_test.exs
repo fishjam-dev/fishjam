@@ -5,9 +5,9 @@ defmodule FishjamWeb.RoomControllerTest do
 
   alias __MODULE__.Endpoint
 
+  alias Fishjam.Local.RoomService
   alias Fishjam.PeerMessage.Authenticated
   alias Fishjam.Room.ID
-  alias Fishjam.Local.RoomService
   alias FishjamWeb.{PeerSocket, WS}
 
   @schema FishjamWeb.ApiSpec.spec()
@@ -460,7 +460,7 @@ defmodule FishjamWeb.RoomControllerTest do
       assert_receive({:DOWN, _ref, :process, ^engine_pid, :normal})
 
       conn = get(conn, ~p"/room/#{room_id}")
-      assert json_response(conn, :not_found) == %{"errors" => "Room #{room_id} does not exist"}
+      assert json_response(conn, :not_found) == %{"errors" => "Room with this ID does not exist"}
     end
 
     test "returns 404 if room doesn't exists", %{conn: conn} do

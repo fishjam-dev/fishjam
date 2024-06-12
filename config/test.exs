@@ -9,7 +9,8 @@ config :fishjam,
   feature_flags: [
     # TODO: Enable this flag here once we start using it in production
     custom_room_name_disabled: false
-  ]
+  ],
+  test_routes: true
 
 config :fishjam, FishjamWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],

@@ -82,15 +82,6 @@ defmodule FishjamWeb.ComponentController do
       {:error, :invalid_type} ->
         {:error, :bad_request, "Invalid component type"}
 
-      {:error, :invalid_room_id} ->
-        {:error, :bad_request, "Invalid room ID: #{room_id}"}
-
-      {:error, not_found} when not_found in [:node_not_found, :room_not_found] ->
-        {:error, :not_found, "Room #{room_id} does not exist"}
-
-      {:error, :rpc_failed} ->
-        {:error, :service_unavailable, "Unable to reach Fishjam instance holding room #{room_id}"}
-
       {:error, {:component_disabled_globally, type}} ->
         {:error, :bad_request, "Components of type #{type} are disabled on this Fishjam"}
 
@@ -130,6 +121,9 @@ defmodule FishjamWeb.ComponentController do
       {:error, :overridding_path_prefix} ->
         {:error, :bad_request,
          "Conflicting S3 path prefix supplied via environment variables and the REST API. Overrides on existing values are disallowed"}
+
+      other ->
+        other
     end
   end
 
@@ -138,17 +132,11 @@ defmodule FishjamWeb.ComponentController do
          :ok <- Room.remove_component(room_id, id) do
       send_resp(conn, :no_content, "")
     else
-      {:error, :invalid_room_id} ->
-        {:error, :bad_request, "Invalid room ID: #{room_id}"}
-
-      {:error, not_found} when not_found in [:node_not_found, :room_not_found] ->
-        {:error, :not_found, "Room #{room_id} does not exist"}
-
-      {:error, :rpc_failed} ->
-        {:error, :service_unavailable, "Unable to reach Fishjam instance holding room #{room_id}"}
-
       {:error, :component_not_found} ->
         {:error, :not_found, "Component #{id} does not exist"}
+
+      other ->
+        other
     end
   end
 end

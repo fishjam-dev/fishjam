@@ -84,7 +84,7 @@ defmodule FishjamWeb.PeerControllerTest do
     test "renders errors when room doesn't exist", %{conn: conn} do
       room_id = ID.generate()
       conn = post(conn, ~p"/room/#{room_id}/peer", type: @peer_type)
-      assert json_response(conn, :not_found)["errors"] == "Room #{room_id} does not exist"
+      assert json_response(conn, :not_found)["errors"] == "Room with this ID does not exist"
     end
 
     test "renders errors when request body structure is invalid", %{conn: conn, room_id: room_id} do
@@ -132,7 +132,7 @@ defmodule FishjamWeb.PeerControllerTest do
     test "deletes peer from not exisiting room", %{conn: conn, peer_id: peer_id} do
       room_id = ID.generate()
       conn = delete(conn, ~p"/room/#{room_id}/peer/#{peer_id}")
-      assert json_response(conn, :not_found)["errors"] == "Room #{room_id} does not exist"
+      assert json_response(conn, :not_found)["errors"] == "Room with this ID does not exist"
     end
 
     defp create_peer(state) do

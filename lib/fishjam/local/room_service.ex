@@ -11,6 +11,7 @@ defmodule Fishjam.Local.RoomService do
 
   alias Fishjam.Event
   alias Fishjam.Local.Room
+  alias Fishjam.Room.ID
   alias Fishjam.WebhookNotifier
 
   @metric_interval_in_seconds Application.compile_env!(:fishjam, :room_metrics_scrape_interval)
@@ -109,6 +110,10 @@ defmodule Fishjam.Local.RoomService do
   @impl true
   def handle_call({:create_room, config}, _from, state) do
     Logger.debug("Creating a new room")
+
+    # Re-generate the room ID to ensure it has the correct node name part
+    {:ok, room_id} = ID.generate(config.room_id)
+    config = %{config | room_id: room_id}
 
     with {:ok, room_pid, room_id} <- Room.start(config) do
       Logger.debug("Room created successfully")

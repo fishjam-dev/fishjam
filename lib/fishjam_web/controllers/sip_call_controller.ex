@@ -52,20 +52,14 @@ defmodule FishjamWeb.SIPCallController do
       :error ->
         {:error, :bad_request, "Invalid request body structure"}
 
-      {:error, :invalid_room_id} ->
-        {:error, :bad_request, "Invalid room ID: #{room_id}"}
-
-      {:error, not_found} when not_found in [:room_not_found, :node_not_found] ->
-        {:error, :not_found, "Room #{room_id} does not exist"}
-
-      {:error, :rpc_failed} ->
-        {:error, :service_unavailable, "Unable to reach Fishjam instance holding room #{room_id}"}
-
       {:error, :component_does_not_exist} ->
         {:error, :bad_request, "Component #{component_id} does not exist"}
 
       {:error, :bad_component_type} ->
         {:error, :bad_request, "Component #{component_id} is not a SIP component"}
+
+      other ->
+        other
     end
   end
 
@@ -79,20 +73,14 @@ defmodule FishjamWeb.SIPCallController do
       :error ->
         {:error, :bad_request, "Invalid request body structure"}
 
-      {:error, :invalid_room_id} ->
-        {:error, :bad_request, "Invalid room ID: #{room_id}"}
-
-      {:error, not_found} when not_found in [:room_not_found, :node_not_found] ->
-        {:error, :not_found, "Room #{room_id} does not exist"}
-
-      {:error, :rpc_failed} ->
-        {:error, :service_unavailable, "Unable to reach Fishjam instance holding room #{room_id}"}
-
       {:error, :component_does_not_exist} ->
         {:error, :bad_request, "Component #{component_id} does not exist"}
 
       {:error, :bad_component_type} ->
         {:error, :bad_request, "Component #{component_id} is not SIP component"}
+
+      other ->
+        other
     end
   end
 end

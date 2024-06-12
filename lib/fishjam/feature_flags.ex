@@ -11,11 +11,11 @@ defmodule Fishjam.FeatureFlags do
   Introduced: 28/05/2024
   Removal: Once we move on to generated room_ids and cluster-wide request routing permanently.
   """
-  def request_routing_enabled?(),
+  def request_routing_enabled?,
     do: Application.get_env(:fishjam, :feature_flags)[:request_routing_enabled?]
 
   @doc "Info about currently enabled feature flags"
-  def info() do
+  def info do
     """
     Feature flags:
       * Request routing: #{status(request_routing_enabled?())}

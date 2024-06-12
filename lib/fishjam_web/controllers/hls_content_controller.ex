@@ -121,7 +121,6 @@ defmodule FishjamWeb.HLSContentController do
       |> URI.parse()
       |> Map.put(:path, conn.request_path)
       |> URI.to_string()
-      |> IO.inspect(label: :redirect_location)
 
     conn
     |> put_status(:moved_permanently)

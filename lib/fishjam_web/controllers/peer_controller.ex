@@ -101,21 +101,6 @@ defmodule FishjamWeb.PeerController do
         log_warning(room_id, msg)
         {:error, :bad_request, msg}
 
-      {:error, :invalid_room_id} ->
-        msg = "Invalid room ID: #{room_id}"
-        log_warning(room_id, msg)
-        {:error, :bad_request, msg}
-
-      {:error, not_found} when not_found in [:node_not_found, :room_not_found] ->
-        msg = "Room #{room_id} does not exist"
-        log_warning(room_id, msg)
-        {:error, :not_found, msg}
-
-      {:error, :rpc_failed} ->
-        msg = "Unable to reach Fishjam instance holding room #{room_id}"
-        log_warning(room_id, msg)
-        {:error, :service_unavailable, msg}
-
       {:error, {:peer_disabled_globally, type}} ->
         msg = "Peers of type #{type} are disabled on this Fishjam"
         log_warning(room_id, msg)
@@ -125,6 +110,9 @@ defmodule FishjamWeb.PeerController do
         msg = "Reached #{type} peers limit in room #{room_id}"
         log_warning(room_id, msg)
         {:error, :service_unavailable, msg}
+
+      other ->
+        other
     end
   end
 
@@ -133,17 +121,11 @@ defmodule FishjamWeb.PeerController do
          :ok <- Room.remove_peer(room_id, id) do
       send_resp(conn, :no_content, "")
     else
-      {:error, :invalid_room_id} ->
-        {:error, :bad_request, "Invalid room ID: #{room_id}"}
-
-      {:error, not_found} when not_found in [:node_not_found, :room_not_found] ->
-        {:error, :not_found, "Room #{room_id} does not exist"}
-
-      {:error, :rpc_failed} ->
-        {:error, :service_unavailable, "Unable to reach Fishjam instance holding room #{room_id}"}
-
       {:error, :peer_not_found} ->
         {:error, :not_found, "Peer #{id} does not exist"}
+
+      other ->
+        other
     end
   end
 
