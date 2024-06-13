@@ -6,7 +6,14 @@ defmodule Fishjam.Cluster.LoadBalancingTest do
   use ExUnit.Case, async: false
 
   alias Fishjam.PeerMessage
-  alias Fishjam.PeerMessage.{Authenticated, MediaEvent}
+  alias Fishjam.PeerMessage.MediaEvent
+  alias Fishjam.ServerMessage
+
+  alias Fishjam.ServerMessage.{
+    RoomCreated,
+    RoomDeleted
+  }
+
   alias FishjamWeb.WS
 
   @token Application.compile_env(:fishjam, :server_api_token)
@@ -18,7 +25,6 @@ defmodule Fishjam.Cluster.LoadBalancingTest do
 
   @moduletag :cluster
   @max_test_duration 400_000
-  @auth_response %Authenticated{}
   @nodes ["app1:4001", "app2:4002"]
 
   setup do
@@ -91,21 +97,21 @@ defmodule Fishjam.Cluster.LoadBalancingTest do
 
     @tag timeout: @max_test_duration
     test "delete room on other node", state do
-      create_and_authenticate(state.token, state.other_instance)
+      create_and_authenticate_peer(state.token, state.other_instance)
       delete_room(state.room_instance, state.room_id)
       assert_receive {:disconnected, {:remote, 1000, "Room stopped"}}, 2_000
     end
 
     @tag timeout: @max_test_duration
     test "delete peer on other node", state do
-      create_and_authenticate(state.token, state.other_instance)
+      create_and_authenticate_peer(state.token, state.other_instance)
       delete_peer(state.room_instance, state.room_id, state.peer_id)
       assert_receive {:disconnected, {:remote, 1000, "Peer removed"}}, 2_000
     end
 
     @tag timeout: @max_test_duration
     test "send connect media event", state do
-      ws = create_and_authenticate(state.token, state.other_instance)
+      ws = create_and_authenticate_peer(state.token, state.other_instance)
 
       data = Jason.encode!(%{"type" => "connect", "data" => %{"metadata" => nil}})
       msg = PeerMessage.encode(%PeerMessage{content: {:media_event, %MediaEvent{data: data}}})
@@ -117,15 +123,105 @@ defmodule Fishjam.Cluster.LoadBalancingTest do
 
     @tag timeout: @max_test_duration
     test "peer socket killed", state do
-      ws = create_and_authenticate(state.token, state.other_instance)
+      ws = create_and_authenticate_peer(state.token, state.other_instance)
 
       Process.unlink(ws)
       Process.monitor(ws)
       Process.exit(ws, :disconnected)
       assert_receive {:DOWN, _ref, :process, ^ws, :disconnected}
+      Process.sleep(500)
 
       room_state = get_room_state(state.room_instance, state.room_id)
       assert Enum.all?(room_state["data"]["peers"], &(&1["status"] == "disconnected"))
+    end
+
+    @tag timeout: @max_test_duration
+    test "invalid token ", state do
+      path = "ws://#{state.other_instance}/socket/peer/websocket"
+      {:ok, ws} = WS.start_link(path, :peer)
+
+      WS.send_auth_request(ws, "invalid" <> state.token)
+
+      assert_receive {:disconnected, {:remote, 1000, "invalid token"}}, 1000
+    end
+
+    @tag timeout: @max_test_duration
+    test "valid token but room doesn't exist", state do
+      path = "ws://#{state.other_instance}/socket/peer/websocket"
+
+      delete_room(state.room_instance, state.room_id)
+
+      {:ok, ws} = WS.start_link(path, :peer)
+      WS.send_auth_request(ws, state.token)
+
+      assert_receive {:disconnected, {:remote, 1000, "room not found"}}, 1000
+    end
+
+    @tag timeout: @max_test_duration
+    test "send authRequest when already connected", state do
+      ws = create_and_authenticate_peer(state.token, state.other_instance)
+
+      WS.send_auth_request(ws, state.token)
+      refute_receive %PeerMessage.Authenticated{}, 1000
+      refute_receive {:disconnected, {:remote, 1000, _msg}}
+    end
+
+    @tag timeout: @max_test_duration
+    test "two web sockets", state do
+      create_and_authenticate_peer(state.token, state.other_instance)
+      path = "ws://#{state.other_instance}/socket/peer/websocket"
+      {:ok, ws2} = WS.start_link(path, :peer)
+      WS.send_auth_request(ws2, state.token)
+
+      assert_receive {:disconnected, {:remote, 1000, "peer already connected"}}, 1000
+    end
+
+    test "message from unauthenticated peer", state do
+      create_and_authenticate_peer(state.token, state.other_instance)
+      path = "ws://#{state.other_instance}/socket/peer/websocket"
+      {:ok, ws} = WS.start_link(path, :peer)
+
+      msg =
+        PeerMessage.encode(%PeerMessage{
+          content: {:media_event, %MediaEvent{data: "some data"}}
+        })
+
+      Process.unlink(ws)
+
+      :ok = WS.send_binary_frame(ws, msg)
+
+      assert_receive {:disconnected, {:remote, 1000, "unauthenticated"}}, 1000
+    end
+  end
+
+  describe "server websocket load balancing" do
+    setup do
+      [node1, node2] = @nodes
+
+      {:ok, %{room_instance: node1, other_instance: node2}}
+    end
+
+    test "sends a message when room gets created and deleted", state do
+      server_api_token = Application.fetch_env!(:fishjam, :server_api_token)
+      ws = create_and_authenticate_server(state.other_instance)
+
+      WS.subscribe(ws, :server_notification)
+
+      response_body1 = add_room(state.room_instance)
+      fishjam_instance1 = get_fishjam_address(response_body1)
+      room_id1 = get_in(response_body1, ["data", "room", "id"])
+      response_body2 = add_room(state.room_instance)
+      fishjam_instance2 = get_fishjam_address(response_body2)
+      room_id2 = get_in(response_body2, ["data", "room", "id"])
+
+      assert_receive %RoomCreated{room_id: ^room_id1}
+      assert_receive %RoomCreated{room_id: ^room_id2}
+
+      delete_room(fishjam_instance1, room_id1)
+      delete_room(fishjam_instance2, room_id2)
+
+      assert_receive %RoomDeleted{room_id: ^room_id1}
+      assert_receive %RoomDeleted{room_id: ^room_id2}
     end
   end
 
@@ -147,11 +243,23 @@ defmodule Fishjam.Cluster.LoadBalancingTest do
     Jason.decode!(body)
   end
 
-  def create_and_authenticate(token, node) do
+  defp create_and_authenticate_peer(token, node) do
     path = "ws://#{node}/socket/peer/websocket"
     {:ok, ws} = WS.start_link(path, :peer)
     WS.send_auth_request(ws, token)
-    assert_receive @auth_response, 1000
+    assert_receive %PeerMessage.Authenticated{}, 1000
+
+    ws
+  end
+
+  def create_and_authenticate_server(node) do
+    token = Application.fetch_env!(:fishjam, :server_api_token)
+
+    path = "ws://#{node}/socket/server/websocket"
+
+    {:ok, ws} = WS.start_link(path, :server)
+    WS.send_auth_request(ws, token)
+    assert_receive %ServerMessage.Authenticated{}, 1000
 
     ws
   end
