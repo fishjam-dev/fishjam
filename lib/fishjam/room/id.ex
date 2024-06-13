@@ -16,12 +16,20 @@ defmodule Fishjam.Room.ID do
           {:ok, node()} | {:error, :invalid_room_id} | {:error, :invalid_node}
   def determine_node(room_id) do
     with {:ok, room_id} <- validate_room_id(room_id),
+         {:feature_flag, true} <-
+           {:feature_flag, Fishjam.FeatureFlags.custom_room_name_disabled?()},
          node_name <- decode_node_name(room_id),
          true <- node_present_in_cluster?(node_name) do
       {:ok, node_name}
     else
-      {:error, :invalid_room_id} -> {:error, :invalid_room_id}
-      false -> {:error, :invalid_node}
+      {:error, :invalid_room_id} ->
+        {:error, :invalid_room_id}
+
+      {:feature_flag, false} ->
+        {:ok, Node.self()}
+
+      false ->
+        {:error, :invalid_node}
     end
   end
 

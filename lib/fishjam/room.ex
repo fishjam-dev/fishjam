@@ -192,10 +192,7 @@ defmodule Fishjam.Room do
     {reply, state} =
       case State.fetch_peer(state, peer_id) do
         {:ok, %{status: :disconnected} = peer} ->
-          # if Node.self() == node_name do
-          # TODO: Properly handle when node is different
           Process.monitor(socket_pid)
-          # end
 
           state = State.connect_peer(state, peer, socket_pid, node_name)
 
@@ -414,9 +411,8 @@ defmodule Fishjam.Room do
     with {:ok, peer} <- State.fetch_peer(state, to),
          socket_pid when is_pid(socket_pid) <- Map.get(peer, :socket_pid),
          node_name when not is_nil(node_name) <- Map.get(peer, :node_name),
-         {:ok, rpc_result} <-
-           RPCClient.call(node_name, PeerSocketHandler, :send_media_event, [socket_pid, data]),
-         :ok <- rpc_result do
+         {:ok, :ok} <-
+           RPCClient.call(node_name, PeerSocketHandler, :send_media_event, [socket_pid, data]) do
       :ok
     else
       :peer_socket_not_exists ->

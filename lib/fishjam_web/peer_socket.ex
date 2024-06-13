@@ -34,11 +34,10 @@ defmodule FishjamWeb.PeerSocket do
     case PeerMessage.decode(encoded_message) do
       %PeerMessage{content: {:auth_request, %AuthRequest{token: token}}} ->
         with {:ok, %{peer_id: peer_id, room_id: room_id}} <- PeerToken.verify(token),
-             {:ok, node_name} <- get_node_name(room_id),
+             {:ok, node_name} <- Room.ID.determine_node(room_id),
              args = [room_id, peer_id, Node.self(), self()],
-             {:ok, connect_result} <-
+             {:ok, :ok} <-
                Fishjam.RPCClient.call(node_name, PeerSocketHandler, :connect_peer, args),
-             :ok <- connect_result,
              :ok <- Phoenix.PubSub.subscribe(Fishjam.PubSub, room_id) do
           Process.send_after(self(), :send_ping, @heartbeat_interval)
 
@@ -72,7 +71,7 @@ defmodule FishjamWeb.PeerSocket do
           :error_rpc ->
             Logger.warning("Couldn't connect with node on which room was created")
 
-            {:stop, :closed, {1000, "node not found"}}
+            {:stop, :closed, {1011, "node not found"}}
         end
 
       _other ->
@@ -174,12 +173,4 @@ defmodule FishjamWeb.PeerSocket do
   defp reason_to_string(:peer_not_found), do: "peer not found"
   defp reason_to_string(:peer_already_connected), do: "peer already connected"
   defp reason_to_string(other), do: "#{other}"
-
-  defp get_node_name(room_id) do
-    if Fishjam.FeatureFlags.custom_room_name_disabled?() do
-      Room.ID.determine_node(room_id)
-    else
-      {:ok, Node.self()}
-    end
-  end
 end
