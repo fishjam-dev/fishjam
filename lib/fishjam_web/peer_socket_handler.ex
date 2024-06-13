@@ -24,7 +24,7 @@ defmodule FishjamWeb.PeerSocketHandler do
     else
       error ->
         Logger.warning(
-          "Error when connecting peer #{peer_id} to room #{room_id}, because: #{inspect(error)}"
+          "Error when disconnecting peer #{peer_id} from room #{room_id}, because: #{inspect(error)}"
         )
 
         error
