@@ -68,6 +68,8 @@ defmodule Fishjam.MixProject do
       {:protobuf, "~> 0.12.0"},
 
       # Membrane deps
+      {:fake_turn, path: "~/Repos/fake_turn", override: true},
+      # {:fake_turn, github: "fishjam-dev/fake_turn", branch: "turnconfig", override: true},
       {:membrane_core, "~> 1.1.0-rc1", override: true},
       {:membrane_rtc_engine,
        github: "fishjam-dev/membrane_rtc_engine",
@@ -77,7 +79,8 @@ defmodule Fishjam.MixProject do
       {:membrane_rtc_engine_webrtc,
        github: "fishjam-dev/membrane_rtc_engine",
        sparse: "webrtc",
-       ref: "dc3ffd0051dd3aec6de142076ac01a5f79fe846a",
+       branch: "turnconfig",
+      #  ref: "dc3ffd0051dd3aec6de142076ac01a5f79fe846a",
        override: "true"},
       {:membrane_rtc_engine_hls, "~> 0.7.0"},
       {:membrane_rtc_engine_recording,
