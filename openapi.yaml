@@ -14,15 +14,6 @@ components:
       title: PeerStatus
       type: string
       x-struct: Elixir.FishjamWeb.ApiSpec.Peer.Status
-    HealthReportStatus:
-      description: Informs about the status of Fishjam or a specific service
-      enum:
-        - UP
-        - DOWN
-      example: UP
-      title: HealthReportStatus
-      type: string
-      x-struct: Elixir.FishjamWeb.ApiSpec.HealthReport.Status
     RoomDetailsResponse:
       description: Response containing room details
       properties:
@@ -562,23 +553,6 @@ components:
       title: Track
       type: object
       x-struct: Elixir.FishjamWeb.ApiSpec.Track
-    HealthReportDistribution:
-      description: Informs about the status of Fishjam distribution
-      properties:
-        enabled:
-          description: Whether distribution is enabled on this Fishjam
-          type: boolean
-        nodeStatus:
-          $ref: '#/components/schemas/HealthReportStatus'
-        nodesInCluster:
-          description: Amount of nodes (including this Fishjam's node) in the distribution cluster
-          type: integer
-      required:
-        - nodeStatus
-        - nodesInCluster
-      title: HealthReportDistribution
-      type: object
-      x-struct: Elixir.FishjamWeb.ApiSpec.HealthReport.Distribution
     ComponentPropertiesRTSP:
       description: Properties specific to the RTSP component
       properties:
@@ -616,25 +590,24 @@ components:
     HealthReport:
       description: Describes overall Fishjam health
       properties:
-        distribution:
-          $ref: '#/components/schemas/HealthReportDistribution'
-        gitCommit:
-          description: Commit hash of the build
-          type: string
-        status:
-          $ref: '#/components/schemas/HealthReportStatus'
-        uptime:
-          description: Uptime of Fishjam (in seconds)
+        distributionEnabled:
+          description: Cluster distribution enabled/disabled
+          type: boolean
+        localStatus:
+          $ref: '#/components/schemas/NodeStatus'
+        nodesInCluster:
+          description: Number of nodes in cluster
           type: integer
-        version:
-          description: Version of Fishjam
-          type: string
+        nodesStatus:
+          description: Status of each node in cluster
+          items:
+            $ref: '#/components/schemas/NodeStatus'
+          type: array
       required:
-        - status
-        - uptime
-        - distribution
-        - version
-        - gitCommit
+        - localStatus
+        - nodesInCluster
+        - distributionEnabled
+        - nodesStatus
       title: HealthReport
       type: object
       x-struct: Elixir.FishjamWeb.ApiSpec.HealthReport
@@ -677,6 +650,36 @@ components:
       title: AuthToken
       type: string
       x-struct: Elixir.FishjamWeb.ApiSpec.Peer.Token
+    NodeStatus:
+      description: Informs about the status of node
+      properties:
+        gitCommit:
+          description: Commit hash of the build
+          type: string
+        nodeName:
+          description: Name of the node
+          type: string
+        status:
+          description: Informs about the status of Fishjam or a specific service
+          enum:
+            - UP
+            - DOWN
+          type: string
+        uptime:
+          description: Uptime of Fishjam (in seconds)
+          type: integer
+        version:
+          description: Version of Fishjam
+          type: string
+      required:
+        - status
+        - version
+        - uptime
+        - nodeName
+        - gitCommit
+      title: NodeStatus
+      type: object
+      x-struct: Elixir.FishjamWeb.ApiSpec.HealthReport.NodeStatus
     RoomsListingResponse:
       description: Response containing list of all rooms
       properties:

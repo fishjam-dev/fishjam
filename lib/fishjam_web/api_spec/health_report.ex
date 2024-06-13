@@ -4,42 +4,30 @@ defmodule FishjamWeb.ApiSpec.HealthReport do
   require OpenApiSpex
   alias OpenApiSpex.Schema
 
-  defmodule Status do
+  defmodule NodeStatus do
     @moduledoc false
 
     require OpenApiSpex
 
     OpenApiSpex.schema(%{
-      title: "HealthReportStatus",
-      description: "Informs about the status of Fishjam or a specific service",
-      type: :string,
-      enum: ["UP", "DOWN"],
-      example: "UP"
-    })
-  end
-
-  defmodule Distribution do
-    @moduledoc false
-
-    require OpenApiSpex
-
-    OpenApiSpex.schema(%{
-      title: "HealthReportDistribution",
-      description: "Informs about the status of Fishjam distribution",
+      title: "NodeStatus",
+      description: "Informs about the status of node",
       type: :object,
       properties: %{
-        enabled: %Schema{
-          type: :boolean,
-          description: "Whether distribution is enabled on this Fishjam"
+        status: %Schema{
+          type: :string,
+          enum: [
+            "UP",
+            "DOWN"
+          ],
+          description: "Informs about the status of Fishjam or a specific service"
         },
-        nodeStatus: Status,
-        nodesInCluster: %Schema{
-          type: :integer,
-          description:
-            "Amount of nodes (including this Fishjam's node) in the distribution cluster"
-        }
+        version: %Schema{type: :string, description: "Version of Fishjam"},
+        uptime: %Schema{type: :integer, description: "Uptime of Fishjam (in seconds)"},
+        nodeName: %Schema{type: :string, description: "Name of the node"},
+        gitCommit: %Schema{type: :string, description: "Commit hash of the build"}
       },
-      required: [:nodeStatus, :nodesInCluster]
+      required: [:status, :version, :uptime, :nodeName, :gitCommit]
     })
   end
 
@@ -48,12 +36,18 @@ defmodule FishjamWeb.ApiSpec.HealthReport do
     description: "Describes overall Fishjam health",
     type: :object,
     properties: %{
-      status: Status,
-      uptime: %Schema{type: :integer, description: "Uptime of Fishjam (in seconds)"},
-      distribution: Distribution,
-      version: %Schema{type: :string, description: "Version of Fishjam"},
-      gitCommit: %Schema{type: :string, description: "Commit hash of the build"}
+      localStatus: NodeStatus,
+      nodesInCluster: %Schema{type: :integer, description: "Number of nodes in cluster"},
+      distributionEnabled: %Schema{
+        type: :boolean,
+        description: "Cluster distribution enabled/disabled"
+      },
+      nodesStatus: %Schema{
+        type: :array,
+        items: NodeStatus,
+        description: "Status of each node in cluster"
+      }
     },
-    required: [:status, :uptime, :distribution, :version, :gitCommit]
+    required: [:localStatus, :nodesInCluster, :distributionEnabled, :nodesStatus]
   })
 end

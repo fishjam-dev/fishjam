@@ -23,14 +23,23 @@ defmodule FishjamWeb.HealthcheckController do
 
     conn
     |> put_resp_content_type("application/json")
-    |> render("show.json", report: report)
+    |> send_resp(200, Jason.encode!(%{data: report}))
   end
 
   defp get_health_report() do
     %{
-      status: :up,
+      localStatus: get_health_status(),
+      distributionEnabled: Application.fetch_env!(:fishjam, :dist_config)[:enabled],
+      nodesInCluster: length([Node.self() | Node.list()]),
+      nodesStatus: Fishjam.RPCClient.multicall(__MODULE__, :get_health_status, [])
+    }
+  end
+
+  def get_health_status do
+    %{
+      status: "UP",
+      nodeName: Node.self(),
       uptime: get_uptime(),
-      distribution: get_distribution_report(),
       version: Fishjam.version(),
       gitCommit: Application.get_env(:fishjam, :git_commit)
     }
@@ -38,16 +47,5 @@ defmodule FishjamWeb.HealthcheckController do
 
   defp get_uptime() do
     System.monotonic_time(:second) - Application.fetch_env!(:fishjam, :start_time)
-  end
-
-  defp get_distribution_report() do
-    alive? = Node.alive?()
-    visible_nodes = Node.list() |> length()
-
-    %{
-      enabled: Application.fetch_env!(:fishjam, :dist_config)[:enabled],
-      node_status: if(alive?, do: :up, else: :down),
-      nodes_in_cluster: visible_nodes + if(alive?, do: 1, else: 0)
-    }
   end
 end
