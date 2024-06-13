@@ -202,7 +202,6 @@ defmodule Fishjam.Cluster.LoadBalancingTest do
     end
 
     test "sends a message when room gets created and deleted", state do
-      server_api_token = Application.fetch_env!(:fishjam, :server_api_token)
       ws = create_and_authenticate_server(state.other_instance)
 
       WS.subscribe(ws, :server_notification)
