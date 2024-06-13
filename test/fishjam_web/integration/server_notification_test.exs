@@ -397,7 +397,8 @@ defmodule FishjamWeb.Integration.ServerNotificationTest do
                        room_id: ^room_id,
                        endpoint_info: {:peer_id, ^peer_id},
                        track: ^track_info
-                     } = track_removed
+                     } = track_removed,
+                     1_000
 
       assert_receive {:webhook_notification, ^track_removed}, 1000
 
