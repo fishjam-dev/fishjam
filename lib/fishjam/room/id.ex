@@ -6,19 +6,23 @@ defmodule Fishjam.Room.ID do
   @type id :: String.t()
 
   @doc """
-  Based on the Room ID determines to which node it belongs to.
-  Returns an error if the node isn't present in the cluster.
+  Depending on feature flag "request_routing_enabled":
+    - if `true`, determines the node holding the room based on the room ID
+        and returns an error if the node isn't present in the cluster
+    - if `false`, returns `{:ok, Node.self()}`
   """
   @spec determine_node(id()) ::
           {:ok, node()} | {:error, :invalid_room_id | :node_not_found}
   def determine_node(room_id) do
     with {:ok, room_id} <- validate_room_id(room_id),
+         {:flag?, true} <- {:flag?, Fishjam.FeatureFlags.request_routing_enabled?()},
          {:ok, node_name} <- decode_node_name(room_id),
-         true <- node_present_in_cluster?(node_name) do
+         {:present?, true} <- {:present?, node_present_in_cluster?(node_name)} do
       {:ok, String.to_existing_atom(node_name)}
     else
+      {:flag?, false} -> {:ok, Node.self()}
       {:error, :invalid_room_id} -> {:error, :invalid_room_id}
-      false -> {:error, :node_not_found}
+      {:present?, false} -> {:error, :node_not_found}
     end
   end
 

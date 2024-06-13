@@ -76,6 +76,9 @@ defmodule FishjamWeb.PeerController do
     with peer_options <- Map.get(params, "options", %{}),
          {:ok, peer_type_string} <- Map.fetch(params, "type"),
          {:ok, peer_type} <- Peer.parse_type(peer_type_string),
+         # FIXME: Opportunity for improvement
+         # This performs two RPCs, but a small refactor in Cluster.Room will let us get rid of one of them
+         # Same thing happens in the other controllers
          {:ok, _room_pid} <- RoomService.find_room(room_id),
          {:ok, peer} <- Room.add_peer(room_id, peer_type, peer_options) do
       Logger.debug("Successfully added peer to room: #{room_id}")

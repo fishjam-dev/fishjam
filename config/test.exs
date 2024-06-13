@@ -8,7 +8,7 @@ config :fishjam,
   room_metrics_scrape_interval: 1,
   feature_flags: [
     # TODO: Enable this flag here once we start using it in production
-    custom_room_name_disabled: false
+    request_routing_enabled?: false
   ],
   test_routes: true
 

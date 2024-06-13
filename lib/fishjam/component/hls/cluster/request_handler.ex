@@ -5,7 +5,7 @@ defmodule Fishjam.Component.HLS.Cluster.RequestHandler do
 
   @behaviour Fishjam.Component.HLS.RequestHandler
 
-  alias Fishjam.{FeatureFlags, Room, RPCClient}
+  alias Fishjam.{Room, RPCClient}
 
   @local_module Fishjam.Component.HLS.Local.RequestHandler
 
@@ -26,17 +26,14 @@ defmodule Fishjam.Component.HLS.Cluster.RequestHandler do
     do: route_request(room_id, :handle_delta_manifest_request, [room_id, partial])
 
   defp route_request(room_id, fun, args) do
-    with true <- FeatureFlags.request_routing_enabled?(),
-         {:ok, node} <- Room.ID.determine_node(room_id),
+    with {:ok, node} <- Room.ID.determine_node(room_id),
          {:here?, false} <- {:here?, node == Node.self()},
          # FIXME: Fishjam addresses could easily be cached
          {:ok, address} <- RPCClient.call(node, Fishjam, :address) do
       {:redirect, address}
     else
-      false -> apply(@local_module, fun, args)
-      {:error, _reason} = error -> error
       {:here?, true} -> apply(@local_module, fun, args)
-      :error -> {:error, :rpc_failed}
+      {:error, _reason} = error -> error
     end
   end
 end

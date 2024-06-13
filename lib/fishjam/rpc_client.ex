@@ -11,16 +11,16 @@ defmodule Fishjam.RPCClient do
   @doc """
   Executes mfa on a remote node.
   Function returns {:ok, result} tuple only if the execution succeeded.
-  In case of any exceptions we are catching them logging and returning simple :error atom.
+  In case of any exceptions we are catching them logging and returning the {:error, :rpc_failed} tuple.
   """
-  @spec call(node(), module(), atom(), term(), timeout()) :: {:ok, term()} | :error
+  @spec call(node(), module(), atom(), term(), timeout()) :: {:ok, term()} | {:error, :rpc_failed}
   def call(node, module, function, args \\ [], timeout \\ :infinity) do
     try do
       {:ok, :erpc.call(node, module, function, args, timeout)}
     rescue
       e ->
         Logger.warning("RPC call to node #{node} failed with exception: #{inspect(e)}")
-        :error
+        {:error, :rpc_failed}
     end
   end
 

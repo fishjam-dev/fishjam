@@ -7,7 +7,7 @@ defmodule Fishjam.Cluster.ApiTest do
 
   @token Application.compile_env(:fishjam, :server_api_token)
   @headers [Authorization: "Bearer #{@token}", Accept: "Application/json; Charset=utf-8"]
-  @post_headers @headers ++ [{"Content-Type", "application/json"}]
+  @post_headers @headers ++ ["Content-Type": "application/json"]
   @nodes ["app1:4001", "app2:4002"]
 
   @moduletag :cluster
@@ -34,103 +34,88 @@ defmodule Fishjam.Cluster.ApiTest do
   end
 
   @tag timeout: @max_test_duration
-  test "load-balancing and listing rooms in a cluster", %{nodes: [node1, node2]} do
-    response_body1 = add_room(node1)
+  test "adding a single room in a cluster", %{nodes: [node1, node2]} do
+    {_room_data, room_node} = add_room(node1)
 
-    fishjam_instance1 = get_fishjam_address(response_body1)
+    other_node = if room_node == node1, do: node2, else: node1
 
-    assert_room_count_on_fishjam(fishjam_instance1, 1)
-
-    assert_room_count_in_cluster(node1, 1)
-    assert_room_count_in_cluster(node2, 1)
-
-    response_body2 = add_room(node1)
-
-    fishjam_instance2 = get_fishjam_address(response_body2)
-
-    assert_room_count_on_fishjam(fishjam_instance2, 1)
-
-    assert_room_count_on_fishjam(node1, 1)
-    assert_room_count_on_fishjam(node2, 1)
-
-    assert_room_count_in_cluster(node1, 2)
-    assert_room_count_in_cluster(node2, 2)
-
-    room_id = response_body1 |> Jason.decode!() |> get_in(["data", "room", "id"])
-
-    delete_room(fishjam_instance1, room_id)
-
-    assert_room_count_on_fishjam(fishjam_instance1, 0)
-    assert_room_count_on_fishjam(fishjam_instance2, 1)
-
-    assert_room_count_in_cluster(node1, 1)
-    assert_room_count_in_cluster(node2, 1)
-
-    response_body3 = add_room(node1)
-    fishjam_instance3 = get_fishjam_address(response_body3)
-    assert_room_count_on_fishjam(fishjam_instance3, 1)
-
-    assert_room_count_on_fishjam(node1, 1)
-    assert_room_count_on_fishjam(node2, 1)
-
-    assert_room_count_in_cluster(node1, 2)
-    assert_room_count_in_cluster(node2, 2)
+    assert_room_counts(%{room_node => 1, other_node => 0})
   end
 
   @tag timeout: @max_test_duration
-  test "request routing within a cluster, using room_id", %{nodes: [node1, node2]} do
-    response_body1 = add_room(node1)
+  test "load-balancing when adding two rooms", %{nodes: [node1, node2]} do
+    {_room_data1, room_node1} = add_room(node1)
 
-    room_node = get_fishjam_address(response_body1)
+    other_node1 = if room_node1 == node1, do: node2, else: node1
+
+    assert_room_counts(%{room_node1 => 1, other_node1 => 0})
+
+    {_room_data2, room_node2} = add_room(node1)
+
+    assert room_node1 != room_node2
+    assert_room_counts(%{room_node1 => 1, room_node2 => 1})
+  end
+
+  @tag timeout: @max_test_duration
+  test "load-balancing and request routing when deleting rooms", %{nodes: [node1, node2]} do
+    {room_data1, room_node1} = add_room(node1)
+    {_room_data2, room_node2} = add_room(node1)
+
+    assert room_node1 != room_node2
+    assert_room_counts(%{room_node1 => 1, room_node2 => 1})
+
+    room_id1 = room_data1 |> get_in(["room", "id"])
+
+    delete_room(room_node2, room_id1)
+
+    assert_room_counts(%{room_node1 => 0, room_node2 => 1})
+
+    {_room_data3, room_node3} = add_room(node1)
+
+    assert room_node3 != room_node2
+    assert_room_count_on_fishjam(room_node3, 1)
+    assert_room_counts(%{node1 => 1, node2 => 1})
+  end
+
+  @tag timeout: @max_test_duration
+  test "request routing when adding peers", %{nodes: [node1, node2]} do
+    {room_data, room_node} = add_room(node1)
+
     other_node = if room_node == node1, do: node2, else: node1
 
-    assert_room_count_on_fishjam(room_node, 1)
-    assert_room_count_on_fishjam(other_node, 0)
+    assert_room_counts(%{room_node => 1, other_node => 0})
 
-    assert_room_count_in_cluster(room_node, 1)
-    assert_room_count_in_cluster(other_node, 1)
+    room_id = room_data |> get_in(["room", "id"])
 
-    room_id = response_body1 |> Jason.decode!() |> get_in(["data", "room", "id"])
-
-    _response_body2 = add_peer(other_node, room_id)
+    add_peer(other_node, room_id)
 
     assert_peer_count_in_room(room_node, room_id, 1)
     assert_peer_count_in_room(other_node, room_id, 1)
 
-    _response_body3 = delete_room(other_node, room_id)
+    delete_room(other_node, room_id)
 
-    assert_room_count_on_fishjam(room_node, 0)
-    assert_room_count_on_fishjam(other_node, 0)
-
-    assert_room_count_in_cluster(room_node, 0)
-    assert_room_count_in_cluster(other_node, 0)
+    assert_room_counts(%{room_node => 0, other_node => 0})
   end
 
   @tag timeout: @max_test_duration
   test "request routing + explicit forwarding of HLS retrieve content requests", %{
     nodes: [node1, node2]
   } do
-    response_body1 = add_room(node1)
+    {room_data, room_node} = add_room(node1)
 
-    room_node = get_fishjam_address(response_body1)
     other_node = if room_node == node1, do: node2, else: node1
 
-    assert_room_count_on_fishjam(room_node, 1)
-    assert_room_count_on_fishjam(other_node, 0)
+    assert_room_counts(%{room_node => 1, other_node => 0})
 
-    assert_room_count_in_cluster(room_node, 1)
-    assert_room_count_in_cluster(other_node, 1)
+    room_id = room_data |> get_in(["room", "id"])
 
-    room_id = response_body1 |> Jason.decode!() |> get_in(["data", "room", "id"])
-
-    _response_body2 = add_hls_component(other_node, room_id)
-
-    _response_body3 = add_file_component(other_node, room_id)
+    add_hls_component(other_node, room_id)
+    add_file_component(other_node, room_id)
 
     # Wait a while for segments and manifest to get created
     Process.sleep(20_000)
 
-    _response_body4 = assert_successful_redirect(other_node, room_id)
+    assert_successful_redirect(other_node, room_id)
   end
 
   defp add_room(fishjam_instance) do
@@ -139,60 +124,54 @@ defmodule Fishjam.Cluster.ApiTest do
     assert {:ok, %HTTPoison.Response{status_code: 201, body: body}} =
              HTTPoison.post("http://#{fishjam_instance}/room", request_body, @post_headers)
 
-    body
+    room_data = body |> Jason.decode!() |> Map.fetch!("data")
+    room_node = get_fishjam_address(room_data)
+
+    {room_data, room_node}
   end
 
   defp add_peer(fishjam_instance, room_id) do
     request_body = %{type: "webrtc", options: %{}} |> Jason.encode!()
 
-    assert {:ok, %HTTPoison.Response{status_code: 201, body: body}} =
+    assert {:ok, %HTTPoison.Response{status_code: 201}} =
              HTTPoison.post(
                "http://#{fishjam_instance}/room/#{room_id}/peer",
                request_body,
                @post_headers
              )
-
-    body
   end
 
   defp add_hls_component(fishjam_instance, room_id) do
     request_body = %{type: "hls", options: %{}} |> Jason.encode!()
 
-    assert {:ok, %HTTPoison.Response{status_code: 201, body: body}} =
+    assert {:ok, %HTTPoison.Response{status_code: 201}} =
              HTTPoison.post(
                "http://#{fishjam_instance}/room/#{room_id}/component",
                request_body,
                @post_headers
              )
-
-    body
   end
 
   defp add_file_component(fishjam_instance, room_id) do
     request_body =
       %{type: "file", options: %{filePath: "video.h264", framerate: 30}} |> Jason.encode!()
 
-    assert {:ok, %HTTPoison.Response{status_code: 201, body: body}} =
+    assert {:ok, %HTTPoison.Response{status_code: 201}} =
              HTTPoison.post(
                "http://#{fishjam_instance}/room/#{room_id}/component",
                request_body,
                @post_headers
              )
-
-    body
   end
 
   defp delete_room(fishjam_instance, room_id) do
-    assert {:ok, %HTTPoison.Response{status_code: 204, body: body}} =
+    assert {:ok, %HTTPoison.Response{status_code: 204}} =
              HTTPoison.delete("http://#{fishjam_instance}/room/#{room_id}", @headers)
-
-    body
   end
 
-  defp get_fishjam_address(response_body) do
-    response_body
-    |> Jason.decode!()
-    |> get_in(["data", "fishjam_address"])
+  defp get_fishjam_address(response_data) do
+    response_data
+    |> Map.fetch!("fishjam_address")
     |> map_fishjam_address()
   end
 
@@ -201,7 +180,16 @@ defmodule Fishjam.Cluster.ApiTest do
       "localhost:4001" => "app1:4001",
       "localhost:4002" => "app2:4002"
     }
-    |> Map.get(fishjam)
+    |> Map.fetch!(fishjam)
+  end
+
+  defp assert_room_counts(instances) do
+    rooms_in_cluster = instances |> Map.values() |> Enum.sum()
+
+    for {instance, rooms} <- instances do
+      assert_room_count_on_fishjam(instance, rooms)
+      assert_room_count_in_cluster(instance, rooms_in_cluster)
+    end
   end
 
   defp assert_room_count_on_fishjam(fishjam_instance, rooms) do
@@ -240,9 +228,6 @@ defmodule Fishjam.Cluster.ApiTest do
       |> Map.put(:path, location_uri.path)
       |> URI.to_string()
 
-    assert {:ok, %HTTPoison.Response{status_code: 200, body: body}} =
-             HTTPoison.get(location, @headers)
-
-    body
+    assert {:ok, %HTTPoison.Response{status_code: 200}} = HTTPoison.get(location, @headers)
   end
 end

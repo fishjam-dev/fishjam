@@ -112,6 +112,7 @@ defmodule Fishjam.Local.RoomService do
     Logger.debug("Creating a new room")
 
     # Re-generate the room ID to ensure it has the correct node name part
+    # FIXME: This is a quick fix for the issue, but this logic probably should be someplace else
     {:ok, room_id} = ID.generate(config.room_id)
     config = %{config | room_id: room_id}
 

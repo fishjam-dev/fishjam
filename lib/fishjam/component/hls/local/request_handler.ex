@@ -7,7 +7,7 @@ defmodule Fishjam.Component.HLS.Local.RequestHandler do
   use Bunch.Access
 
   alias Fishjam.Utils.PathValidation
-  alias Fishjam.Component.HLS.{EtsHelper, Recording}
+  alias Fishjam.Component.HLS.{EtsHelper, Recording, RequestHandler}
   alias Fishjam.Room.ID
 
   @enforce_keys [:room_id, :room_pid]
@@ -18,10 +18,10 @@ defmodule Fishjam.Component.HLS.Local.RequestHandler do
                 delta_manifest: %{waiting_pids: %{}, last_partial: nil}
               ]
 
-  @type segment_sn :: non_neg_integer()
-  @type partial_sn :: non_neg_integer()
-  @type partial :: {segment_sn(), partial_sn()}
-  @type status :: %{waiting_pids: %{partial() => [pid()]}, last_partial: partial() | nil}
+  @type status :: %{
+          waiting_pids: %{RequestHandler.partial() => [pid()]},
+          last_partial: RequestHandler.partial() | nil
+        }
 
   @type t :: %__MODULE__{
           room_id: ID.id(),
@@ -120,12 +120,12 @@ defmodule Fishjam.Component.HLS.Local.RequestHandler do
   ### STORAGE API
   ###
 
-  @spec update_recent_partial(ID.id(), partial()) :: :ok
+  @spec update_recent_partial(ID.id(), RequestHandler.partial()) :: :ok
   def update_recent_partial(room_id, partial) do
     GenServer.cast(registry_id(room_id), {:update_recent_partial, partial, :manifest})
   end
 
-  @spec update_delta_recent_partial(ID.id(), partial()) :: :ok
+  @spec update_delta_recent_partial(ID.id(), RequestHandler.partial()) :: :ok
   def update_delta_recent_partial(room_id, partial) do
     GenServer.cast(registry_id(room_id), {:update_recent_partial, partial, :delta_manifest})
   end

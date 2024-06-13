@@ -13,18 +13,17 @@ defmodule Fishjam.Cluster.RoomService do
 
   @impl true
   def create_room(config) do
-    case RPCClient.multicall(@local_module, :get_resource_usage) do
-      [_only_self_resources] ->
-        apply(@local_module, :create_room, [config])
+    node_resources = RPCClient.multicall(@local_module, :get_resource_usage)
+    min_node = find_best_node(node_resources)
 
-      nodes_resources ->
-        min_node = find_best_node(nodes_resources)
-        Logger.info("Node with least used resources is #{inspect(min_node)}")
+    if node_resources == [],
+      do: raise("Unable to gather node resources!")
 
-        case RPCClient.call(min_node, @local_module, :create_room, [config]) do
-          {:ok, result} -> result
-          :error -> {:error, :rpc_failed}
-        end
+    if length(node_resources) > 1,
+      do: Logger.info("Node with least used resources is #{inspect(min_node)}")
+
+    with {:ok, result} <- RPCClient.call(min_node, @local_module, :create_room, [config]) do
+      result
     end
   end
 
@@ -65,14 +64,9 @@ defmodule Fishjam.Cluster.RoomService do
   end
 
   defp route_request(room_id, fun, args) do
-    with true <- FeatureFlags.request_routing_enabled?(),
-         {:ok, node} <- Room.ID.determine_node(room_id),
+    with {:ok, node} <- Room.ID.determine_node(room_id),
          {:ok, result} <- RPCClient.call(node, @local_module, fun, args) do
       result
-    else
-      false -> apply(@local_module, fun, args)
-      {:error, _reason} = error -> error
-      :error -> {:error, :rpc_failed}
     end
   end
 end

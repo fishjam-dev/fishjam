@@ -5,7 +5,7 @@ defmodule Fishjam.Cluster.Room do
 
   @behaviour Fishjam.Room
 
-  alias Fishjam.{FeatureFlags, Room, RPCClient}
+  alias Fishjam.{Room, RPCClient}
 
   @local_module Fishjam.Local.Room
 
@@ -50,14 +50,9 @@ defmodule Fishjam.Cluster.Room do
     do: route_request(room_id, :receive_media_event, [room_id, peer_id, event])
 
   defp route_request(room_id, fun, args) do
-    with true <- FeatureFlags.request_routing_enabled?(),
-         {:ok, node} <- Room.ID.determine_node(room_id),
+    with {:ok, node} <- Room.ID.determine_node(room_id),
          {:ok, result} <- RPCClient.call(node, @local_module, fun, args) do
       result
-    else
-      false -> apply(@local_module, fun, args)
-      {:error, _reason} = error -> error
-      :error -> {:error, :rpc_failed}
     end
   end
 end
