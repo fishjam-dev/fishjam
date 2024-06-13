@@ -67,6 +67,15 @@ defmodule Fishjam.Room.IDTest do
   end
 
   describe "generate/1" do
+    setup do
+      old_values = Application.get_env(:fishjam, :feature_flags)
+      Application.delete_env(:fishjam, :feature_flags)
+
+      on_exit(fn ->
+        Application.put_env(:fishjam, :feature_flags, old_values)
+      end)
+    end
+
     test "executes generate/0 when feature flag is enabled and generates random id" do
       Application.put_env(:fishjam, :feature_flags, request_routing_enabled?: true)
       refute {:ok, "custom_room_name"} == Subject.generate("custom_room_name")
