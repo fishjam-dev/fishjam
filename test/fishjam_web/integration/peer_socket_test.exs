@@ -72,7 +72,7 @@ defmodule FishjamWeb.Integration.PeerSocketTest do
   end
 
   test "valid token but peer doesn't exist", %{room_id: room_id} do
-    {:ok, ws} = WS.start_link(@path, :peer)
+    {:ok, ws} = WS.start(@path, :peer)
 
     unadded_peer_token = FishjamWeb.PeerToken.generate(%{peer_id: "peer_id", room_id: room_id})
     WS.send_auth_request(ws, unadded_peer_token)
@@ -83,7 +83,7 @@ defmodule FishjamWeb.Integration.PeerSocketTest do
   test "valid token but room doesn't exist", %{room_id: room_id, token: token, conn: conn} do
     _conn = delete(conn, ~p"/room/#{room_id}")
 
-    {:ok, ws} = WS.start_link(@path, :peer)
+    {:ok, ws} = WS.start(@path, :peer)
     WS.send_auth_request(ws, token)
 
     assert_receive {:disconnected, {:remote, 1000, "room not found"}}, 1000
@@ -100,7 +100,7 @@ defmodule FishjamWeb.Integration.PeerSocketTest do
   test "two web sockets", %{token: token} do
     create_and_authenticate(token)
 
-    {:ok, ws2} = WS.start_link(@path, :peer)
+    {:ok, ws2} = WS.start(@path, :peer)
     WS.send_auth_request(ws2, token)
 
     assert_receive {:disconnected, {:remote, 1000, "peer already connected"}}, 1000
