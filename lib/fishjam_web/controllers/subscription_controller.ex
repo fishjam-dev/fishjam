@@ -48,8 +48,8 @@ defmodule FishjamWeb.SubscriptionController do
         {:error, :bad_request,
          "Component #{component_id} option `subscribe_mode` is set to :auto"}
 
-      other ->
-        other
+      {:error, reason} ->
+        {:rpc_error, reason, room_id}
     end
   end
 end

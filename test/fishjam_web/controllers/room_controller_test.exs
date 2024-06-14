@@ -136,7 +136,7 @@ defmodule FishjamWeb.RoomControllerTest do
         else
           id = UUID.uuid4() <> "_ABCD-123_xyz"
           conn = post(conn, ~p"/room", roomId: id)
-          json_response(conn, :created)
+          assert %{"id" => ^id} = json_response(conn, :created)["data"]["room"]
 
           id
         end
@@ -460,7 +460,7 @@ defmodule FishjamWeb.RoomControllerTest do
       assert_receive({:DOWN, _ref, :process, ^engine_pid, :normal})
 
       conn = get(conn, ~p"/room/#{room_id}")
-      assert json_response(conn, :not_found) == %{"errors" => "Room with this ID does not exist"}
+      assert json_response(conn, :not_found) == %{"errors" => "Room #{room_id} does not exist"}
     end
 
     test "returns 404 if room doesn't exists", %{conn: conn} do

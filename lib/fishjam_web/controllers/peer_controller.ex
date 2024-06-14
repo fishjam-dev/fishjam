@@ -114,8 +114,8 @@ defmodule FishjamWeb.PeerController do
         log_warning(room_id, msg)
         {:error, :service_unavailable, msg}
 
-      other ->
-        other
+      {:error, reason} ->
+        {:rpc_error, reason, room_id}
     end
   end
 
@@ -127,8 +127,8 @@ defmodule FishjamWeb.PeerController do
       {:error, :peer_not_found} ->
         {:error, :not_found, "Peer #{id} does not exist"}
 
-      other ->
-        other
+      {:error, reason} ->
+        {:rpc_error, reason, room_id}
     end
   end
 

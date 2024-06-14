@@ -122,8 +122,8 @@ defmodule FishjamWeb.ComponentController do
         {:error, :bad_request,
          "Conflicting S3 path prefix supplied via environment variables and the REST API. Overrides on existing values are disallowed"}
 
-      other ->
-        other
+      {:error, reason} ->
+        {:rpc_error, reason, room_id}
     end
   end
 
@@ -135,8 +135,8 @@ defmodule FishjamWeb.ComponentController do
       {:error, :component_not_found} ->
         {:error, :not_found, "Component #{id} does not exist"}
 
-      other ->
-        other
+      {:error, reason} ->
+        {:rpc_error, reason, room_id}
     end
   end
 end

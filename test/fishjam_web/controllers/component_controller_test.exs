@@ -30,7 +30,7 @@ defmodule FishjamWeb.ComponentControllerTest do
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
 
       response = model_response(conn, :not_found, "Error")
-      assert response["errors"] == "Room with this ID does not exist"
+      assert response["errors"] == "Room #{room_id} does not exist"
     end
 
     test "renders errors when component isn't allowed globally", %{conn: conn, room_id: room_id} do
@@ -79,7 +79,7 @@ defmodule FishjamWeb.ComponentControllerTest do
       conn = delete(conn, ~p"/room/#{room_id}/component/#{component_id}")
 
       assert model_response(conn, :not_found, "Error")["errors"] ==
-               "Room with this ID does not exist"
+               "Room #{room_id} does not exist"
     end
   end
 

@@ -39,19 +39,19 @@ defmodule Fishjam.Cluster.ApiTest do
   end
 
   @tag timeout: @max_test_duration
-  test "adding a single room in a cluster", %{nodes: [node1, node2]} do
+  test "adding a single room in a cluster", %{nodes: [node1, _node2]} do
     %{node: room_node} = add_room(node1)
 
-    other_node = if room_node == node1, do: node2, else: node1
+    other_node = determine_other_node(room_node)
 
     assert_room_counts(%{room_node => 1, other_node => 0})
   end
 
   @tag timeout: @max_test_duration
-  test "load-balancing when adding two rooms", %{nodes: [node1, node2]} do
+  test "load-balancing when adding two rooms", %{nodes: [node1, _node2]} do
     %{node: room_node1} = add_room(node1)
 
-    other_node1 = if room_node1 == node1, do: node2, else: node1
+    other_node1 = determine_other_node(room_node1)
 
     assert_room_counts(%{room_node1 => 1, other_node1 => 0})
 
@@ -81,10 +81,10 @@ defmodule Fishjam.Cluster.ApiTest do
   end
 
   @tag timeout: @max_test_duration
-  test "request routing when adding peers", %{nodes: [node1, node2]} do
+  test "request routing when adding peers", %{nodes: [node1, _node2]} do
     %{id: room_id, node: room_node} = add_room(node1)
 
-    other_node = if room_node == node1, do: node2, else: node1
+    other_node = determine_other_node(room_node)
 
     assert_room_counts(%{room_node => 1, other_node => 0})
 
@@ -100,11 +100,11 @@ defmodule Fishjam.Cluster.ApiTest do
 
   @tag timeout: @max_test_duration
   test "request routing + explicit forwarding of HLS retrieve content requests", %{
-    nodes: [node1, node2]
+    nodes: [node1, _node2]
   } do
     %{id: room_id, node: room_node} = add_room(node1)
 
-    other_node = if room_node == node1, do: node2, else: node1
+    other_node = determine_other_node(room_node)
 
     assert_room_counts(%{room_node => 1, other_node => 0})
 
@@ -233,5 +233,9 @@ defmodule Fishjam.Cluster.ApiTest do
       |> URI.to_string()
 
     assert {:ok, %HTTPoison.Response{status_code: 200}} = HTTPoison.get(location, @headers)
+  end
+
+  defp determine_other_node(room_node) do
+    Enum.find(@nodes, &(&1 != room_node))
   end
 end

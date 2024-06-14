@@ -140,8 +140,8 @@ defmodule FishjamWeb.RoomController do
         |> put_resp_content_type("application/json")
         |> render("show.json", room: room)
 
-      error ->
-        error
+      {:error, reason} ->
+        {:rpc_error, reason, id}
     end
   end
 
@@ -150,8 +150,8 @@ defmodule FishjamWeb.RoomController do
       :ok ->
         send_resp(conn, :no_content, "")
 
-      error ->
-        error
+      {:error, reason} ->
+        {:rpc_error, reason, id}
     end
   end
 

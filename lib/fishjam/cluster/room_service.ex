@@ -16,9 +16,6 @@ defmodule Fishjam.Cluster.RoomService do
     node_resources = RPCClient.multicall(@local_module, :get_resource_usage)
     min_node = find_best_node(node_resources)
 
-    if node_resources == [],
-      do: raise("Unable to gather node resources!")
-
     if length(node_resources) > 1,
       do: Logger.info("Node with least used resources is #{inspect(min_node)}")
 

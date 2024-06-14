@@ -58,8 +58,8 @@ defmodule FishjamWeb.SIPCallController do
       {:error, :bad_component_type} ->
         {:error, :bad_request, "Component #{component_id} is not a SIP component"}
 
-      other ->
-        other
+      {:error, reason} ->
+        {:rpc_error, reason, room_id}
     end
   end
 
@@ -79,8 +79,8 @@ defmodule FishjamWeb.SIPCallController do
       {:error, :bad_component_type} ->
         {:error, :bad_request, "Component #{component_id} is not SIP component"}
 
-      other ->
-        other
+      {:error, reason} ->
+        {:rpc_error, reason, room_id}
     end
   end
 end
