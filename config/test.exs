@@ -6,10 +6,6 @@ config :fishjam,
   server_api_token: "development",
   webrtc_metrics_scrape_interval: 50,
   room_metrics_scrape_interval: 1,
-  feature_flags: [
-    # TODO: Enable this flag here once we start using it in production
-    request_routing_enabled?: false
-  ],
   test_routes: true
 
 config :fishjam, FishjamWeb.Endpoint,

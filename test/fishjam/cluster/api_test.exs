@@ -5,6 +5,11 @@ defmodule Fishjam.Cluster.ApiTest do
 
   use ExUnit.Case, async: false
 
+  import FishjamWeb.WS, only: [subscribe: 2]
+
+  alias Fishjam.ServerMessage.{Authenticated, HlsPlayable}
+  alias FishjamWeb.WS
+
   @token Application.compile_env(:fishjam, :server_api_token)
   @headers [Authorization: "Bearer #{@token}", Accept: "Application/json; Charset=utf-8"]
   @post_headers @headers ++ ["Content-Type": "application/json"]
@@ -35,7 +40,7 @@ defmodule Fishjam.Cluster.ApiTest do
 
   @tag timeout: @max_test_duration
   test "adding a single room in a cluster", %{nodes: [node1, node2]} do
-    {_room_data, room_node} = add_room(node1)
+    %{node: room_node} = add_room(node1)
 
     other_node = if room_node == node1, do: node2, else: node1
 
@@ -44,13 +49,13 @@ defmodule Fishjam.Cluster.ApiTest do
 
   @tag timeout: @max_test_duration
   test "load-balancing when adding two rooms", %{nodes: [node1, node2]} do
-    {_room_data1, room_node1} = add_room(node1)
+    %{node: room_node1} = add_room(node1)
 
     other_node1 = if room_node1 == node1, do: node2, else: node1
 
     assert_room_counts(%{room_node1 => 1, other_node1 => 0})
 
-    {_room_data2, room_node2} = add_room(node1)
+    %{node: room_node2} = add_room(node1)
 
     assert room_node1 != room_node2
     assert_room_counts(%{room_node1 => 1, room_node2 => 1})
@@ -58,19 +63,17 @@ defmodule Fishjam.Cluster.ApiTest do
 
   @tag timeout: @max_test_duration
   test "load-balancing and request routing when deleting rooms", %{nodes: [node1, node2]} do
-    {room_data1, room_node1} = add_room(node1)
-    {_room_data2, room_node2} = add_room(node1)
+    %{id: room_id1, node: room_node1} = add_room(node1)
+    %{node: room_node2} = add_room(node1)
 
     assert room_node1 != room_node2
     assert_room_counts(%{room_node1 => 1, room_node2 => 1})
-
-    room_id1 = room_data1 |> get_in(["room", "id"])
 
     delete_room(room_node2, room_id1)
 
     assert_room_counts(%{room_node1 => 0, room_node2 => 1})
 
-    {_room_data3, room_node3} = add_room(node1)
+    %{node: room_node3} = add_room(node1)
 
     assert room_node3 != room_node2
     assert_room_count_on_fishjam(room_node3, 1)
@@ -79,13 +82,11 @@ defmodule Fishjam.Cluster.ApiTest do
 
   @tag timeout: @max_test_duration
   test "request routing when adding peers", %{nodes: [node1, node2]} do
-    {room_data, room_node} = add_room(node1)
+    %{id: room_id, node: room_node} = add_room(node1)
 
     other_node = if room_node == node1, do: node2, else: node1
 
     assert_room_counts(%{room_node => 1, other_node => 0})
-
-    room_id = room_data |> get_in(["room", "id"])
 
     add_peer(other_node, room_id)
 
@@ -101,20 +102,21 @@ defmodule Fishjam.Cluster.ApiTest do
   test "request routing + explicit forwarding of HLS retrieve content requests", %{
     nodes: [node1, node2]
   } do
-    {room_data, room_node} = add_room(node1)
+    %{id: room_id, node: room_node} = add_room(node1)
 
     other_node = if room_node == node1, do: node2, else: node1
 
     assert_room_counts(%{room_node => 1, other_node => 0})
 
-    room_id = room_data |> get_in(["room", "id"])
+    {:ok, ws} = WS.start_link("ws://#{room_node}/socket/server/websocket", :server)
+    WS.send_auth_request(ws, @token)
+    assert_receive %Authenticated{}, 1000
+    subscribe(ws, :server_notification)
 
     add_hls_component(other_node, room_id)
     add_file_component(other_node, room_id)
 
-    # Wait a while for segments and manifest to get created
-    Process.sleep(20_000)
-
+    assert_receive %HlsPlayable{room_id: ^room_id}, 20_000
     assert_successful_redirect(other_node, room_id)
   end
 
@@ -125,9 +127,11 @@ defmodule Fishjam.Cluster.ApiTest do
              HTTPoison.post("http://#{fishjam_instance}/room", request_body, @post_headers)
 
     room_data = body |> Jason.decode!() |> Map.fetch!("data")
-    room_node = get_fishjam_address(room_data)
 
-    {room_data, room_node}
+    %{
+      node: get_fishjam_address(room_data),
+      id: get_in(room_data, ["room", "id"])
+    }
   end
 
   defp add_peer(fishjam_instance, room_id) do

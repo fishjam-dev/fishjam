@@ -30,7 +30,7 @@ defmodule Fishjam.Cluster.RoomService do
   @impl true
   def list_rooms() do
     if FeatureFlags.request_routing_enabled?() do
-      RPCClient.multicall(@local_module, :list_rooms)
+      @local_module |> RPCClient.multicall(:list_rooms) |> List.flatten()
     else
       apply(@local_module, :list_rooms, [])
     end

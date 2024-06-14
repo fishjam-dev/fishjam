@@ -18,11 +18,11 @@ defmodule Fishjam.Room.ID do
          {:flag?, true} <- {:flag?, Fishjam.FeatureFlags.request_routing_enabled?()},
          {:ok, node_name} <- decode_node_name(room_id),
          {:present?, true} <- {:present?, node_present_in_cluster?(node_name)} do
-      {:ok, String.to_existing_atom(node_name)}
+      {:ok, node_name}
     else
       {:flag?, false} -> {:ok, Node.self()}
-      {:error, :invalid_room_id} -> {:error, :invalid_room_id}
       {:present?, false} -> {:error, :node_not_found}
+      {:error, _reason} = error -> error
     end
   end
 
@@ -67,8 +67,15 @@ defmodule Fishjam.Room.ID do
     |> Enum.at(0)
     |> Base.decode16(case: :lower)
     |> case do
-      {:ok, node_name} -> {:ok, node_name}
-      :error -> {:error, :invalid_room_id}
+      {:ok, node_name} ->
+        try do
+          {:ok, String.to_existing_atom(node_name)}
+        rescue
+          ArgumentError -> {:error, :node_not_found}
+        end
+
+      :error ->
+        {:error, :invalid_room_id}
     end
   end
 
@@ -79,7 +86,7 @@ defmodule Fishjam.Room.ID do
   end
 
   defp node_present_in_cluster?(node_name) do
-    node_name in Enum.map([Node.self() | Node.list()], &Atom.to_string/1)
+    node_name in [Node.self() | Node.list()]
   end
 
   defp validate_room_id(room_id) when is_binary(room_id) do

@@ -48,7 +48,6 @@ defmodule Fishjam.RPCClient do
 
         acc
     end)
-    |> List.flatten()
   end
 
   defp nodes, do: [Node.self() | Node.list()]
