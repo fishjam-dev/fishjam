@@ -3,6 +3,8 @@ defmodule FishjamWeb.PeerControllerTest do
 
   import OpenApiSpex.TestAssertions
 
+  alias Fishjam.Room.ID
+
   @schema FishjamWeb.ApiSpec.spec()
   @peer_type "webrtc"
 
@@ -80,7 +82,7 @@ defmodule FishjamWeb.PeerControllerTest do
     end
 
     test "renders errors when room doesn't exist", %{conn: conn} do
-      room_id = "invalid_room"
+      room_id = ID.generate()
       conn = post(conn, ~p"/room/#{room_id}/peer", type: @peer_type)
       assert json_response(conn, :not_found)["errors"] == "Room #{room_id} does not exist"
     end
@@ -128,7 +130,7 @@ defmodule FishjamWeb.PeerControllerTest do
     end
 
     test "deletes peer from not exisiting room", %{conn: conn, peer_id: peer_id} do
-      room_id = "invalid_room"
+      room_id = ID.generate()
       conn = delete(conn, ~p"/room/#{room_id}/peer/#{peer_id}")
       assert json_response(conn, :not_found)["errors"] == "Room #{room_id} does not exist"
     end

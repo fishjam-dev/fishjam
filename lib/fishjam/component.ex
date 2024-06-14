@@ -10,7 +10,7 @@ defmodule Fishjam.Component do
 
   use Bunch.Access
 
-  alias Fishjam.Room
+  alias Fishjam.Local.Room
   alias Fishjam.Component.{File, HLS, Recording, RTSP, SIP}
   alias Fishjam.Track
 

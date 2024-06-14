@@ -26,6 +26,7 @@ defmodule Fishjam.Application do
     Logger.info("Distribution config: #{inspect(Keyword.delete(dist_config, :cookie))}")
     Logger.info("WebRTC config: #{inspect(webrtc_config)}")
     Logger.info("Allowed components: #{inspect(components_used)}")
+    Logger.info(Fishjam.FeatureFlags.info())
 
     children =
       [
@@ -38,7 +39,7 @@ defmodule Fishjam.Application do
         {Fishjam.MetricsScraper, scrape_interval},
         FishjamWeb.Endpoint,
         # Start the RoomService
-        Fishjam.RoomService,
+        Fishjam.Local.RoomService,
         # Start the ResourceManager, responsible for cleaning old recordings
         {Fishjam.ResourceManager, @resource_manager_opts},
         Fishjam.WebhookNotifier,

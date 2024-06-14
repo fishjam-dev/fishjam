@@ -3,6 +3,14 @@ defmodule Fishjam.Room.IDTest do
 
   alias Fishjam.Room.ID, as: Subject
 
+  setup_all do
+    current = Application.fetch_env!(:fishjam, :feature_flags)
+
+    on_exit(fn ->
+      Application.put_env(:fishjam, :feature_flags, current)
+    end)
+  end
+
   describe "determine_node/1" do
     test "resolves node name from the provided room_id" do
       node_name = Node.self()
@@ -14,7 +22,10 @@ defmodule Fishjam.Room.IDTest do
     test "returns error if node is not detected in cluster" do
       invalid_node = :invalid_node |> Atom.to_string() |> Base.encode16(case: :lower)
       invalid_room_id = "room-id-#{invalid_node}"
-      assert {:error, :invalid_node} == Subject.determine_node(invalid_room_id)
+
+      if Fishjam.FeatureFlags.request_routing_enabled?() do
+        assert {:error, :node_not_found} == Subject.determine_node(invalid_room_id)
+      end
     end
   end
 
@@ -36,20 +47,18 @@ defmodule Fishjam.Room.IDTest do
   end
 
   describe "generate/1" do
-    setup do
-      Application.delete_env(:fishjam, :feature_flags)
-    end
-
     test "executes generate/0 when feature flag is enabled and generates random id" do
-      Application.put_env(:fishjam, :feature_flags, custom_room_name_disabled: true)
+      Application.put_env(:fishjam, :feature_flags, request_routing_enabled?: true)
       refute {:ok, "custom_room_name"} == Subject.generate("custom_room_name")
     end
 
     test "parses custom room name when feature flag is disabled" do
+      Application.put_env(:fishjam, :feature_flags, request_routing_enabled?: false)
       assert {:ok, "custom_room_name"} == Subject.generate("custom_room_name")
     end
 
     test "returns error when custom room doesn't meet naming criteria" do
+      Application.put_env(:fishjam, :feature_flags, request_routing_enabled?: false)
       assert {:error, :invalid_room_id} = Subject.generate("invalid_characters//??$@!")
     end
   end

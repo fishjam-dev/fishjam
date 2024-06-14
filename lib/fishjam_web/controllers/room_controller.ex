@@ -3,8 +3,9 @@ defmodule FishjamWeb.RoomController do
   use OpenApiSpex.ControllerSpecs
 
   require Logger
-  alias Fishjam.Room
-  alias Fishjam.RoomService
+
+  alias Fishjam.Cluster.RoomService
+  alias Fishjam.Room.Config
   alias FishjamWeb.ApiSpec
   alias OpenApiSpex.Response
 
@@ -29,7 +30,8 @@ defmodule FishjamWeb.RoomController do
     responses: [
       created: ApiSpec.data("Room successfully created", ApiSpec.RoomCreateDetailsResponse),
       bad_request: ApiSpec.error("Invalid request structure"),
-      unauthorized: ApiSpec.error("Unauthorized")
+      unauthorized: ApiSpec.error("Unauthorized"),
+      service_unavailable: ApiSpec.error("Service temporarily unavailable")
     ]
 
   operation :show,
@@ -44,8 +46,10 @@ defmodule FishjamWeb.RoomController do
     ],
     responses: [
       ok: ApiSpec.data("Success", ApiSpec.RoomDetailsResponse),
+      bad_request: ApiSpec.error("Invalid request"),
       not_found: ApiSpec.error("Room doesn't exist"),
-      unauthorized: ApiSpec.error("Unauthorized")
+      unauthorized: ApiSpec.error("Unauthorized"),
+      service_unavailable: ApiSpec.error("Service temporarily unavailable")
     ]
 
   operation :delete,
@@ -60,8 +64,10 @@ defmodule FishjamWeb.RoomController do
     ],
     responses: [
       no_content: %Response{description: "Successfully deleted room"},
+      bad_request: ApiSpec.error("Invalid request"),
       not_found: ApiSpec.error("Room doesn't exist"),
-      unauthorized: ApiSpec.error("Unauthorized")
+      unauthorized: ApiSpec.error("Unauthorized"),
+      service_unavailable: ApiSpec.error("Service temporarily unavailable")
     ]
 
   def index(conn, _params) do
@@ -77,7 +83,7 @@ defmodule FishjamWeb.RoomController do
   def create(conn, params) do
     Logger.debug("Start creating room")
 
-    with {:ok, config} <- Room.Config.from_params(params),
+    with {:ok, config} <- Config.from_params(params),
          {:ok, room, fishjam_address} <- RoomService.create_room(config) do
       conn
       |> put_resp_content_type("application/json")
@@ -111,6 +117,12 @@ defmodule FishjamWeb.RoomController do
         room_id = Map.get(params, "roomId")
         {:error, :bad_request, "Cannot add room with id \"#{room_id}\" - unexpected error"}
 
+      {:error, :rpc_failed} ->
+        room_id = Map.get(params, "roomId")
+
+        {:error, :service_unavailable,
+         "Cannot add room with id \"#{room_id}\" - unable to communicate with designated Fishjam instance"}
+
       {:error, :invalid_room_id} ->
         room_id = Map.get(params, "roomId")
 
@@ -128,8 +140,8 @@ defmodule FishjamWeb.RoomController do
         |> put_resp_content_type("application/json")
         |> render("show.json", room: room)
 
-      {:error, :room_not_found} ->
-        {:error, :not_found, "Room #{id} does not exist"}
+      {:error, reason} ->
+        {:rpc_error, reason, id}
     end
   end
 
@@ -138,8 +150,8 @@ defmodule FishjamWeb.RoomController do
       :ok ->
         send_resp(conn, :no_content, "")
 
-      {:error, :room_not_found} ->
-        {:error, :not_found, "Room #{id} does not exist"}
+      {:error, reason} ->
+        {:rpc_error, reason, id}
     end
   end
 

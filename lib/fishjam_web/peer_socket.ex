@@ -6,7 +6,7 @@ defmodule FishjamWeb.PeerSocket do
   alias Fishjam.Event
   alias Fishjam.PeerMessage
   alias Fishjam.PeerMessage.{Authenticated, AuthRequest, MediaEvent}
-  alias Fishjam.{Room, RoomService}
+  alias Fishjam.Local.{Room, RoomService}
   alias FishjamWeb.PeerToken
 
   @heartbeat_interval 30_000

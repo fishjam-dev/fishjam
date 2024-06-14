@@ -4,10 +4,12 @@ defmodule FishjamWeb.HLSControllerTest do
   import OpenApiSpex.TestAssertions
 
   alias Fishjam.Component.HLS
-  alias Fishjam.Component.HLS.{EtsHelper, RequestHandler}
+  alias Fishjam.Component.HLS.EtsHelper
+  alias Fishjam.Component.HLS.Local.RequestHandler
+  alias Fishjam.Room.ID
 
-  @room_id "hls_controller_test"
-  @wrong_room_id "wrong_id"
+  @room_id ID.generate()
+  @wrong_room_id ID.generate()
 
   @header_name "header_name.mp4"
   @header_content <<1>>

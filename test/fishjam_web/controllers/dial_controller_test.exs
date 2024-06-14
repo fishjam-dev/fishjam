@@ -1,6 +1,8 @@
 defmodule FishjamWeb.DialControllerTest do
   use FishjamWeb.ConnCase
 
+  alias Fishjam.Room.ID
+
   @source_uri "rtsp://placeholder-19inrifjbsjb.it:12345/afwefae"
 
   @sip_registrar_credentials %{
@@ -41,8 +43,9 @@ defmodule FishjamWeb.DialControllerTest do
 
   describe "dial" do
     test "returns error when room doesn't exist", %{conn: conn} do
-      conn = post(conn, ~p"/sip/invalid_room_id/component_id/call", phoneNumber: "+123456")
-      assert json_response(conn, :not_found)["errors"] == "Room invalid_room_id does not exist"
+      invalid_room_id = ID.generate()
+      conn = post(conn, ~p"/sip/#{invalid_room_id}/component_id/call", phoneNumber: "+123456")
+      assert json_response(conn, :not_found)["errors"] == "Room #{invalid_room_id} does not exist"
     end
 
     test "returns error when sip component doesn't exist", %{conn: conn, room_id: room_id} do

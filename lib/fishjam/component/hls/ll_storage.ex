@@ -3,8 +3,9 @@ defmodule Fishjam.Component.HLS.LLStorage do
 
   @behaviour Membrane.HTTPAdaptiveStream.Storage
 
-  alias Fishjam.Component.HLS.{EtsHelper, RequestHandler}
-  alias Fishjam.Room
+  alias Fishjam.Component.HLS.EtsHelper
+  alias Fishjam.Component.HLS.Local.RequestHandler
+  alias Fishjam.Room.ID
 
   @enforce_keys [:directory, :room_id]
   defstruct @enforce_keys ++
@@ -17,7 +18,7 @@ defmodule Fishjam.Component.HLS.LLStorage do
 
   @type t :: %__MODULE__{
           directory: Path.t(),
-          room_id: Room.id(),
+          room_id: ID.id(),
           table: :ets.table() | nil,
           partial_sn: sequence_number(),
           segment_sn: sequence_number(),

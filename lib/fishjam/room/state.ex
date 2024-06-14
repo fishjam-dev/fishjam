@@ -5,9 +5,9 @@ defmodule Fishjam.Room.State do
 
   require Logger
 
-  alias Fishjam.{Component, Event, Peer, Room, Track}
+  alias Fishjam.{Component, Event, Peer, Track}
   alias Fishjam.Component.{HLS, Recording, RTSP}
-  alias Fishjam.Room.Config
+  alias Fishjam.Room.{Config, ID}
   alias Membrane.ICE.TURNManager
   alias Membrane.RTC.Engine
 
@@ -39,7 +39,7 @@ defmodule Fishjam.Room.State do
   * `last_peer_left` - arbitrary timestamp with latest occurence of the room becoming peerless
   """
   @type t :: %__MODULE__{
-          id: Room.id(),
+          id: ID.id(),
           config: Config.t(),
           components: %{Component.id() => Component.t()},
           peers: %{Peer.id() => Peer.t()},
@@ -55,7 +55,7 @@ defmodule Fishjam.Room.State do
   defguard endpoint_exists?(state, endpoint_id)
            when peer_exists?(state, endpoint_id) or component_exists?(state, endpoint_id)
 
-  @spec new(id :: Room.id(), config :: Config.t()) :: t()
+  @spec new(id :: ID.id(), config :: Config.t()) :: t()
   def new(id, config) do
     rtc_engine_options = [
       id: id
@@ -98,7 +98,7 @@ defmodule Fishjam.Room.State do
     state
   end
 
-  @spec id(state :: t()) :: Room.id()
+  @spec id(state :: t()) :: ID.id()
   def id(state), do: state.id
 
   @spec engine_pid(state :: t()) :: pid()

@@ -9,7 +9,7 @@ defmodule Fishjam.ResourceManager do
   require Logger
 
   alias Fishjam.Component.Recording
-  alias Fishjam.RoomService
+  alias Fishjam.Local.RoomService
 
   @type seconds :: pos_integer()
   @type opts :: %{interval: seconds(), recording_timeout: seconds()}

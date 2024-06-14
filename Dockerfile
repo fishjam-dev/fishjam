@@ -21,7 +21,8 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 RUN mix local.hex --force && \
   mix local.rebar --force
 
-ENV MIX_ENV=prod
+ARG MIX_ENV=prod
+ENV MIX_ENV=$MIX_ENV
 
 # The order of the following commands is important.
 # It ensures that:
@@ -50,6 +51,9 @@ COPY rel rel
 RUN mix release
 
 FROM alpine:3.17 AS app
+
+ARG MIX_ENV=prod
+ENV MIX_ENV=$MIX_ENV
 
 ARG FJ_GIT_COMMIT
 ENV FJ_GIT_COMMIT=$FJ_GIT_COMMIT
@@ -122,7 +126,7 @@ RUN mkdir ${FJ_RESOURCES_BASE_PATH} && chown fishjam:fishjam ${FJ_RESOURCES_BASE
 RUN mkdir ${FJ_RESOURCES_BASE_PATH}/file_component_sources \
  && chown fishjam:fishjam ${FJ_RESOURCES_BASE_PATH}/file_component_sources
 
-COPY --from=build /app/_build/prod/rel/fishjam ./
+COPY --from=build /app/_build/${MIX_ENV}/rel/fishjam ./
 
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x docker-entrypoint.sh

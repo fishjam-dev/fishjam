@@ -35,6 +35,12 @@ defmodule FishjamWeb.Router do
       delete "/:recording_id", RecordingController, :delete
       get "/", RecordingController, :show
     end
+
+    if Application.compile_env(:fishjam, :test_routes) do
+      scope "/test" do
+        get "/local/room", LocalRoomController, :index
+      end
+    end
   end
 
   # Paths which DO NOT require auth

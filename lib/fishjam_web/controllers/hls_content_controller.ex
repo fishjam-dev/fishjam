@@ -4,7 +4,7 @@ defmodule FishjamWeb.HLSContentController do
 
   require Logger
 
-  alias Fishjam.Component.HLS.RequestHandler
+  alias Fishjam.Component.HLS.Cluster.RequestHandler
   alias FishjamWeb.ApiSpec
   alias FishjamWeb.ApiSpec.HLS.{Params, Response}
 
@@ -33,7 +33,11 @@ defmodule FishjamWeb.HLSContentController do
     responses: [
       ok: ApiSpec.data("File was found", Response),
       not_found: ApiSpec.error("File not found"),
-      bad_request: ApiSpec.error("Invalid filename")
+      bad_request: ApiSpec.error("Invalid filename"),
+      moved_permanently: %OpenApiSpex.Response{
+        description: "Resource available on another Fishjam instance"
+      },
+      service_unavailable: ApiSpec.error("Service temporarily unavailable")
     ]
 
   @playlist_content_type "application/vnd.apple.mpegurl"
@@ -74,6 +78,9 @@ defmodule FishjamWeb.HLSContentController do
         |> put_resp_content_type(@playlist_content_type, nil)
         |> Conn.send_resp(200, manifest)
 
+      {:redirect, fishjam_address} ->
+        send_redirect_response(conn, fishjam_address)
+
       {:error, reason} ->
         Logger.error("Error handling manifest request, reason: #{inspect(reason)}")
         {:error, :not_found, "File not found"}
@@ -97,11 +104,26 @@ defmodule FishjamWeb.HLSContentController do
 
         Conn.send_resp(conn, 200, file)
 
+      {:redirect, fishjam_address} ->
+        send_redirect_response(conn, fishjam_address)
+
       {:error, :invalid_path} ->
         {:error, :bad_request, "Invalid filename, got #{filename}"}
 
       {:error, _reason} ->
         {:error, :not_found, "File not found"}
     end
+  end
+
+  defp send_redirect_response(conn, fishjam_address) do
+    location =
+      "#{conn.scheme}://#{fishjam_address}"
+      |> URI.parse()
+      |> Map.put(:path, conn.request_path)
+      |> URI.to_string()
+
+    conn
+    |> put_status(:moved_permanently)
+    |> redirect(external: location)
   end
 end

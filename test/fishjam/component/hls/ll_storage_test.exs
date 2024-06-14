@@ -3,7 +3,8 @@ defmodule Fishjam.Component.HLS.LLStorageTest do
 
   use ExUnit.Case, async: true
 
-  alias Fishjam.Component.HLS.{EtsHelper, LLStorage, RequestHandler}
+  alias Fishjam.Component.HLS.{EtsHelper, LLStorage}
+  alias Fishjam.Component.HLS.Local.RequestHandler
 
   @segment_name "segment"
   @segment_content <<1, 2, 3>>
