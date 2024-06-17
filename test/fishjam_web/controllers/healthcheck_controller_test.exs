@@ -23,11 +23,11 @@ defmodule FishjamWeb.HealthcheckControllerTest do
 
     assert %{
              "localStatus" => %{
-              "status" => "UP",
-              "nodeName" => _,
-              "uptime" => _,
-              "version" => ^version,
-              "gitCommit" => commit
+               "status" => "UP",
+               "nodeName" => _,
+               "uptime" => _,
+               "version" => ^version,
+               "gitCommit" => commit
              },
              "distributionEnabled" => false,
              "nodesInCluster" => 1,
