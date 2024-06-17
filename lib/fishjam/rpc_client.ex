@@ -15,17 +15,17 @@ defmodule Fishjam.RPCClient do
   """
   @spec call(node(), module(), atom(), term(), timeout()) :: {:ok, term()} | {:error, :rpc_failed}
   def call(node, module, function, args \\ [], timeout \\ :infinity) do
-    start_time = System.monotonic_time(:millisecond)
+    start_time = get_time()
 
     try do
       result = :erpc.call(node, module, function, args, timeout)
-      emit_rpc_duration_event([:fishjam, :rcp_client, :call], start_time)
+      emit_rpc_duration_event([:fishjam, :rpc_client, :call], start_time)
 
       {:ok, result}
     rescue
       e ->
         Logger.warning("RPC call to node #{node} failed with exception: #{inspect(e)}")
-        emit_rpc_duration_event([:fishjam, :rcp_client, :call], start_time)
+        emit_rpc_duration_event([:fishjam, :rpc_client, :call], start_time)
 
         {:error, :rpc_failed}
     end
@@ -37,16 +37,12 @@ defmodule Fishjam.RPCClient do
   """
   @spec multicall(module(), atom(), term(), timeout()) :: list(term)
   def multicall(module, function, args \\ [], timeout \\ :infinity) do
-    start_time = System.monotonic_time(:millisecond)
+    start_time = get_time()
 
     nodes()
     |> :erpc.multicall(module, function, args, timeout)
     |> handle_result()
-    |> then(fn result ->
-      emit_rpc_duration_event([:fishjam, :rcp_client, :multicall], start_time)
-
-      result
-    end)
+    |> tap(fn _ -> emit_rpc_duration_event([:fishjam, :rpc_client, :multicall], start_time) end)
   end
 
   defp handle_result(result) when is_list(result) do
@@ -66,8 +62,10 @@ defmodule Fishjam.RPCClient do
 
   defp nodes, do: [Node.self() | Node.list()]
 
+  defp get_time, do: System.monotonic_time()
+
   defp emit_rpc_duration_event(event_name, start_time) do
-    duration = System.monotonic_time(:millisecond) - start_time
+    duration = System.monotonic_time() - start_time
     :telemetry.execute(event_name, %{duration: duration})
   end
 end
