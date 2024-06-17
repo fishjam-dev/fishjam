@@ -3,9 +3,10 @@ defmodule FishjamWeb.PeerController do
   use OpenApiSpex.ControllerSpecs
 
   require Logger
+
+  alias Fishjam.Cluster.Room
+  alias Fishjam.Cluster.RoomService
   alias Fishjam.Peer
-  alias Fishjam.Room
-  alias Fishjam.RoomService
   alias FishjamWeb.ApiSpec
   alias FishjamWeb.PeerToken
   alias OpenApiSpex.{Response, Schema}
@@ -40,8 +41,8 @@ defmodule FishjamWeb.PeerController do
       created: ApiSpec.data("Peer successfully created", ApiSpec.PeerDetailsResponse),
       bad_request: ApiSpec.error("Invalid request body structure"),
       not_found: ApiSpec.error("Room doesn't exist"),
-      service_unavailable: ApiSpec.error("Peer limit has been reached"),
-      unauthorized: ApiSpec.error("Unauthorized")
+      unauthorized: ApiSpec.error("Unauthorized"),
+      service_unavailable: ApiSpec.error("Service temporarily unavailable")
     ]
 
   operation :delete,
@@ -61,8 +62,10 @@ defmodule FishjamWeb.PeerController do
     ],
     responses: [
       no_content: %Response{description: "Peer successfully deleted"},
+      bad_request: ApiSpec.error("Invalid request body structure"),
       not_found: ApiSpec.error("Room ID or Peer ID references a resource that doesn't exist"),
-      unauthorized: ApiSpec.error("Unauthorized")
+      unauthorized: ApiSpec.error("Unauthorized"),
+      service_unavailable: ApiSpec.error("Service temporarily unavailable")
     ]
 
   def create(conn, %{"room_id" => room_id} = params) do
@@ -73,6 +76,9 @@ defmodule FishjamWeb.PeerController do
     with peer_options <- Map.get(params, "options", %{}),
          {:ok, peer_type_string} <- Map.fetch(params, "type"),
          {:ok, peer_type} <- Peer.parse_type(peer_type_string),
+         # FIXME: Opportunity for improvement
+         # This performs two RPCs, but a small refactor in Cluster.Room will let us get rid of one of them
+         # Same thing happens in the other controllers
          {:ok, _room_pid} <- RoomService.find_room(room_id),
          {:ok, peer} <- Room.add_peer(room_id, peer_type, peer_options) do
       Logger.debug("Successfully added peer to room: #{room_id}")
@@ -91,13 +97,7 @@ defmodule FishjamWeb.PeerController do
       :error ->
         msg = "Invalid request body structure"
         log_warning(room_id, msg)
-
         {:error, :bad_request, msg}
-
-      {:error, :room_not_found} ->
-        msg = "Room #{room_id} does not exist"
-        log_warning(room_id, msg)
-        {:error, :not_found, msg}
 
       {:error, :invalid_type} ->
         msg = "Invalid peer type"
@@ -113,6 +113,9 @@ defmodule FishjamWeb.PeerController do
         msg = "Reached #{type} peers limit in room #{room_id}"
         log_warning(room_id, msg)
         {:error, :service_unavailable, msg}
+
+      {:error, reason} ->
+        {:rpc_error, reason, room_id}
     end
   end
 
@@ -121,8 +124,11 @@ defmodule FishjamWeb.PeerController do
          :ok <- Room.remove_peer(room_id, id) do
       send_resp(conn, :no_content, "")
     else
-      {:error, :room_not_found} -> {:error, :not_found, "Room #{room_id} does not exist"}
-      {:error, :peer_not_found} -> {:error, :not_found, "Peer #{id} does not exist"}
+      {:error, :peer_not_found} ->
+        {:error, :not_found, "Peer #{id} does not exist"}
+
+      {:error, reason} ->
+        {:rpc_error, reason, room_id}
     end
   end
 

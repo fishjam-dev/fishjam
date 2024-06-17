@@ -5,7 +5,8 @@ config :fishjam,
   port: 4002,
   server_api_token: "development",
   webrtc_metrics_scrape_interval: 50,
-  room_metrics_scrape_interval: 1
+  room_metrics_scrape_interval: 1,
+  test_routes: true
 
 config :fishjam, FishjamWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],

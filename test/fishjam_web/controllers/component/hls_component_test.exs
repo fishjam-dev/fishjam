@@ -4,7 +4,7 @@ defmodule FishjamWeb.Component.HlsComponentTest do
 
   import Mox
 
-  alias Fishjam.RoomService
+  alias Fishjam.Local.RoomService
 
   alias Fishjam.Component.HLS
 

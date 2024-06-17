@@ -2,6 +2,8 @@ defmodule FishjamWeb.ComponentControllerTest do
   use FishjamWeb.ConnCase
   use FishjamWeb.ComponentCase
 
+  alias Fishjam.Room.ID
+
   @source_uri "rtsp://placeholder-19inrifjbsjb.it:12345/afwefae"
 
   setup_all do
@@ -24,7 +26,7 @@ defmodule FishjamWeb.ComponentControllerTest do
     end
 
     test "renders errors when room doesn't exists", %{conn: conn} do
-      room_id = "abc"
+      room_id = ID.generate()
       conn = post(conn, ~p"/room/#{room_id}/component", type: "hls")
 
       response = model_response(conn, :not_found, "Error")
@@ -73,7 +75,7 @@ defmodule FishjamWeb.ComponentControllerTest do
     end
 
     test "deletes component from not exisiting room", %{conn: conn, component_id: component_id} do
-      room_id = "abc"
+      room_id = ID.generate()
       conn = delete(conn, ~p"/room/#{room_id}/component/#{component_id}")
 
       assert model_response(conn, :not_found, "Error")["errors"] ==

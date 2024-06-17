@@ -12,19 +12,19 @@ defmodule Fishjam.Component.HLS.Manager do
   require Logger
 
   alias Fishjam.Event
-  alias Fishjam.Room
+  alias Fishjam.Room.ID
 
   @hls_extensions [".m4s", ".m3u8", ".mp4"]
   @playlist_content_type "application/vnd.apple.mpegurl"
 
   @type options :: %{
-          room_id: Room.id(),
+          room_id: ID.id(),
           engine_pid: pid(),
           hls_dir: String.t(),
           hls_options: map()
         }
 
-  @spec start(Room.id(), pid(), String.t(), map()) :: {:ok, pid()} | {:error, term()}
+  @spec start(ID.id(), pid(), String.t(), map()) :: {:ok, pid()} | {:error, term()}
   def start(room_id, engine_pid, hls_dir, hls_options) do
     DynamicSupervisor.start_child(
       Fishjam.HLS.ManagerSupervisor,

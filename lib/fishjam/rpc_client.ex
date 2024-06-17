@@ -11,10 +11,10 @@ defmodule Fishjam.RPCClient do
   @doc """
   Executes mfa on a remote node.
   Function returns {:ok, result} tuple only if the execution succeeded.
-  In case of any exceptions we are catching them logging and returning simple :error atom.
+  In case of any exceptions we are catching them logging and returning the {:error, :rpc_failed} tuple.
   """
-  @spec call(node(), module(), atom(), term(), timeout()) :: {:ok, term()} | :error
-  def call(node, module, function, args, timeout \\ :infinity) do
+  @spec call(node(), module(), atom(), term(), timeout()) :: {:ok, term()} | {:error, :rpc_failed}
+  def call(node, module, function, args \\ [], timeout \\ :infinity) do
     start_time = System.monotonic_time(:millisecond)
 
     try do
@@ -27,7 +27,7 @@ defmodule Fishjam.RPCClient do
         Logger.warning("RPC call to node #{node} failed with exception: #{inspect(e)}")
         emit_rpc_duration_event([:fishjam, :rcp_client, :call], start_time)
 
-        :error
+        {:error, :rpc_failed}
     end
   end
 
@@ -36,7 +36,7 @@ defmodule Fishjam.RPCClient do
   It filters out any errors or exceptions from return so you may end up with empty list.
   """
   @spec multicall(module(), atom(), term(), timeout()) :: list(term)
-  def multicall(module, function, args, timeout \\ :infinity) do
+  def multicall(module, function, args \\ [], timeout \\ :infinity) do
     start_time = System.monotonic_time(:millisecond)
 
     nodes()

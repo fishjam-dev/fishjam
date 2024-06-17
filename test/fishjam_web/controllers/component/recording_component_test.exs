@@ -4,7 +4,7 @@ defmodule FishjamWeb.Component.RecordingComponentTest do
 
   import Mox
 
-  alias Fishjam.RoomService
+  alias Fishjam.Local.RoomService
 
   @s3_credentials %{
     accessKeyId: "access_key_id",

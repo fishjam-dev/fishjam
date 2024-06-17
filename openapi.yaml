@@ -949,6 +949,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/HlsResponse'
           description: File was found
+        '301':
+          description: Resource available on another Fishjam instance
         '400':
           content:
             application/json:
@@ -961,6 +963,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: File not found
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Service temporarily unavailable
       summary: Retrieve HLS Content
       tags:
         - hls
@@ -1122,6 +1130,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Unauthorized
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Service temporarily unavailable
       security:
         - authorization: []
       summary: Creates a room
@@ -1141,6 +1155,12 @@ paths:
       responses:
         '204':
           description: Successfully deleted room
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Invalid request
         '401':
           content:
             application/json:
@@ -1153,6 +1173,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Room doesn't exist
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Service temporarily unavailable
       security:
         - authorization: []
       summary: Delete the room
@@ -1175,6 +1201,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/RoomDetailsResponse'
           description: Success
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Invalid request
         '401':
           content:
             application/json:
@@ -1187,6 +1219,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Room doesn't exist
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Service temporarily unavailable
       security:
         - authorization: []
       summary: Shows information about the room
@@ -1242,6 +1280,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Room doesn't exist
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Service temporarily unavailable
       security:
         - authorization: []
       summary: Creates the component and adds it to the room
@@ -1292,6 +1336,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Room doesn't exist
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Service temporarily unavailable
       security:
         - authorization: []
       summary: Subscribe component to the tracks of peers or components
@@ -1317,6 +1367,12 @@ paths:
       responses:
         '204':
           description: Successfully deleted
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Invalid request
         '401':
           content:
             application/json:
@@ -1329,6 +1385,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Either component or the room doesn't exist
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Service temporarily unavailable
       security:
         - authorization: []
       summary: Delete the component from the room
@@ -1390,7 +1452,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-          description: Peer limit has been reached
+          description: Service temporarily unavailable
       security:
         - authorization: []
       summary: Create peer
@@ -1416,6 +1478,12 @@ paths:
       responses:
         '204':
           description: Peer successfully deleted
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Invalid request body structure
         '401':
           content:
             application/json:
@@ -1428,6 +1496,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Room ID or Peer ID references a resource that doesn't exist
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Service temporarily unavailable
       security:
         - authorization: []
       summary: Delete peer
@@ -1471,6 +1545,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Room doesn't exist
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Service temporarily unavailable
       security:
         - authorization: []
       summary: Finish call made by SIP component
@@ -1520,6 +1600,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
           description: Room doesn't exist
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Service temporarily unavailable
       security:
         - authorization: []
       summary: Make a call from the SIP component to the provided phone number
