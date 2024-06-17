@@ -108,6 +108,25 @@ defmodule FishjamWeb.Telemetry do
         #   - WebSocket traffic
         #   - RTP events (RTSP components don't use ICE)
         #   - HTTP traffic related to metrics (not handled by Phoenix)
+
+        counter("fishjam.rpc_client.call.count",
+          event_name: [:fishjam, :rpc_client, :call],
+          measurement: :duration
+        ),
+        counter("fishjam.rpc_client.multicall.count",
+          event_name: [:fishjam, :rpc_client, :multicall],
+          measurement: :duration
+        ),
+        metric_type.("fishjam.rpc_client.call.duration.milliseconds",
+          event_name: [:fishjam, :rpc_client, :call],
+          measurement: :duration,
+          unit: :millisecond
+        ),
+        metric_type.("fishjam.rpc_client.multicall.duration.milliseconds",
+          event_name: [:fishjam, :rpc_client, :multicall],
+          measurement: :duration,
+          unit: :millisecond
+        ),
         sum("fishjam.traffic.ingress.webrtc.total.bytes",
           event_name: @ice_received_event,
           description: "Total WebRTC traffic received (bytes)"
