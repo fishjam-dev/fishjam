@@ -18,17 +18,17 @@ defmodule Fishjam.RPCClient do
     start_time = System.monotonic_time(:millisecond)
 
     try do
-      {:ok, :erpc.call(node, module, function, args, timeout)}
+      result = :erpc.call(node, module, function, args, timeout)
+      emit_rpc_duration_event([:fishjam, :rcp_client, :call], start_time)
+
+      {:ok, result}
     rescue
       e ->
         Logger.warning("RPC call to node #{node} failed with exception: #{inspect(e)}")
+        emit_rpc_duration_event([:fishjam, :rcp_client, :call], start_time)
+
         :error
     end
-    |> then(fn result ->
-      emit_rpc_duration_event([:fishjam, :rcp_client, :call], start_time)
-
-      result
-    end)
   end
 
   @doc """
