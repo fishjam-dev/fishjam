@@ -270,11 +270,4 @@ defmodule Fishjam.Cluster.LoadBalancingTest do
     |> get_in(["data", "fishjam_address"])
     |> map_fishjam_address()
   end
-
-  defp assert_rooms_number_on_fishjam(fishjam_instance, rooms) do
-    assert {:ok, %HTTPoison.Response{status_code: 200, body: body}} =
-             HTTPoison.get("http://#{fishjam_instance}/room", @headers)
-
-    assert ^rooms = body |> Jason.decode!() |> Map.get("data") |> Enum.count()
-  end
 end
