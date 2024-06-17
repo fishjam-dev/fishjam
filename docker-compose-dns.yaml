@@ -19,8 +19,8 @@ x-fishjam-template: &fishjam-template
   restart: on-failure
   healthcheck:
     interval: 1s
-    timeout: 8s
-    retries: 16
+    timeout: 10s
+    retries: 20
 
 services:
   test:
