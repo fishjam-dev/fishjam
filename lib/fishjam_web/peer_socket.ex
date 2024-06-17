@@ -6,7 +6,7 @@ defmodule FishjamWeb.PeerSocket do
   alias Fishjam.Event
   alias Fishjam.PeerMessage
   alias Fishjam.PeerMessage.{Authenticated, AuthRequest, MediaEvent}
-  alias Fishjam.Local.{Room, RoomService}
+  alias Fishjam.Room
   alias FishjamWeb.PeerSocketHandler
   alias FishjamWeb.PeerToken
 
@@ -59,6 +59,11 @@ defmodule FishjamWeb.PeerSocket do
 
           {:reply, :ok, {:binary, encoded_message}, state}
         else
+          {:error, :rpc_failed} ->
+            Logger.warning("Couldn't connect with node on which room was created")
+
+            {:stop, :closed, {1011, "node not found"}}
+
           {:error, reason} ->
             reason = reason_to_string(reason)
 
@@ -68,11 +73,6 @@ defmodule FishjamWeb.PeerSocket do
             """)
 
             {:stop, :closed, {1000, reason}, state}
-
-          :error_rpc ->
-            Logger.warning("Couldn't connect with node on which room was created")
-
-            {:stop, :closed, {1011, "node not found"}}
         end
 
       _other ->

@@ -1,7 +1,7 @@
 defmodule FishjamWeb.PeerSocketHandler do
   @moduledoc false
   require Logger
-  alias Fishjam.{Room, RoomService}
+  alias Fishjam.Cluster.{Room, RoomService}
 
   def connect_peer(room_id, peer_id, node_name, current_pid) do
     with {:ok, _room_pid} <- RoomService.find_room(room_id),

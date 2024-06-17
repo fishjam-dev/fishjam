@@ -28,7 +28,7 @@ defmodule Fishjam.Room.IDTest do
     end
 
     test "returns error if node is not detected in cluster" do
-      Application.put_env(:fishjam, :feature_flags, custom_room_name_disabled: true)
+      Application.put_env(:fishjam, :feature_flags, request_routing_enabled?: true)
 
       invalid_node = :invalid_node |> Atom.to_string() |> Base.encode16(case: :lower)
       invalid_room_id = "room-id-#{invalid_node}"
@@ -39,7 +39,7 @@ defmodule Fishjam.Room.IDTest do
     end
 
     test "returns ok self node if feature flag is disabled" do
-      Application.put_env(:fishjam, :feature_flags, custom_room_name_disabled: false)
+      Application.put_env(:fishjam, :feature_flags, request_routing_enabled?: false)
 
       invalid_node = :invalid_node |> Atom.to_string() |> Base.encode16(case: :lower)
       invalid_room_id = "room-id-#{invalid_node}"

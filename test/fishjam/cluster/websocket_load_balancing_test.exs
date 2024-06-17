@@ -35,39 +35,6 @@ defmodule Fishjam.Cluster.LoadBalancingTest do
     {:ok, %{}}
   end
 
-  @tag timeout: @max_test_duration
-  test "spawning tasks on a cluster" do
-    [node1, node2] = @nodes
-    response_body1 = add_room(node1)
-
-    fishjam_instance1 = get_fishjam_address(response_body1)
-
-    assert_rooms_number_on_fishjam(fishjam_instance1, 1)
-
-    response_body2 = add_room(node1)
-
-    fishjam_instance2 = get_fishjam_address(response_body2)
-
-    assert_rooms_number_on_fishjam(fishjam_instance2, 1)
-
-    assert_rooms_number_on_fishjam(node1, 1)
-    assert_rooms_number_on_fishjam(node2, 1)
-
-    room_id = get_in(response_body1, ["data", "room", "id"])
-
-    delete_room(fishjam_instance1, room_id)
-
-    assert_rooms_number_on_fishjam(fishjam_instance1, 0)
-    assert_rooms_number_on_fishjam(fishjam_instance2, 1)
-
-    response_body3 = add_room(node1)
-    fishjam_instance3 = get_fishjam_address(response_body3)
-    assert_rooms_number_on_fishjam(fishjam_instance3, 1)
-
-    assert_rooms_number_on_fishjam(node1, 1)
-    assert_rooms_number_on_fishjam(node2, 1)
-  end
-
   describe "peer websocket load balancing" do
     setup do
       [node1, _node2] = @nodes

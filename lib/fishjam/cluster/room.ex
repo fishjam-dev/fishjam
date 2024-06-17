@@ -14,8 +14,8 @@ defmodule Fishjam.Cluster.Room do
     do: route_request(room_id, :add_peer, [room_id, peer_type, options])
 
   @impl true
-  def set_peer_connected(room_id, peer_id),
-    do: route_request(room_id, :set_peer_connected, [room_id, peer_id])
+  def set_peer_connected(room_id, peer_id, node_name, socket_pid),
+    do: route_request(room_id, :set_peer_connected, [room_id, peer_id, node_name, socket_pid])
 
   @impl true
   def get_peer_connection_status(room_id, peer_id),

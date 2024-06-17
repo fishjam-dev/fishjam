@@ -293,7 +293,7 @@ defmodule Fishjam.Room.State do
       :peer_socket_not_exists ->
         Logger.warning("Peer socket doesn't exist")
 
-      :error_rpc ->
+      {:error, :rpc_failed} ->
         nil
     end
 
