@@ -22,15 +22,16 @@ defmodule FishjamWeb.HealthcheckControllerTest do
     version = Fishjam.version()
 
     assert %{
-             "status" => "UP",
-             "uptime" => _uptime,
-             "distribution" => %{
-               "enabled" => false,
-               "nodeStatus" => "DOWN",
-               "nodesInCluster" => 0
+             "localStatus" => %{
+              "status" => "UP",
+              "nodeName" => _,
+              "uptime" => _,
+              "version" => ^version,
+              "gitCommit" => commit
              },
-             "version" => ^version,
-             "gitCommit" => commit
+             "distributionEnabled" => false,
+             "nodesInCluster" => 1,
+             "nodesStatus" => _
            } = response["data"]
 
     assert commit == "dev" || String.length(commit) == @commit_hash_length
