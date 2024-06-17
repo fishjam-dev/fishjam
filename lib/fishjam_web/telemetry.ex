@@ -109,21 +109,23 @@ defmodule FishjamWeb.Telemetry do
         #   - RTP events (RTSP components don't use ICE)
         #   - HTTP traffic related to metrics (not handled by Phoenix)
 
-        counter("fishjam.rpc.call.total",
-          event_name: [:fishjam, :rpc_client, :call],
-          measurement: :duration
-        ),
-        counter("fishjam.rpc.multicall.total",
-          event_name: [:fishjam, :rpc_client, :multicall],
-          measurement: :duration
-        ),
-        metric_type.("fishjam.rpc_client.call.duration.milliseconds",
-          event_name: [:fishjam, :rpc_client, :call],
+        metric_type.("fishjam.rpc.call.success.duration.seconds",
+          event_name: [:fishjam, :rpc_client, :call, :success],
           measurement: :duration,
           unit: {:native, :second}
         ),
-        metric_type.("fishjam.rpc_client.multicall.duration.milliseconds",
-          event_name: [:fishjam, :rpc_client, :multicall],
+        metric_type.("fishjam.rpc.call.fail.duration.seconds",
+          event_name: [:fishjam, :rpc_client, :call, :fail],
+          measurement: :duration,
+          unit: {:native, :second}
+        ),
+        metric_type.("fishjam.rpc.multicall.success.duration.seconds",
+          event_name: [:fishjam, :rpc_client, :multicall, :success],
+          measurement: :duration,
+          unit: {:native, :second}
+        ),
+        metric_type.("fishjam.rpc.multicall.fail.duration.seconds",
+          event_name: [:fishjam, :rpc_client, :multicall, :fail],
           measurement: :duration,
           unit: {:native, :second}
         ),

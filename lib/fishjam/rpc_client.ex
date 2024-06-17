@@ -19,13 +19,13 @@ defmodule Fishjam.RPCClient do
 
     try do
       result = :erpc.call(node, module, function, args, timeout)
-      emit_rpc_duration_event([:fishjam, :rpc_client, :call], start_time)
+      emit_rpc_duration_event([:fishjam, :rpc_client, :call, :success], start_time)
 
       {:ok, result}
     rescue
       e ->
         Logger.warning("RPC call to node #{node} failed with exception: #{inspect(e)}")
-        emit_rpc_duration_event([:fishjam, :rpc_client, :call], start_time)
+        emit_rpc_duration_event([:fishjam, :rpc_client, :call, :fail], start_time)
 
         {:error, :rpc_failed}
     end
@@ -41,20 +41,23 @@ defmodule Fishjam.RPCClient do
 
     nodes()
     |> :erpc.multicall(module, function, args, timeout)
-    |> handle_result()
-    |> tap(fn _ -> emit_rpc_duration_event([:fishjam, :rpc_client, :multicall], start_time) end)
+    |> handle_result(start_time)
   end
 
-  defp handle_result(result) when is_list(result) do
+  defp handle_result(result, start_time) when is_list(result) do
     result
     |> Enum.reduce([], fn
       {:ok, res}, acc ->
+        emit_rpc_duration_event([:fishjam, :rpc_client, :multicall, :success], start_time)
+
         [res | acc]
 
       {status, res}, acc ->
         Logger.warning(
           "RPC multicall to one of the nodes failed with status: #{inspect(status)} because of: #{inspect(res)}"
         )
+
+        emit_rpc_duration_event([:fishjam, :rpc_client, :multicall, :fail], start_time)
 
         acc
     end)
