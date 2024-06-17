@@ -20,7 +20,7 @@ defmodule FishjamWeb.Telemetry do
     metrics_port = Application.fetch_env!(:fishjam, :metrics_port)
 
     Logger.info(
-      "Starting prometheus metrics endpoint at: http://#{:inet.ntoa(metrics_ip)}:#{metrics_port}"
+      "Starting prometheus metrics endpoint at: http://#{:inet.ntoa(metrics_ip)}:#{metrics_port}/metrics"
     )
 
     metrics_opts = [
