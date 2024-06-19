@@ -69,6 +69,7 @@ defmodule Fishjam.MixProject do
 
       # Membrane deps
       # {:fake_turn, path: "~/Repos/fake_turn", override: true},
+      # {:membrane_ice_plugin, path: "/home/michal/Repos/membrane_ice_plugin", override: true},
       {:membrane_ice_plugin, github: "fishjam-dev/membrane_ice_plugin", branch: "turnconfig", override: true},
       {:fake_turn, github: "fishjam-dev/fake_turn", branch: "turnconfig", override: true},
       {:membrane_core, "~> 1.1.0-rc1", override: true},
