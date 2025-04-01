@@ -1,4 +1,11 @@
-# Fishjam
+# Moving forward with Fishjam
+
+Fishjam Media Server is evolving into [Fishjam](https://fishjam.io/).
+
+While this organization remains public, we will not be updating it with new developments or fixes.  
+If you run your product on Fishjam Media Server and these changes affect your business, please contact us via projects@swmansion.com.
+
+# Fishjam Media Server
 
 [![codecov](https://codecov.io/gh/fishjam-dev/fishjam/branch/main/graph/badge.svg?token=ANWFKV2EDP)](https://codecov.io/gh/fishjam-dev/fishjam)
 [![CircleCI](https://circleci.com/gh/fishjam-dev/fishjam.svg?style=svg)](https://circleci.com/gh/fishjam-dev/fishjam)
